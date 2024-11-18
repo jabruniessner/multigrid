@@ -13,28 +13,27 @@ int Convolve(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...>& src
 	assert(dest.padding_width == src.padding_width);
 
 	
-	dest.q.submit([&](sycl::handler& h){
-
-	
-
-		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I){
-				
-				
-				((I[dims] += dest.padding_width), ...);
-				
-				float result = 0;
-				
-				for(int k = 0; k < size; k++){
-					auto source_value = src((I[dims]+offsets[k][dims])...);
-					result += src((I[dims]+offsets[k][dims])...)*values[k];
-				}
-
-				dest(I[dims]...) = result;
-				
-				});
-	});
-
-	dest.q.wait();
+ 	dest.q.submit([&](sycl::handler& h){
+ 
+ 	
+ 
+ 		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I){
+ 				
+ 				
+ 				((I[dims] += dest.padding_width), ...);
+ 				
+ 				float result = 0;
+ 				
+ 				for(int k = 0; k < size; k++){
+ 					result += src((I[dims]+offsets[k][dims])...)*values[k];
+ 				}
+ 
+ 				dest(I[dims]...) = result;
+ 				
+ 				});
+ 	});
+ 
+ 	dest.q.wait();
 
 	return 0;
 }

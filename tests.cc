@@ -3,7 +3,7 @@
 
 int main()
 {
-	sycl::cpu_selector selector;
+	sycl::gpu_selector selector;
 	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
 
 	Domain<2, 3u, 3u> domain_src(Paddings::PERIODIC, q, 1);

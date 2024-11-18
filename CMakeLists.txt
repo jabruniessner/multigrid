@@ -18,8 +18,11 @@ set(CMAKE_CXX_COMPILER "acpp")
 
 # Add the executable
 #add_executable(Convolution Convolution2D.cc)
-add_executable(run_tests tests.cc)
-add_executable(test_CG_solver test_CG.cc)
+#add_executable(run_tests tests.cc)
+#add_executable(test_CG_solver test_CG.cc)
+
+add_executable(test_CG_solver3D test_CG3D.cc)
+add_executable(run_test_3D tests3D.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
