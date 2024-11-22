@@ -23,6 +23,7 @@ set(CMAKE_CXX_COMPILER "acpp")
 
 add_executable(test_CG_solver3D test_CG3D.cc)
 add_executable(run_test_3D tests3D.cc)
+add_executable(test_lvl_trans tests_level_transition.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
