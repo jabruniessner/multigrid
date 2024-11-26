@@ -4,7 +4,7 @@
 
 int main()
 {
-	sycl::cpu_selector selector;
+	sycl::gpu_selector selector;
 	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
 
 	Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, q, 1);
@@ -21,8 +21,6 @@ int main()
  		{
  			domain_src.set_value(((i+j)%2==0)*1,  i, j);
  		}
- 
- 		std::cout<<std::endl;
  	}
 
 	for(Position1D i = 0; i<7+2; i++)
@@ -53,6 +51,18 @@ int main()
 
 	refinement(domain_src, domain_dest);
 
+	std::cout<<"The output after the refinement is:" << std::endl;
+
+	for(Position1D i = 0; i<7+2; i++)
+ 	{
+ 		for(Position1D j = 0; j<7+2; j++)
+ 		{
+ 			//domain_src.set_value(1,  i, j);
+ 			std::cout<< domain_src.get_value(i, j) << " ";
+ 		}
+ 
+ 		std::cout<<std::endl;
+ 	}
 
 	
 

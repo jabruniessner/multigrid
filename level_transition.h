@@ -64,14 +64,15 @@ void refinement(Domain<Dim, strides_all...>& dest, Domain<Dim, ((strides_all+1)/
 }
 
 template<Dimension Dim, Length...strides_all, typename... Index, typename... Rest_indices>
-DataType domain_refinement_helper(Domain<Dim, strides_all...> dom, std::tuple<Index...>& index_tuple, Rest_indices... rest_indices)
+DataType domain_refinement_helper(const Domain<Dim, strides_all...>& dom, std::tuple<Index...>& index_tuple, Rest_indices&... rest_indices)
 {
 	if constexpr (sizeof...(Index) == Dim)
 	{
-		for(int i = 0; i < Dim; i++)
-		{
-			std::get<i>(index_tuple) /= 2;
-		}	
+		std::apply([&](auto&&... args){
+				((args /= 2), ...);
+				}, 
+				index_tuple);	
+		
 		return std::apply(dom, index_tuple);
 	}
 	else
@@ -82,49 +83,47 @@ DataType domain_refinement_helper(Domain<Dim, strides_all...> dom, std::tuple<In
 		if (first % 2 == 0)
 		{
 
-			auto new_index_tuple = std::tuple_cat(index_tuple, std::make_tuple(first));
-			
-			auto first_arg_tuple = std::forward_as_tuple(
-				       std::forward<Domain<Dim, strides_all...>>(dom), 
-				       std::forward<decltype(new_index_tuple)>(new_index_tuple));
-			
-			auto arg_tuple = std::tuple_cat(std::forward<decltype(first_arg_tuple)>(first_arg_tuple),
-							std::forward<decltype(rest)>(rest));
+			auto new_index_tuple = std::tuple_cat(index_tuple, std::make_tuple(first));	
+			auto first_arg_tuple = std::forward_as_tuple(dom, new_index_tuple);
+			auto arg_tuple = std::tuple_cat(std::forward<decltype(first_arg_tuple)>(first_arg_tuple), rest);
 
-			//TD<decltype(arg_tuple)> td;
 			
-			std::apply(
-   				 [](auto&&... args) {
-        				return domain_refinement_helper<decltype(args)...>(std::forward<decltype(args)>(args)...);
-    				}, arg_tuple);
-			
-			//return std::apply(domain_refinement_helper<decltype(dom),
-			//					   decltype(new_index_tuple),
-			//					   unsigned long>, arg_tuple);
+			return std::apply(
+  				  [](auto&&... args) {
+        				return domain_refinement_helper(args...);
+    					}, arg_tuple
+					);
 
 		}
-//		else
-//		{	
-//			auto new_index_tuple_1 = std::tuple_cat(index_tuple, std::make_tuple(first+1));
-//			auto new_index_tuple_2 = std::tuple_cat(index_tuple, std::make_tuple(first-1));
-//
-//			auto first_arg_tuple_1 = std::forward_as_tuple(
-//				       std::forward<Domain<Dim, strides_all...>>(dom), 
-//				       std::forward<decltype(new_index_tuple_1)>(new_index_tuple_1));
-//
-//			auto first_arg_tuple_2 = std::forward_as_tuple(
-//				       std::forward<Domain<Dim, strides_all...>>(dom), 
-//				       std::forward<decltype(new_index_tuple_2)>(new_index_tuple_2));
-//
-//			auto arg_tuple_1 = std::tuple_cat(std::forward<decltype(first_arg_tuple_1)> 
-//								(first_arg_tuple_1), rest);
-//
-//			auto arg_tuple_2 = std::tuple_cat(std::forward<decltype(first_arg_tuple_2)>
-//                                                                (first_arg_tuple_2), rest);
-//
-//			//return (std::apply(domain_refinement_helper, arg_tuple_1)+
-//			//	std::apply(domain_refinement_helper, arg_tuple_2))/2;
-//		}
+		else
+		{	
+			auto new_index_tuple_1 = std::tuple_cat(index_tuple, std::make_tuple(first+1));
+			auto new_index_tuple_2 = std::tuple_cat(index_tuple, std::make_tuple(first-1));
+
+			auto first_arg_tuple_1 = std::forward_as_tuple(dom, new_index_tuple_1);
+
+			auto first_arg_tuple_2 = std::forward_as_tuple(dom, new_index_tuple_2);
+
+			auto arg_tuple_1 = std::tuple_cat(std::forward<decltype(first_arg_tuple_1)> (first_arg_tuple_1), rest);
+
+			auto arg_tuple_2 = std::tuple_cat(std::forward<decltype(first_arg_tuple_2)> (first_arg_tuple_2), rest);
+
+			auto return_value = std::apply(
+					[](auto&&... args) {
+						return domain_refinement_helper(args...);
+					}, arg_tuple_1
+					);
+
+			return_value += std::apply(
+					[](auto&&... args) {
+						return domain_refinement_helper(args...);
+					}, arg_tuple_2
+					);
+
+
+			return return_value/2;
+
+		}
 		
 	}
 	

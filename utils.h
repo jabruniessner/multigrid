@@ -14,7 +14,7 @@ namespace utils{
 
   template<typename Arg1, typename... Args>
   auto get_tail(Arg1&& arg1, Args... args){
-	auto tail = std::forward_as_tuple(std::forward<Args>(args)...);
+	auto tail = std::forward_as_tuple(args...);
        	return tail;	
   }
 
