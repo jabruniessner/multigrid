@@ -27,7 +27,8 @@ struct Domain {
 			q(q)
 
 		{	
-			assert(sizeof... (strides_all) == Dim);
+			static_assert(sizeof... (strides_all) == Dim);
+
 			
 			num_values=1;
 			((num_values*= strides_all + 2*padding_width), ...);
@@ -40,7 +41,7 @@ struct Domain {
 		template<typename... Positions>
 		DataType& operator()(Positions... positions) const
 		{
-			assert(sizeof... (Positions) == Dim);
+			static_assert(sizeof... (Positions) == Dim);
 			return values_buff[flatten_index<strides_all...>(padding_width, positions...)];
 		}
 
@@ -57,11 +58,10 @@ struct Domain {
 		DataType get_value(Positions... position)
 		{
 			DataType k;
-			q.memcpy( &k, &values_buff[flatten_index<strides_all...>(padding_width, position...)], sizeof(DataType));
+			std::size_t flat_index = flatten_index<strides_all...>(padding_width, position...);
+			q.memcpy( &k, &values_buff[flat_index], sizeof(DataType));
 			q.wait();
 			
-	//		auto k = flatten_index<strides_all...>(padding_width, position...);
-
 			return k;
 		}
 

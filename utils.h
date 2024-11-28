@@ -24,5 +24,17 @@ namespace utils{
    return { std::get<Ints>(std::forward<Tuple>(tuple))... };
   }
 
+  template<std::size_t base, std::size_t power>
+  struct Power
+  {
+	  constexpr static std::size_t value = base * Power<base, power-1>::value;
+  };
+
+  template<std::size_t base>
+  struct Power<base, 0u>
+  {
+	  constexpr static std::size_t value=1;
+  };
+
 }
 
