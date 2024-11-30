@@ -1,8 +1,9 @@
-#include "CG_Solver.h"
-#include "Convolution.h"
+//#include "CG_Solver.h"
+//#include "Convolution.h"
 #include "Domain.h"
 #include "predefinitions.h"
-#include "level_transition.h"
+#include "utils.h"
+//#include "level_transition.h"
 
 constexpr Length nlev = 5;
 constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
@@ -57,7 +58,7 @@ struct Multigrid_domain<Dim, base_length, 0u>
 		domain.set_value(val, i, j);
 	}	
 	
-	constexpr static Length length = base_length;
+	constexpr static Length length = base_length-1;
 	Domain<Dim, length, length> domain;
 };
 
@@ -75,18 +76,9 @@ int main()
 
 	auto& dom = mult_domain.get_domain<1u>();
 
-//	TD<decltype(dom)> td;
 
 	auto a = dom.get_value(0, 0);
 
-
-//	for(int i = 0; i<1; i++){
-//		for(int j = 0; j<1; j++){
-//			std::cout<<mult_domain.get_value<0>(i, j) << " ";
-//		}
-//		std::cout<<std::endl;
-//	}
-	
 	std::cout<<std::endl;	
 
 	std::cout<<"The value for the length in one direction is: "<< values_1D << std::endl;

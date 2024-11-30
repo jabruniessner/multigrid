@@ -34,8 +34,7 @@ struct Domain {
 			((num_values*= strides_all + 2*padding_width), ...);
 
 			values_buff = sycl::malloc_device<DataType>(num_values*sizeof(DataType), q);
-			q.memset(values_buff, 0, num_values*sizeof(DataType));
-			q.wait();
+			q.memset(values_buff, 0, num_values*sizeof(DataType)).wait();
 		}
 
 		template<typename... Positions>
@@ -49,8 +48,7 @@ struct Domain {
 		template<typename... Positions>
 		void set_value(DataType val, Positions... position)
 		{
-			q.memcpy(&values_buff[flatten_index<strides_all...>(padding_width, position...)], &val, sizeof(DataType));
-			q.wait();
+			q.memcpy(&values_buff[flatten_index<strides_all...>(padding_width, position...)], &val, sizeof(DataType)).wait();
 		}
 
 
@@ -59,8 +57,7 @@ struct Domain {
 		{
 			DataType k;
 			std::size_t flat_index = flatten_index<strides_all...>(padding_width, position...);
-			q.memcpy( &k, &values_buff[flat_index], sizeof(DataType));
-			q.wait();
+			q.memcpy( &k, &values_buff[flat_index], sizeof(DataType)).wait();
 			
 			return k;
 		}
