@@ -102,9 +102,7 @@ int domain_compute_norm_squared(DataType& result,  Domain<Dim, strides_all...>& 
         a.q.parallel_for(sycl::range<Dim>(strides_all...), sycl::reduction(result_device, sycl::plus<>()), [=](sycl::id<Dim> I, auto& acc)
                         { 
                                 acc += a((I[dims]+a.padding_width)...)*a((I[dims]+a.padding_width)...);
-                        });
-
-        a.q.wait();
+                        }).wait();
 
         a.q.memcpy(&result, result_device, sizeof(DataType)).wait();
 
@@ -127,7 +125,7 @@ int domain_scalar_multiply(Domain<Dim, strides_all...>& dest, Domain<Dim, stride
 
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
                         dest.values_buff[i] = a.values_buff[i]*scalar;
-                        });
+                        }).wait();
 
         return 0;
 }
@@ -144,7 +142,7 @@ int divide_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
 
                         dest.values_buff[i] = a.values_buff[i]/b.values_buff[i];
-        });
+        }).wait();
 
         return 0;
 }
@@ -161,7 +159,7 @@ int multiply_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all.
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
 
                         dest.values_buff[i] = a.values_buff[i]*b.values_buff[i];
-        });
+        }).wait();
 
         return 0;
 }
@@ -179,7 +177,7 @@ int subtract_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all.
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
 
                         dest.values_buff[i] = a.values_buff[i]-b.values_buff[i];
-        });
+        }).wait();
 
         return 0;
 }
@@ -196,7 +194,7 @@ int add_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...>& 
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
 
                         dest.values_buff[i] = a.values_buff[i]+b.values_buff[i];
-        });
+        }).wait();
 
         return 0;
 }
