@@ -42,7 +42,6 @@ void coarsening(Domain<Dim, ((strides_all+1)/2-1)...>& dest, Domain<Dim, strides
 }
 
 
-
 template<Dimension Dim, Length... strides_all, std::size_t... dims>
 void refinement(Domain<Dim, strides_all...>& dest, Domain<Dim, ((strides_all+1)/2-1)...>& src, std::index_sequence<dims...>)
 {
