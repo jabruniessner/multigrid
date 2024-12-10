@@ -41,17 +41,6 @@ void coarsening(Domain<Dim, ((strides_all+1)/2-1)...>& dest, Domain<Dim, strides
 	coarsening(dest, src, values, offsets, std::make_index_sequence<Dim>());
 }
 
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all, std::size_t... dims>
-void coarsening_boundaries(Domain<Dim, ((strides_all+1)/2 - 1)...>& dest, Domain<Dim, strides_all...>& src, const std::array<DataType, size> values, const std::array<Offsets, size> offsets, std::index_sequence<dims...>)
-{
-
-}
-
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all, std::size_t...dims>
-void coarsening_boundaries_helper
-
-
-
 
 
 template<Dimension Dim, Length... strides_all, std::size_t... dims>

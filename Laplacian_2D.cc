@@ -1,34 +1,28 @@
 #include "MultigridDomain.h"
 #include "Convolution.h"
+#include "level_transition.h"
 
 
-template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t... levels, std::size_t last_level>
-void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain, std::index_sequence<levels..., last_level>)
-{
-	
-	if constexpr (last_level == 0)
-		return;
-
-	constexpr std::array<OffsetType, 1> offsets_coarsening{{{0, 0}}};
-	constexpr std::array<DataType, 1> values_coarsening{1};
-
-	coarsening(MultDomain.template get_domain<last_level-1>(), 
-		   MultDomain.template get_domain<last_level>());
-
-	Initializing_all_rhs(MultDomain, std::index_sequence<levels...>{});
-}
-
-template<Dimension Dim, 
-	std::size_t base_length, 
-	std::size_t nlev, 
-	std::size_t... levels, 
-	std::size_t last_level>
+template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
 void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
 {
-	Initializing_all_rhs(MultDomain, std::make_index_sequence<nlev+1>{});
+	if constexpr (level == 0)
+	{
+		return;
+	}
+	else
+	{
+
+		constexpr std::array<OffsetType, 1> offsets_coarsening{{{0, 0}}};
+		constexpr std::array<DataType, 1> values_coarsening{1};
+
+		coarsening(MultDomain.template get_domain<level-1>(), 
+			   MultDomain.template get_domain<level>(),
+		   	   values_coarsening,
+		           offsets_coarsening);
+	        Initializing_all_rhs<Dim, base_length, nlev, level-1>(MultDomain);
+	}
 }
-
-
 
 
 
@@ -62,6 +56,7 @@ int main()
 
 
 	Convolve(rhs_domain.domain, boundary_values.domain, values_op, offsets_op);
+	Initializing_all_rhs(rhs_domain);
 
 
 

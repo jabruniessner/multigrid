@@ -4,6 +4,9 @@
 #include<vector>
 #include<array>
 
+#ifndef UTILS_H
+#define UTILS_H
+
 namespace utils{
 
   template<typename Arg1, typename... Args>
@@ -50,4 +53,7 @@ namespace utils{
   };
 
 }
+
+
+#endif
 
