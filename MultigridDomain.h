@@ -40,6 +40,11 @@ struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev-1>
 	{
 		std::cout<< nlev << std::endl;
 	}
+
+	void print_length()
+	{
+		std::cout << length << std::endl;
+	}
 	
 	constexpr static Length length = base_length* utils::Power<2u, nlev>::value-1;
 	Domain<Dim, length, length> domain;
@@ -66,6 +71,11 @@ struct Multigrid_domain<Dim, base_length, 0u>
 	void print_level()
 	{
 		std::cout<< 0u << std::endl;
+	}
+
+	std::size_t get_base_length()
+	{
+		return base_length;
 	}	
 	
 	constexpr static Length length = base_length-1;
