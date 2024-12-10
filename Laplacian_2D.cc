@@ -24,6 +24,24 @@ void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
 	}
 }
 
+template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
+void print_multigrid_domain(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
+{
+	if constexpr (level==0)
+	{
+		return;
+	}
+	else
+	{
+
+		std::cout<<"\n\n\n";
+		std::cout << "Level: "<< level<<std::endl;
+		MultDomain.template get_domain<level>().print_domain();
+		print_multigrid_domain<Dim, base_length, nlev, level-1>(MultDomain);
+		
+	}
+}
+
 
 
 int main()
@@ -58,7 +76,7 @@ int main()
 	Convolve(rhs_domain.domain, boundary_values.domain, values_op, offsets_op);
 	Initializing_all_rhs(rhs_domain);
 
-	//rhs_domain.domain.print_domain();
+	print_multigrid_domain(rhs_domain);
 	
 	
 	std::array<OffsetType, 4> offsets{{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}};

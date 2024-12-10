@@ -1,6 +1,7 @@
 #include <sycl/sycl.hpp>
 #include "predefinitions.h"
 #include <cassert>
+#include <format>
 
 #ifndef DOMAIN_H
 #define DOMAIN_H
@@ -73,7 +74,7 @@ struct Domain {
 			}
 			else
 			{
-				std::cout<<this->get_value(indices...);
+				std::cout<<std::format("{:6.3f} ", this->get_value(indices...));
 			}
 
 		};
