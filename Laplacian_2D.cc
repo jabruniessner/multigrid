@@ -24,23 +24,7 @@ void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
 	}
 }
 
-template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
-void print_multigrid_domain(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
-{
-	if constexpr (level==0)
-	{
-		return;
-	}
-	else
-	{
 
-		std::cout<<"\n\n\n";
-		std::cout << "Level: "<< level<<std::endl;
-		MultDomain.template get_domain<level>().print_domain();
-		print_multigrid_domain<Dim, base_length, nlev, level-1>(MultDomain);
-		
-	}
-}
 
 
 
@@ -49,7 +33,8 @@ int main()
 	sycl::gpu_selector selector;
 	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
 
-	Multigrid_domain<2, 1, 4u> lhs_domain(q);
+	Multigrid_domain<2, 1, 4u> lhs_domain1(q);
+	Multigrid_domain<2, 1, 4u> lhs_domain2(q);
 	Multigrid_domain<2, 1, 4u> rhs_domain(q);
 	Multigrid_domain<2, 1, 4u> boundary_values(q);
 
@@ -74,9 +59,10 @@ int main()
 
 
 	Convolve(rhs_domain.domain, boundary_values.domain, values_op, offsets_op);
-	Initializing_all_rhs(rhs_domain);
 
 	print_multigrid_domain(rhs_domain);
+
+
 	
 	
 	std::array<OffsetType, 4> offsets{{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}};

@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.10)
 project(MuhltigridSYCL)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
@@ -26,6 +26,7 @@ set(CMAKE_CXX_COMPILER "acpp")
 add_executable(test_lvl_trans tests_level_transition.cc)
 add_executable(test_lvl_trans3D tests_level_transition3D.cc)
 add_executable(MultiGrid_test MultigridDomain_test.cc)
+add_executable(Laplacian2D Laplacian_2D.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
