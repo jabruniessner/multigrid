@@ -12,7 +12,7 @@ struct Jacobi_Smoother{
 		for(int i = 0; i< Num_Iters)
 		{		
 			Convolve(dest, src, values, offsets);
-			subtract_domains(dest, rhs, dest);
+			subtract_domain(dest, rhs, dest);
 			
 			auto& temp = dest;
 		        dest = src;
@@ -30,24 +30,37 @@ struct Jacobi_Smoother{
 
 
 
-template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
+template<typename Pre_Smoother, typename Post_Smoother, typename Dimension Dim, std::size_t base_length, std::size_t length,std::size_t nlev, std::size_t level=nlev>
 struct V_Cycle_base()
 {
-	Multigrid_domain<Dim, base_length, nlev>& current;
-	Multigrid_domain<Dim, base_length, nlev>& next;
-	Multigrid_domain<Dim, base_length, nlev>& rhs_domain;
+
+	Pre_Smoother pre_smoother;
+	Post_Smoother post_smoother;
 	
 
 	template<std::size_t iter_level=level>
-	static void iteration()
+	static void iteration(
+			Multigrid_domain<Dim, base_length, nlev>& current,
+			Multigrid_domain<Dim, base_length, nlev>& next,
+			Multigrid_domain<Dim, base_length, nlev>& rhs_domain;
+			Multi_Level_operator<Dim, DataType, length, nlev>& Diff_operator;
+			)
 	{
-
-
+		pre_smoother(next.get_domain<level>(), 
+			     current.get_domain<level>(), 
+			     rhs_domain.get_domain<level>(), 
+			     values, 
+			     offsets);
+		
+		iteration<level-1>()
+		
+		post_smoother(next.get_domain<level>(), 
+			      current.get_domain<level>(), 
+			      rhs_domain.get_domain<level>(), 
+			      values, 
+			      offsets);
 	}
 
 	template<>
-	static void iteration<0u>()
-	{
-		std::cout<<"Hello World!"<<std::endl;	
-	}
+	static void iteration<0u>(){}
 }

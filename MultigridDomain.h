@@ -116,6 +116,28 @@ struct Multi_Level_operator : public Multi_Level_operator<Dim, DataType, length,
 		values(values),
 		offsets(offsets) {};
 	
+	template<std::size_t access_level = nlev>
+	auto& get_values()
+	{
+		return 
+		  Multi_Level_operator<
+		  	Dim, 
+			DataType, 
+			length, 
+			access_level>::values;
+	}
+
+	template<std::size_t access_level= nlev>
+	auto& get_offsets()
+	{
+		return 
+		 Multi_Level_operator<
+		 	Dim, 
+			DataType, 
+			length, 
+			access_level>::offsets; 
+	}
+	
 	std::array<DataType, length> values;
 	std::array<OffsetType, length> offsets;
 };
@@ -135,6 +157,16 @@ struct Multi_Level_operator<Dim, DataType, length, 0u>
 		             std::array<OffsetType, length>&& offsets) :
 		values(values),
 		offsets(offsets) {};
+
+	auto get_values()
+	{
+		return values;
+	}
+
+	auto get_offsets()
+	{
+		return offsets;
+	}
 	
 	std::array<DataType, length> values;
 	std::array<OffsetType, length> offsets;
