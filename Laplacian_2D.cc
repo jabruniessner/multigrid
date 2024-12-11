@@ -1,6 +1,7 @@
 #include "MultigridDomain.h"
 #include "Convolution.h"
 #include "level_transition.h"
+#include "cycles.h"
 
 
 template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
