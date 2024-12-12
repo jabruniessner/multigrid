@@ -3,6 +3,9 @@
 #ifndef PREDEFINITIONS_H
 #define PREDEFINITIONS_H
 
+template <std::size_t Int>
+struct Integer{};
+
 class LinearAlgebraDouble{
 	public:
 		using DataType = float;
