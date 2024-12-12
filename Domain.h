@@ -79,6 +79,7 @@ struct Domain {
 
 		};
 
+
 	
 		DataType* values_buff;
 		Length strides[Dim];
