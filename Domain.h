@@ -168,16 +168,20 @@ int multiply_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all.
 
 
 template<Dimension Dim, Length... strides_all>
-int subtract_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...>& a, Domain<Dim, strides_all...> &b)
+int subtract_domains(Domain<Dim, strides_all...>& dest, 
+		     Domain<Dim, strides_all...>& a, 
+		     Domain<Dim, strides_all...> &b)
 {
 
         assert(dest.q==a.q && a.q == b.q);
-        assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-        assert(dest.padding_width == a.padding_width && a.padding_width == b.padding_width);
+        assert(dest.num_values == a.num_values 
+	       && b.num_values == a.num_values);
+        
+	assert(dest.padding_width == a.padding_width 
+	       && a.padding_width == b.padding_width);
 
 
         dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i){
-
                         dest.values_buff[i] = a.values_buff[i]-b.values_buff[i];
         }).wait();
 

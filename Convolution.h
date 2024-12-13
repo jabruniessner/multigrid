@@ -7,7 +7,11 @@
 
 
 template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all, std::size_t... dims>
-int Convolve(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...>& src, const std::array<DataType, size> values, const std::array<Offsets, size> offsets, std::index_sequence<dims...>)
+int Convolve(Domain<Dim, strides_all...>& dest, 
+	     Domain<Dim, strides_all...>& src, 
+	     const std::array<DataType, size> values, 
+	     const std::array<Offsets, size> offsets, 
+	     std::index_sequence<dims...>)
 {
 	assert(dest.q == src.q);
 	assert(dest.padding_width == src.padding_width);

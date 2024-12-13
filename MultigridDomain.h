@@ -1,6 +1,7 @@
 #include "Domain.h"
 #include "predefinitions.h"
 #include "utils.h"
+#include <format>
 
 #ifndef MULTIGRIDDOMAIN_H
 #define MULTIGRIDDOMAIN_H
@@ -11,6 +12,8 @@ constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
 template<Dimension Dim, std::size_t base_length, std::size_t nlev>
 struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev-1>
 {	
+
+	using OffsetType = std::array<int, Dim>;
 	
 	Multigrid_domain(sycl::queue& q) : 
 		domain(Paddings::PERIODIC, q, 1), 
@@ -45,6 +48,13 @@ struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev-1>
 	{
 		std::cout << length << std::endl;
 	}
+
+	template<std::size_t level, std::size_t length>
+	void coarsening(std::array<DataType, length> values,
+			std::array<OffsetType, length> offsets)
+	{
+	}
+		
 	
 	constexpr static Length length = base_length* utils::Power<2u, nlev>::value-1;
 	Domain<Dim, length, length> domain;
@@ -145,6 +155,29 @@ struct Multi_Level_operator : public Multi_Level_operator<Dim, DataType, length,
 			length, 
 			access_level>::offsets; 
 	}
+
+	void print_operator()
+	{
+		std::cout << "The level is: " << nlev << std::endl;
+		std::cout << std::endl << std::endl;
+
+		for(int i = 0; i < length; i++)
+		{
+			for(int j = 0; j < Dim; j++)
+				std::cout << " " << std::format("{:>2}", offsets[i][j]);
+			std::cout << ":";
+			std::cout << " " << values[i] << std::endl;
+		}
+
+		Multi_Level_operator<Dim, 
+				DataType, 
+				length, 
+				nlev-1>
+			::print_operator();
+	
+
+		
+	}
 	
 	std::array<DataType, length> values;
 	std::array<OffsetType, length> offsets;
@@ -177,6 +210,21 @@ struct Multi_Level_operator<Dim, DataType, length, 0u>
 	{
 		return offsets;
 	}
+
+	void print_operator()
+	{
+		std::cout << "The level is: " << 0 << std::endl;
+		std::cout << std::endl << std::endl;
+
+		for(int i = 0; i < length; i++)
+		{
+			for(int j = 0; j < Dim; j++)
+				std::cout << " " << std::format("{:>2}", offsets[i][j]);
+			std::cout << ":";
+			std::cout << " " << values[i] << std::endl;
+		}	
+	}
+
 	
 	std::array<DataType, length> values;
 	std::array<OffsetType, length> offsets;

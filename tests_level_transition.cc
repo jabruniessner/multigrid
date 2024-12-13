@@ -10,8 +10,13 @@ int main()
 	Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, q, 1);
 	Domain<2, 7u, 7u> domain_src(Paddings::PERIODIC, q, 1);
 
-	constexpr std::array<DataType, 9> values{1./9, 1./9, 1/9., 1./9., 1./9, 1./9, 1./9, 1./9, 1./9};
-	constexpr std::array<OffsetType, 9> offsets{{{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1,1}, {-1, 1}, {1, -1}, {-1, -1}}};
+	constexpr std::array<DataType, 9> values{1./9, 1./9, 1./9., 
+						 1./9, 1./9, 1./9, 
+						 1./9, 1./9, 1./9};
+	
+	constexpr std::array<OffsetType, 9> offsets{{{0, 0}, {1, 0}, {-1, 0}, 
+						     {0, 1}, {0,-1}, { 1, 1}, 
+						     {-1,1}, {1,-1}, {-1,-1}}};
 
 	//====== First Trial ======//
 	std::cout<<"The input matrix is given by: "<<std::endl;

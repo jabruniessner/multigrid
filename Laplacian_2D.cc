@@ -51,7 +51,7 @@ int main()
 	
 	
 	
-	std::array<OffsetType, 5> offsets_op{{{-1, 0}, {1, 0}, {0, 0}, {0, -1}, {0, 1}}};
+	std::array<OffsetType, 5> offsets_op{{{-1, 0}, { 1, 0}, {0, 0}, {0, -1}, {0, 1}}};
 	std::array<DataType, 5> values_op{-1./4., -1./4., 1, -1./4., -1./4.}; //Dividing the original operator by the Diagonal 
 							      		      //as it is only applied to the right hand side anyways
 
@@ -70,22 +70,27 @@ int main()
 			values, 
 			offsets);
 
-	j_smoother(lhs_domain1.domain,
-		   lhs_domain2.domain,
-		   rhs_domain.domain,
-		   values, 
-		   offsets);
+//	j_smoother(lhs_domain1.domain,
+//		   lhs_domain2.domain,
+//		   rhs_domain.domain,
+//		   values, 
+//		   offsets);
 
 	Multi_Level_operator mult_level(Integer<nlev>{},
 					values,
 					offsets);
+	mult_level.print_operator();
 
-//	V_Cycle_base v_cycle(
-//			j_smoother,
-//			j_smoother,
-//			lhs_domain1, 
-//
-//			)
+	V_Cycle_base v_cycle(
+			j_smoother,
+			j_smoother,
+			lhs_domain1, 
+			mult_level);
+
+	v_cycle.iteration(lhs_domain1,
+			  lhs_domain2,
+			  rhs_domain,
+			  mult_level);
 
 	std::cout<< "lhs_domain_1:"<< std::endl;
 	print_multigrid_domain(lhs_domain1);

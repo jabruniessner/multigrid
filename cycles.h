@@ -2,11 +2,16 @@
 #include <array>
 
 
+#ifndef CYCLES_H
+#define CYCLES_H
+
 
 template<std::size_t Num_Iters, Dimension Dim, typename DataType, typename OffsetType, std::size_t length, 
 	Length... strides_all>
 struct Jacobi_Smoother
 {
+
+	Jacobi_Smoother(){};
 
 	Jacobi_Smoother(Integer<Num_Iters> integer,
 			Domain<Dim, strides_all...> domain, 
@@ -46,42 +51,57 @@ template<typename Pre_Smoother, typename Post_Smoother,
 	std::size_t nlev, std::size_t level=nlev>
 struct V_Cycle_base
 {
-
 	V_Cycle_base(Pre_Smoother& presmoother, 
 		     Post_Smoother& post_smoother,
 		     Multigrid_domain<Dim, base_length, nlev>&,
 		     Multi_Level_operator<Dim, DataType, length, nlev>&
 		     ){}
 
-	
+	template<std::size_t iter_level=level>
+	static void iteration(
+			Multigrid_domain<Dim, base_length, nlev>& next,
+			Multigrid_domain<Dim, base_length, nlev>& current,
+			Multigrid_domain<Dim, base_length, nlev>& rhs_domain,
+			Multi_Level_operator<Dim, DataType, length, nlev>& Diff_operator,
+			Multi_Level_operator<Dim, DataType, length, nlev>& Smooth_operator
+			)
+	{
+		pre_smoother(next.template get_domain<iter_level>(), 
+			     current.template get_domain<iter_level>(), 
+			     rhs_domain.template get_domain<iter_level>(), 
+			     Smooth_operator.template get_values<iter_level>(), 
+			     Smooth_operator.template get_offsets<iter_level>());
+		
+		//Computing offsets
+		Convolve(current.template get_domain<iter_level>(),
+			 next.template get_domain<iter_level>(),
+			 Diff_operator.template get_values<iter_level>(),
+			 Diff_operator.template get_offsets<iter_level>());
 
-//	template<std::size_t iter_level=level>
-//	static void iteration(
-//			Multigrid_domain<Dim, base_length, nlev>& current,
-//			Multigrid_domain<Dim, base_length, nlev>& next,
-//			Multigrid_domain<Dim, base_length, nlev>& rhs_domain,
-//			Multi_Level_operator<Dim, DataType, length, nlev>& Diff_operator
-//			)
-//	{
-//		pre_smoother(next.template get_domain<iter_level>(), 
-//			     current.template get_domain<iter_level>(), 
-//			     rhs_domain.template get_domain<iter_level>(), 
-//			     Diff_operator.template get_values<iter_level>(), 
-//			     Diff_operator.template get_offsets<iter_level>());
-//		
-//		iteration<iter_level-1>();
-//		
-//		post_smoother(next.template get_domain<iter_level>(), 
-//			      current.template get_domain<iter_level>(), 
-//			      rhs_domain.template get_domain<iter_level>(), 
-//			      Diff_operator.template get_values<iter_level>(), 
-//			      Diff_operator.template get_offsets<iter_level>());
-//	}
-//
-//	template<>
-//	static void iteration<0u>(){}
+		
+		subtract_domains(next.template get_domain<iter_level>(),
+				 rhs_domain.template get_domain<iter_level>(),
+				 current.template get_domain<iter_level>());
 
-	static Pre_Smoother pre_smoother;
-	static Post_Smoother post_smoother;
+
+		//Now we need to coarsen the domain.
+		
+		
+		//iteration<iter_level-1>();
+		
+		post_smoother(next.template get_domain<iter_level>(), 
+			      current.template get_domain<iter_level>(), 
+			      rhs_domain.template get_domain<iter_level>(), 
+			      Smooth_operator.template get_values<iter_level>(), 
+			      Smooth_operator.template get_offsets<iter_level>());
+	}
+
+	//template <>
+	//static void iteration<0u>(){}
+
+	inline static Pre_Smoother pre_smoother{};
+	inline static Post_Smoother post_smoother{};
 
 };
+
+#endif
