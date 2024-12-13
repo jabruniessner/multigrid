@@ -5,9 +5,14 @@
 #ifndef CYCLES_H
 #define CYCLES_H
 
+namespace cycles{
 
-template<std::size_t Num_Iters, Dimension Dim, typename DataType, typename OffsetType, std::size_t length, 
-	Length... strides_all>
+using namespace multigrid_domain;
+
+
+template<std::size_t Num_Iters, Dimension Dim, 
+	typename DataType, typename OffsetType, 
+	std::size_t length, Length... strides_all>
 struct Jacobi_Smoother
 {
 
@@ -103,5 +108,7 @@ struct V_Cycle_base
 	inline static Post_Smoother post_smoother{};
 
 };
+
+}
 
 #endif

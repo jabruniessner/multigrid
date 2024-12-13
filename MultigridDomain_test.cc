@@ -3,6 +3,8 @@
 template<typename T>
 struct TD;
 
+using namespace multigrid_domain;
+
 
 int main()
 {

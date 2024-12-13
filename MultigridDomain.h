@@ -1,10 +1,15 @@
 #include "Domain.h"
 #include "predefinitions.h"
+#include "level_transition.h"
 #include "utils.h"
 #include <format>
 
 #ifndef MULTIGRIDDOMAIN_H
 #define MULTIGRIDDOMAIN_H
+
+namespace multigrid_domain{
+
+using namespace domain;
 
 constexpr Length nlev = 5;
 constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
@@ -53,10 +58,19 @@ struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev-1>
 	void coarsening(std::array<DataType, length> values,
 			std::array<OffsetType, length> offsets)
 	{
+		auto& upper_domain = this->template get_domain<level>();
+		auto& lower_domain = this->template get_domain<level-1>();
+
+		level_transition::coarsening(lower_domain, 
+					     upper_domain,
+					     coarse_filter_values,
+					     coarse_filter_offsets);
 	}
 		
 	
 	constexpr static Length length = base_length* utils::Power<2u, nlev>::value-1;
+	constexpr static std::array<DataType, 1> coarse_filter_values {1};
+	constexpr static std::array<OffsetType, 1> coarse_filter_offsets {{{0, 0}}};
 	Domain<Dim, length, length> domain;
 };
 
@@ -229,6 +243,9 @@ struct Multi_Level_operator<Dim, DataType, length, 0u>
 	std::array<DataType, length> values;
 	std::array<OffsetType, length> offsets;
 };
+
+
+}
 
 #endif
 

@@ -7,6 +7,8 @@
 
 namespace level_transition{
 
+using namespace domain;
+
 std::string tuple_type;
 
 template<typename T> struct TD;
@@ -55,32 +57,6 @@ void coarsening(Domain<Dim, ((strides_all+1)/2-1)...>& dest,
 {
 	coarsening(dest, src, values, 
 		   offsets, std::make_index_sequence<Dim>());
-}
-
-
-
-template<Dimension Dim, Length... strides_all, std::size_t... dims>
-void refinement(Domain<Dim, strides_all...>& dest, 
-		Domain<Dim, ((strides_all+1)/2-1)...>& src, 
-		std::index_sequence<dims...>)
-{
-	assert(dest.q == src.q);
-	//assert(dest.padding_width == src.padding_width);
-
-	dest.q.submit([&](sycl::handler& h){
-		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), 
-				[=](sycl::id<Dim> I){
-				
-				((I[dims] += dest.padding_width), ...);
-				std::tuple<> empty_index_tuple;
-				dest(I[dims]...) = domain_refinement_helper(src, 
-						empty_index_tuple, I[dims]...);
-		});
-	});
-
-	dest.q.wait();
-
-	std::cout<<"The tuple type is: "<<tuple_type<<std::endl;
 }
 
 template<Dimension Dim, Length...strides_all,
@@ -166,6 +142,34 @@ DataType domain_refinement_helper(const Domain<Dim, strides_all...>& dom,
 	return 0.;
 	
 }
+
+
+
+
+template<Dimension Dim, Length... strides_all, std::size_t... dims>
+void refinement(Domain<Dim, strides_all...>& dest, 
+		Domain<Dim, ((strides_all+1)/2-1)...>& src, 
+		std::index_sequence<dims...>)
+{
+	assert(dest.q == src.q);
+	//assert(dest.padding_width == src.padding_width);
+
+	dest.q.submit([&](sycl::handler& h){
+		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), 
+				[=](sycl::id<Dim> I){
+				
+				((I[dims] += dest.padding_width), ...);
+				std::tuple<> empty_index_tuple;
+				dest(I[dims]...) = domain_refinement_helper(src, 
+						empty_index_tuple, I[dims]...);
+		});
+	});
+
+	dest.q.wait();
+
+	std::cout<<"The tuple type is: "<<tuple_type<<std::endl;
+}
+
 
 template<Dimension Dim, Length... strides_all>
 void refinement(Domain<Dim, strides_all...>& dest, 

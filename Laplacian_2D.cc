@@ -4,6 +4,12 @@
 #include "cycles.h"
 
 
+
+
+using namespace cycles;
+using namespace convolution;
+
+
 template<Dimension Dim, std::size_t base_length, std::size_t nlev, std::size_t level=nlev>
 void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
 {
@@ -87,10 +93,10 @@ int main()
 			lhs_domain1, 
 			mult_level);
 
-	v_cycle.iteration(lhs_domain1,
-			  lhs_domain2,
-			  rhs_domain,
-			  mult_level);
+//	v_cycle.iteration(lhs_domain1,
+//			  lhs_domain2,
+//			  rhs_domain,
+//			  mult_level);
 
 	std::cout<< "lhs_domain_1:"<< std::endl;
 	print_multigrid_domain(lhs_domain1);

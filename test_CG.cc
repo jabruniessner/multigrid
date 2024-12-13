@@ -4,6 +4,10 @@
 
 int main()
 {
+
+	using namespace cg_solver;
+	using namespace convolution;
+	
 	sycl::gpu_selector selector;
 	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
 
@@ -15,7 +19,8 @@ int main()
 	 
 
 	constexpr std::array<DataType, 5> values = {4, -1, -1, -1, -1};
-	constexpr std::array<OffsetType, 5> offsets ={{{0,0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
+	constexpr std::array<OffsetType, 5> offsets ={{{0,0}, {1, 0}, 
+		                                       {-1,0},{0, 1}, {0, -1}}};
 
 	const int m = 16;
 	

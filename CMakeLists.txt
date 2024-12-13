@@ -17,12 +17,11 @@ set(CMAKE_CXX_COMPILER "acpp")
 #endif()
 
 # Add the executable
-#add_executable(Convolution Convolution2D.cc)
-#add_executable(run_tests tests.cc)
-#add_executable(test_CG_solver test_CG.cc)
+add_executable(run_tests tests.cc)
+add_executable(test_CG_solver test_CG.cc)
 
-#add_executable(test_CG_solver3D test_CG3D.cc)
-#add_executable(run_test_3D tests3D.cc)
+add_executable(test_CG_solver3D test_CG3D.cc)
+add_executable(run_test_3D tests3D.cc)
 add_executable(test_lvl_trans tests_level_transition.cc)
 add_executable(test_lvl_trans3D tests_level_transition3D.cc)
 add_executable(MultiGrid_test MultigridDomain_test.cc)

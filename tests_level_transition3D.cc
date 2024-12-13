@@ -4,7 +4,7 @@
 
 int main()
 {
-
+	using namespace level_transition;
 	using OffsetType = std::array<int, 3>;
 	
 	sycl::gpu_selector selector;

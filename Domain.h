@@ -6,6 +6,8 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
+namespace domain{
+
 template <Length FirstStride, Length... RestStrides, typename Padding, typename Position, typename... PositionRest>
 size_t flatten_index(Padding padding, Position i, PositionRest... rest_positions)
 {
@@ -208,7 +210,7 @@ int add_domains(Domain<Dim, strides_all...>& dest, Domain<Dim, strides_all...>& 
 
 
 
-
+}
 
 
 #endif

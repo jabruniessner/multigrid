@@ -5,8 +5,15 @@
 #ifndef CONVOLUTION_H
 #define CONVOLUTION_H
 
+namespace convolution{
 
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all, std::size_t... dims>
+using namespace domain;
+
+
+template<typename DataType, typename Offsets, 
+	size_t size, Dimension Dim, Length... strides_all, 
+	std::size_t... dims>
+
 int Convolve(Domain<Dim, strides_all...>& dest, 
 	     Domain<Dim, strides_all...>& src, 
 	     const std::array<DataType, size> values, 
@@ -21,15 +28,16 @@ int Convolve(Domain<Dim, strides_all...>& dest,
  
  	
  
- 		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I){
- 				
+ 		h.parallel_for(sycl::range<Dim>(dest.strides[dims]...), 
+				[=](sycl::id<Dim> I){
  				
  				((I[dims] += dest.padding_width), ...);
  				
  				float result = 0;
  				
  				for(int k = 0; k < size; k++){
- 					result += src((I[dims]+offsets[k][dims])...)*values[k];
+ 					result += src((I[dims]+offsets[k][dims])...)
+						*values[k];
  				}
  
  				dest(I[dims]...) = result;
@@ -42,8 +50,15 @@ int Convolve(Domain<Dim, strides_all...>& dest,
 	return 0;
 }
 
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all>
-int Convolve(Domain<Dim, strides_all...> dest, Domain<Dim, strides_all...> src, const std::array<DataType, size>values, const std::array<Offsets, size> offsets)
+template<typename DataType, 
+	 typename Offsets, 
+	 size_t size, 
+	 Dimension Dim, 
+	Length... strides_all>
+int Convolve(Domain<Dim, strides_all...> dest, 
+		Domain<Dim, strides_all...> src, 
+		const std::array<DataType, size>values, 
+		const std::array<Offsets, size> offsets)
 {	
 	return
 	Convolve(dest, src, values, offsets, std::make_index_sequence<Dim>());
@@ -54,6 +69,9 @@ int Convolve(Domain<Dim, strides_all...> dest, Domain<Dim, strides_all...> src, 
 
 constexpr std::array<OffsetType, 5> vec_offsets={{{0, 0}, {1,0}, {-1, 0}, {0, 1}, {0, -1}}};
 constexpr std::array<DataType, 5> vec_val{4 , -1, -1, -1, -1};
+
+
+} //End namespace convolution
 
 
 #endif

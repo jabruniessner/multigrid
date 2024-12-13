@@ -5,13 +5,29 @@
 #ifndef CG_SOLVER_H
 #define CG_SOLVER_H
 
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length...strides_all, std::size_t... dims>
-void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all...> rhs ,Domain<Dim, strides_all...> defect_r, Domain<Dim, strides_all...> defect_p, const std::array<DataType, size> values, const std::array<Offsets, size> offsets, int m,
+namespace cg_solver{
+
+	using namespace domain;
+
+template<typename DataType, typename Offsets, 
+	size_t size, Dimension Dim, 
+	Length...strides_all, std::size_t... dims>
+void CG_solver(Domain<Dim, strides_all...> init_guess, 
+		Domain<Dim, strides_all...> rhs, 
+		Domain<Dim, strides_all...> defect_r, 
+		Domain<Dim, strides_all...> defect_p, 
+		const std::array<DataType, size> values, 
+		const std::array<Offsets, size> offsets, int m,
 		std::index_sequence<dims...>)
 {
-	assert( defect_r.q == defect_p.q && init_guess.q == defect_p.q);
-	assert( defect_r.num_values == defect_p.num_values && init_guess.num_values == defect_p.num_values);
-	assert( defect_r.padding_width == defect_p.padding_width && init_guess.padding_width == defect_p.padding_width);
+	assert( defect_r.q == defect_p.q 
+	   && init_guess.q == defect_p.q);
+	
+	assert( defect_r.num_values == defect_p.num_values 
+	   && init_guess.num_values == defect_p.num_values);
+	
+	assert( defect_r.padding_width == defect_p.padding_width
+           && init_guess.padding_width == defect_p.padding_width);
 	
 	
 	sycl::queue& q = init_guess.q;
@@ -24,7 +40,9 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 	DataType* alpha = sycl::malloc_device<DataType>(1, q);
 	DataType* beta = sycl::malloc_device<DataType>(1, q);
 	
-	q.parallel_for(sycl::range<Dim>((strides[dims])...), sycl::reduction(r_squared, sycl::plus<>()),
+	q.parallel_for(sycl::range<Dim>((strides[dims])...), 
+			sycl::reduction(r_squared, sycl::plus<>()),
+			
 			[=](sycl::id<Dim> I, auto& r)
 			{
 				((I[dims]+=padding_width), ...);
@@ -34,10 +52,13 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 				
 				for(int k = 0; k < size; k++)
 			        {
-					result += init_guess((I[dims]+offsets[k][dims])...)*values[k];
+					result += init_guess((I[dims]+offsets[k][dims])...)
+					*values[k];
 				}
 				//Assigning values and reducing to the sum
-				defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...)-result;	
+				defect_r(I[dims]...) = defect_p(I[dims]...) = 
+							rhs(I[dims]...)-result;	
+				
 				r += defect_r(I[dims]...)*defect_r(I[dims]...);
 
 				
@@ -48,7 +69,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 
 	
 	//Computing the initial pAp
-	q.parallel_for(sycl::range<Dim>((strides[dims])...), sycl::reduction(p_squared_A, sycl::plus<>()),
+	q.parallel_for(sycl::range<Dim>((strides[dims])...), 
+			sycl::reduction(p_squared_A, sycl::plus<>()),
 			[=](sycl::id<Dim> I, auto& pAp)
 			{
 				((I[dims] += padding_width), ...);
@@ -57,7 +79,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 				DataType result = 0;
 				for(int k = 0; k < size; k++)
 				{
-					result += defect_p((I[dims]+offsets[k][dims])...)*values[k];
+					result += defect_p((I[dims]+offsets[k][dims])...)
+							*values[k];
 				}
 
 				pAp += result*defect_p(I[dims]...);
@@ -77,7 +100,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 			
 	for(int k = 0; k < m; k++)
 	{
-		q.parallel_for(sycl::range<Dim>(strides[dims]...), sycl::reduction(r_squared_next, sycl::plus<>()),
+		q.parallel_for(sycl::range<Dim>(strides[dims]...), 
+				sycl::reduction(r_squared_next, sycl::plus<>()),
 			 	[=](sycl::id<Dim> I, auto& r_squared_plus_1)
 				{
 					((I[dims] += padding_width),...);
@@ -86,12 +110,15 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 					DataType result = 0;
 					for(int k = 0; k < size; k++)
 				        {
-						result += defect_p((I[dims]+offsets[k][dims])...)*values[k];
+						result += defect_p(
+							(I[dims]+offsets[k][dims])...)
+							*values[k];
 					}
 					
 					defect_r(I[dims]...) -= (*alpha)*result;
 
-					r_squared_plus_1 += defect_r(I[dims]...)*defect_r(I[dims]...);				
+					r_squared_plus_1 += defect_r(I[dims]...)
+					*defect_r(I[dims]...);				
 				
 				}).wait();
 		
@@ -108,14 +135,16 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 		q.parallel_for(sycl::range<Dim>(strides[dims]...),[=](sycl::id<Dim> I)
 				{
 					((I[dims] += padding_width), ...);
-					defect_p(I[dims]...) = defect_r(I[dims]...) + (*beta)*defect_p(I[dims]...);
+					defect_p(I[dims]...) = defect_r(I[dims]...) 
+					+ (*beta)*defect_p(I[dims]...);
 				}).wait();
 
 
 		
 
 		
-		q.parallel_for(sycl::range<Dim>(strides[dims]...), sycl::reduction(p_squared_A, sycl::plus<>()),
+		q.parallel_for(sycl::range<Dim>(strides[dims]...), 
+				sycl::reduction(p_squared_A, sycl::plus<>()),
 				[=](sycl::id<Dim> I, auto& pAp)
 				{
 					((I[dims] += padding_width), ...);
@@ -123,7 +152,9 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 					DataType result = 0;
 					for(int k = 0; k < size; k++)
 				        {
-						result += defect_p((I[dims]+offsets[k][dims])...)*values[k];
+						result += defect_p(
+								(I[dims]+offsets[k][dims])...)
+								*values[k];
 					}
 
 
@@ -150,13 +181,21 @@ void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all..
 }
 
 
-template<typename DataType, typename Offsets, size_t size, Dimension Dim, Length... strides_all>
-void CG_solver(Domain<Dim, strides_all...> init_guess, Domain<Dim, strides_all...> rhs ,Domain<Dim, strides_all...> defect_r, Domain<Dim, strides_all...> defect_p, const std::array<DataType, size> values, const std::array<Offsets, size> offsets, int m)
+template<typename DataType, typename Offsets, 
+	size_t size, Dimension Dim, Length... strides_all>
+void CG_solver(Domain<Dim, strides_all...> init_guess,
+	       Domain<Dim, strides_all...> rhs ,
+	       Domain<Dim, strides_all...> defect_r, 
+	       Domain<Dim, strides_all...> defect_p, 
+	       const std::array<DataType, size> values, 
+	       const std::array<Offsets, size> offsets, int m)
 {
 	CG_solver(init_guess, rhs , defect_r, defect_p, values,  offsets, m,
 		std::make_index_sequence<Dim>());
-
 }
+
+
+} //End namespace CG_Solver
 
 
 

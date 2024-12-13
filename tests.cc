@@ -4,6 +4,11 @@
 
 int main()
 {
+
+
+	using namespace convolution;
+	using namespace domain;
+
  	sycl::gpu_selector selector;
  	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
  
