@@ -102,21 +102,27 @@ void print_multigrid_domain(Multigrid_domain<Dim, base_length, nlev>& MultDomain
 
 
 template <Dimension Dim, typename DataType ,std::size_t length, std::size_t nlev>
-struct Multi_Level_operator //: public Multi_Level_operator<Dim, DataType, length, nlev-1>
+struct Multi_Level_operator : public Multi_Level_operator<Dim, DataType, length, nlev-1>
 {
 	using OffsetType = std::array<int, Dim>;
+
+	Multi_Level_operator() {};
 
 	Multi_Level_operator(Integer<nlev>, 
 			     std::array<DataType, length>& values, 
 			     std::array<OffsetType, length>& offsets) :
 		values(values),
-		offsets(offsets) {};
+		offsets(offsets),
+       		Multi_Level_operator<Dim, DataType, length, nlev-1>
+			(Integer<nlev-1>{}, values, offsets) {};
 
 	Multi_Level_operator(Integer<nlev>,
 			     std::array<DataType, length>&& values,
 		             std::array<OffsetType, length>&& offsets) :
 		values(values),
-		offsets(offsets) {};
+		offsets(offsets),
+		Multi_Level_operator<Dim, DataType, length, nlev-1>
+			(Integer<nlev-1>{}, values, offsets) {};
 	
 	template<std::size_t access_level = nlev>
 	auto& get_values()
@@ -148,14 +154,16 @@ struct Multi_Level_operator //: public Multi_Level_operator<Dim, DataType, lengt
 template <Dimension Dim, typename DataType, std::size_t length>
 struct Multi_Level_operator<Dim, DataType, length, 0u>
 {
-	using OffsetType = std::array<std::size_t, Dim>;
+	using OffsetType = std::array<int, Dim>;
 
-	Multi_Level_operator(std::array<DataType, length>& values, 
+	Multi_Level_operator(Integer<0>,
+			     std::array<DataType, length>& values, 
 			     std::array<OffsetType, length>& offsets) :
 		values(values),
 		offsets(offsets) {};
 
-	Multi_Level_operator(std::array<DataType, length>&& values,
+	Multi_Level_operator(Integer<0>,
+			     std::array<DataType, length>&& values,
 		             std::array<OffsetType, length>&& offsets) :
 		values(values),
 		offsets(offsets) {};
