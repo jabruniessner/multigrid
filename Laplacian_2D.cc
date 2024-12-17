@@ -60,15 +60,32 @@ int main()
 	std::array<OffsetType, 5> offsets_op{{{-1, 0}, { 1, 0}, {0, 0}, {0, -1}, {0, 1}}};
 	std::array<DataType, 5> values_op{-1./4., -1./4., 1, -1./4., -1./4.}; //Dividing the original operator by the Diagonal 
 							      		      //as it is only applied to the right hand side anyways
+									     
+	Multi_Level_operator diff_operator(Integer<nlev>{},
+					   values_op,
+					   offsets_op);
+
+
+	std::array<OffsetType, 4u> offsets{{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}}; //Smoothing operator 
+	std::array<float, 4u> values{-1./4., -1./4., -1./4., -1./4.}; // Formula S = 1 - D^(-1) L, 
+
+
+	Multi_Level_operator mult_level(Integer<nlev>{},
+					values,
+					offsets);
+
+	std::array<OffsetType, 1u> offsets_coarse{{{0, 0}}}; //Coarsening operator single poit for now
+	std::array<DataType, 1u> values_coarse{1};
+
+	Multi_Level_operator coarser(Integer<nlev>{},
+				     values_coarse,
+				     offsets_coarse);
+
+
 
 
 	Convolve(rhs_domain.domain, boundary_values.domain, values_op, offsets_op);
 
-	
-	std::array<OffsetType, 4u> offsets{{{-1, 0}, {1, 0}, {0, 1}, {0, -1}}};
-	std::array<float, 4u> values{-1./4., -1./4., -1./4., -1./4.};
-
-	
 
 	Jacobi_Smoother j_smoother(
 			Integer<3>{},
@@ -76,27 +93,31 @@ int main()
 			values, 
 			offsets);
 
-//	j_smoother(lhs_domain1.domain,
-//		   lhs_domain2.domain,
-//		   rhs_domain.domain,
-//		   values, 
-//		   offsets);
+	j_smoother(lhs_domain1.domain,
+		   lhs_domain2.domain,
+		   rhs_domain.domain,
+		   values, 
+		   offsets);
 
-	Multi_Level_operator mult_level(Integer<nlev>{},
-					values,
-					offsets);
+
+	
+		
 	mult_level.print_operator();
 
 	V_Cycle_base v_cycle(
 			j_smoother,
 			j_smoother,
 			lhs_domain1, 
-			mult_level);
+			mult_level,
+			diff_operator,
+			coarser);
 
-//	v_cycle.iteration(lhs_domain1,
-//			  lhs_domain2,
-//			  rhs_domain,
-//			  mult_level);
+	v_cycle.iteration(lhs_domain1,
+			  lhs_domain2,
+			  rhs_domain,
+			  mult_level,
+			  diff_operator,
+			  coarser);
 
 	std::cout<< "lhs_domain_1:"<< std::endl;
 	print_multigrid_domain(lhs_domain1);

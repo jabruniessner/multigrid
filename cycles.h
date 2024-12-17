@@ -1,5 +1,6 @@
 #include "level_transition.h"
 #include <array>
+#include "Convolution.h"
 
 
 #ifndef CYCLES_H
@@ -31,7 +32,7 @@ struct Jacobi_Smoother
 	{	
 		for(int i = 0; i< Num_Iters; i++)
 		{		
-			Convolve(dest, src, values, offsets);
+			convolution::Convolve(dest, src, values, offsets);
 			subtract_domains(dest, rhs, dest);
 			
 			DataType* temp = dest.values_buff;
@@ -49,17 +50,27 @@ struct Jacobi_Smoother
 };
 
 
+//template<std::size_t Num_Iter, Dimension Dim,
+//	typename template <Dim, std::size_t... strides_all> Domain, 
+//	typename OffsetType, typename DataType,
+//	std::size_t length>
+
+
+
 
 template<typename Pre_Smoother, typename Post_Smoother, 
 	Dimension Dim, std::size_t base_length, 
-	std::size_t length, typename DataType,
+	std::size_t length, std::size_t length_diff_op, 
+	std::size_t length_coarsening_op, typename DataType,
 	std::size_t nlev, std::size_t level=nlev>
 struct V_Cycle_base
 {
 	V_Cycle_base(Pre_Smoother& presmoother, 
 		     Post_Smoother& post_smoother,
 		     Multigrid_domain<Dim, base_length, nlev>&,
-		     Multi_Level_operator<Dim, DataType, length, nlev>&
+		     Multi_Level_operator<Dim, DataType, length, nlev>&,
+		     Multi_Level_operator<Dim, DataType, length_diff_op, nlev>&,
+		     Multi_Level_operator<Dim, DataType, length_coarsening_op, nlev>&
 		     ){}
 
 	template<std::size_t iter_level=level>
@@ -67,9 +78,12 @@ struct V_Cycle_base
 			Multigrid_domain<Dim, base_length, nlev>& next,
 			Multigrid_domain<Dim, base_length, nlev>& current,
 			Multigrid_domain<Dim, base_length, nlev>& rhs_domain,
-			Multi_Level_operator<Dim, DataType, length, nlev>& Diff_operator,
-			Multi_Level_operator<Dim, DataType, length, nlev>& Smooth_operator
-			)
+			Multi_Level_operator<Dim,
+			DataType, length, nlev>& Smooth_operator,
+			Multi_Level_operator<Dim, 
+			DataType, length_diff_op, nlev>& Diff_operator,
+			Multi_Level_operator<Dim, 
+			DataType, length_coarsening_op, nlev>& coarsening_operator)
 	{
 		pre_smoother(next.template get_domain<iter_level>(), 
 			     current.template get_domain<iter_level>(), 
@@ -78,21 +92,31 @@ struct V_Cycle_base
 			     Smooth_operator.template get_offsets<iter_level>());
 		
 		//Computing offsets
-		Convolve(current.template get_domain<iter_level>(),
-			 next.template get_domain<iter_level>(),
-			 Diff_operator.template get_values<iter_level>(),
-			 Diff_operator.template get_offsets<iter_level>());
+	        convolution::Convolve(current.template get_domain<iter_level>(),
+			 	next.template get_domain<iter_level>(),
+			 	Diff_operator.template get_values<iter_level>(),
+			 	Diff_operator.template get_offsets<iter_level>());
 
 		
 		subtract_domains(next.template get_domain<iter_level>(),
 				 rhs_domain.template get_domain<iter_level>(),
 				 current.template get_domain<iter_level>());
 
+		level_transition::coarsening(
+				 rhs_domain.template get_domain<iter_level-1>(),
+				 next.template get_domain<iter_level>(),
+				 coarsening_operator.template get_values<iter_level>(),
+				 coarsening_operator.template get_offsets<iter_level>()
+			);
+
 
 		//Now we need to coarsen the domain.
-		
-		
-		//iteration<iter_level-1>();
+//		iteration<iter_level-1>(next, 
+//					current, 
+//					rhs_domain, 
+//					Smooth_operator,
+//					Diff_operator, 
+//					coarsening_operator);
 		
 		post_smoother(next.template get_domain<iter_level>(), 
 			      current.template get_domain<iter_level>(), 
