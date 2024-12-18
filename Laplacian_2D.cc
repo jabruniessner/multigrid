@@ -124,4 +124,7 @@ int main()
 
 	std::cout<< "lhs_domain_2:"<< std::endl;
 	print_multigrid_domain(lhs_domain2);
+
+	std::cout<< "rhs_domain:"<<std::endl;
+	print_multigrid_domain(rhs_domain);
 }
