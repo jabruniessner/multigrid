@@ -89,13 +89,13 @@ int main()
 
 	Jacobi_Smoother j_smoother(
 			Integer<3>{},
-			rhs_domain.domain, 
+			rhs_domain, 
 			values, 
 			offsets);
 
-	j_smoother(lhs_domain1.domain,
-		   lhs_domain2.domain,
-		   rhs_domain.domain,
+	j_smoother(lhs_domain1,
+		   lhs_domain2,
+		   rhs_domain,
 		   values, 
 		   offsets);
 
@@ -112,12 +112,12 @@ int main()
 			diff_operator,
 			coarser);
 
-	v_cycle.iteration(lhs_domain1,
-			  lhs_domain2,
-			  rhs_domain,
-			  mult_level,
-			  diff_operator,
-			  coarser);
+//	v_cycle.iteration(lhs_domain1,
+//			  lhs_domain2,
+//			  rhs_domain,
+//			  mult_level,
+//			  diff_operator,
+//			  coarser);
 
 	std::cout<< "lhs_domain_1:"<< std::endl;
 	print_multigrid_domain(lhs_domain1);

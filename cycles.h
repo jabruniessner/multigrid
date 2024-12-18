@@ -1,5 +1,6 @@
-#include "level_transition.h"
+#include <utility>
 #include <array>
+#include "level_transition.h"
 #include "Convolution.h"
 
 
@@ -11,50 +12,86 @@ namespace cycles{
 using namespace multigrid_domain;
 
 
+//template<std::size_t Num_Iters, Dimension Dim, 
+//	typename DataType, typename OffsetType, 
+//	std::size_t length, Length... strides_all>
+//struct Jacobi_Smoother
+//{
+//
+//	Jacobi_Smoother(){};
+//
+//	Jacobi_Smoother(Integer<Num_Iters> integer,
+//			Domain<Dim, strides_all...> domain, 
+//			std::array<DataType, length> values, 
+//			std::array<OffsetType, length> offsets){}
+//
+//	void operator()(Domain<Dim, strides_all...>& dest,
+//		 Domain<Dim, strides_all...>& src,
+//		 Domain<Dim, strides_all...>& rhs,
+//		 std::array<DataType, length>& values,
+//		 std::array<OffsetType, length>& offsets)
+//	{	
+//		for(int i = 0; i< Num_Iters; i++)
+//		{		
+//			convolution::Convolve(dest, src, values, offsets);
+//			subtract_domains(dest, rhs, dest);
+//			
+//			DataType* temp = dest.values_buff;
+//		        dest.values_buff = src.values_buff;
+//			src.values_buff = temp;
+//		}
+//
+//	
+//		DataType* temp = dest.values_buff;
+//		dest.values_buff = src.values_buff;
+//		src.values_buff = temp;
+//	}
+//
+//
+//};
+
+
 template<std::size_t Num_Iters, Dimension Dim, 
 	typename DataType, typename OffsetType, 
-	std::size_t length, Length... strides_all>
+	std::size_t length, std::size_t base_length, std::size_t nlev>
 struct Jacobi_Smoother
 {
-
 	Jacobi_Smoother(){};
-
-	Jacobi_Smoother(Integer<Num_Iters> integer,
-			Domain<Dim, strides_all...> domain, 
-			std::array<DataType, length> values, 
-			std::array<OffsetType, length> offsets){}
-
-	void operator()(Domain<Dim, strides_all...>& dest,
-		 Domain<Dim, strides_all...>& src,
-		 Domain<Dim, strides_all...>& rhs,
-		 std::array<DataType, length>& values,
-		 std::array<OffsetType, length>& offsets)
-	{	
-		for(int i = 0; i< Num_Iters; i++)
-		{		
-			convolution::Convolve(dest, src, values, offsets);
-			subtract_domains(dest, rhs, dest);
-			
-			DataType* temp = dest.values_buff;
-		        dest.values_buff = src.values_buff;
-			src.values_buff = temp;
-		}
-
 	
-		DataType* temp = dest.values_buff;
-		dest.values_buff = src.values_buff;
-		src.values_buff = temp;
+	Jacobi_Smoother(Integer<Num_Iters> integer,
+			Multigrid_domain<Dim, base_length, nlev>,
+			std::array<DataType, length> values,
+			std::array<OffsetType, length> offsets){};
+
+	template<std::size_t level = nlev>
+	void operator()(Multigrid_domain<Dim, base_length, nlev>& dest,
+		    	  Multigrid_domain<Dim, base_length, nlev>& src,
+		     	  Multigrid_domain<Dim, base_length, nlev>& rhs,
+		     	  std::array<DataType, length>& values,
+		     	  std::array<OffsetType, length>& offsets)
+
+	{
+		
+		auto& dest_domain = dest.template get_domain<level>();
+		//auto&  src_domain =  src.get_domain<level>();	
+		//auto&  rhs_domain =  rhs.get_domain<level>();
+		
+//		for(int i = 0; i< Num_Iters; i++)
+//		{		
+//			convolution::Convolve(dest_domain, src_domain, values, offsets);
+//			subtract_domains(dest_domain, rhs_domain, dest_domain);
+//
+//			std::swap(dest_domain.values_buff, 
+//				   src_domain.values_buff);
+//		}
+//
+//
+//		std::swap(dest_domain.values_buff, 
+//			  src_domain.values_buff);
+
 	}
-
-
+	
 };
-
-
-//template<std::size_t Num_Iter, Dimension Dim,
-//	typename template <Dim, std::size_t... strides_all> Domain, 
-//	typename OffsetType, typename DataType,
-//	std::size_t length>
-
 
 
 
