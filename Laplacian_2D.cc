@@ -3,9 +3,6 @@
 #include "level_transition.h"
 #include "cycles.h"
 
-
-
-
 using namespace cycles;
 using namespace convolution;
 
@@ -34,7 +31,7 @@ void Initializing_all_rhs(Multigrid_domain<Dim, base_length, nlev>& MultDomain)
 
 int main()
 {
-	sycl::gpu_selector selector;
+	sycl::cpu_selector selector;
 	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
 
 	constexpr std::size_t nlev=2u;
@@ -93,11 +90,11 @@ int main()
 			values, 
 			offsets);
 
-	j_smoother(lhs_domain1,
-		   lhs_domain2,
-		   rhs_domain,
-		   values, 
-		   offsets);
+//	j_smoother(lhs_domain1,
+//		   lhs_domain2,
+//		   rhs_domain,
+//		   values, 
+//		   offsets);
 
 
 	
@@ -112,12 +109,12 @@ int main()
 			diff_operator,
 			coarser);
 
-//	v_cycle.iteration(lhs_domain1,
-//			  lhs_domain2,
-//			  rhs_domain,
-//			  mult_level,
-//			  diff_operator,
-//			  coarser);
+	v_cycle.iteration(lhs_domain1,
+			  lhs_domain2,
+			  rhs_domain,
+			  mult_level,
+			  diff_operator,
+			  coarser);
 
 	std::cout<< "lhs_domain_1:"<< std::endl;
 	print_multigrid_domain(lhs_domain1);
