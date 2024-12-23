@@ -142,7 +142,7 @@ struct V_Cycle_base
 		else
 		{
 			pre_smoother(Integer<iter_level>{},
-   					next, 
+   				     next, 
 			     	     current, 
 			     	     rhs_domain, 
 			     	     Smooth_operator.template get_values<iter_level>(), 
