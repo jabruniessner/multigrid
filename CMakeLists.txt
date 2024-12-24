@@ -2,15 +2,15 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set the project name
-project(MuhltigridSYCL)
+project(MultigridSYCL)
 
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
-
-set(CMAKE_CXX_FLAGS "-O3")
+set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_COMPILER "acpp")
 
