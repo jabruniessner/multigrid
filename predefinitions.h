@@ -26,7 +26,7 @@ using OffsetType = LAD::OffsetType;
 // using PositionType = LAD::PositionType;
 using Dimension = LAD::Dimension;
 
-template <typename T> void gpu_print(T *val, sycl::queue q) {
+template <typename T> void gpu_print(T *val, sycl::queue &q) {
   T val_host;
   q.memcpy(&val_host, val, sizeof(T));
   q.wait();
