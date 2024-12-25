@@ -27,7 +27,6 @@ void Initializing_all_rhs(
 int main() {
 
 #ifdef DEBUGMODE
-#warning 'We are accesing the cpu selector'
   sycl::cpu_selector selector;
 #else
   sycl::gpu_selector selector;
@@ -78,15 +77,12 @@ int main() {
 
   Jacobi_Smoother j_smoother(Integer<3>{}, rhs_domain, values, offsets);
 
-  //	j_smoother(lhs_domain1,
-  //		   lhs_domain2,
-  //		   rhs_domain,
-  //		   values,
-  //		   offsets);
+  cg_solver::Solver_CG solver(Integer<3>{}, rhs_domain.template get_domain<1>(),
+                              values_op, offsets_op);
 
   mult_level.print_operator();
 
-  V_Cycle_base v_cycle(j_smoother, j_smoother, lhs_domain1, mult_level,
+  V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
 
   v_cycle.iteration(lhs_domain1, lhs_domain2, rhs_domain, mult_level,
