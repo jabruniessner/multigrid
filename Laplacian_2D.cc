@@ -3,7 +3,7 @@
 #include "cycles.h"
 #include "level_transition.h"
 #include <string>
-#include <utility>
+// #include <utility>
 
 using namespace cycles;
 using namespace convolution;
@@ -98,18 +98,27 @@ int main(int argc, char *argv[]) {
   auto *current = &lhs_domain1;
   auto *next = &lhs_domain2;
 
+  Domain<2, length, length> helper(Paddings::PERIODIC, q, 1);
+
   for (int num = 0; num < num_iter; num++) {
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
                       coarser);
+
+    DataType const residual = compute_residual(
+        rhs_domain.template get_domain<nlev>(),
+        current->template get_domain<nlev>(), helper, values_op, offsets_op);
+
+    std::cout << "The residual after " << num + 1 << " iterations is "
+              << residual << std::endl;
     // std::swap(current, next);
   }
 
-  std::cout << "lhs_domain_1:" << std::endl;
-  print_multigrid_domain(lhs_domain1);
-
-  std::cout << "lhs_domain_2:" << std::endl;
-  print_multigrid_domain(lhs_domain2);
-
-  std::cout << "rhs_domain:" << std::endl;
-  print_multigrid_domain(rhs_domain);
+  //  std::cout << "lhs_domain_1:" << std::endl;
+  //  print_multigrid_domain(lhs_domain1);
+  //
+  //  std::cout << "lhs_domain_2:" << std::endl;
+  //  print_multigrid_domain(lhs_domain2);
+  //
+  //  std::cout << "rhs_domain:" << std::endl;
+  //  print_multigrid_domain(rhs_domain);
 }

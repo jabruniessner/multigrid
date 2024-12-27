@@ -43,7 +43,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType *beta = sycl::malloc_device<DataType>(1, q);
   q.memset(beta, 0, sizeof(DataType));
 
-  init_guess.print_domain();
+  // init_guess.print_domain();
 
   q.parallel_for(
        sycl::range<Dim>((strides[dims])...),
@@ -65,7 +65,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
        })
       .wait();
 
-  init_guess.print_domain();
+  // init_guess.print_domain();
 
   // Computing the initial pAp
   q.parallel_for(sycl::range<Dim>((strides[dims])...),
@@ -84,7 +84,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                  })
       .wait();
 
-  init_guess.print_domain();
+  // init_guess.print_domain();
 
   // Computing initial alpha
   q.submit([&](sycl::handler &h) {
@@ -113,7 +113,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
          })
         .wait();
 
-    init_guess.print_domain();
+    // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
        h.single_task([=]() {
@@ -129,7 +129,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
            defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
      }).wait();
 
-    init_guess.print_domain();
+    // init_guess.print_domain();
 
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(p_squared_A, sycl::plus<>()),
@@ -145,7 +145,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                      pAp += result * defect_p(I[dims]...);
                    })
         .wait();
-    init_guess.print_domain();
+    // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
        h.single_task([=]() {

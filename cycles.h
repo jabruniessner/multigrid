@@ -2,6 +2,9 @@
 #include "MultigridDomain.h"
 #include "level_transition.h"
 #include <array>
+#include <cmath>
+#include <cstddef>
+#include <ostream>
 #include <utility>
 
 #ifndef CYCLES_H
@@ -48,6 +51,19 @@ using namespace multigrid_domain;
 //
 //
 // };
+
+template <Dimension Dim, Length... strides_all, typename DataType,
+          typename OffsetType, size_t size>
+DataType compute_residual(Domain<Dim, strides_all...> &rhs,
+                          Domain<Dim, strides_all...> &sol,
+                          Domain<Dim, strides_all...> &helper,
+                          std::array<DataType, size> &values,
+                          std::array<OffsetType, size> &offsets) {
+  convolution::Subtract_Convolve(helper, sol, rhs, values, offsets);
+  DataType result;
+  domain_compute_norm_squared(result, helper);
+  return std::sqrt(result / sol.num_values);
+}
 
 template <std::size_t Num_Iters, Dimension Dim, typename DataType,
           typename OffsetType, std::size_t length, std::size_t base_length,
