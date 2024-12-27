@@ -135,24 +135,35 @@ struct V_Cycle_base {
                             Diff_operator.template get_values<iter_level>(),
                             Diff_operator.template get_offsets<iter_level>());
 
-      subtract_domains(next.template get_domain<iter_level>(),
+      subtract_domains(current.template get_domain<iter_level>(),
                        rhs_domain.template get_domain<iter_level>(),
                        current.template get_domain<iter_level>());
+      // Finished computing the offset
 
+      // Now we need to coarsen the domain
       level_transition::coarsening(
           rhs_domain.template get_domain<iter_level - 1>(),
-          next.template get_domain<iter_level>(),
+          current.template get_domain<iter_level>(),
           coarsening_operator.template get_values<iter_level>(),
           coarsening_operator.template get_offsets<iter_level>());
 
-      // Now we need to coarsen the domain.
+      level_transition::coarsening(
+          current.template get_domain<iter_level - 1>(),
+          current.template get_domain<iter_level>(),
+          coarsening_operator.template get_values<iter_level>(),
+          coarsening_operator.template get_offsets<iter_level>());
+
       iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                 Diff_operator, coarsening_operator);
 
       level_transition::refinement(current.template get_domain<iter_level>(),
                                    next.template get_domain<iter_level - 1>());
 
-      post_smoother(Integer<iter_level>{}, next, current, rhs_domain,
+      add_domains(next.template get_domain<iter_level>(),
+                  next.template get_domain<iter_level>(),
+                  current.template get_domain<iter_level>());
+
+      post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
                     Smooth_operator.template get_values<iter_level>(),
                     Smooth_operator.template get_offsets<iter_level>());
     }

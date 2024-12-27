@@ -2,6 +2,8 @@
 #include "MultigridDomain.h"
 #include "cycles.h"
 #include "level_transition.h"
+#include <string>
+#include <utility>
 
 using namespace cycles;
 using namespace convolution;
@@ -24,7 +26,13 @@ void Initializing_all_rhs(
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+  if (argc < 2) {
+    std::cout << "Usage: ./this_program num_iters" << std::endl;
+    return 0;
+  }
+  int num_iter = std::stoi(argv[1]);
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -51,6 +59,8 @@ int main() {
     boundary_values.set_value((double)i / (double)(length + 1), i, length + 1);
   }
 
+  print_multigrid_domain(boundary_values);
+
   std::array<OffsetType, 5> offsets_op{
       {{-1, 0}, {1, 0}, {0, 0}, {0, -1}, {0, 1}}};
   std::array<DataType, 5> values_op{
@@ -62,8 +72,8 @@ int main() {
 
   std::array<OffsetType, 4u> offsets{
       {{-1, 0}, {1, 0}, {0, 1}, {0, -1}}}; // Smoothing operator
-  std::array<float, 4u> values{-1. / 4., -1. / 4., -1. / 4.,
-                               -1. / 4.}; // Formula S = 1 - D^(-1) L,
+  std::array<DataType, 4u> values{-1. / 4., -1. / 4., -1. / 4.,
+                                  -1. / 4.}; // Formula S = 1 - D^(-1) L,
 
   Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets);
 
@@ -77,7 +87,7 @@ int main() {
 
   Jacobi_Smoother j_smoother(Integer<3>{}, rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Integer<3>{}, rhs_domain.template get_domain<1>(),
+  cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
                               values_op, offsets_op);
 
   mult_level.print_operator();
@@ -85,8 +95,14 @@ int main() {
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
 
-  v_cycle.iteration(lhs_domain1, lhs_domain2, rhs_domain, mult_level,
-                    diff_operator, coarser);
+  auto *current = &lhs_domain1;
+  auto *next = &lhs_domain2;
+
+  for (int num = 0; num < num_iter; num++) {
+    v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
+                      coarser);
+    // std::swap(current, next);
+  }
 
   std::cout << "lhs_domain_1:" << std::endl;
   print_multigrid_domain(lhs_domain1);
