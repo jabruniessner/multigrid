@@ -50,6 +50,48 @@ void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
   coarsening(dest, src, values, offsets, std::make_index_sequence<Dim>());
 }
 
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
+                         Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest2,
+                         Domain<Dim, strides_all...> &src,
+                         const std::array<DataType, size> values,
+                         const std::array<Offsets, size> offsets,
+                         std::index_sequence<dims...>) {
+  assert(dest1.q == src.q);
+  // assert(dest.padding_width == src.padding_width);
+
+  dest1.q.submit([&](sycl::handler &h) {
+    h.parallel_for(
+        sycl::range<Dim>(dest1.strides[dims]...), [=](sycl::id<Dim> I) {
+          ((I[dims] += dest1.padding_width), ...);
+          sycl::id<Dim> I_fine;
+          ((I_fine[dims] = 2 * I[dims]), ...);
+
+          DataType result = 0;
+
+          for (int k = 0; k < size; k++) {
+            result += src((I_fine[dims] + offsets[k][dims])...) * values[k];
+          }
+
+          dest1(I[dims]...) = dest2(I[dims]...) = result;
+        });
+  });
+
+  dest1.q.wait();
+}
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all>
+void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
+                         Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest2,
+                         Domain<Dim, strides_all...> &src,
+                         const std::array<DataType, size> values,
+                         const std::array<Offsets, size> offsets) {
+  coarsening_and_copy(dest1, dest2, src, values, offsets,
+                      std::make_index_sequence<Dim>());
+}
+
 template <Dimension Dim, Length... strides_all, typename... Index,
           typename... Rest_indices>
 DataType domain_refinement_helper(const Domain<Dim, strides_all...> &dom,
@@ -131,6 +173,34 @@ template <Dimension Dim, Length... strides_all>
 void refinement(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src) {
   refinement(dest, src, std::make_index_sequence<Dim>());
+}
+
+template <Dimension Dim, Length... strides_all, std::size_t... dims>
+void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
+                         Domain<Dim, strides_all...> &dest2,
+                         Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src,
+                         std::index_sequence<dims...>) {
+  assert(dest1.q == src.q && dest2.q == src.q);
+  // assert(dest.padding_width == src.padding_width);
+
+  dest1.q.submit([&](sycl::handler &h) {
+    h.parallel_for(
+        sycl::range<Dim>(dest1.strides[dims]...), [=](sycl::id<Dim> I) {
+          ((I[dims] += dest1.padding_width), ...);
+          std::tuple<> empty_index_tuple;
+          dest1(I[dims]...) = dest2(I[dims]...) =
+              domain_refinement_helper(src, empty_index_tuple, I[dims]...);
+        });
+  });
+
+  dest1.q.wait();
+}
+
+template <Dimension Dim, Length... strides_all>
+void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
+                         Domain<Dim, strides_all...> &dest2,
+                         Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src) {
+  refinement_and_copy(dest1, dest2, src, std::make_index_sequence<Dim>());
 }
 
 }; // namespace level_transition

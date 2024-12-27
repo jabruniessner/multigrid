@@ -141,17 +141,18 @@ struct V_Cycle_base {
       // Finished computing the offset
 
       // Now we need to coarsen the domain
-      level_transition::coarsening(
+      level_transition::coarsening_and_copy(
           rhs_domain.template get_domain<iter_level - 1>(),
-          current.template get_domain<iter_level>(),
-          coarsening_operator.template get_values<iter_level>(),
-          coarsening_operator.template get_offsets<iter_level>());
-
-      level_transition::coarsening(
           current.template get_domain<iter_level - 1>(),
           current.template get_domain<iter_level>(),
           coarsening_operator.template get_values<iter_level>(),
           coarsening_operator.template get_offsets<iter_level>());
+
+      //      level_transition::coarsening(
+      //          current.template get_domain<iter_level - 1>(),
+      //          current.template get_domain<iter_level>(),
+      //          coarsening_operator.template get_values<iter_level>(),
+      //          coarsening_operator.template get_offsets<iter_level>());
 
       iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                 Diff_operator, coarsening_operator);
