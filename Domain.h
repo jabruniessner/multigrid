@@ -1,7 +1,12 @@
 #include "predefinitions.h"
+#include "utils.h"
 #include <cassert>
 #include <format>
+#include <iostream>
+#include <ostream>
 #include <sycl/sycl.hpp>
+#include <tuple>
+#include <utility>
 
 #ifndef DOMAIN_H
 #define DOMAIN_H
@@ -72,6 +77,38 @@ template <Dimension Dim, Length... strides_all> struct Domain {
       std::cout << std::format("{:6.3f} ", this->get_value(indices...));
     }
   };
+
+  template <std::size_t... Ints>
+  void print_header(std::ostream &output, std::index_sequence<Ints...>) {
+    output << "Dimension: " << Dim << std::endl;
+    output << "Number of points in direction:" << std::endl;
+    ((output << "Dir " << Ints << " " << strides_all + 1 << std::endl), ...);
+  }
+
+  void print_header(std::ostream &output) {
+    print_header(output, std::make_index_sequence<Dim>{});
+  }
+
+  template <typename... Indices>
+  void print_domain_to_stream(std::ostream &output, Indices... indices) {
+    if constexpr (sizeof...(Indices) < Dim) {
+      constexpr auto size = sizeof...(Indices);
+      constexpr auto dimension_size =
+          utils::get_stack_element<size>(strides_all...);
+      for (int i = 0; i < dimension_size + 2 * padding_width; i++) {
+        print_domain_to_stream(output, indices..., i);
+      }
+    } else {
+      ((std::cout << indices << " "), ...);
+      std::cout << std::format("{:6.3f}", this->get_value(indices...))
+                << std::endl;
+    }
+  }
+
+  void print_to_output(std::ostream &output) {
+    print_header(output);
+    print_domain_to_stream(output);
+  }
 
   DataType *values_buff;
   Length strides[Dim];

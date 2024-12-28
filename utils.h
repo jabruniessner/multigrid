@@ -36,6 +36,11 @@ extract_tuple(Tuple &&tuple, std::index_sequence<Ints...>) {
   return {std::get<Ints>(std::forward<Tuple>(tuple))...};
 }
 
+template <std::size_t index, typename... Elements>
+constexpr auto get_stack_element(Elements... elements) {
+  return std::get<index>(std::make_tuple(elements...));
+}
+
 template <typename Tuple, std::size_t... Ints>
 void print_tuple(Tuple &&tuple, std::index_sequence<Ints...>) {
   (std::cout << ... << std::get<Ints>(std::forward<Tuple>(tuple)))

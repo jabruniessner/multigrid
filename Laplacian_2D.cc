@@ -113,6 +113,8 @@ int main(int argc, char *argv[]) {
     // std::swap(current, next);
   }
 
+  current->template get_domain<nlev>().print_to_output(std::cout);
+
   //  std::cout << "lhs_domain_1:" << std::endl;
   //  print_multigrid_domain(lhs_domain1);
   //
