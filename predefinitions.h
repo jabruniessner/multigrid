@@ -11,8 +11,8 @@ template <std::size_t Int> struct Integer {};
 class LinearAlgebraDouble {
 public:
   using DataType = double;
-  using Length = unsigned int;
-  using Position1D = unsigned int;
+  using Length = std::size_t;
+  using Position1D = std::size_t;
   // using PositionType = sycl::id<2>;
   using OffsetType = std::array<int, 2>;
   using Dimension = std::size_t;

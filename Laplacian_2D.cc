@@ -64,33 +64,45 @@ int main(int argc, char *argv[]) {
   std::array<OffsetType, 5> offsets_op{
       {{-1, 0}, {1, 0}, {0, 0}, {0, -1}, {0, 1}}};
   std::array<DataType, 5> values_op{
-      -1. / 4., -1. / 4., 1, -1. / 4.,
-      -1. / 4.}; // Dividing the original operator by the Diagonal
-                 // as it is only applied to the right hand side anyways
+      -1., -1, 4, -1.,
+      -1.}; // Dividing the original operator by the Diagonal
+            // as it is only applied to the right hand side anyways
 
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op);
+  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
+                                     Integer<1>{});
+
+  diff_operator.print_operator();
 
   std::array<OffsetType, 4u> offsets{
       {{-1, 0}, {1, 0}, {0, 1}, {0, -1}}}; // Smoothing operator
   std::array<DataType, 4u> values{-1. / 4., -1. / 4., -1. / 4.,
                                   -1. / 4.}; // Formula S = 1 - D^(-1) L,
 
-  Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets);
+  Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets,
+                                  Integer<1>{});
+
+  std::cout << "The mult_level smoother is: " << std::endl;
+  mult_level.print_operator();
 
   std::array<OffsetType, 1u> offsets_coarse{
-      {{0, 0}}}; // Coarsening operator single poit for now
+      {{0, 0}}}; // Coarsening operator single point for now
   std::array<DataType, 1u> values_coarse{1};
 
-  Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse);
+  Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
+                               Integer<1>{});
 
-  Convolve(rhs_domain.domain, boundary_values.domain, values_op, offsets_op);
+  std::cout << "The coarsening smoother is: " << std::endl;
+  coarser.print_operator();
+  Convolve(rhs_domain.domain, boundary_values.domain,
+           diff_operator.get_values(), diff_operator.get_offsets());
 
-  Jacobi_Smoother j_smoother(Integer<3>{}, rhs_domain, values, offsets);
+  Jacobi_Smoother j_smoother(Integer<1>{}, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
-                              values_op, offsets_op);
+                              diff_operator.template get_values<1>(),
+                              diff_operator.template get_offsets<1>());
 
-  mult_level.print_operator();
+  //  // mult_level.print_operator();
 
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
@@ -102,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   for (int num = 0; num < num_iter; num++) {
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
-                      coarser);
+                      coarser, 1.);
 
     DataType const residual = compute_residual(
         rhs_domain.template get_domain<nlev>(),
@@ -113,14 +125,14 @@ int main(int argc, char *argv[]) {
     // std::swap(current, next);
   }
 
-  current->template get_domain<nlev>().print_to_output(std::cout);
+  // current->template get_domain<nlev>().print_to_output(std::cout);
 
-  //  std::cout << "lhs_domain_1:" << std::endl;
-  //  print_multigrid_domain(lhs_domain1);
-  //
-  //  std::cout << "lhs_domain_2:" << std::endl;
-  //  print_multigrid_domain(lhs_domain2);
-  //
-  //  std::cout << "rhs_domain:" << std::endl;
-  //  print_multigrid_domain(rhs_domain);
+  // std::cout << "lhs_domain_1:" << std::endl;
+  // print_multigrid_domain(lhs_domain1);
+
+  // std::cout << "lhs_domain_2:" << std::endl;
+  // print_multigrid_domain(lhs_domain2);
+
+  // std::cout << "rhs_domain:" << std::endl;
+  // print_multigrid_domain(rhs_domain);
 }
