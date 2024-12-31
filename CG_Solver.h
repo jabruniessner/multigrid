@@ -86,6 +86,14 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
 
   // init_guess.print_domain();
 
+  DataType p_squared_A_value = 0;
+  q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
+
+  // std::cout << "The value of p_squared_A is:" << std::endl;
+  // std::cout << p_squared_A_value << std::endl;
+  if (p_squared_A_value == 0)
+    return;
+
   // Computing initial alpha
   q.submit([&](sycl::handler &h) {
      h.single_task([=]() {

@@ -26,6 +26,8 @@ void Initializing_all_rhs(
   }
 }
 
+std::index_sequence<2, 4> a{};
+
 int main(int argc, char *argv[]) {
 
   if (argc < 2) {
@@ -43,7 +45,7 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 2u;
+  constexpr std::size_t nlev = 4u;
 
   Multigrid_domain<2, 1, nlev> lhs_domain1(q);
   Multigrid_domain<2, 1, nlev> lhs_domain2(q);
@@ -59,7 +61,7 @@ int main(int argc, char *argv[]) {
     boundary_values.set_value((double)i / (double)(length + 1), i, length + 1);
   }
 
-  print_multigrid_domain(boundary_values);
+  // print_multigrid_domain(boundary_values);
 
   std::array<OffsetType, 5> offsets_op{
       {{-1, 0}, {1, 0}, {0, 0}, {0, -1}, {0, 1}}};
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
                                      Integer<1>{});
 
-  diff_operator.print_operator();
+  std::cout << "The diff operator is: " << std::endl;
 
   std::array<OffsetType, 4u> offsets{
       {{-1, 0}, {1, 0}, {0, 1}, {0, -1}}}; // Smoothing operator
@@ -81,9 +83,6 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets,
                                   Integer<1>{});
 
-  std::cout << "The mult_level smoother is: " << std::endl;
-  mult_level.print_operator();
-
   std::array<OffsetType, 1u> offsets_coarse{
       {{0, 0}}}; // Coarsening operator single point for now
   std::array<DataType, 1u> values_coarse{1};
@@ -91,12 +90,10 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
                                Integer<1>{});
 
-  std::cout << "The coarsening smoother is: " << std::endl;
-  coarser.print_operator();
   Convolve(rhs_domain.domain, boundary_values.domain,
            diff_operator.get_values(), diff_operator.get_offsets());
 
-  Jacobi_Smoother j_smoother(Integer<1>{}, rhs_domain, values, offsets);
+  Jacobi_Smoother j_smoother(Integer<6>{}, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
@@ -118,7 +115,8 @@ int main(int argc, char *argv[]) {
 
     DataType const residual = compute_residual(
         rhs_domain.template get_domain<nlev>(),
-        current->template get_domain<nlev>(), helper, values_op, offsets_op);
+        current->template get_domain<nlev>(), helper,
+        diff_operator.get_values(), diff_operator.get_offsets());
 
     std::cout << "The residual after " << num + 1 << " iterations is "
               << residual << std::endl;

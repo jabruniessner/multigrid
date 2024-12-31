@@ -157,14 +157,6 @@ struct V_Cycle_base {
                    Smooth_operator.template get_offsets<iter_level>(),
                    box_length);
 
-      std::cout << "After presmoothing the state is: " << std::endl;
-      std::cout << "Next: " << std::endl;
-
-      print_multigrid_domain(next);
-
-      std::cout << "Current: " << std::endl;
-      print_multigrid_domain(current);
-
       // Computing offsets
       convolution::Convolve(current.template get_domain<iter_level>(),
                             next.template get_domain<iter_level>(),
@@ -176,7 +168,6 @@ struct V_Cycle_base {
                        current.template get_domain<iter_level>());
       // Finished computing the offset
 
-      // Now we need to coarsen the domain
       level_transition::coarsening_and_copy(
           rhs_domain.template get_domain<iter_level - 1>(),
           current.template get_domain<iter_level - 1>(),
@@ -200,9 +191,10 @@ struct V_Cycle_base {
                   next.template get_domain<iter_level>(),
                   current.template get_domain<iter_level>());
 
-      // post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
-      //               Smooth_operator.template get_values<iter_level>(),
-      //               Smooth_operator.template get_offsets<iter_level>());
+      post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
+                    Smooth_operator.template get_values<iter_level>(),
+                    Smooth_operator.template get_offsets<iter_level>(),
+                    box_length);
     }
   }
   Solver &solver;
