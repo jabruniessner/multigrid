@@ -2,6 +2,7 @@
 #include "MultigridDomain.h"
 #include "cycles.h"
 #include "level_transition.h"
+#include <chrono>
 #include <string>
 #include <utility>
 // #include <utility>
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 2u;
+  constexpr std::size_t nlev = 5u;
 
   Multigrid_domain<2, 1, nlev> lhs_domain1(q);
   Multigrid_domain<2, 1, nlev> lhs_domain2(q);
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
   Convolve(rhs_domain.domain, boundary_values.domain,
            diff_operator.get_values(), diff_operator.get_offsets());
 
-  std::index_sequence<2> smoother_sequence{};
+  std::index_sequence<2, 4, 5, 2> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
@@ -100,28 +101,35 @@ int main(int argc, char *argv[]) {
                               diff_operator.template get_offsets<1>());
 
   //  // mult_level.print_operator();
-
+  std::index_sequence<2, 3, 3, 1> num_iters_level{};
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
-                       diff_operator, coarser);
+                       diff_operator, coarser, num_iters_level);
 
   auto *current = &lhs_domain1;
   auto *next = &lhs_domain2;
 
   Domain<2, length, length> helper(Paddings::PERIODIC, q, 1);
 
+  auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
                       coarser, 1.);
 
-    DataType const residual = compute_residual(
-        rhs_domain.template get_domain<nlev>(),
-        current->template get_domain<nlev>(), helper,
-        diff_operator.get_values(), diff_operator.get_offsets());
+    // DataType const residual = compute_residual(
+    //     rhs_domain.template get_domain<nlev>(),
+    //     current->template get_domain<nlev>(), helper,
+    //     diff_operator.get_values(), diff_operator.get_offsets());
 
-    std::cout << "The residual after " << num + 1 << " iterations is "
-              << residual << std::endl;
-    // std::swap(current, next);
+    // std::cout << "The residual after " << num + 1 << " iterations is "
+    //           << residual << std::endl;
+    //  std::swap(current, next);
   }
+
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> duration = end - start;
+  std::cout << "The required time was: " << duration.count() << " seconds"
+            << std::endl;
 
   // current->template get_domain<nlev>().print_to_output(std::cout);
 

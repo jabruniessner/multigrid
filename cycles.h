@@ -141,7 +141,8 @@ struct Jacobi_Smoother {
 template <typename Pre_Smoother, typename Post_Smoother, typename Solver,
           Dimension Dim, std::size_t base_length, std::size_t length,
           std::size_t length_diff_op, std::size_t length_coarsening_op,
-          typename DataType, std::size_t nlev, std::size_t level = nlev>
+          typename DataType, std::size_t nlev, std::size_t level = nlev,
+          std::size_t... Num_Iters>
 struct V_Cycle_base {
   V_Cycle_base(
       Pre_Smoother &presmoother, Post_Smoother &post_smoother, Solver &solver,
@@ -149,8 +150,18 @@ struct V_Cycle_base {
       Multi_Level_operator<Dim, DataType, length, base_length, nlev> &,
       Multi_Level_operator<Dim, DataType, length_diff_op, base_length, nlev> &,
       Multi_Level_operator<Dim, DataType, length_coarsening_op, base_length,
-                           nlev> &)
-      : solver(solver) {}
+                           nlev> &,
+      std::index_sequence<Num_Iters...> &)
+      : solver(solver) {
+    static_assert(sizeof...(Num_Iters) == level - 1 ||
+                  sizeof...(Num_Iters) == 1);
+
+    std::cout << "The num_iterations are:" << std::endl;
+    ((std::cout << Num_Iters << " "), ...);
+    std::cout << std::endl;
+  }
+
+  template <std::size_t... Ts> struct TD;
 
   template <std::size_t iter_level = level>
   void iteration(Multigrid_domain<Dim, base_length, nlev> &next,
@@ -171,49 +182,57 @@ struct V_Cycle_base {
              Diff_operator.template get_offsets<iter_level>());
       return;
     } else {
-      pre_smoother(Integer<iter_level>{}, next, current, rhs_domain,
-                   Smooth_operator.template get_values<iter_level>(),
-                   Smooth_operator.template get_offsets<iter_level>(),
-                   box_length);
 
-      // Computing offsets
-      convolution::Convolve(current.template get_domain<iter_level>(),
-                            next.template get_domain<iter_level>(),
-                            Diff_operator.template get_values<iter_level>(),
-                            Diff_operator.template get_offsets<iter_level>());
+      constexpr std::size_t num_iters =
+          get_num_iters<iter_level, Num_Iters...>();
 
-      subtract_domains(current.template get_domain<iter_level>(),
-                       rhs_domain.template get_domain<iter_level>(),
-                       current.template get_domain<iter_level>());
-      // Finished computing the offset
+      for (int j = 0; j < num_iters; j++) {
+        pre_smoother(Integer<iter_level>{}, next, current, rhs_domain,
+                     Smooth_operator.template get_values<iter_level>(),
+                     Smooth_operator.template get_offsets<iter_level>(),
+                     box_length);
 
-      level_transition::coarsening_and_copy(
-          rhs_domain.template get_domain<iter_level - 1>(),
-          current.template get_domain<iter_level - 1>(),
-          current.template get_domain<iter_level>(),
-          coarsening_operator.template get_values<iter_level>(),
-          coarsening_operator.template get_offsets<iter_level>());
+        // Computing offsets
+        convolution::Convolve(current.template get_domain<iter_level>(),
+                              next.template get_domain<iter_level>(),
+                              Diff_operator.template get_values<iter_level>(),
+                              Diff_operator.template get_offsets<iter_level>());
 
-      //      level_transition::coarsening(
-      //          current.template get_domain<iter_level - 1>(),
-      //          current.template get_domain<iter_level>(),
-      //          coarsening_operator.template get_values<iter_level>(),
-      //          coarsening_operator.template get_offsets<iter_level>());
+        subtract_domains(current.template get_domain<iter_level>(),
+                         rhs_domain.template get_domain<iter_level>(),
+                         current.template get_domain<iter_level>());
+        // Finished computing the offset
 
-      iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
-                                Diff_operator, coarsening_operator, box_length);
+        level_transition::coarsening_and_copy(
+            rhs_domain.template get_domain<iter_level - 1>(),
+            current.template get_domain<iter_level - 1>(),
+            current.template get_domain<iter_level>(),
+            coarsening_operator.template get_values<iter_level>(),
+            coarsening_operator.template get_offsets<iter_level>());
 
-      level_transition::refinement(current.template get_domain<iter_level>(),
-                                   next.template get_domain<iter_level - 1>());
+        //      level_transition::coarsening(
+        //          current.template get_domain<iter_level - 1>(),
+        //          current.template get_domain<iter_level>(),
+        //          coarsening_operator.template get_values<iter_level>(),
+        //          coarsening_operator.template get_offsets<iter_level>());
 
-      add_domains(next.template get_domain<iter_level>(),
-                  next.template get_domain<iter_level>(),
-                  current.template get_domain<iter_level>());
+        iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
+                                  Diff_operator, coarsening_operator,
+                                  box_length);
 
-      post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
-                    Smooth_operator.template get_values<iter_level>(),
-                    Smooth_operator.template get_offsets<iter_level>(),
-                    box_length);
+        level_transition::refinement(
+            current.template get_domain<iter_level>(),
+            next.template get_domain<iter_level - 1>());
+
+        add_domains(next.template get_domain<iter_level>(),
+                    next.template get_domain<iter_level>(),
+                    current.template get_domain<iter_level>());
+
+        post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
+                      Smooth_operator.template get_values<iter_level>(),
+                      Smooth_operator.template get_offsets<iter_level>(),
+                      box_length);
+      }
     }
   }
   Solver &solver;
