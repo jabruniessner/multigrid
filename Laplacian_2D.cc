@@ -3,6 +3,7 @@
 #include "cycles.h"
 #include "level_transition.h"
 #include <string>
+#include <utility>
 // #include <utility>
 
 using namespace cycles;
@@ -26,8 +27,6 @@ void Initializing_all_rhs(
   }
 }
 
-std::index_sequence<2, 4> a{};
-
 int main(int argc, char *argv[]) {
 
   if (argc < 2) {
@@ -45,7 +44,7 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 4u;
+  constexpr std::size_t nlev = 2u;
 
   Multigrid_domain<2, 1, nlev> lhs_domain1(q);
   Multigrid_domain<2, 1, nlev> lhs_domain2(q);
@@ -93,7 +92,8 @@ int main(int argc, char *argv[]) {
   Convolve(rhs_domain.domain, boundary_values.domain,
            diff_operator.get_values(), diff_operator.get_offsets());
 
-  Jacobi_Smoother j_smoother(Integer<6>{}, rhs_domain, values, offsets);
+  std::index_sequence<2> smoother_sequence{};
+  Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),

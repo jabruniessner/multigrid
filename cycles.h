@@ -52,6 +52,17 @@ using namespace multigrid_domain;
 //
 // };
 
+template <std::size_t level, std::size_t... Num_Iters>
+constexpr std::size_t get_num_iters() {
+
+  auto Iter_Tuple = std::make_tuple(Num_Iters...);
+  if constexpr (sizeof...(Num_Iters) == 1) {
+    return std::get<0>(Iter_Tuple);
+  } else {
+    return std::get<level - 2>(Iter_Tuple);
+  }
+}
+
 template <Dimension Dim, Length... strides_all, typename DataType,
           typename OffsetType, size_t size>
 DataType compute_residual(Domain<Dim, strides_all...> &rhs,
@@ -65,16 +76,22 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
   return std::sqrt(result / sol.num_values);
 }
 
-template <std::size_t Num_Iters, Dimension Dim, typename DataType,
-          typename OffsetType, std::size_t length, std::size_t base_length,
-          std::size_t nlev>
+template <Dimension Dim, typename DataType, typename OffsetType,
+          std::size_t length, std::size_t base_length, std::size_t nlev,
+          std::size_t... Num_Iters>
 struct Jacobi_Smoother {
   Jacobi_Smoother() {};
 
-  Jacobi_Smoother(Integer<Num_Iters> integer,
+  Jacobi_Smoother(std::index_sequence<Num_Iters...> integer,
                   Multigrid_domain<Dim, base_length, nlev>,
                   std::array<DataType, length> values,
-                  std::array<OffsetType, length> offsets) {};
+                  std::array<OffsetType, length> offsets) {
+
+    static_assert(sizeof...(Num_Iters) == nlev - 1 ||
+                  sizeof...(Num_Iters) == 1);
+  };
+
+  template <std::size_t num> struct TD;
 
   template <std::size_t level = nlev>
   void operator()(Integer<level>,
@@ -86,16 +103,18 @@ struct Jacobi_Smoother {
 
   {
 
+    constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
+
     auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     const DataType h = box_length / (rhs.template get_length<level>() + 1);
     const DataType diag_inverse = (h * h) / 4;
 
-    if constexpr (Num_Iters == 0) {
+    if constexpr (num_iters == 0) {
       return;
     } else {
-      for (int i = 0; i < Num_Iters; i++) {
+      for (int i = 0; i < num_iters; i++) {
         convolution::Convolve(dest_domain, src_domain, values, offsets);
         subtract_and_multiply_domains(dest_domain, rhs_domain, dest_domain,
                                       diag_inverse);
