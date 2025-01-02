@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "Domain.h"
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <ostream>
 
@@ -18,7 +19,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &defect_r,
                Domain<Dim, strides_all...> &defect_p,
                const std::array<DataType, size> &values,
-               const std::array<Offsets, size> &offsets, int m,
+               const std::array<Offsets, size> &offsets, DataType thresh,
                const std::index_sequence<dims...> &) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
@@ -89,8 +90,6 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType p_squared_A_value = 0;
   q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
 
-  // std::cout << "The value of p_squared_A is:" << std::endl;
-  // std::cout << p_squared_A_value << std::endl;
   if (p_squared_A_value == 0)
     return;
 
@@ -102,7 +101,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
      });
    }).wait();
 
-  for (int k = 0; k < m; k++) {
+  DataType residual = 2 * thresh;
+  while (thresh < residual) {
     q.parallel_for(
          sycl::range<Dim>(strides[dims]...),
          sycl::reduction(r_squared_next, sycl::plus<>()),
@@ -122,6 +122,13 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
         .wait();
 
     // init_guess.print_domain();
+    DataType r_squared_value = 0;
+    q.memcpy(&r_squared_value, r_squared, sizeof(DataType)).wait();
+
+    if (r_squared_value == 0)
+      return;
+
+    residual = std::sqrt(r_squared_value / defect_r.num_dofs);
 
     q.submit([&](sycl::handler &h) {
        h.single_task([=]() {
@@ -153,6 +160,12 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                      pAp += result * defect_p(I[dims]...);
                    })
         .wait();
+
+    DataType p_squared_A_value = 0;
+    q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
+
+    if (p_squared_A_value == 0)
+      return;
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
@@ -171,15 +184,15 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &defect_r,
                Domain<Dim, strides_all...> &defect_p,
                const std::array<DataType, size> &values,
-               const std::array<Offsets, size> &offsets, int m) {
+               const std::array<Offsets, size> &offsets, DataType m) {
   CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets, m,
             std::make_index_sequence<Dim>());
 }
 
 template <typename DataType, typename Offsets, std::size_t size,
-          std::size_t num_iter, Dimension Dim, Length... strides_all>
+          DataType thresh, Dimension Dim, Length... strides_all>
 struct Solver_CG {
-  Solver_CG(Integer<num_iter>, Domain<Dim, strides_all...> &sample_domain,
+  Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
             const std::array<DataType, size> &,
             const std::array<Offsets, size> &)
       : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
@@ -189,7 +202,7 @@ struct Solver_CG {
                   Domain<Dim, strides_all...> &rhs,
                   const std::array<DataType, size> &values,
                   const std::array<Offsets, size> &offsets) {
-    CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets, num_iter);
+    CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets, thresh);
   }
 
   Domain<Dim, strides_all...> defect_r;

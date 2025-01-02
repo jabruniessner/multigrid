@@ -45,14 +45,20 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 5u;
+  constexpr std::size_t nlev = 2u;
+  constexpr std::size_t base_length = 5;
 
-  Multigrid_domain<2, 1, nlev> lhs_domain1(q);
-  Multigrid_domain<2, 1, nlev> lhs_domain2(q);
-  Multigrid_domain<2, 1, nlev> rhs_domain(q);
-  Multigrid_domain<2, 1, nlev> boundary_values(q);
+  Multigrid_domain<2, base_length, nlev> lhs_domain1(q);
+  Multigrid_domain<2, base_length, nlev> lhs_domain2(q);
+  Multigrid_domain<2, base_length, nlev> rhs_domain(q);
+  Multigrid_domain<2, base_length, nlev> boundary_values(q);
 
-  constexpr auto length = Multigrid_domain<2, 1, nlev>::length;
+  constexpr auto length = Multigrid_domain<2, base_length, nlev>::length;
+
+  std::cout << "The length is: " << length << std::endl;
+
+  // std::cout << "After initialization we get:" << std::endl;
+  // print_multigrid_domain(lhs_domain1);
 
   for (int i = 0; i < length + 2; i++) {
     boundary_values.set_value(0., 0, i);
@@ -71,7 +77,7 @@ int main(int argc, char *argv[]) {
             // as it is only applied to the right hand side anyways
 
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
-                                     Integer<1>{});
+                                     Integer<base_length>{});
 
   std::cout << "The diff operator is: " << std::endl;
 
@@ -81,27 +87,28 @@ int main(int argc, char *argv[]) {
                                   -1. / 4.}; // Formula S = 1 - D^(-1) L,
 
   Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets,
-                                  Integer<1>{});
+                                  Integer<base_length>{});
 
   std::array<OffsetType, 1u> offsets_coarse{
       {{0, 0}}}; // Coarsening operator single point for now
   std::array<DataType, 1u> values_coarse{1};
 
   Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
-                               Integer<1>{});
+                               Integer<base_length>{});
 
   Convolve(rhs_domain.domain, boundary_values.domain,
            diff_operator.get_values(), diff_operator.get_offsets());
 
-  std::index_sequence<2, 4, 5, 2> smoother_sequence{};
+  std::index_sequence<3> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Integer<1>{}, rhs_domain.template get_domain<1>(),
+  cg_solver::Solver_CG solver(Float<1e-4>{},
+                              rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
 
   //  // mult_level.print_operator();
-  std::index_sequence<2, 3, 3, 1> num_iters_level{};
+  std::index_sequence<1> num_iters_level{};
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser, num_iters_level);
 
@@ -115,14 +122,14 @@ int main(int argc, char *argv[]) {
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
                       coarser, 1.);
 
-    // DataType const residual = compute_residual(
-    //     rhs_domain.template get_domain<nlev>(),
-    //     current->template get_domain<nlev>(), helper,
-    //     diff_operator.get_values(), diff_operator.get_offsets());
+    DataType const residual = compute_residual(
+        rhs_domain.template get_domain<nlev>(),
+        current->template get_domain<nlev>(), helper,
+        diff_operator.get_values(), diff_operator.get_offsets());
 
-    // std::cout << "The residual after " << num + 1 << " iterations is "
-    //           << residual << std::endl;
-    //  std::swap(current, next);
+    std::cout << "The residual after " << num + 1 << " iterations is "
+              << residual << std::endl;
+    // std::swap(current, next);
   }
 
   auto end = std::chrono::high_resolution_clock::now();

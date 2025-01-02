@@ -26,6 +26,8 @@ using OffsetType = LAD::OffsetType;
 // using PositionType = LAD::PositionType;
 using Dimension = LAD::Dimension;
 
+template <DataType val> struct Float {};
+
 template <typename T> void gpu_print(T *val, sycl::queue &q) {
   T val_host;
   q.memcpy(&val_host, val, sizeof(T));

@@ -68,8 +68,8 @@ template <Dimension Dim, Length... strides_all, typename DataType,
 DataType compute_residual(Domain<Dim, strides_all...> &rhs,
                           Domain<Dim, strides_all...> &sol,
                           Domain<Dim, strides_all...> &helper,
-                          std::array<DataType, size> &values,
-                          std::array<OffsetType, size> &offsets) {
+                          const std::array<DataType, size> &values,
+                          const std::array<OffsetType, size> &offsets) {
   convolution::Subtract_Convolve(helper, sol, rhs, values, offsets);
   DataType result;
   domain_compute_norm_squared(result, helper);
@@ -109,7 +109,7 @@ struct Jacobi_Smoother {
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     const DataType h = box_length / (rhs.template get_length<level>() + 1);
-    const DataType diag_inverse = (h * h) / 4;
+    const DataType diag_inverse = (h) / 4;
 
     if constexpr (num_iters == 0) {
       return;
@@ -203,6 +203,8 @@ struct V_Cycle_base {
                          current.template get_domain<iter_level>());
         // Finished computing the offset
 
+        // current.template get_domain<iter_level>().print_domain();
+
         level_transition::coarsening_and_copy(
             rhs_domain.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level - 1>(),
@@ -216,13 +218,18 @@ struct V_Cycle_base {
         //          coarsening_operator.template get_values<iter_level>(),
         //          coarsening_operator.template get_offsets<iter_level>());
 
+        // rhs_domain.template get_domain<iter_level - 1>().print_domain();
+
         iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                   Diff_operator, coarsening_operator,
                                   box_length);
+        // next.template get_domain<iter_level - 1>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
+
+        // current.template get_domain<iter_level>().print_domain();
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),

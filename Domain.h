@@ -38,6 +38,9 @@ template <Dimension Dim, Length... strides_all> struct Domain {
     num_values = 1;
     ((num_values *= strides_all + 2 * padding_width), ...);
 
+    num_dofs = 1;
+    ((num_dofs *= strides_all), ...);
+
     values_buff =
         sycl::malloc_device<DataType>(num_values * sizeof(DataType), q);
     q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
@@ -113,6 +116,7 @@ template <Dimension Dim, Length... strides_all> struct Domain {
   DataType *values_buff;
   Length strides[Dim];
   Length num_values;
+  Length num_dofs;
   Length padding_width;
   Paddings padding;
   sycl::queue &q;
@@ -126,10 +130,6 @@ int domain_compute_norm_squared(DataType &result,
       sycl::malloc_device<DataType>(sizeof(DataType), a.q);
 
   a.q.memset(result_device, 0, sizeof(DataType));
-
-  std::cout << "The strides are: ";
-  ((std::cout << strides_all << " "), ...);
-  std::cout << std::endl;
 
   a.q.parallel_for(sycl::range<Dim>(strides_all...),
                    sycl::reduction(result_device, sycl::plus<>()),
