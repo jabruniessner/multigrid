@@ -128,7 +128,7 @@ struct Multi_Level_operator
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 
-      this->values[i] = values_new[i] / (h);
+      this->values[i] = values_new[i] / (h * h);
     }
   };
 

@@ -110,7 +110,7 @@ struct Jacobi_Smoother {
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     const DataType h = box_length / (rhs.template get_length<level>() + 1);
-    const DataType diag_inverse = omega * (h) / 4;
+    const DataType diag_inverse = omega * (h * h) / 4;
 
     if constexpr (num_iters == 0) {
       return;
