@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
                 sycl::property_list{sycl::property::queue::in_order{}});
 
   constexpr std::size_t nlev = 2u;
-  constexpr std::size_t base_length = 22u;
+  constexpr std::size_t base_length = 64u;
   constexpr DataType omega = 4. / 5.;
 
   Multigrid_domain<2, base_length, nlev> lhs_domain1(q);
@@ -89,9 +89,19 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets,
                                   Integer<base_length>{});
 
-  std::array<OffsetType, 1u> offsets_coarse{
-      {{0, 0}}}; // Coarsening operator single point for now
-  std::array<DataType, 1u> values_coarse{1};
+  std::array<OffsetType, 9u> offsets_coarse{
+      {{-1, -1},
+       {0, -1},
+       {1, -1},
+       {-1, 0},
+       {0, 0},
+       {1, 0},
+       {-1, 1},
+       {0, 1},
+       {1, 1}}}; // Coarsening operator single point for now
+  std::array<DataType, 9u> values_coarse{1. / 16., 2. / 16., 1. / 16.,
+                                         2. / 16., 4. / 16., 2. / 16.,
+                                         1. / 16., 2. / 16., 1. / 16.};
 
   Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
                                Integer<base_length>{});
@@ -101,7 +111,7 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5> smoother_sequence{};
+  std::index_sequence<10> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Float<1e-9>{},
