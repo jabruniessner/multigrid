@@ -99,7 +99,8 @@ struct Jacobi_Smoother {
                   Multigrid_domain<Dim, base_length, nlev> &src,
                   Multigrid_domain<Dim, base_length, nlev> &rhs,
                   std::array<DataType, length> &values,
-                  std::array<OffsetType, length> &offsets, DataType &box_length)
+                  std::array<OffsetType, length> &offsets,
+                  const DataType &box_length, const DataType omega)
 
   {
 
@@ -109,7 +110,7 @@ struct Jacobi_Smoother {
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     const DataType h = box_length / (rhs.template get_length<level>() + 1);
-    const DataType diag_inverse = (h) / 4;
+    const DataType diag_inverse = omega * (h) / 4;
 
     if constexpr (num_iters == 0) {
       return;
@@ -156,9 +157,9 @@ struct V_Cycle_base {
     static_assert(sizeof...(Num_Iters) == level - 1 ||
                   sizeof...(Num_Iters) == 1);
 
-    std::cout << "The num_iterations are:" << std::endl;
-    ((std::cout << Num_Iters << " "), ...);
-    std::cout << std::endl;
+    // std::cout << "The num_iterations are:" << std::endl;
+    //((std::cout << Num_Iters << " "), ...);
+    // std::cout << std::endl;
   }
 
   template <std::size_t... Ts> struct TD;
@@ -173,7 +174,7 @@ struct V_Cycle_base {
                                       base_length, nlev> &Diff_operator,
                  Multi_Level_operator<Dim, DataType, length_coarsening_op,
                                       base_length, nlev> &coarsening_operator,
-                 DataType box_length) {
+                 DataType box_length, DataType omega) {
 
     if constexpr (iter_level == 1) {
       solver(next.template get_domain<iter_level>(),
@@ -190,7 +191,7 @@ struct V_Cycle_base {
         pre_smoother(Integer<iter_level>{}, next, current, rhs_domain,
                      Smooth_operator.template get_values<iter_level>(),
                      Smooth_operator.template get_offsets<iter_level>(),
-                     box_length);
+                     box_length, omega);
 
         // Computing offsets
         convolution::Convolve(current.template get_domain<iter_level>(),
@@ -222,7 +223,7 @@ struct V_Cycle_base {
 
         iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                   Diff_operator, coarsening_operator,
-                                  box_length);
+                                  box_length, omega);
         // next.template get_domain<iter_level - 1>().print_domain();
 
         level_transition::refinement(
@@ -238,7 +239,7 @@ struct V_Cycle_base {
         post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
                       Smooth_operator.template get_values<iter_level>(),
                       Smooth_operator.template get_offsets<iter_level>(),
-                      box_length);
+                      box_length, omega);
       }
     }
   }

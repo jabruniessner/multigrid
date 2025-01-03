@@ -46,7 +46,8 @@ int main(int argc, char *argv[]) {
                 sycl::property_list{sycl::property::queue::in_order{}});
 
   constexpr std::size_t nlev = 2u;
-  constexpr std::size_t base_length = 5;
+  constexpr std::size_t base_length = 22u;
+  constexpr DataType omega = 4. / 5.;
 
   Multigrid_domain<2, base_length, nlev> lhs_domain1(q);
   Multigrid_domain<2, base_length, nlev> lhs_domain2(q);
@@ -79,12 +80,11 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
                                      Integer<base_length>{});
 
-  std::cout << "The diff operator is: " << std::endl;
-
-  std::array<OffsetType, 4u> offsets{
-      {{-1, 0}, {1, 0}, {0, 1}, {0, -1}}}; // Smoothing operator
-  std::array<DataType, 4u> values{-1. / 4., -1. / 4., -1. / 4.,
-                                  -1. / 4.}; // Formula S = 1 - D^(-1) L,
+  std::array<OffsetType, 5u> offsets{
+      {{-1, 0}, {1, 0}, {0, 1}, {0, -1}, {0, 0}}}; // Smoothing operator
+  std::array<DataType, 5u> values{-omega * 1. / 4., -omega * 1. / 4.,
+                                  -omega * 1. / 4., -omega * 1. / 4.,
+                                  -1. + omega}; // Formula S = 1 - D^(-1) L,
 
   Multi_Level_operator mult_level(Integer<nlev>{}, values, offsets,
                                   Integer<base_length>{});
@@ -99,10 +99,12 @@ int main(int argc, char *argv[]) {
   Convolve(rhs_domain.domain, boundary_values.domain,
            diff_operator.get_values(), diff_operator.get_offsets());
 
-  std::index_sequence<3> smoother_sequence{};
+  // rhs_domain.domain.print_domain();
+
+  std::index_sequence<5> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Float<1e-4>{},
+  cg_solver::Solver_CG solver(Float<1e-9>{},
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
@@ -120,7 +122,7 @@ int main(int argc, char *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
-                      coarser, 1.);
+                      coarser, 1., omega);
 
     DataType const residual = compute_residual(
         rhs_domain.template get_domain<nlev>(),
@@ -131,6 +133,13 @@ int main(int argc, char *argv[]) {
               << residual << std::endl;
     // std::swap(current, next);
   }
+
+  // Convolve(helper, current->template get_domain<nlev>(),
+  //          diff_operator.get_values(), diff_operator.get_offsets());
+
+  // helper.print_domain();
+
+  // current->template get_domain<nlev>().print_domain();
 
   auto end = std::chrono::high_resolution_clock::now();
 
