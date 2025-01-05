@@ -171,11 +171,11 @@ DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
   DataType result_host;
   a.q.memcpy(&result_host, result_device, sizeof(DataType)).wait();
 
-  return 0;
+  return result_host;
 }
 
 template <Dimension Dim, Length... strides_all>
-DataType domain_scalar_product(DataType &result, Domain<Dim, strides_all...> &a,
+DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
                                Domain<Dim, strides_all...> &b) {
   return domain_scalar_product(a, b, std::make_index_sequence<Dim>());
 }
@@ -185,6 +185,14 @@ DataType domain_find_ideal_factor(Domain<Dim, strides_all...> &a,
                                   Domain<Dim, strides_all...> &b) {
   DataType numerator = domain_scalar_product(a, b);
   DataType denominator = domain_scalar_product(b, b);
+
+  std::cout << "a: " << std::endl;
+  a.print_domain();
+  std::cout << "b: " << std::endl;
+  b.print_domain();
+
+  std::cout << "Numerator: " << numerator << std::endl;
+  std::cout << "denominator: " << denominator << std::endl;
 
   return numerator / denominator;
 }

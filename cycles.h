@@ -239,12 +239,18 @@ struct V_Cycle_base {
         std::swap(buffer_domain.values_buff,
                   current.template get_domain<iter_level>().values_buff);
 
-        buffer_domain.print_domain();
-        current.template get_domain<iter_level>().print_domain();
+        // buffer_domain.print_domain();
+        // current.template get_domain<iter_level>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
+
+        DataType factor = domain_find_ideal_factor(
+            current.template get_domain<iter_level>(), buffer_domain);
+
+        std::cout << "Level: " << iter_level << " ifactor: " << factor
+                  << std::endl;
 
         // current.template get_domain<iter_level>().print_domain();
 
