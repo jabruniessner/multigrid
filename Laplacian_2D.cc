@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
                 sycl::property_list{sycl::property::queue::in_order{}});
 
   constexpr std::size_t nlev = 2u;
-  constexpr std::size_t base_length = 22u;
+  constexpr std::size_t base_length = 2u;
   constexpr DataType omega = 4. / 5.;
 
   Multigrid_domain<2, base_length, nlev> lhs_domain1(q);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5> smoother_sequence{};
+  std::index_sequence<3> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Float<1e-9>{},

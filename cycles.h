@@ -221,10 +221,26 @@ struct V_Cycle_base {
 
         // rhs_domain.template get_domain<iter_level - 1>().print_domain();
 
+        // For Debug purposes, trying to find the optimal scaling for the
+        // solution
+        constexpr std::size_t domain_length =
+            Multigrid_domain<Dim, base_length, iter_level>::length;
+
+        auto &q = rhs_domain.get_domain().q;
+
+        Domain<Dim, domain_length, domain_length> buffer_domain(
+            Paddings::PERIODIC, q, 1);
+
         iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                   Diff_operator, coarsening_operator,
                                   box_length, omega);
         // next.template get_domain<iter_level - 1>().print_domain();
+
+        std::swap(buffer_domain.values_buff,
+                  current.template get_domain<iter_level>().values_buff);
+
+        buffer_domain.print_domain();
+        current.template get_domain<iter_level>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),

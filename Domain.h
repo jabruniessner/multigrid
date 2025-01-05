@@ -151,6 +151,44 @@ int domain_compute_norm_squared(DataType &result,
                                      std::make_index_sequence<Dim>());
 }
 
+template <Dimension Dim, Length... strides_all, std::size_t... dims>
+DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
+                               Domain<Dim, strides_all...> &b,
+                               std::index_sequence<dims...>) {
+  DataType *result_device =
+      sycl::malloc_device<DataType>(sizeof(DataType), a.q);
+
+  a.q.memset(result_device, 0, sizeof(DataType));
+
+  a.q.parallel_for(sycl::range<Dim>(strides_all...),
+                   sycl::reduction(result_device, sycl::plus<>()),
+                   [=](sycl::id<Dim> I, auto &acc) {
+                     acc += a((I[dims] + a.padding_width)...) *
+                            b((I[dims] + b.padding_width)...);
+                   })
+      .wait();
+
+  DataType result_host;
+  a.q.memcpy(&result_host, result_device, sizeof(DataType)).wait();
+
+  return 0;
+}
+
+template <Dimension Dim, Length... strides_all>
+DataType domain_scalar_product(DataType &result, Domain<Dim, strides_all...> &a,
+                               Domain<Dim, strides_all...> &b) {
+  return domain_scalar_product(a, b, std::make_index_sequence<Dim>());
+}
+
+template <Dimension Dim, Length... strides_all>
+DataType domain_find_ideal_factor(Domain<Dim, strides_all...> &a,
+                                  Domain<Dim, strides_all...> &b) {
+  DataType numerator = domain_scalar_product(a, b);
+  DataType denominator = domain_scalar_product(b, b);
+
+  return numerator / denominator;
+}
+
 template <Dimension Dim, Length... strides_all>
 int domain_scalar_multiply(Domain<Dim, strides_all...> &dest,
                            Domain<Dim, strides_all...> &a,

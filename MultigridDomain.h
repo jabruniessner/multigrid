@@ -170,20 +170,20 @@ struct Multi_Level_operator
 
 template <Dimension Dim, typename DataType, std::size_t length,
           Length base_length>
-struct Multi_Level_operator<Dim, DataType, length, base_length, 0u> {
+struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
   using OffsetType = std::array<int, Dim>;
 
-  Multi_Level_operator(Integer<0>, std::array<DataType, length> &values,
+  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values,
                        std::array<OffsetType, length> &offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets) {};
 
-  Multi_Level_operator(Integer<0>, std::array<DataType, length> &values_new,
+  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values_new,
                        std::array<OffsetType, length> &offsets,
                        DataType Box_Length, Integer<base_length>)
       : offsets(offsets) {
 
-    auto num_points = Multigrid_domain<Dim, base_length, 0u>::length + 1;
+    auto num_points = Multigrid_domain<Dim, base_length, 1u>::length + 1;
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 
@@ -191,7 +191,7 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 0u> {
     }
   }
 
-  Multi_Level_operator(Integer<0>, std::array<DataType, length> &&values,
+  Multi_Level_operator(Integer<1>, std::array<DataType, length> &&values,
                        std::array<OffsetType, length> &&offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets) {};
