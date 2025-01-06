@@ -201,7 +201,7 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
   auto get_offsets() { return offsets; }
 
   void print_operator() {
-    std::cout << "The level is: " << 0 << std::endl;
+    std::cout << "The level is: " << 1 << std::endl;
     std::cout << std::endl << std::endl;
 
     for (int i = 0; i < length; i++) {

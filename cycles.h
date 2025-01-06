@@ -183,6 +183,9 @@ struct V_Cycle_base {
              Diff_operator.template get_offsets<iter_level>());
       return;
     } else {
+      // std::cout << "Level: " << iter_level << std::endl;
+      // std::cout << "rhs is:" << std::endl;
+      // rhs_domain.template get_domain<iter_level>().print_domain();
 
       constexpr std::size_t num_iters =
           get_num_iters<iter_level, Num_Iters...>();
@@ -193,75 +196,102 @@ struct V_Cycle_base {
                      Smooth_operator.template get_offsets<iter_level>(),
                      box_length, omega);
 
+        // std::cout << "next after pre-smoothing: " << std::endl;
+        // next.template get_domain<iter_level>().print_domain();
+
+        // if constexpr (iter_level > 2) {
         // Computing offsets
         convolution::Convolve(current.template get_domain<iter_level>(),
                               next.template get_domain<iter_level>(),
                               Diff_operator.template get_values<iter_level>(),
                               Diff_operator.template get_offsets<iter_level>());
 
+        // Diff_operator.print_operator();
+
+        // std::cout << "current after convolution: " << std::endl;
+        // current.template get_domain<iter_level>().print_domain();
+
         subtract_domains(current.template get_domain<iter_level>(),
                          rhs_domain.template get_domain<iter_level>(),
                          current.template get_domain<iter_level>());
-        // Finished computing the offset
+        //  Finished computing the offset
 
+        // std::cout << "Defect before coarsening: " << std::endl;
         // current.template get_domain<iter_level>().print_domain();
 
-        level_transition::coarsening_and_copy(
+        //  level_transition::coarsening_and_copy(
+        //      rhs_domain.template get_domain<iter_level - 1>(),
+        //      current.template get_domain<iter_level - 1>(),
+        //      current.template get_domain<iter_level>(),
+        //      coarsening_operator.template get_values<iter_level>(),
+        //      coarsening_operator.template get_offsets<iter_level>());
+
+        level_transition::coarsening(
             rhs_domain.template get_domain<iter_level - 1>(),
-            current.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
 
-        //      level_transition::coarsening(
-        //          current.template get_domain<iter_level - 1>(),
-        //          current.template get_domain<iter_level>(),
-        //          coarsening_operator.template get_values<iter_level>(),
-        //          coarsening_operator.template get_offsets<iter_level>());
-
+        // std::cout << "Defect after coarsening: " << std::endl;
         // rhs_domain.template get_domain<iter_level - 1>().print_domain();
+        // std::cout << "The iter level is: " << iter_level - 1 << std::endl;
 
         // For Debug purposes, trying to find the optimal scaling for the
         // solution
-        constexpr std::size_t domain_length =
-            Multigrid_domain<Dim, base_length, iter_level>::length;
+        // constexpr std::size_t domain_length =
+        //    Multigrid_domain<Dim, base_length, iter_level>::length;
 
-        auto &q = rhs_domain.get_domain().q;
+        // auto &q = rhs_domain.get_domain().q;
 
-        Domain<Dim, domain_length, domain_length> buffer_domain(
-            Paddings::PERIODIC, q, 1);
-
+        // Domain<Dim, domain_length, domain_length> buffer_domain(
+        //     Paddings::PERIODIC, q, 1);
+        //  Domain<Dim, domain_length, domain_length> buffer_domain2(
+        //      Paddings::PERIODIC, q, 1);
         iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                   Diff_operator, coarsening_operator,
                                   box_length, omega);
+
+        // std::cout << "next after recursive call: " << std::endl;
         // next.template get_domain<iter_level - 1>().print_domain();
 
-        std::swap(buffer_domain.values_buff,
-                  current.template get_domain<iter_level>().values_buff);
+        // std::swap(buffer_domain.values_buff,
+        //           current.template get_domain<iter_level>().values_buff);
 
-        // buffer_domain.print_domain();
         // current.template get_domain<iter_level>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
 
-        DataType factor = domain_find_ideal_factor(
-            current.template get_domain<iter_level>(), buffer_domain);
-
-        std::cout << "Level: " << iter_level << " ifactor: " << factor
-                  << std::endl;
-
+        // std::cout << "current after refinement: " << std::endl;
         // current.template get_domain<iter_level>().print_domain();
+
+        // Computing offsets
+        // convolution::Convolve(buffer_domain,
+        //                       current.template get_domain<iter_level>(),
+        //                       Diff_operator.template
+        //                       get_values<iter_level>(),
+        //                       Diff_operator.template
+        //                       get_offsets<iter_level>());
+
+        // std::cout << "Defect after coarse grid correction: " << std::endl;
+        // buffer_domain.print_domain();
+
+        // DataType factor =
+        //     domain_find_ideal_factor(buffer_domain, buffer_domain2);
+
+        // std::cout << "Level: " << iter_level << " ifactor: " << factor
+        //           << std::endl;
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
 
-        post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
-                      Smooth_operator.template get_values<iter_level>(),
-                      Smooth_operator.template get_offsets<iter_level>(),
-                      box_length, omega);
+        //}
+        // post_smoother(Integer<iter_level>{}, current, next, rhs_domain,
+        //               Smooth_operator.template get_values<iter_level>(),
+        //               Smooth_operator.template get_offsets<iter_level>(),
+        //               box_length, omega);
       }
     }
   }

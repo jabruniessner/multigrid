@@ -186,14 +186,6 @@ DataType domain_find_ideal_factor(Domain<Dim, strides_all...> &a,
   DataType numerator = domain_scalar_product(a, b);
   DataType denominator = domain_scalar_product(b, b);
 
-  std::cout << "a: " << std::endl;
-  a.print_domain();
-  std::cout << "b: " << std::endl;
-  b.print_domain();
-
-  std::cout << "Numerator: " << numerator << std::endl;
-  std::cout << "denominator: " << denominator << std::endl;
-
   return numerator / denominator;
 }
 
@@ -313,6 +305,29 @@ int add_domains(Domain<Dim, strides_all...> &dest,
       .parallel_for(sycl::range<1>(a.num_values),
                     [=](sycl::id<1> i) {
                       dest.values_buff[i] = a.values_buff[i] + b.values_buff[i];
+                    })
+      .wait();
+
+  return 0;
+}
+
+template <Dimension Dim, Length... strides_all>
+int add_and_multiply_domains(Domain<Dim, strides_all...> &dest,
+                             Domain<Dim, strides_all...> &a,
+                             Domain<Dim, strides_all...> &b,
+                             const DataType &val) {
+
+  assert(dest.q == a.q && a.q == b.q);
+  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
+
+  assert(dest.padding_width == a.padding_width &&
+         a.padding_width == b.padding_width);
+
+  dest.q
+      .parallel_for(sycl::range<1>(a.num_values),
+                    [=](sycl::id<1> i) {
+                      dest.values_buff[i] =
+                          a.values_buff[i] + val * b.values_buff[i];
                     })
       .wait();
 
