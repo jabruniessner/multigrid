@@ -3,6 +3,7 @@
 #include "predefinitions.h"
 #include "utils.h"
 #include <format>
+#include <utility>
 
 #ifndef MULTIGRIDDOMAIN_H
 #define MULTIGRIDDOMAIN_H
@@ -14,35 +15,36 @@ using namespace domain;
 constexpr Length nlev = 5;
 constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
 
-template <Dimension Dim, std::size_t base_length, std::size_t nlev>
-struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev - 1> {
+template <Dimension Dim, std::size_t nlev, std::size_t... base_length>
+struct Multigrid_domain
+    : public Multigrid_domain<Dim, nlev - 1, base_length...> {
 
   using OffsetType = std::array<int, Dim>;
 
   Multigrid_domain(sycl::queue &q)
       : domain(Paddings::PERIODIC, q, 1),
-        Multigrid_domain<Dim, base_length, nlev - 1>(q) {};
+        Multigrid_domain<Dim, nlev - 1, base_length...>(q) {};
 
   template <std::size_t lev = nlev>
   DataType get_value(Position1D i, Position1D j) {
     static_assert(lev <= nlev, "level too large!");
-    return Multigrid_domain<Dim, base_length, lev>::domain.get_value(i, j);
+    return Multigrid_domain<Dim, lev, base_length...>::domain.get_value(i, j);
   }
 
   template <std::size_t lev = nlev>
   void set_value(DataType val, Position1D i, Position1D j) {
     static_assert(lev <= nlev, "level too large!");
-    Multigrid_domain<Dim, base_length, lev>::domain.set_value(val, i, j);
+    Multigrid_domain<Dim, lev, base_length...>::domain.set_value(val, i, j);
   }
 
   template <std::size_t lev = nlev>
-  decltype(Multigrid_domain<Dim, base_length, lev>::domain) &get_domain() {
-    return Multigrid_domain<Dim, base_length, lev>::domain;
+  decltype(Multigrid_domain<Dim, lev, base_length...>::domain) &get_domain() {
+    return Multigrid_domain<Dim, lev, base_length...>::domain;
   }
 
   void print_level() { std::cout << nlev << std::endl; }
 
-  void print_length() { std::cout << length << std::endl; }
+  void print_length() { std::cout << std::get<0>(length) << std::endl; }
 
   template <std::size_t level, std::size_t length>
   void coarsening(std::array<DataType, length> values,
@@ -55,40 +57,62 @@ struct Multigrid_domain : public Multigrid_domain<Dim, base_length, nlev - 1> {
   }
 
   template <std::size_t level = nlev> auto get_length() {
-    return Multigrid_domain<Dim, base_length, level>::length;
+    return Multigrid_domain<Dim, level, base_length...>::length;
   }
 
-  constexpr static Length length =
-      base_length * utils::Power<2u, nlev>::value - 1;
+  template <std::size_t... indices> struct Domain_Type {
+    constexpr Domain_Type(std::index_sequence<indices...>) {
+      static_assert(sizeof...(indices) == Dim);
+    }
+    constexpr static std::tuple length =
+        std::make_tuple((base_length * utils::Power<2u, nlev>::value - 1)...);
+    using domain_t = Domain<Dim, std::get<indices>(length)...>;
+  };
+
   constexpr static std::array<DataType, 1> coarse_filter_values{1};
   constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
-  Domain<Dim, length, length> domain;
+  constexpr static Domain_Type domain_t_v{std::make_index_sequence<Dim>{}};
+  constexpr static auto &length = decltype(domain_t_v)::length;
+
+  decltype(domain_t_v)::domain_t domain;
 };
 
-template <Dimension Dim, std::size_t base_length>
-struct Multigrid_domain<Dim, base_length, 0u> {
+template <Dimension Dim, std::size_t... base_length>
+struct Multigrid_domain<Dim, 0u, base_length...> {
   Multigrid_domain(sycl::queue &q) : domain(Paddings::PERIODIC, q, 1) {}
 
-  DataType get_value(Position1D i, Position1D j) {
-    return domain.get_value(i, j);
+  template <typename... Position1D> DataType get_value(Position1D... i) {
+    return domain.get_value(i...);
   }
 
-  void set_value(DataType val, Position1D i, Position1D j) {
-    domain.set_value(val, i, j);
+  template <typename... Position1D>
+  void set_value(DataType val, Position1D... i) {
+    domain.set_value(val, i...);
   }
 
   void print_level() { std::cout << 0u << std::endl; }
 
-  std::size_t get_base_length() { return base_length; }
+  std::size_t get_base_length() { return utils::get_first(base_length...); }
 
-  constexpr static Length length = base_length - 1;
-  Domain<Dim, length, length> domain;
+  template <std::size_t... indices> struct Domain_Type {
+    constexpr Domain_Type(std::index_sequence<indices...>) {
+      static_assert(sizeof...(indices) == Dim);
+    }
+    constexpr static std::tuple length =
+        std::make_tuple((base_length * utils::Power<2u, nlev>::value - 1)...);
+    using domain_t = Domain<Dim, std::get<indices>(length)...>;
+  };
+
+  constexpr static std::array<DataType, 1> coarse_filter_values{1};
+  constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
+
+  decltype(Domain_Type(std::make_index_sequence<Dim>{}))::domain_t domain;
 };
 
-template <Dimension Dim, std::size_t base_length, std::size_t nlev,
-          std::size_t level = nlev>
+template <Dimension Dim, std::size_t nlev, std::size_t level = nlev,
+          std::size_t... base_length>
 void print_multigrid_domain(
-    Multigrid_domain<Dim, base_length, nlev> &MultDomain) {
+    Multigrid_domain<Dim, nlev, base_length...> &MultDomain) {
   if constexpr (level == 0) {
     return;
   } else {
@@ -96,7 +120,7 @@ void print_multigrid_domain(
     std::cout << "\n\n\n";
     std::cout << "Level: " << level << std::endl;
     MultDomain.template get_domain<level>().print_domain();
-    print_multigrid_domain<Dim, base_length, nlev, level - 1>(MultDomain);
+    print_multigrid_domain<Dim, nlev, level - 1, base_length...>(MultDomain);
   }
 }
 
@@ -124,7 +148,8 @@ struct Multi_Level_operator
             Integer<nlev - 1>{}, values_new, offsets, Box_Length,
             Integer<base_length>{}) {
 
-    auto num_points = Multigrid_domain<Dim, base_length, nlev>::length + 1;
+    auto num_points =
+        std::get<0>(Multigrid_domain<1, base_length, nlev>::length) + 1;
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 
@@ -183,7 +208,8 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
                        DataType Box_Length, Integer<base_length>)
       : offsets(offsets) {
 
-    auto num_points = Multigrid_domain<Dim, base_length, 1u>::length + 1;
+    auto num_points =
+        std::get<0>(Multigrid_domain<1, base_length, 1u>::length) + 1;
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 
