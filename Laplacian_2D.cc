@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 3u;
+  constexpr std::size_t nlev = 4u;
   constexpr std::size_t base_length = 22u;
   constexpr DataType omega = 4. / 5.;
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5, 5> smoother_sequence{};
+  std::index_sequence<3, 3, 3> smoother_sequence{};
   Jacobi_Smoother j_smoother(smoother_sequence, rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Float<1e-9>{},
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
                               diff_operator.template get_offsets<1>());
 
   //  // mult_level.print_operator();
-  std::index_sequence<1> num_iters_level{};
+  std::index_sequence<2, 2, 1> num_iters_level{};
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser, num_iters_level);
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     std::cout << "The residual after " << num << " iterations is " << residual
               << std::endl;
 
-    std::swap(current, next);
+    // std::swap(current, next);
 
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
                       coarser, 1., omega);
