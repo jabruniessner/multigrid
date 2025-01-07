@@ -149,7 +149,8 @@ struct Multi_Level_operator
             Integer<base_length>{}) {
 
     auto num_points =
-        std::get<0>(Multigrid_domain<1, base_length, nlev>::length) + 1;
+        std::get<0>(Multigrid_domain<1, nlev, base_length>::length) + 1;
+
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 
@@ -209,7 +210,7 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
       : offsets(offsets) {
 
     auto num_points =
-        std::get<0>(Multigrid_domain<1, base_length, 1u>::length) + 1;
+        std::get<0>(Multigrid_domain<1, 1u, base_length>::length) + 1;
     auto h = Box_Length / num_points;
     for (int i = 0; i < length; i++) {
 

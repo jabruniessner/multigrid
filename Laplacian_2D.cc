@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
                 sycl::property_list{sycl::property::queue::in_order{}});
 
   constexpr std::size_t nlev = 2u;
-  constexpr std::size_t base_length = 1u;
+  constexpr std::size_t base_length = 4u;
   constexpr DataType omega = 4. / 5.;
 
   Multigrid_domain<2, nlev, base_length, base_length> lhs_domain1(q);
@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
   Multigrid_domain<2, nlev, base_length, base_length> rhs_domain(q);
   Multigrid_domain<2, nlev, base_length, base_length> boundary_values(q);
 
-  std::cout << "lhs_domain1: " << std::endl;
-  print_multigrid_domain(lhs_domain1);
+  // std::cout << "lhs_domain1: " << std::endl;
+  // print_multigrid_domain(lhs_domain1);
 
   constexpr auto &length =
       Multigrid_domain<2, nlev, base_length, base_length>::length;
@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
                               std::get<0>(length) + 1);
   }
 
-  std::cout << "Boundary values: " << std::endl;
-  print_multigrid_domain(boundary_values);
+  // std::cout << "Boundary values: " << std::endl;
+  // print_multigrid_domain(boundary_values);
 
   std::array<OffsetType, 5> offsets_op{
       {{-1, 0}, {1, 0}, {0, 0}, {0, -1}, {0, 1}}};
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
                                      Integer<base_length>{});
 
-  // diff_operator.print_operator();
+  diff_operator.print_operator();
 
   std::array<OffsetType, 5u> offsets{
       {{-1, 0}, {1, 0}, {0, 1}, {0, -1}, {0, 0}}}; // Smoothing operator
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<3, 3, 3, 3> smoother_sequence{};
+  std::index_sequence<3> smoother_sequence{};
   Jacobi_Smoother j_smoother(rhs_domain, values, offsets);
 
   cg_solver::Solver_CG solver(Float<1e-9>{},
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
                               diff_operator.template get_offsets<1>());
 
   //  //  // mult_level.print_operator();
-  std::index_sequence<2, 2, 2, 1> num_iters_level{};
+  std::index_sequence<1> num_iters_level{};
   V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
 
@@ -145,6 +145,7 @@ int main(int argc, char *argv[]) {
 
   Domain<2, std::get<0>(length), std::get<1>(length)> helper(Paddings::PERIODIC,
                                                              q, 1);
+
   auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
 
@@ -158,9 +159,9 @@ int main(int argc, char *argv[]) {
 
     // std::swap(current, next);
 
-    // v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
-    //                   coarser, 1., omega, num_iters_level, smoother_sequence,
-    //                   smoother_sequence);
+    v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
+                      coarser, 1., omega, num_iters_level, smoother_sequence,
+                      smoother_sequence);
   }
   //
   //   // Convolve(helper, current->template get_domain<nlev>(),
