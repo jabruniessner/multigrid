@@ -104,7 +104,7 @@ struct Multigrid_domain<Dim, 0u, base_length...> {
       static_assert(sizeof...(indices) == Dim);
     }
     constexpr static std::tuple length =
-        std::make_tuple((base_length * utils::Power<2u, nlev>::value - 1)...);
+        std::make_tuple((base_length * utils::Power<2u, 0u>::value - 1)...);
     using domain_t = Domain<Dim, std::get<indices>(length)...>;
   };
 
