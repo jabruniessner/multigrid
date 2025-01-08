@@ -69,27 +69,25 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "After initialization we get:" << std::endl;
   // print_multigrid_domain(lhs_domain1);
-  for (int j = 0; j < std::get<1>(length) + 2; j++)
-    for (int i = 0; i < std::get<0>(length) + 2; i++) {
-      boundary_values.set_value(0., i, j, 0);
-      boundary_values.set_value(1., i, j, std::get<2>(length) + 1);
+  {
+    auto &boundary_domain = boundary_values.template get_domain<nlev>();
+    q.parallel_for(
+         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+         [=](sycl::id<2> I) {
+           boundary_domain(I[0], I[1], 0) = 0.;
+           boundary_domain(I[0], I[1], std::get<2>(length) + 1) = 1.;
+           boundary_domain(0, I[0], I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(I[0], 0, I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+         })
+        .wait();
+  }
 
-      boundary_values.set_value((double)i / (double)(std::get<2>(length) + 1),
-                                0, j, i);
-
-      boundary_values.set_value((double)i / (double)(std::get<2>(length) + 1),
-                                std::get<0>(length) + 1, j, i);
-
-      boundary_values.set_value((double)i / (double)(std::get<2>(length) + 1),
-                                j, 0, i);
-
-      boundary_values.set_value((double)i / (double)(std::get<2>(length) + 1),
-                                j, std::get<0>(length) + 1, i);
-    }
-  //
-  //  // std::cout << "Boundary values: " << std::endl;
-  //  // print_multigrid_domain(boundary_values);
-  //
   std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
                                         {1, 0, 0},
                                         {0, 0, 0},
