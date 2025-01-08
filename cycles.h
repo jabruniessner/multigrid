@@ -98,6 +98,9 @@ struct Jacobi_Smoother {
 
   {
 
+    static_assert(sizeof...(Num_Iters) == 1 ||
+                  sizeof...(Num_Iters) == nlev - 1);
+
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
     auto &dest_domain = dest.template get_domain<level>();
@@ -105,7 +108,7 @@ struct Jacobi_Smoother {
     auto &rhs_domain = rhs.template get_domain<level>();
     const DataType h =
         box_length / (std::get<0>(rhs.template get_length<level>()) + 1);
-    const DataType diag_inverse = omega * (h * h) / 4;
+    const DataType diag_inverse = omega * (h * h) / (2 * Dim);
 
     if constexpr (num_iters == 0) {
       return;
@@ -170,6 +173,9 @@ struct V_Cycle_base {
       std::index_sequence<Num_Iters...> num_iters_,
       std::index_sequence<Num_Iters_Smoother_Pre...> smoother_iters_pre,
       std::index_sequence<Num_Iters_Smoother_Post...> smoother_iters_post) {
+
+    static_assert(sizeof...(Num_Iters) == 1 ||
+                  sizeof...(Num_Iters) == nlev - 1);
 
     if constexpr (iter_level == 1) {
       solver(next.template get_domain<iter_level>(),

@@ -25,16 +25,18 @@ struct Multigrid_domain
       : domain(Paddings::PERIODIC, q, 1),
         Multigrid_domain<Dim, nlev - 1, base_length...>(q) {};
 
-  template <std::size_t lev = nlev>
-  DataType get_value(Position1D i, Position1D j) {
+  template <std::size_t lev = nlev, typename... Position1D>
+  DataType get_value(Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
-    return Multigrid_domain<Dim, lev, base_length...>::domain.get_value(i, j);
+    static_assert(sizeof...(Position1D) == Dim);
+    return Multigrid_domain<Dim, lev, base_length...>::domain.get_value(i...);
   }
 
-  template <std::size_t lev = nlev>
-  void set_value(DataType val, Position1D i, Position1D j) {
+  template <std::size_t lev = nlev, typename... Position1D>
+  void set_value(DataType val, Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
-    Multigrid_domain<Dim, lev, base_length...>::domain.set_value(val, i, j);
+    static_assert(sizeof...(Position1D) == Dim);
+    Multigrid_domain<Dim, lev, base_length...>::domain.set_value(val, i...);
   }
 
   template <std::size_t lev = nlev>
@@ -69,6 +71,9 @@ struct Multigrid_domain
     using domain_t = Domain<Dim, std::get<indices>(length)...>;
   };
 
+  template <std::size_t... indices>
+  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
+
   constexpr static std::array<DataType, 1> coarse_filter_values{1};
   constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
   constexpr static Domain_Type domain_t_v{std::make_index_sequence<Dim>{}};
@@ -102,6 +107,9 @@ struct Multigrid_domain<Dim, 0u, base_length...> {
         std::make_tuple((base_length * utils::Power<2u, nlev>::value - 1)...);
     using domain_t = Domain<Dim, std::get<indices>(length)...>;
   };
+
+  template <std::size_t... indices>
+  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
 
   constexpr static std::array<DataType, 1> coarse_filter_values{1};
   constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
