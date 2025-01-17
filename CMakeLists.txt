@@ -12,7 +12,6 @@ set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS "-L/usr/local/cuda/lib64 -lcudart -I/usr/local/cuda/include")
 
 set(CMAKE_CXX_COMPILER "acpp")
 

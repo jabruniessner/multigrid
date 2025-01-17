@@ -9,6 +9,20 @@
 
 namespace utils {
 
+template <typename Tuple1, typename Tuple2, std::size_t... indices>
+void add_to_tuple(Tuple1 &tuple_1, Tuple2 &tuple_2,
+                  std::index_sequence<indices...>) {
+  static_assert(sizeof...(indices) == std::tuple_size_v<Tuple1> &&
+                sizeof...(indices) == std::tuple_size_v<Tuple2>);
+  ((std::get<indices>(tuple_1) += std::get<indices>(tuple_2)), ...);
+}
+
+template <typename Tuple1, typename Tuple2>
+void add_to_tuple(Tuple1 &tuple_1, Tuple2 &tuple_2) {
+  constexpr std::size_t length = std::tuple_size_v<Tuple1>;
+  add_to_tuple(tuple_1, tuple_2, std::make_index_sequence<length>{});
+}
+
 template <typename Arg1, typename... Args>
 Arg1 &&get_first(Arg1 &&arg1, Args &&...) {
   return std::forward<Arg1>(arg1);
