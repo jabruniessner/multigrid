@@ -29,7 +29,6 @@ add_executable(test_lvl_trans3D tests_level_transition3D.cc)
 add_executable(MultiGrid_test MultigridDomain_test.cc)
 add_executable(Laplacian2D Laplacian_2D.cc)
 add_executable(Laplacian3D Laplacian_3D.cc)
-add_executable(cuda_amg_test amg_solver.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
