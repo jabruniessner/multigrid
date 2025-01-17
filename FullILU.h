@@ -1,33 +1,36 @@
 #include "matrix_utilities.h"
+#include "predefinitions.h"
 #include "utils.h"
 #include <array>
 #include <cmath>
 #include <format>
 #include <iostream>
 #include <string>
+#include <sycl/sycl.hpp>
 #include <tuple>
+#include <utility>
 
 template <std::size_t stride> int get_index(std::size_t i, std::size_t j) {
   return i * stride + j;
 }
 
 template <std::size_t problem_size, typename DataType>
-void print_matrix(std::array<DataType, problem_size * problem_size> &matrix) {
+void print_matrix(DataType *matrix, sycl::queue &q) {
   std::cout << "Matrix: " << std::endl;
   for (int i = 0; i < problem_size; i++) {
     for (int j = 0; j < problem_size; j++) {
-      std::cout << std::format("{:6.3f} ",
-                               matrix[get_index<problem_size>(i, j)]);
+      DataType value;
+      q.memcpy(&value, matrix + get_index<problem_size>(i, j), sizeof(DataType))
+          .wait();
+      std::cout << std::format("{:6.3f} ", value);
     }
     std::cout << std::endl;
   }
 }
 
 template <std::size_t problem_size, typename DataType>
-void matrix_vector_multiply(
-    std::array<DataType, problem_size * problem_size> &matrix,
-    std::array<DataType, problem_size> &vector,
-    std::array<DataType, problem_size> &result) {
+void matrix_vector_multiply(DataType *matrix, DataType *vector,
+                            DataType *result) {
   for (int i = 0; i < problem_size; i++) {
     result[i] = 0;
     for (int j = 0; j < problem_size; j++) {
@@ -37,7 +40,7 @@ void matrix_vector_multiply(
 }
 
 template <std::size_t problem_size, typename DataType>
-void vector_norm(std::array<DataType, problem_size> &vector, DataType &result) {
+void vector_norm(DataType *vector, DataType *result) {
   result = 0;
   for (int i = 0; i < problem_size; i++) {
     result += vector[i] * vector[i];
@@ -46,16 +49,14 @@ void vector_norm(std::array<DataType, problem_size> &vector, DataType &result) {
 }
 
 template <std::size_t problem_size, typename DataType>
-void vector_subtract(std::array<DataType, problem_size> &vector1,
-                     std::array<DataType, problem_size> &vector2,
-                     std::array<DataType, problem_size> &result) {
+void vector_subtract(DataType *vector1, DataType *vector2, DataType *result) {
   for (int i = 0; i < problem_size; i++) {
     result[i] = vector1[i] - vector2[i];
   }
 }
 
 template <std::size_t problem_size, typename DataType>
-void Factorize_ILU(std::array<DataType, problem_size * problem_size> &matrix) {
+void Factorize_ILU(DataType *matrix) {
   for (int k = 0; k < problem_size - 1; k++) {
     for (int i = k + 1; i < problem_size; i++) {
       auto &a = matrix[get_index<problem_size>(i, k)];
@@ -70,8 +71,7 @@ void Factorize_ILU(std::array<DataType, problem_size * problem_size> &matrix) {
 }
 
 template <std::size_t problem_size, typename DataType>
-void solve_ILU(std::array<DataType, problem_size * problem_size> &matrix,
-               std::array<DataType, problem_size> &vector) {
+void solve_ILU(DataType *matrix, DataType *vector) {
 
   // Solveing the lower triangular matrix
   for (int i = 1; i < problem_size; i++) {
@@ -89,84 +89,67 @@ void solve_ILU(std::array<DataType, problem_size * problem_size> &matrix,
   }
 };
 
-template <std::size_t problem_size, typename DataType, typename OffsetType,
-          std::size_t stencil_length, std::size_t FirstStride,
-          std::size_t... Strides, std::size_t... All_Strides,
-          typename... Indices>
-void create_matrix_from_stencil(
-    std::array<DataType, problem_size * problem_size> &matrix,
-    std::array<double, stencil_length> &values,
-    std::array<OffsetType, stencil_length> &offsets,
-    std::index_sequence<FirstStride, Strides...>,
-    std::index_sequence<All_Strides...>, Indices... indices) {
+template <std::size_t Dim, std::size_t problem_size, typename DataType,
+          typename OffsetType, std::size_t stencil_length,
+          std::size_t... Strides, std::size_t... dims>
+void create_matrix_from_stencil(DataType *matrix,
+                                std::array<double, stencil_length> &values,
+                                std::array<OffsetType, stencil_length> &offsets,
+                                sycl::queue &q, std::index_sequence<Strides...>,
+                                std::index_sequence<dims...>) {
 
-  static_assert(sizeof...(Indices) + sizeof...(Strides) + 1 ==
-                sizeof...(All_Strides));
+  static_assert(Dim == sizeof...(Strides));
+  q.parallel_for(sycl::range<Dim>(Strides...), [=](sycl::id<Dim> I) {
+     auto index_tuple = std::make_tuple(I[dims]...);
+     auto row_index = std::apply(
+         [&](auto... elems) { return flatten_index<Strides...>(0, elems...); },
+         index_tuple); // computing the row_index
 
-  if constexpr (sizeof...(Strides) == 0) {
+     // utils::print_tuple(index_tuple);
+     for (int j = 0; j < stencil_length; j++) {
 
-    for (int i = 0; i < FirstStride; i++) {
-      auto index_tuple = std::make_tuple(indices..., i);
-      auto row_index = std::apply(
-          [&](auto... elems) {
-            return flatten_index<All_Strides...>(0, elems...);
-          },
-          index_tuple); // computing the row_index
+       auto index_tuple_new = index_tuple;
+       auto flat_index_row = std::apply(
+           [&](auto... elems) {
+             return flatten_index<Strides...>(0, elems...);
+           },
+           index_tuple_new);
+       utils::add_to_tuple(index_tuple_new, offsets[j]);
+       auto flat_index_column = std::apply(
+           [&](auto... elems) {
+             return flatten_index<Strides...>(0, elems...);
+           },
+           index_tuple_new);
 
-      // utils::print_tuple(index_tuple);
-      for (int j = 0; j < stencil_length; j++) {
+       bool in_range = std::apply(
+           [&](auto... elems) {
+             bool truth = true;
+             static_assert(sizeof...(elems) == sizeof...(Strides));
+             ((truth = truth && elems >= 0 && elems < Strides), ...);
+             return truth;
+           },
+           index_tuple_new); // Computing whether the index is in the range of
+                             // the Domain;
 
-        auto index_tuple_new = index_tuple;
-        auto flat_index_row = std::apply(
-            [&](auto... elems) {
-              return flatten_index<All_Strides...>(0, elems...);
-            },
-            index_tuple_new);
-        utils::add_to_tuple(index_tuple_new, offsets[j]);
-        auto flat_index_column = std::apply(
-            [&](auto... elems) {
-              return flatten_index<All_Strides...>(0, elems...);
-            },
-            index_tuple_new);
+       if (!in_range)
+         continue; // Do not add value if the domain is out of range
 
-        bool in_range = std::apply(
-            [&](auto... elems) {
-              bool truth = true;
-              static_assert(sizeof...(elems) == sizeof...(All_Strides));
-              ((truth = truth && elems >= 0 && elems < All_Strides), ...);
-              return truth;
-            },
-            index_tuple_new); // Computing whether the index is in the range of
-                              // the Domain;
-
-        if (!in_range)
-          continue; // Do not add value if the domain is out of range
-
-        matrix[get_index<problem_size>(row_index, flat_index_column)] =
-            values[j];
-      }
-    }
-
-  } else {
-    for (int i = 0; i < FirstStride; i++) {
-      create_matrix_from_stencil<problem_size>(
-          matrix, values, offsets, std::index_sequence<Strides...>{},
-          std::index_sequence<All_Strides...>{}, indices..., i);
-    }
-  }
-}
-
-template <std::size_t problem_size, typename DataType, typename OffsetType,
-          std::size_t stencil_length, std::size_t... Strides>
-void create_matrix_from_stencil(
-    std::array<DataType, problem_size * problem_size> &matrix,
-    std::array<DataType, stencil_length> &values,
-    std::array<OffsetType, stencil_length> &offsets,
-    std::index_sequence<Strides...>) {
-
-  // std::size_t current_position = 0;
-
-  create_matrix_from_stencil<problem_size>(matrix, values, offsets,
-                                           std::index_sequence<Strides...>{},
-                                           std::index_sequence<Strides...>{});
+       matrix[get_index<problem_size>(row_index, flat_index_column)] =
+           values[j];
+     }
+   }).wait();
 };
+
+template <std::size_t Dim, std::size_t problem_size, typename DataType,
+          typename OffsetType, std::size_t stencil_length,
+          std::size_t... Strides>
+void create_matrix_from_stencil(DataType *matrix,
+                                std::array<DataType, stencil_length> &values,
+                                std::array<OffsetType, stencil_length> &offsets,
+                                sycl::queue &q,
+                                std::index_sequence<Strides...>) {
+
+  create_matrix_from_stencil<Dim, problem_size>(
+      matrix, values, offsets, q, std::index_sequence<Strides...>{},
+      std::make_index_sequence<Dim>{});
+}
