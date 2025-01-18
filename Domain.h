@@ -27,6 +27,35 @@ size_t flatten_index(Padding padding, Position i,
   return index;
 }
 
+template <Length FirstStride, Length... RestStrides, std::size_t... directions>
+std::array<Length, sizeof...(RestStrides) + 1>
+flat_to_multi_index(Length i, std::index_sequence<directions...>) {
+  static_assert(sizeof...(RestStrides) == sizeof...(directions));
+  constexpr std::array<Length, sizeof...(RestStrides)> strides{RestStrides...};
+  constexpr std::size_t Dim = sizeof...(RestStrides) + 1;
+
+  std::array<Length, sizeof...(RestStrides) + 1> multi_index;
+
+  // for (int i : strides)
+  //   std::cout << "Strides: " << i << std::endl;
+
+  ((multi_index[Dim - 1 - directions] = i % strides[Dim - 2 - directions],
+    // std::cout << "strides: " << strides[Dim - 2 - directions] << std::endl,
+    // std::cout << "position: " << Dim - 1 - directions << std::endl,
+    // std::cout << "value: " << i % strides[Dim - 2 - directions] << std::endl,
+    i /= strides[Dim - 2 - directions]),
+   ...);
+  multi_index[0] = i;
+
+  return multi_index;
+}
+
+template <Length FirstStride, Length... RestStrides>
+std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
+  return flat_to_multi_index<FirstStride, RestStrides...>(
+      i, std::make_index_sequence<sizeof...(RestStrides)>{});
+}
+
 template <Dimension Dim, Length... strides_all> struct Domain {
   template <typename... Length>
   Domain(Paddings padding, sycl::queue &q, int padding_width)
