@@ -385,7 +385,13 @@ template <Dimension Dim, typename Domain, typename... Ranges> class Subdomain {
     return parent_domain((positions + RangeProps<Ranges>::start_v)...);
   }
 
-  template <typename Position> DataType &operator[](Position position) const;
+  template <typename Position> DataType &operator[](Position position) const {
+    const auto multi_index =
+        flat_to_multi_index<RangeProps<Ranges>::length...>(position);
+    return std::apply(
+        [&](auto &...elems) { return this->operator()(elems...); },
+        multi_index);
+  }
 
   Domain &parent_domain;
 };
