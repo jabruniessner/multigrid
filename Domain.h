@@ -375,9 +375,16 @@ struct RangeProps<Range<start, end>> {
   constexpr static std::size_t end_v = end;
 };
 
-template <Dimension Dim, typename Domain, typename... Ranges> class Subdomain {
+template <typename Domain, typename... Ranges> struct Subdomain;
 
-  Subdomain(Domain &domain, Ranges... ranges) : parent_domain(domain) {}
+template <template <Dimension, Length...> typename Domain, Dimension Dim,
+          Length... length, typename... Ranges>
+struct Subdomain<Domain<Dim, length...>, Ranges...> {
+
+  Subdomain(Domain<Dim, length...> &domain, Ranges... ranges)
+      : parent_domain(domain) {
+    static_assert(sizeof...(Ranges) == Dim);
+  }
 
   template <typename... Positions>
   DataType &operator()(Positions... positions) const {
@@ -393,10 +400,13 @@ template <Dimension Dim, typename Domain, typename... Ranges> class Subdomain {
         multi_index);
   }
 
-  Domain &parent_domain;
+  Domain<Dim, length...> &parent_domain;
 };
 
-// At this place should come an implemetation of an inverse matrix view
+template <template <Dimension, Length...> typename Domain, Length... length,
+          Dimension Dim, typename... Ranges>
+Subdomain(Domain<Dim, length...> &, Ranges...)
+    -> Subdomain<Domain<Dim, length...>, Ranges...>;
 
 } // namespace domain
 

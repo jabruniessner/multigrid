@@ -1,3 +1,4 @@
+#include "concepts.h"
 #include "matrix_utilities.h"
 #include "predefinitions.h"
 #include "utils.h"
@@ -9,6 +10,9 @@
 #include <sycl/sycl.hpp>
 #include <tuple>
 #include <utility>
+
+#ifndef FULLILU_H
+#define FULLILU_H
 
 template <std::size_t stride> int get_index(std::size_t i, std::size_t j) {
   return i * stride + j;
@@ -28,8 +32,9 @@ void print_matrix(DataType *matrix, sycl::queue &q) {
   }
 }
 
-template <std::size_t problem_size, typename DataType>
-void matrix_vector_multiply(DataType *matrix, DataType *vector,
+template <std::size_t problem_size, typename DataType,
+          subscriptable<std::size_t> Vector_Type>
+void matrix_vector_multiply(DataType *matrix, Vector_Type vector,
                             DataType *result) {
   for (int i = 0; i < problem_size; i++) {
     result[i] = 0;
@@ -39,8 +44,9 @@ void matrix_vector_multiply(DataType *matrix, DataType *vector,
   }
 }
 
-template <std::size_t problem_size, typename DataType>
-void vector_norm(DataType *vector, DataType *result) {
+template <std::size_t problem_size, typename DataType,
+          subscriptable<std::size_t> Vector_Type>
+void vector_norm(Vector_Type vector, DataType *result) {
   result = 0;
   for (int i = 0; i < problem_size; i++) {
     result += vector[i] * vector[i];
@@ -48,8 +54,10 @@ void vector_norm(DataType *vector, DataType *result) {
   result = std::sqrt(result);
 }
 
-template <std::size_t problem_size, typename DataType>
-void vector_subtract(DataType *vector1, DataType *vector2, DataType *result) {
+template <std::size_t problem_size, typename DataType,
+          subscriptable<std::size_t> Vector_Type>
+void vector_subtract(Vector_Type vector1, Vector_Type vector2,
+                     DataType *result) {
   for (int i = 0; i < problem_size; i++) {
     result[i] = vector1[i] - vector2[i];
   }
@@ -70,8 +78,9 @@ void Factorize_ILU(DataType *matrix) {
   }
 }
 
-template <std::size_t problem_size, typename DataType>
-void solve_ILU(DataType *matrix, DataType *vector) {
+template <std::size_t problem_size, typename DataType,
+          subscriptable<std::size_t> Vector_Type>
+void solve_ILU(DataType *matrix, Vector_Type vector) {
 
   // Solveing the lower triangular matrix
   for (int i = 1; i < problem_size; i++) {
@@ -92,11 +101,10 @@ void solve_ILU(DataType *matrix, DataType *vector) {
 template <std::size_t Dim, std::size_t problem_size, typename DataType,
           typename OffsetType, std::size_t stencil_length,
           std::size_t... Strides, std::size_t... dims>
-void create_matrix_from_stencil(DataType *matrix,
-                                std::array<double, stencil_length> &values,
-                                std::array<OffsetType, stencil_length> &offsets,
-                                sycl::queue &q, std::index_sequence<Strides...>,
-                                std::index_sequence<dims...>) {
+void create_matrix_from_stencil(
+    DataType *matrix, const std::array<double, stencil_length> &values,
+    const std::array<OffsetType, stencil_length> &offsets, sycl::queue &q,
+    std::index_sequence<Strides...>, std::index_sequence<dims...>) {
 
   static_assert(Dim == sizeof...(Strides));
   q.parallel_for(sycl::range<Dim>(Strides...), [=](sycl::id<Dim> I) {
@@ -143,13 +151,14 @@ void create_matrix_from_stencil(DataType *matrix,
 template <std::size_t Dim, std::size_t problem_size, typename DataType,
           typename OffsetType, std::size_t stencil_length,
           std::size_t... Strides>
-void create_matrix_from_stencil(DataType *matrix,
-                                std::array<DataType, stencil_length> &values,
-                                std::array<OffsetType, stencil_length> &offsets,
-                                sycl::queue &q,
-                                std::index_sequence<Strides...>) {
+void create_matrix_from_stencil(
+    DataType *matrix, const std::array<DataType, stencil_length> &values,
+    const std::array<OffsetType, stencil_length> &offsets, sycl::queue &q,
+    std::index_sequence<Strides...>) {
 
   create_matrix_from_stencil<Dim, problem_size>(
       matrix, values, offsets, q, std::index_sequence<Strides...>{},
       std::make_index_sequence<Dim>{});
 }
+
+#endif //! FULLILU_H
