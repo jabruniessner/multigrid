@@ -1,6 +1,7 @@
 #include "predefinitions.h"
 #include "utils.h"
 #include <cassert>
+#include <cstddef>
 #include <format>
 #include <iostream>
 #include <ostream>
@@ -334,6 +335,33 @@ int add_and_multiply_domains(Domain<Dim, strides_all...> &dest,
 
   return 0;
 }
+
+template <typename Range> struct RangeProps;
+
+template <template <std::size_t, std::size_t> typename Range, std::size_t start,
+          std::size_t end>
+struct RangeProps<Range<start, end>> {
+  constexpr static std::size_t length = end - start;
+  constexpr static std::size_t start_v = start;
+  constexpr static std::size_t end_v = end;
+};
+
+template <Dimension Dim, typename Domain, typename... Ranges> class Subdomain {
+
+  Subdomain(Domain &domain, Ranges... ranges) : parent_domain(domain) {}
+
+  template <typename... Positions>
+  DataType &operator()(Positions... positions) const {
+    static_assert(sizeof...(Positions) == Dim);
+    return parent_domain((positions + RangeProps<Ranges>::start_v)...);
+  }
+
+  template <typename Position> DataType &operator[](Position position) const;
+
+  Domain &parent_domain;
+};
+
+// At this place should come an implemetation of an inverse matrix view
 
 } // namespace domain
 
