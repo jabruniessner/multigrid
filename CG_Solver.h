@@ -44,27 +44,28 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType *beta = sycl::malloc_device<DataType>(1, q);
   q.memset(beta, 0, sizeof(DataType));
 
+  q.wait();
+
   // init_guess.print_domain();
 
   q.parallel_for(
-       sycl::range<Dim>((strides[dims])...),
-       sycl::reduction(r_squared, sycl::plus<>()),
+      sycl::range<Dim>((strides[dims])...),
+      sycl::reduction(r_squared, sycl::plus<>()),
 
-       [=](sycl::id<Dim> I, auto &r) {
-         ((I[dims] += padding_width), ...);
+      [=](sycl::id<Dim> I, auto &r) {
+        ((I[dims] += padding_width), ...);
 
-         // Computing the convolution for the initial residual
-         DataType result = 0;
+        // Computing the convolution for the initial residual
+        DataType result = 0;
 
-         for (int k = 0; k < size; k++) {
-           result += init_guess((I[dims] + offsets[k][dims])...) * values[k];
-         }
-         // Assigning values and reducing to the sum
-         defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...) - result;
+        for (int k = 0; k < size; k++) {
+          result += init_guess((I[dims] + offsets[k][dims])...) * values[k];
+        }
+        // Assigning values and reducing to the sum
+        defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...) - result;
 
-         r += defect_r(I[dims]...) * defect_r(I[dims]...);
-       })
-      .wait();
+        r += defect_r(I[dims]...) * defect_r(I[dims]...);
+      });
 
   // init_guess.print_domain();
 
@@ -82,8 +83,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                    }
 
                    pAp += result * defect_p(I[dims]...);
-                 })
-      .wait();
+                 });
 
   // init_guess.print_domain();
 
@@ -101,48 +101,52 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
      });
    }).wait();
 
-  DataType residual = 2 * thresh;
+  DataType residual = 0;
+  q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
+  residual = std::sqrt(residual);
+  thresh = thresh * residual;
+
+  int count = 0;
   while (thresh < residual) {
+    count++;
     q.parallel_for(
-         sycl::range<Dim>(strides[dims]...),
-         sycl::reduction(r_squared_next, sycl::plus<>()),
-         [=](sycl::id<Dim> I, auto &r_squared_plus_1) {
-           ((I[dims] += padding_width), ...);
-           init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
+        sycl::range<Dim>(strides[dims]...),
+        sycl::reduction(r_squared_next, sycl::plus<>()),
+        [=](sycl::id<Dim> I, auto &r_squared_plus_1) {
+          ((I[dims] += padding_width), ...);
+          init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
 
-           DataType result = 0;
-           for (int k = 0; k < size; k++) {
-             result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
-           }
+          DataType result = 0;
+          for (int k = 0; k < size; k++) {
+            result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
+          }
 
-           defect_r(I[dims]...) -= (*alpha) * result;
+          defect_r(I[dims]...) -= (*alpha) * result;
 
-           r_squared_plus_1 += defect_r(I[dims]...) * defect_r(I[dims]...);
-         })
-        .wait();
+          r_squared_plus_1 += defect_r(I[dims]...) * defect_r(I[dims]...);
+        });
 
     // init_guess.print_domain();
     DataType r_squared_value = 0;
     q.memcpy(&r_squared_value, r_squared, sizeof(DataType)).wait();
+    residual = std::sqrt(r_squared_value / defect_r.num_dofs);
 
     if (r_squared_value == 0)
       return;
 
-    residual = std::sqrt(r_squared_value / defect_r.num_dofs);
-
     q.submit([&](sycl::handler &h) {
-       h.single_task([=]() {
-         *beta = (*r_squared_next) / (*r_squared);
-         *r_squared = *r_squared_next;
-         *r_squared_next = 0;
-       });
-     }).wait();
+      h.single_task([=]() {
+        *beta = (*r_squared_next) / (*r_squared);
+        *r_squared = *r_squared_next;
+        *r_squared_next = 0;
+      });
+    });
 
     q.parallel_for(sycl::range<Dim>(strides[dims]...), [=](sycl::id<Dim> I) {
-       ((I[dims] += padding_width), ...);
-       defect_p(I[dims]...) =
-           defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
-     }).wait();
+      ((I[dims] += padding_width), ...);
+      defect_p(I[dims]...) =
+          defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
+    });
 
     // init_guess.print_domain();
 
@@ -158,8 +162,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                      }
 
                      pAp += result * defect_p(I[dims]...);
-                   })
-        .wait();
+                   });
 
     DataType p_squared_A_value = 0;
     q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
@@ -169,12 +172,14 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
-       h.single_task([=]() {
-         *alpha = (*r_squared) / (*p_squared_A);
-         *p_squared_A = 0;
-       });
-     }).wait();
+      h.single_task([=]() {
+        *alpha = (*r_squared) / (*p_squared_A);
+        *p_squared_A = 0;
+      });
+    });
   }
+
+  std::cout << "We made " << count << " CG iterations." << std::endl;
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,

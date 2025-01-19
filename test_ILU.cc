@@ -47,8 +47,8 @@ int main(int argc, char *argv[]) {
   create_matrix_from_stencil<2, problem_size>(
       matrix, values, offsets, q, std::index_sequence<length, length>{});
 
-  std::cout << "#========= Original Matrix =======#" << std::endl;
-  print_matrix<problem_size>(matrix, q);
+  // std::cout << "#========= Original Matrix =======#" << std::endl;
+  // print_matrix<problem_size>(matrix, q);
 
   std::cout << std::endl;
   std::cout << std::endl;
@@ -69,10 +69,10 @@ int main(int argc, char *argv[]) {
     sol.set_value(-1., length + 1, i);
   }
 
-  std::cout << "#============= The initial set up is ==============#"
-            << std::endl;
+  // std::cout << "#============= The initial set up is ==============#"
+  //           << std::endl;
 
-  std::cout << "The inhomogenous part is given by: " << std::endl;
+  // std::cout << "The inhomogenous part is given by: " << std::endl;
   sol.print_domain();
 
   Convolve(rhs, sol, values, offsets);
@@ -104,14 +104,25 @@ int main(int argc, char *argv[]) {
 
   // auto &val_1 = sub_rhs[-1];
 
-  q.submit([=](sycl::handler &h) {
-    h.single_task([=]() { solve_ILU<problem_size>(matrix, sub_rhs); });
-  });
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < 5000; i++) {
+    q.submit([=](sycl::handler &h) {
+      h.single_task([=]() { solve_ILU<problem_size>(matrix, sub_rhs); });
+    });
+  }
 
+  // q.wait();
+
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> duration = end - start;
+
+  std::cout << "The required time for the solution was: " << duration.count()
+            << std::endl;
   //  solve_ILU<problem_size>(matrix, sub_rhs);
 
-  std::cout << "The solution is: " << std::endl;
-  rhs.print_domain();
+  // std::cout << "The solution is: " << std::endl;
+  // rhs.print_domain();
 
   // RangeProps<Range<1, 2>> a{};
 
