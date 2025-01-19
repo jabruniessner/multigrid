@@ -78,7 +78,7 @@ template <Dimension Dim, Length... strides_all> struct Domain {
   }
 
   template <typename... Positions>
-  DataType &operator()(Positions... positions) const {
+  DataType &operator()(const Positions &...positions) const {
     static_assert(sizeof...(Positions) == Dim);
     return values_buff[flatten_index<strides_all...>(padding_width,
                                                      positions...)];
@@ -387,18 +387,30 @@ struct Subdomain<Domain<Dim, length...>, Ranges...> {
   }
 
   template <typename... Positions>
-  DataType &operator()(Positions... positions) const {
+  DataType &operator()(const Positions &...positions) {
     static_assert(sizeof...(Positions) == Dim);
     return parent_domain((positions + RangeProps<Ranges>::start_v)...);
   }
 
-  template <typename Position> DataType &operator[](Position position) const {
+  template <typename Position, std::size_t... directions>
+  DataType &subscript(Position position, std::index_sequence<directions...>) {
+    static_assert(sizeof...(directions) == sizeof...(Ranges));
     const auto multi_index =
         flat_to_multi_index<RangeProps<Ranges>::length...>(position);
-    return std::apply(
-        [&](auto &...elems) { return this->operator()(elems...); },
-        multi_index);
+    return this->operator()(multi_index[directions]...);
   }
+
+  template <typename Position> DataType &operator[](Position position) {
+    return subscript(position, std::make_index_sequence<sizeof...(Ranges)>{});
+  }
+
+  // template <typename Position> DataType &operator[](Position position) {
+  //   const auto multi_index =
+  //       flat_to_multi_index<RangeProps<Ranges>::length...>(position);
+  //   return std::apply(
+  //       [&](const auto &...elems) { return (this->operator()(elems...)); },
+  //       multi_index);
+  // }
 
   Domain<Dim, length...> &parent_domain;
 };
