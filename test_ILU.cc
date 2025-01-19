@@ -47,8 +47,8 @@ int main(int argc, char *argv[]) {
   create_matrix_from_stencil<2, problem_size>(
       matrix, values, offsets, q, std::index_sequence<length, length>{});
 
-  // std::cout << "#========= Original Matrix =======#" << std::endl;
-  // print_matrix<problem_size>(matrix, q);
+  std::cout << "#========= Original Matrix =======#" << std::endl;
+  print_matrix<problem_size>(matrix, q);
 
   std::cout << std::endl;
   std::cout << std::endl;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
      h.single_task([=]() { Factorize_ILU<problem_size>(matrix); });
    }).wait();
 
-  print_matrix<problem_size>(matrix, q);
+  // print_matrix<problem_size>(matrix, q);
 
   const int m = 16;
 
@@ -79,27 +79,36 @@ int main(int argc, char *argv[]) {
   std::cout << "The right hand side is given by: " << std::endl;
   rhs.print_domain();
   //
-  //   std::cout << "The defect_r is prior to iteration given by" << std::endl;
+  //   std::cout << "The defect_r is prior to iteration given by" <<
+  // std::endl;
   //   defect_r.print_domain();
   //
-  //   std::cout << "The defect_p is prior to iteration given by" << std::endl;
+  //   std::cout << "The defect_p is prior to iteration given by" <<
+  // std::endl;
   //   defect_p.print_domain();
   //
   //   std::cout << "The init_guess is given by " << std::endl;
   //   init_guess.print_domain();
-
+  //
   Subdomain sub_init{init_guess, Range<1, 5>{}, Range<1, 5>{}};
 
   Subdomain sub_rhs{rhs, Range<1, 5>{}, Range<1, 5>{}};
 
+  DataType *a = sycl::malloc_device<DataType>(1, q);
+
+  // q.submit([=](sycl::handler &h) {
+  //    h.single_task([=]() { sub_rhs(0, 0) = 1.; });
+  //  }).wait();
+
   // auto val = sub_rhs(0, 0);
 
-  // auto &val_1 = sub_rhs[0];
+  // auto &val_1 = sub_rhs[-1];
 
-  q.submit([&](sycl::handler &h) {
-     h.single_task([=]() { solve_ILU<problem_size>(matrix, sub_rhs); });
-   }).wait();
-  // solve_ILU<problem_size>(matrix, sub_rhs);
+  q.submit([=](sycl::handler &h) {
+    h.single_task([=]() { solve_ILU<problem_size>(matrix, sub_rhs); });
+  });
+
+  //  solve_ILU<problem_size>(matrix, sub_rhs);
 
   std::cout << "The solution is: " << std::endl;
   rhs.print_domain();

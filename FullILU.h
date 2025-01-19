@@ -80,7 +80,7 @@ void Factorize_ILU(DataType *matrix) {
 
 template <std::size_t problem_size, typename DataType,
           subscriptable<std::size_t> Vector_Type>
-void solve_ILU(DataType *matrix, Vector_Type vector) {
+void solve_ILU(DataType *matrix, Vector_Type &vector) {
 
   // Solveing the lower triangular matrix
   for (int i = 1; i < problem_size; i++) {

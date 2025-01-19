@@ -378,29 +378,34 @@ struct RangeProps<Range<start, end>> {
 template <typename Domain, typename... Ranges> struct Subdomain;
 
 template <template <Dimension, Length...> typename Domain, Dimension Dim,
-          Length... length, typename... Ranges>
-struct Subdomain<Domain<Dim, length...>, Ranges...> {
+          Length... strides_all, typename... Ranges>
+struct Subdomain<Domain<Dim, strides_all...>, Ranges...> {
 
-  Subdomain(Domain<Dim, length...> &domain, Ranges... ranges)
-      : parent_domain(domain) {
+  Subdomain(Domain<Dim, strides_all...> &domain, Ranges... ranges)
+      : parent_domain(domain), values_buff(domain.values_buff),
+        padding_width(domain.padding_width) {
     static_assert(sizeof...(Ranges) == Dim);
   }
 
   template <typename... Positions>
-  DataType &operator()(const Positions &...positions) {
+  DataType &operator()(const Positions &...positions) const {
     static_assert(sizeof...(Positions) == Dim);
-    return parent_domain((positions + RangeProps<Ranges>::start_v)...);
+    return values_buff[flatten_index<strides_all...>(
+        padding_width, (positions + RangeProps<Ranges>::start_v)...)];
+
+    // return parent_domain((positions + RangeProps<Ranges>::start_v)...);
   }
 
   template <typename Position, std::size_t... directions>
-  DataType &subscript(Position position, std::index_sequence<directions...>) {
+  DataType &subscript(Position position,
+                      std::index_sequence<directions...>) const {
     static_assert(sizeof...(directions) == sizeof...(Ranges));
     const auto multi_index =
         flat_to_multi_index<RangeProps<Ranges>::length...>(position);
     return this->operator()(multi_index[directions]...);
   }
 
-  template <typename Position> DataType &operator[](Position position) {
+  template <typename Position> DataType &operator[](Position position) const {
     return subscript(position, std::make_index_sequence<sizeof...(Ranges)>{});
   }
 
@@ -412,7 +417,9 @@ struct Subdomain<Domain<Dim, length...>, Ranges...> {
   //       multi_index);
   // }
 
-  Domain<Dim, length...> &parent_domain;
+  Domain<Dim, strides_all...> &parent_domain;
+  DataType *values_buff;
+  DataType padding_width;
 };
 
 template <template <Dimension, Length...> typename Domain, Length... length,
