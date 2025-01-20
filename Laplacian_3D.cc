@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
   constexpr std::size_t nlev = 4u;
   constexpr std::size_t base_length = 22u;
   constexpr DataType omega = 4. / 5.;
+  constexpr DataType box_length = 1;
 
   Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain1(
       q);
@@ -99,9 +100,8 @@ int main(int argc, char *argv[]) {
       -1., -1,  6,  -1.,
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
                       // as it is only applied to the right hand side anyways
-
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
-                                     Integer<base_length>{});
+  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+                                     box_length, Integer<base_length>{});
 
   diff_operator.print_operator();
 
@@ -153,10 +153,10 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5> smoother_sequence{};
+  std::index_sequence<5, 5, 5> smoother_sequence{};
   Jacobi_Smoother j_smoother(rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Float<5e-5>{},
+  cg_solver::Solver_CG solver(Float<1e-5f>{},
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());

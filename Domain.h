@@ -167,8 +167,7 @@ int domain_compute_norm_squared(DataType &result,
                    [=](sycl::id<Dim> I, auto &acc) {
                      acc += a((I[dims] + a.padding_width)...) *
                             a((I[dims] + a.padding_width)...);
-                   })
-      .wait();
+                   });
 
   a.q.memcpy(&result, result_device, sizeof(DataType)).wait();
 
@@ -311,13 +310,9 @@ int subtract_and_multiply_domains(Domain<Dim, strides_all...> &dest,
   assert(dest.padding_width == a.padding_width &&
          a.padding_width == b.padding_width);
 
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] =
-                          val * a.values_buff[i] - b.values_buff[i];
-                    })
-      .wait();
+  dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i) {
+    dest.values_buff[i] = val * a.values_buff[i] - b.values_buff[i];
+  });
 
   return 0;
 }

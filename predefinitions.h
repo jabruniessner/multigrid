@@ -10,7 +10,7 @@ template <std::size_t Int> struct Integer {};
 
 class LinearAlgebraDouble {
 public:
-  using DataType = double;
+  using DataType = float;
   using Length = std::size_t;
   using Position1D = std::size_t;
   // using PositionType = sycl::id<2>;

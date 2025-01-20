@@ -127,16 +127,14 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
         });
 
     // init_guess.print_domain();
-    DataType r_squared_value = 0;
-    q.memcpy(&r_squared_value, r_squared, sizeof(DataType)).wait();
-    residual = std::sqrt(r_squared_value / defect_r.num_dofs);
-
-    if (r_squared_value == 0)
-      return;
 
     q.submit([&](sycl::handler &h) {
       h.single_task([=]() {
-        *beta = (*r_squared_next) / (*r_squared);
+        if (*r_squared == 0) {
+          *beta = 0.;
+        } else {
+          *beta = (*r_squared_next) / (*r_squared);
+        }
         *r_squared = *r_squared_next;
         *r_squared_next = 0;
       });
@@ -164,16 +162,29 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                      pAp += result * defect_p(I[dims]...);
                    });
 
-    DataType p_squared_A_value = 0;
-    q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
+    if (count % 10 == 0) {
+      DataType r_squared_value = 0;
+      DataType p_squared_A_value = 0;
 
-    if (p_squared_A_value == 0)
-      return;
+      q.memcpy(&r_squared_value, r_squared, sizeof(DataType));
+      q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
+      residual = std::sqrt(r_squared_value / defect_r.num_dofs);
+    }
+
+    //  if (r_squared_value == 0)
+    //    return;
+
+    //  if (p_squared_A_value == 0)
+    //    return;
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
       h.single_task([=]() {
-        *alpha = (*r_squared) / (*p_squared_A);
+        if (*p_squared_A == 0) {
+          *alpha = 0;
+        } else {
+          *alpha = (*r_squared) / (*p_squared_A);
+        }
         *p_squared_A = 0;
       });
     });

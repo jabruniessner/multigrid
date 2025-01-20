@@ -222,13 +222,13 @@ struct V_Cycle_base {
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
-
-        post_smoother(Integer<iter_level>{}, smoother_iters_post, current, next,
-                      rhs_domain,
-                      Smooth_operator.template get_values<iter_level>(),
-                      Smooth_operator.template get_offsets<iter_level>(),
-                      box_length, omega);
       }
+
+      post_smoother(Integer<iter_level>{}, smoother_iters_post, current, next,
+                    rhs_domain,
+                    Smooth_operator.template get_values<iter_level>(),
+                    Smooth_operator.template get_offsets<iter_level>(),
+                    box_length, omega);
     }
   }
   Solver &solver;

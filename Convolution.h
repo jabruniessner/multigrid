@@ -35,7 +35,7 @@ int Convolve(Domain<Dim, strides_all...> &dest,
         });
   });
 
-  dest.q.wait();
+  // dest.q.wait();
 
   return 0;
 }
@@ -76,7 +76,7 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
         });
   });
 
-  dest.q.wait();
+  // dest.q.wait();
 
   return 0;
 }

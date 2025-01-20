@@ -7,7 +7,7 @@
 
 constexpr std::size_t Dim = 2;
 using OffsetType = std::array<int, Dim>;
-using DataType = double;
+// using DataType = double;
 
 int main() {
 

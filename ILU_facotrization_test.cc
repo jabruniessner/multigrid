@@ -4,7 +4,7 @@
 #include <iostream>
 #include <random>
 
-using DataType = double;
+// using DataType = double;
 constexpr std::size_t problem_size = 4;
 
 int main(int argc, char const *argv[]) {
