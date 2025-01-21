@@ -1,3 +1,4 @@
+#include "Atom_types.h"
 #include "Domain.h"
 #include "predefinitions.h"
 #include "utils.h"
@@ -12,11 +13,6 @@
 #define DOT_FINDER_H
 
 template <typename T> inline T square(T x) { return x * x; }
-
-template <typename DataType, Dimension Dim> struct Sphere {
-  std::array<DataType, Dim> Position;
-  DataType radius;
-};
 
 template <typename DataType, Dimension Dim, Length... strides,
           typename... Positions, Length... directions>

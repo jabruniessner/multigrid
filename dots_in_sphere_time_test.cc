@@ -17,7 +17,7 @@ int main() {
                 sycl::property_list{sycl::property::queue::in_order{}});
 
   constexpr std::size_t Dim = 3;
-  constexpr std::size_t num_spheres = 40000;
+  constexpr std::size_t num_spheres = 400000;
 
   std::cout << "Before algorithm" << std::endl;
   domain::Domain<Dim, 351, 351, 351> domain(Paddings::PERIODIC, q, 1);
@@ -52,7 +52,7 @@ int main() {
      Spheres[I].Position[0] = x_pos_d[I];
      Spheres[I].Position[1] = y_pos_d[I];
      Spheres[I].Position[2] = z_pos_d[I];
-     Spheres[I].radius = 4.5;
+     Spheres[I].radius = 3.03;
    }).wait();
 
   auto start = std::chrono::high_resolution_clock::now();
