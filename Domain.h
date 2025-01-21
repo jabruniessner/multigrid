@@ -74,7 +74,7 @@ template <Dimension Dim, Length... strides_all> struct Domain {
     values_buff =
         sycl::malloc_device<DataType>(num_values * sizeof(DataType), q);
     q.wait();
-    //  q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+    q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
   template <typename... Positions>

@@ -8,7 +8,7 @@ project(MultigridSYCL)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -30,6 +30,7 @@ add_executable(Laplacian2D Laplacian_2D.cc)
 add_executable(Laplacian3D Laplacian_3D.cc)
 add_executable(matrix_creation_test main_test_matrix_creation.cc)
 add_executable(test_ILU test_ILU.cc)
+add_executable(topological_test dots_in_sphere.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
