@@ -30,6 +30,7 @@ void find_dots_in_sphere_helper(Sphere<DataType, Dim> &sphere,
                 "Break condition never satisfied");
 
   if constexpr (sizeof...(directions) == Dim) {
+    auto a = std::make_tuple(positions...);
     domain(positions...) = 1;
 
   } else if constexpr (sizeof...(directions) == 0) {
@@ -49,19 +50,22 @@ void find_dots_in_sphere_helper(Sphere<DataType, Dim> &sphere,
     const auto &Position = sphere.Position;
     const auto &current_value = Position[sizeof...(directions)];
     const auto &radius = sphere.radius;
-    const int lower_bound = static_cast<int>(std::ceil(
-        (current_value -
-         std::sqrt(
-             square(radius) -
-             (square(Position[directions] - grid_step * positions) + ...))) /
-        grid_step));
 
-    const int upper_bound = static_cast<int>(
-        (current_value +
-         std::sqrt(
-             square(radius) -
-             (square(Position[directions] - grid_step * positions) + ...))) /
-        grid_step);
+    auto sqrt_squared =
+        (square(radius) -
+         (square(Position[directions] - grid_step * positions) + ...));
+
+    if (sqrt_squared < 0) {
+      sqrt_squared = 0;
+    }
+
+    const auto sqrt = std::sqrt(sqrt_squared);
+
+    const int lower_bound =
+        static_cast<int>(std::ceil((current_value - sqrt) / grid_step));
+
+    const int upper_bound =
+        static_cast<int>((current_value + sqrt) / grid_step);
 
     for (int i = lower_bound; i <= upper_bound; i++) {
       find_dots_in_sphere_helper(

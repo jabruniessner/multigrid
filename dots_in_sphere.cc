@@ -14,11 +14,11 @@ int main() {
   sycl::cpu_selector selector;
   sycl::queue q(selector);
 
-  constexpr std::size_t Dim = 1;
+  constexpr std::size_t Dim = 3;
 
   std::cout << "Before algorithm" << std::endl;
-  domain::Domain<Dim, 5> domain(Paddings::PERIODIC, q, 1);
-  domain.print_domain();
+  domain::Domain<Dim, 351, 351, 351> domain(Paddings::PERIODIC, q, 1);
+  // domain.print_domain();
 
   // std::cout << "Hello World!" << std::endl;
   std::random_device rd;
@@ -27,14 +27,14 @@ int main() {
   double lower_bound = 0.0;
   double upper_bound = 1.0;
 
-  auto *Spheres = sycl::malloc_device<Sphere<DataType, 1u>>(1, q);
+  auto *Spheres = sycl::malloc_device<Sphere<DataType, 3u>>(1, q);
 
   q.submit([=](sycl::handler &h) {
      h.single_task([=]() {
-       Spheres->Position[0] = 3. / 2.;
-       Spheres->Position[1] = 3. / 2.;
-       Spheres->Position[2] = 3. / 2.;
-       Spheres->radius = 1.0;
+       Spheres->Position[0] = 115.192108;
+       Spheres->Position[1] = 324.394073;
+       Spheres->Position[2] = 168.093201;
+       Spheres->radius = 3.0;
      });
    }).wait();
 
@@ -44,8 +44,8 @@ int main() {
 
   // domain(0) = 1.;
   std::cout << "After algo" << std::endl;
-  find_dots_in_sphere(Spheres[0], domain, 0.5f);
-  domain.print_domain();
+  find_dots_in_sphere(Spheres[0], domain, 1.f);
+  // domain.print_domain();
 
   // std::cout << "The sphere position is: " << Spheres->Position[0] <<
   // std::endl; std::cout << "The sphere radius is: " << Spheres->radius <<
