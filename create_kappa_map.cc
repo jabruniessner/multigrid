@@ -10,7 +10,8 @@
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
-    std::cout << "Usage: ./program in_file out_file origin_x origin_y origin_z"
+    std::cout << "Usage: ./program in_file out_file origin_x origin_y origin_z "
+                 "ion_radius"
               << std::endl;
   }
 
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]) {
   std::array<double, 3> a{std::stod(argv[3]), std::stod(argv[4]),
                           std::stod(argv[5])};
 
+  double radius = std::stod(argv[6]);
+
   std::list<Atom<DataType>> atoms;
   read_pqr_file(pqr_file, atoms);
 
@@ -36,6 +39,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= a[0];
     atom.Position[1] -= a[1];
     atom.Position[2] -= a[2];
+    atom.radius += radius;
     atoms_vector.push_back(atom);
   }
 
