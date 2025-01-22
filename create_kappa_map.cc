@@ -1,0 +1,60 @@
+#include "Atom_types.h"
+#include "Domain.h"
+#include "dot_finder.h"
+#include "fileio.h"
+#include "hipSYCL/sycl/queue.hpp"
+#include "hipSYCL/sycl/usm.hpp"
+#include <fstream>
+#include <iostream>
+#include <sycl/sycl.hpp>
+
+int main(int argc, char *argv[]) {
+  if (argc < 6) {
+    std::cout << "Usage: ./program in_file out_file origin_x origin_y origin_z"
+              << std::endl;
+  }
+
+  constexpr std::size_t length = 95;
+
+  sycl::cpu_selector selector;
+  sycl::queue q{selector,
+                sycl::property_list{sycl::property::queue::in_order{}}};
+
+  std::string pqr_file{argv[1]};
+  std::ofstream dx_file{argv[2]};
+
+  std::array<double, 3> a{std::stod(argv[3]), std::stod(argv[4]),
+                          std::stod(argv[5])};
+
+  std::list<Atom<DataType>> atoms;
+  read_pqr_file(pqr_file, atoms);
+
+  std::vector<Atom<DataType>> atoms_vector;
+  atoms_vector.reserve(atoms.size());
+
+  for (auto &atom : atoms) {
+    atom.Position[0] -= a[0];
+    atom.Position[1] -= a[1];
+    atom.Position[2] -= a[2];
+    atoms_vector.push_back(atom);
+  }
+
+  Atom<DataType> *atoms_device =
+      sycl::malloc_device<Atom<DataType>>(atoms.size(), q);
+
+  q.memcpy(atoms_device, atoms_vector.data(),
+           atoms_vector.size() * sizeof(Atom<DataType>));
+
+  domain::Domain<3, length, length, length> domain(Paddings::PERIODIC, q, 1);
+  q.wait();
+
+  q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> I) {
+     find_dots_in_sphere(atoms_device[I], domain, 1.f);
+   }).wait();
+
+  q.parallel_for(sycl::range<3>(length, length, length), [=](sycl::id<3> I) {
+     domain(I[0], I[1], I[2]) = (domain(I[0], I[1], I[2]) < .9) * 1.f;
+   }).wait();
+
+  domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 96.f);
+}

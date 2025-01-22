@@ -34,6 +34,7 @@ add_executable(topological_test dots_in_sphere.cc)
 add_executable(dots_ist dots_in_sphere_time_test.cc)
 add_executable(pqr_reader_test test_pqr_reader.cc fileio.cc)
 add_executable(test_dx test_write_domain_to_dx.cc)
+add_executable(create_kappa create_kappa_map.cc fileio.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
