@@ -32,6 +32,7 @@ add_executable(matrix_creation_test main_test_matrix_creation.cc)
 add_executable(test_ILU test_ILU.cc)
 add_executable(topological_test dots_in_sphere.cc)
 add_executable(dots_ist dots_in_sphere_time_test.cc)
+add_executable(pqr_reader_test test_pqr_reader.cc read_pqr.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 

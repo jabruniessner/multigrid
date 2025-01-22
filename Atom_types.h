@@ -10,6 +10,12 @@ template <typename DataType, Dimension Dim> struct Sphere {
 
 template <typename DataType> struct Atom : Sphere<DataType, 3> {
   DataType charge;
+
+  void print() {
+    std::cout << "x: " << this->Position[0] << " y: " << this->Position[1]
+              << " z: " << this->Position[2] << " r: " << this->radius
+              << " c:  " << this->charge << std::endl;
+  }
 };
 
 #endif
