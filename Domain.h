@@ -77,6 +77,53 @@ template <Dimension Dim, Length... strides_all> struct Domain {
     q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
+  void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
+                          DataType zmin, DataType Box_length) {
+
+#define format_v(X) std::format("{:<+13e} ", X)
+
+    const DataType delta = Box_length / (strides[0] + padding_width);
+    out << "object 1 class gridpositions counts" << " "
+        << strides[0] + 2 * padding_width << " "
+        << strides[1] + 2 * padding_width << " "
+        << strides[2] + 2 * padding_width << std::endl;
+    out << "origin " << format_v(xmin) << format_v(ymin) << format_v(zmin)
+        << std::endl;
+    out << "delta " << format_v(delta) << format_v(0.0) << format_v(0.0)
+        << std::endl;
+    out << "delta " << format_v(0.0) << format_v(delta) << format_v(0.0)
+        << std::endl;
+    out << "delta " << format_v(0.0) << format_v(0.0) << format_v(delta)
+        << std::endl;
+
+    out << "object 2 class gridconnections count "
+        << strides[0] + 2 * padding_width << " "
+        << strides[1] + 2 * padding_width << " "
+        << strides[2] + 2 * padding_width << std::endl;
+
+    out << "object 3 class array type double rank 0 items " << num_values
+        << " data follows" << std::endl;
+
+    std::unique_ptr<DataType[]> values{new DataType[num_values]};
+    q.memcpy(values.get(), values_buff, sizeof(DataType) * num_values).wait();
+
+    for (int i = 0; i < num_values; i++) {
+
+      if (i % 3 == 0 && i != 0) {
+        out << std::endl;
+      }
+      out << format_v(values[i]);
+    }
+    out << std::endl;
+
+    out << "attribute \"dep\" string \"positions\"" << std::endl;
+    out << "object \"regular positions regular connections\" class field"
+        << std::endl;
+    out << "component \"positions\" value 1" << std::endl;
+    out << "component \"connections\" value 2" << std::endl;
+    out << "component \"data\" value 3" << std::endl;
+  }
+
   template <typename... Positions>
   DataType &operator()(const Positions &...positions) const {
     static_assert(sizeof...(Positions) == Dim);

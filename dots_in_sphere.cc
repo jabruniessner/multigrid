@@ -1,5 +1,6 @@
 #include "Domain.h"
 #include "dot_finder.h"
+#include "hipSYCL/sycl/queue.hpp"
 #include "predefinitions.h"
 #include "utils.h"
 #include <array>
@@ -12,7 +13,8 @@
 int main() {
 
   sycl::cpu_selector selector;
-  sycl::queue q(selector);
+  sycl::queue q{selector,
+                sycl::property_list{sycl::property::queue::in_order{}}};
 
   constexpr std::size_t Dim = 3;
 
