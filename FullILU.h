@@ -102,7 +102,7 @@ template <std::size_t Dim, std::size_t problem_size, typename DataType,
           typename OffsetType, std::size_t stencil_length,
           std::size_t... Strides, std::size_t... dims>
 void create_matrix_from_stencil(
-    DataType *matrix, const std::array<double, stencil_length> &values,
+    DataType *matrix, const std::array<DataType, stencil_length> &values,
     const std::array<OffsetType, stencil_length> &offsets, sycl::queue &q,
     std::index_sequence<Strides...>, std::index_sequence<dims...>) {
 
