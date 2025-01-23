@@ -56,9 +56,12 @@ int main(int argc, char *argv[]) {
      find_dots_in_sphere(atoms_device[I], domain, 1.f);
    }).wait();
 
-  q.parallel_for(sycl::range<3>(length, length, length), [=](sycl::id<3> I) {
-     domain(I[0], I[1], I[2]) = (domain(I[0], I[1], I[2]) < .9) * 1.f;
-   }).wait();
+  q.parallel_for(sycl::range<3>(length + 2, length + 2, length + 2),
+                 [=](sycl::id<3> I) {
+                   domain(I[0], I[1], I[2]) =
+                       (domain(I[0], I[1], I[2]) < .9) * 1.f;
+                 })
+      .wait();
 
   domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 96.f);
 }

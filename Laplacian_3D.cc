@@ -153,11 +153,10 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5, 5, 5> smoother_sequence{};
+  std::index_sequence<0, 0, 0> smoother_sequence{};
   Jacobi_Smoother j_smoother(rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Float<1e-5f>{},
-                              rhs_domain.template get_domain<1>(),
+  cg_solver::Solver_CG solver(Float<1.f>{}, rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
 
