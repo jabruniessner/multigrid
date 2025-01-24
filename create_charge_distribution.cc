@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
   }
 
-  constexpr std::size_t length = 3;
+  constexpr std::size_t length = 95;
 
   sycl::cpu_selector selector;
   sycl::queue q{selector,
@@ -54,11 +54,16 @@ int main(int argc, char *argv[]) {
   domain::Domain<3, length, length, length> domain(Paddings::PERIODIC, q, 1);
   q.wait();
 
-  q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> I) {
-     add_charges_to_distribution(domain, atoms_device[I].Position,
-                                 atoms_device[I].charge,
-                                 spacing<DataType, 1.>{});
-   }).wait();
+  // q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> I) {
+  // q.submit([=](sycl::handler &h) {
+  //   h.single_task([=]() {
+  for (int I = 0; I < atoms.size(); I++)
+    add_charges_to_distribution(domain, atoms_device[I].Position,
+                                atoms_device[I].charge,
+                                spacing<DataType, 1.>{});
+  //   });
+  // }).wait();
+  //}).wait();
 
-  domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 4.);
+  domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 96.);
 }

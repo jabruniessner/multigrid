@@ -1,0 +1,26 @@
+read
+mol pqr 1PIT.pqr
+end
+
+elec name viz
+mg-manual
+dime 97 97 97
+grid 1.0 1.0 1.0
+gcent  mol 1
+mol 1
+lpbe
+bcfl mdh
+ion charge 1 conc 0.005 radius 1.500
+ion charge -1 conc 0.005 radius 1.500
+pdie 4.0
+sdie 78.4
+chgm spl0
+srfm smol
+srad 0.0
+swin 0.3
+temp 298.15
+write kappa dx kappa_apbs
+write charge dx charge_apbs
+end
+
+quit
