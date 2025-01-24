@@ -7,8 +7,9 @@ import pdb
 
 
 if __name__=="__main__":
-    #  if len(sys.argv)<3:
-    #    print("Usage: python3 this_script in_file1 in_file2")
+      if len(sys.argv)<4:
+        print("Usage: python3 this_script in_file1 in_file2")
+        return
     
     in_file1=sys.argv[1]
     in_file2=sys.argv[2]
