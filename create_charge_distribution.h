@@ -11,14 +11,17 @@
 // template <Dimension Dim, typename DataType> void convert_number_to_binary()
 // {}
 
-template <Dimension Dim, typename DataType, std::size_t... Strides>
+template <typename DataType, DataType value> struct spacing {};
+
+template <Dimension Dim, typename DataType, DataType grid_spacing,
+          std::size_t... Strides>
 void add_charges_to_distribution(domain::Domain<Dim, Strides...> domain,
                                  std::array<DataType, Dim> &Point,
-                                 DataType grid_spacing) {
+                                 spacing<DataType, grid_spacing>) {
 
   constexpr auto num_points = utils::Power<2, Dim>::value;
   constexpr auto Box_volume = utils::power_off(grid_spacing, Dim);
-  std::array<DataType, 2 * Dim> distances;
+  std::array<DataType, 2 * Dim> distance_weight;
   std::array<std::size_t, 2 * Dim> Grid_Points;
   std::array<DataType, utils::power_off(2, Dim)> factors;
 
@@ -29,14 +32,11 @@ void add_charges_to_distribution(domain::Domain<Dim, Strides...> domain,
     Grid_Points[2 * i] = lower;
     Grid_Points[2 * i + 1] = lower + 1;
 
-    const DataType distance_lower =
-        (Position_grid_spacing - lower) * grid_spacing;
+    const DataType distance_weight_lower = (lower + 1 - Position_grid_spacing);
+    const DataType distance_weight_upper = (Position_grid_spacing - lower);
 
-    const DataType distance_upper =
-        (lower + 1 - Position_grid_spacing) * grid_spacing;
-
-    distances[2 * i] = distance_lower;
-    distances[2 * i + 1] = distance_upper;
+    distance_weight[2 * i] = distance_weight_lower;
+    distance_weight[2 * i + 1] = distance_weight_upper;
   }
 
   std::array<std::size_t, Dim> Coordinate;
@@ -45,10 +45,10 @@ void add_charges_to_distribution(domain::Domain<Dim, Strides...> domain,
     DataType weight = 1;
     char value = 1;
     for (int j = 0; j < Dim; j++) {
-      value *= 2;
       const char index = ((value & i) == value);
-      weight *= distances[2 * j + index];
-      Coordinate[j] = Grid_Points[2 + j + index];
+      weight *= distance_weight[2 * j + index];
+      Coordinate[j] = Grid_Points[2 * j + index];
+      value *= 2;
     }
 
     std::apply(
