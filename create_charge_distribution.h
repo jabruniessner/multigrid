@@ -17,6 +17,7 @@ template <Dimension Dim, typename DataType, DataType grid_spacing,
           std::size_t... Strides>
 void add_charges_to_distribution(domain::Domain<Dim, Strides...> domain,
                                  std::array<DataType, Dim> &Point,
+                                 DataType charge,
                                  spacing<DataType, grid_spacing>) {
 
   constexpr auto num_points = utils::Power<2, Dim>::value;
@@ -52,7 +53,9 @@ void add_charges_to_distribution(domain::Domain<Dim, Strides...> domain,
     }
 
     std::apply(
-        [&, weight](auto... elems) { domain(elems...) = weight / Box_volume; },
+        [&, weight](auto... elems) {
+          domain(elems...) += charge * weight / Box_volume;
+        },
         Coordinate);
   }
 };

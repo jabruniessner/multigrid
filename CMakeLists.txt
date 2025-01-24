@@ -8,7 +8,7 @@ project(MultigridSYCL)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -36,6 +36,7 @@ add_executable(pqr_reader_test test_pqr_reader.cc fileio.cc)
 add_executable(test_dx test_write_domain_to_dx.cc)
 add_executable(create_kappa create_kappa_map.cc fileio.cc)
 add_executable(create_charge_test test_charge_add.cc)
+add_executable(create_charge_dist create_charge_distribution.cc fileio.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
