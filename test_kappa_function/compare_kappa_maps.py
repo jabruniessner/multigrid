@@ -7,9 +7,8 @@ import pdb
 
 
 if __name__=="__main__":
-      if len(sys.argv)<4:
+    if len(sys.argv)<4:
         print("Usage: python3 this_script in_file1 in_file2")
-        return
     
     in_file1=sys.argv[1]
     in_file2=sys.argv[2]
@@ -23,12 +22,21 @@ if __name__=="__main__":
     
     potential_grid_diff = potential_grid_comparison[potential_grid_comparison>thresh]
 
-    positions = np.argwhere(potential_grid_comparison>0.01)
+    #positions = np.argwhere(potential_grid_comparison>0.01)
 
     print("The number of points with different values is: ", 
           potential_grid_diff.size)
 
+    #print("The values are: ", potential_grid_diff)
+
     #print("The positions where the difference occured is: ", positions)
+
+    #a = potential_grid1.flatten()
+    #b = potential_grid2.flatten()
+
+    #print("First grid:      Second grid")
+    #for idx, _  in enumerate(a):
+    #    print(a[idx], "       ", b[idx])
     
 
 

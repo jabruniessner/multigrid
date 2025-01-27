@@ -1,10 +1,10 @@
 read
-mol pqr MonoPole.pqr
+mol pqr 1PIT.pqr
 end
 
 elec name viz
 mg-manual
-dime 5 5 5
+dime 97 97 97
 grid 1.0 1.0 1.0
 gcent  mol 1
 mol 1

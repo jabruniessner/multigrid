@@ -32,8 +32,8 @@ bool read_pqr_file(std::string &filename,
         const DataType c = stod(li[8]);
         const DataType r = stod(li[9]);
 
-        if (r < 1e-6)
-          continue;
+        // if (r < 1e-6)
+        //   continue;
 
         // atom_list.push_back();
 

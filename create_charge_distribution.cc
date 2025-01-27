@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
   }
 
-  constexpr std::size_t length = 3;
+  constexpr std::size_t length = 95;
 
   sycl::cpu_selector selector;
   sycl::queue q{selector,
@@ -65,5 +65,5 @@ int main(int argc, char *argv[]) {
    }).wait();
   //}).wait();
 
-  domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 4.);
+  domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 96.);
 }
