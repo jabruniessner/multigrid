@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Usage: ./program in_file out_file origin_x origin_y origin_z "
                  "ion_radius"
               << std::endl;
+    return 0;
   }
 
   constexpr std::size_t length = 95;
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
   q.wait();
 
   q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> I) {
-     find_dots_in_sphere(atoms_device[I], domain, 1.f);
+     find_dots_in_sphere(atoms_device[I], domain, static_cast<DataType>(1.));
    }).wait();
 
   q.parallel_for(sycl::range<3>(length + 2, length + 2, length + 2),
