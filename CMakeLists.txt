@@ -38,6 +38,7 @@ add_executable(create_kappa create_kappa_map.cc fileio.cc)
 add_executable(create_charge_test test_charge_add.cc)
 add_executable(create_charge_dist create_charge_distribution.cc fileio.cc)
 add_executable(test_kappa_functions test_kappa_function.cc)
+add_executable(PBE_example PBE_example.cc fileio.cc Debye_Hueckel_functions.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 

@@ -12,8 +12,8 @@ namespace multigrid_domain {
 
 using namespace domain;
 
-constexpr Length nlev = 5;
-constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
+// constexpr Length nlev = 5;
+// constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
 
 template <Dimension Dim, std::size_t nlev, std::size_t... base_length>
 struct Multigrid_domain

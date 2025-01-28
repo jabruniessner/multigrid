@@ -78,7 +78,7 @@ template <Dimension Dim, Length... strides_all> struct Domain {
   }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
-                          DataType zmin, DataType Box_length) {
+                          DataType zmin, DataType Box_length) const {
 
 #define format_v(X) std::format("{:<+13e} ", X)
 
