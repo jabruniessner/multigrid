@@ -9,15 +9,16 @@ constexpr double e = 1.60217663e-19;
 constexpr double T = 298.15;
 constexpr double beta = 1 / (k_b * T);
 constexpr double potential_unit = k_b * T / e;
-constexpr double epsilon = 8.8541878128e-12;
-constexpr double epsilon_r = 78.5;
+constexpr double epsilon_SI = 8.8541878128e-12;
+constexpr double epsilon = epsilon_SI * 1e-10 / (e * e) * k_b * T;
+constexpr double epsilon_r = 78.4;
 constexpr double epsilon_p = 4.0;
 constexpr double n_a = 6.0221408e23;
 
 // This function is made to work in SI units, so it takes the IS in units of
 // Mole/m^3
 constexpr double Debye_length_inverse_squared(double IS) {
-  return e * e * beta * 2 * IS * n_a / (epsilon_r * epsilon);
+  return e * e * beta * 2 * IS * n_a / (epsilon_r * epsilon_SI);
 }
 
 // This funnctions automatically converts from Mole/ltr to Mole/m^3 and return
