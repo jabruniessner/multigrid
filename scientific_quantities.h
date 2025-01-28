@@ -14,18 +14,24 @@ constexpr double epsilon_r = 78.5;
 constexpr double epsilon_p = 4.0;
 constexpr double n_a = 6.0221408e23;
 
+// This function is made to work in SI units, so it takes the IS in units of
+// Mole/m^3
 constexpr double Debye_length_inverse_squared(double IS) {
   return e * e * beta * 2 * IS * n_a / (epsilon_r * epsilon);
 }
 
+// This funnctions automatically converts from Mole/ltr to Mole/m^3 and return
+// the Debye Length in A
 constexpr double Debye_length(double IS) {
   return (1 / std::sqrt(Debye_length_inverse_squared(1000 * IS))) * 1e10;
 };
 
+// This function computes Kappa, (the inverse Debye length) in units of 1/m
 constexpr double Kappa(double IS) {
   return std::sqrt(Debye_length_inverse_squared(1000 * IS));
 }
 
+// This function computes Kappa, (the inverse Debye length) in units of 1/A
 constexpr double KappaA(double IS) { return Kappa(IS) * 1e-10; }
 
 #endif // !SCIENTFIC_CONSTANTS_AND_FUNCTIONS_H
