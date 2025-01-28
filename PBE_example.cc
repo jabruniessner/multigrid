@@ -20,10 +20,10 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 4u;
-constexpr std::size_t base_length = 6;
+constexpr std::size_t nlev = 1u;
+constexpr std::size_t base_length = 2;
 constexpr DataType omega = 4. / 5.;
-constexpr DataType box_length = 96;
+constexpr DataType box_length = 4;
 constexpr double ionic_strength = 0.005;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType ionradius = 1.5;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= x_min;
     atom.Position[1] -= y_min;
     atom.Position[2] -= z_min;
-    atom.radius += ionradius;
+    // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
 

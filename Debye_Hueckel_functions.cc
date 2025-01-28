@@ -4,5 +4,5 @@
 
 double DH_Sphere(double radius, double charge, double distance, double kappa) {
   return charge / (epsilon * epsilon_r * (1 + kappa * radius)) *
-         std::exp(-kappa * (distance - radius)) / radius;
+         std::exp(-kappa * (distance - radius)) / distance;
 }
