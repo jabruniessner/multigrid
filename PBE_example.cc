@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= x_min;
     atom.Position[1] -= y_min;
     atom.Position[2] -= z_min;
-    // atom.radius += ionradius;
+    atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
 
