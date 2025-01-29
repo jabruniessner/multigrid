@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
   }
 
   constexpr DataType delta_epsilon =
-      epsilon * (epsilon_p - epsilon_r); // Difference in epsilon
-                                         //
+      (epsilon_p - epsilon_r); // Difference in epsilon
+                               //
   std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
                                         {1, 0, 0},
                                         {0, 0, 0},

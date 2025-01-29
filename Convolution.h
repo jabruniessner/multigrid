@@ -125,12 +125,13 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
             sycl::id<Dim> I2{I}, I3{I};
             I2[k] += 1;
             I3[k] -= 1;
-            result += (src(I2[dims]...) - src(I3[dims]...)) *
+            result += (src(I2[dims]...) - src(I3[dims]...)) * (delta_epsilon) *
                       (epsilon_map(I2[dims]...) - epsilon_map(I3[dims]...)) /
                       (4 * grid_step);
           }
 
-          dest(I[dims]...) = result + kappa_map(I[dims]...) * kappa_2 * src;
+          dest(I[dims]...) = result + kappa_map(I[dims]...) * epsilon_r *
+                                          kappa_2 * src(I[dims]...);
         });
   });
 
