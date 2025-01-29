@@ -6,6 +6,6 @@
 constexpr double pi = std::numbers::pi;
 
 double DH_Sphere(double radius, double charge, double distance, double kappa) {
-  return 10 * charge / (4 * pi * (epsilon * epsilon_r) * (1 + kappa * radius)) *
+  return charge / (4 * pi * (epsilon * epsilon_r) * (1 + kappa * radius)) *
          std::exp(-kappa * (distance - radius)) / distance;
 }

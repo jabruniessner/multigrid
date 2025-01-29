@@ -20,10 +20,10 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 2;
+constexpr std::size_t nlev = 4u;
+constexpr std::size_t base_length = 6;
 constexpr DataType omega = 4. / 5.;
-constexpr DataType box_length = 4;
+constexpr DataType box_length = 96;
 constexpr double ionic_strength = 0.005;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType ionradius = 1.5;
@@ -39,14 +39,16 @@ template <std::size_t level = nlev>
 void Set_boundary_conditions(Atom<DataType> *atoms, std::size_t num_atoms,
                              const Domain_Type_upper &domain, std::size_t x,
                              std::size_t y, std::size_t z) {
+  DataType buffer_value = 0;
   for (int i = 0; i < num_atoms; i++) {
     const DataType distance = std::sqrt(sqr(x - atoms[i].Position[0]) +
                                         sqr(y - atoms[i].Position[1]) +
                                         sqr(z - atoms[i].Position[2]));
 
-    domain(x, y, z) =
+    buffer_value +=
         DH_Sphere(atoms[i].radius, atoms[i].charge, distance, kappa);
   }
+  domain(x, y, z) = buffer_value;
 }
 
 int main(int argc, char *argv[]) {
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= x_min;
     atom.Position[1] -= y_min;
     atom.Position[2] -= z_min;
-    atom.radius += ionradius;
+    // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
 
