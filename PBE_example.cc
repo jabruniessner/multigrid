@@ -2,6 +2,7 @@
 #include "Debye_Hueckel_functions.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
+#include "dot_finder.h"
 #include "fileio.h"
 #include "hipSYCL/sycl/device_selector.hpp"
 #include "hipSYCL/sycl/queue.hpp"
@@ -49,6 +50,21 @@ void Set_boundary_conditions(Atom<DataType> *atoms, std::size_t num_atoms,
         DH_Sphere(atoms[i].radius, atoms[i].charge, distance, kappa);
   }
   domain(x, y, z) = buffer_value;
+}
+
+template <std::size_t level = nlev> void coarsen_domains(Domain_Type domain) {
+  if constexpr (level <= 1) {
+    return;
+  } else {
+    using Offset_Type = std::array<DataType, Dim>;
+    constexpr std::array<Offset_Type, 1> offsets{};
+    constexpr std::array<DataType, 1> values{1};
+
+    auto &dest = domain.template get_domain<level - 1>();
+    auto &src = domain.template get_domain<level>();
+    level_transition::coarsening(dest, src, values, offsets);
+    coarsen_domains<level - 1>(domain);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -102,7 +118,7 @@ int main(int argc, char *argv[]) {
       .wait();
 
   Domain_Type lhs_domain1(q), lhs_domain2(q), rhs_domain(q), boundary_values(q),
-      epsilon(q), kappa_(q);
+      epsilon_map(q), kappa_(q);
 
   constexpr auto &length = Domain_Type::length;
 
@@ -129,10 +145,57 @@ int main(int argc, char *argv[]) {
          })
         .wait();
 
-    std::ofstream out_file{filename_out};
-    boundary_domain.print_dx_to_stream(out_file, x_min, y_min, z_min,
-                                       box_length);
+    auto &epsilon_domain = epsilon_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      find_dots_in_sphere(atoms_device[I], epsilon_domain,
+                          static_cast<DataType>(1.));
+    });
+
+    // q.parallel_for(sycl::range<1>(epsilon_domain.num_values),
+    //                [=](sycl::id<1> I) {
+    //                  epsilon_domain.values_buff[I] != 0
+    //                      ? epsilon_domain.values_buff[I] = 0
+    //                      : epsilon_domain.values_buff[I] = 1;
+    //                })
+    //     .wait();
+    auto &kappa_domain = kappa_.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      auto atom = atoms_device[I];
+      atom.radius += 1.5;
+      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(1.));
+    });
+
+    // Inverting the kappa domain because the original functions marks the
+    // points inside the protein with 1.
+    q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1> I) {
+       kappa_domain.values_buff[I] != 0 ? kappa_domain.values_buff[I] = 0
+                                        : kappa_domain.values_buff[I] = 1;
+     }).wait();
+
+    coarsen_domains(kappa_);
+    coarsen_domains(epsilon_map);
+
+    // Now we need to coarsen the kappa map and the epsilon map
   }
+
+  constexpr DataType delta_epsilon =
+      epsilon * (epsilon_p - epsilon_r); // Difference in epsilon
+                                         //
+  std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
+                                        {1, 0, 0},
+                                        {0, 0, 0},
+                                        {0, -1, 0},
+                                        {0, 1, 0},
+                                        {0, 0, -1},
+                                        {0, 0, 1}}};
+
+  std::array<DataType, 7> values_op{
+      -1., -1,  6,  -1.,
+      -1., -1., -1.}; // Dividing the original operator by the Diagonal
+                      // as it is only applied to the right hand side anyways
+
+  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+                                     box_length, Integer<base_length>{});
 
   std::cout << "The length is: " << std::get<0>(length) << std::endl;
 

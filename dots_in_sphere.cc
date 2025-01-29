@@ -46,7 +46,7 @@ int main() {
 
   // domain(0) = 1.;
   std::cout << "After algo" << std::endl;
-  find_dots_in_sphere(Spheres[0], domain, 1.f);
+  find_dots_in_sphere(Spheres[0], domain, static_cast<DataType>(1.));
   // domain.print_domain();
 
   // std::cout << "The sphere position is: " << Spheres->Position[0] <<

@@ -92,6 +92,53 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                            std::make_index_sequence<Dim>());
 }
 
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+int PBE_Convolve(Domain<Dim, strides_all...> &dest,
+                 Domain<Dim, strides_all...> &src,
+                 Domain<Dim, strides_all...> &kappa_map,
+                 Domain<Dim, strides_all...> &epsilon_map,
+                 const DataType &kappa_2, const DataType grid_step,
+                 const DataType epsilon_r, const DataType delta_epsilon,
+                 const std::array<DataType, size> &values,
+                 const std::array<Offsets, size> &offsets,
+                 std::index_sequence<dims...>) {
+  assert(dest.q == src.q);
+  assert(dest.padding_width == src.padding_width);
+
+  dest.q.submit([&](sycl::handler &h) {
+    h.parallel_for(
+        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
+          ((I[dims] += dest.padding_width), ...);
+
+          DataType result = 0;
+
+          // Performing the gradient convolution
+          for (int k = 0; k < size; k++) {
+            result += src((I[dims] + offsets[k][dims])...) * values[k];
+          }
+
+          result *= epsilon_r + (delta_epsilon * epsilon_map(I[dims]...));
+
+          // Adding the gradient part of the position dependence of epsilon
+          for (int k = 0; k < Dim; k++) {
+            sycl::id<Dim> I2{I}, I3{I};
+            I2[k] += 1;
+            I3[k] -= 1;
+            result += (src(I2[dims]...) - src(I3[dims]...)) *
+                      (epsilon_map(I2[dims]...) - epsilon_map(I3[dims]...)) /
+                      (4 * grid_step);
+          }
+
+          dest(I[dims]...) = result + kappa_map(I[dims]...) * kappa_2 * src;
+        });
+  });
+
+  // dest.q.wait();
+
+  return 0;
+}
+
 constexpr std::array<OffsetType, 5> vec_offsets = {
     {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
 constexpr std::array<DataType, 5> vec_val{4, -1, -1, -1, -1};
