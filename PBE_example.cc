@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "Debye_Hueckel_functions.h"
 #include "MultigridDomain.h"
+#include "create_charge_distribution.h"
 #include "cycles.h"
 #include "dot_finder.h"
 #include "fileio.h"
@@ -27,7 +28,11 @@ constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 96;
 constexpr double ionic_strength = 0.005;
 constexpr DataType kappa = KappaA(ionic_strength);
+constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
+constexpr DataType delta_epsilon =
+    (epsilon_p - epsilon_r); // Difference in epsilon
+                             //
 
 using Domain_Type =
     Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
@@ -117,13 +122,29 @@ int main(int argc, char *argv[]) {
            atoms_vector.size() * sizeof(Atom<DataType>))
       .wait();
 
-  Domain_Type lhs_domain1(q), lhs_domain2(q), rhs_domain(q), boundary_values(q),
-      epsilon_map(q), kappa_(q);
+  Domain_Type sol(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
+      boundary_values(q), epsilon_map(q), kappa_(q);
 
   constexpr auto &length = Domain_Type::length;
 
+  std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
+                                        {1, 0, 0},
+                                        {0, 0, 0},
+                                        {0, -1, 0},
+                                        {0, 1, 0},
+                                        {0, 0, -1},
+                                        {0, 0, 1}}};
+
+  std::array<DataType, 7> values_op{
+      -1., -1,  6,  -1.,
+      -1., -1., -1.}; // Dividing the original operator by the Diagonal
+                      // as it is only applied to the right hand side anyways
+
+  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+                                     box_length, Integer<base_length>{});
+
   {
-    const auto &boundary_domain = boundary_values.template get_domain<nlev>();
+    auto &boundary_domain = boundary_values.template get_domain<nlev>();
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
@@ -172,30 +193,40 @@ int main(int argc, char *argv[]) {
                                         : kappa_domain.values_buff[I] = 1;
      }).wait();
 
+    // Now we need to coarsen the kappa map and the epsilon map
     coarsen_domains(kappa_);
     coarsen_domains(epsilon_map);
 
-    // Now we need to coarsen the kappa map and the epsilon map
+    auto &rhs = rhs_domain.template get_domain<nlev>();
+    auto &kappa_map = kappa_.template get_domain<nlev>();
+    auto &epsilon_map_ = epsilon_map.template get_domain<nlev>();
+    convolution::PBE_Convolve(
+        rhs, boundary_domain, kappa_map, epsilon_map_, kappa_2, 1., epsilon_r,
+        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
+
+    q.wait();
+
+    //   q.submit([=](sycl::handler &h) {
+    //      h.single_task([=]() {
+    //        for (int I = 0; I < num_atoms; I++)
+    //          add_charges_to_distribution(rhs, atoms_device[I].Position,
+    //                                      atoms_device[I].charge / epsilon,
+    //                                      spacing<DataType, 1.>{});
+    //      });
+    //    }).wait();
+
+    auto &defect_p = lhs_domain1.get_domain();
+    auto &defect_r = lhs_domain2.get_domain();
+    auto &init_guess = sol.get_domain();
+
+    // cg_solver::CG_solver_PBE(
+    //     init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_map_,
+    //     kappa_2, static_cast<DataType>(1.), epsilon_r, delta_epsilon,
+    //     diff_operator.get_values(), diff_operator.get_offsets(), num_iters);
+    cg_solver::CG_solver(init_guess, rhs, defect_r, defect_p,
+                         diff_operator.get_values(),
+                         diff_operator.get_offsets(), 1e-2);
   }
-
-  constexpr DataType delta_epsilon =
-      (epsilon_p - epsilon_r); // Difference in epsilon
-                               //
-  std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
-                                        {1, 0, 0},
-                                        {0, 0, 0},
-                                        {0, -1, 0},
-                                        {0, 1, 0},
-                                        {0, 0, -1},
-                                        {0, 0, 1}}};
-
-  std::array<DataType, 7> values_op{
-      -1., -1,  6,  -1.,
-      -1., -1., -1.}; // Dividing the original operator by the Diagonal
-                      // as it is only applied to the right hand side anyways
-
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
-                                     box_length, Integer<base_length>{});
 
   std::cout << "The length is: " << std::get<0>(length) << std::endl;
 

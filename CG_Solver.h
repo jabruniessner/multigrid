@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <ostream>
+#include <utility>
 
 #ifndef CG_SOLVER_H
 #define CG_SOLVER_H
@@ -106,6 +107,9 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
+  std::cout << "The residual before the conjugate gradient is: " << residual
+            << std::endl;
+
   int count = 0;
   while (thresh < residual) {
     count++;
@@ -191,6 +195,10 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   }
 
   std::cout << "We made " << count << " CG iterations." << std::endl;
+  q.wait();
+  q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
+  residual = std::sqrt(residual);
+  std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -236,7 +244,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    const DataType &kappa_2, const DataType grid_step,
                    const DataType epsilon_r, const DataType delta_epsilon,
                    const std::array<DataType, size> &values,
-                   const std::array<Offsets, size> &offsets, DataType thresh,
+                   const std::array<Offsets, size> &offsets, int num_iters,
                    const std::index_sequence<dims...> &) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
@@ -269,31 +277,50 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                  sycl::reduction(r_squared, sycl::plus<>()),
 
                  [=](sycl::id<Dim> I, auto &r) {
-                   // Computing the convolution for the initial residual
+                   ((I[dims] += padding_width), ...);
+
                    DataType result = convolution::PBE_Convolve_kernel(
-                       init_guess, kappa_map, epsilon_map, kappa_2, grid_step,
+                       defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
                        epsilon_r, delta_epsilon, values, offsets, I);
+
+                   // Computing the convolution for the initial residual
+                   // DataType result = 0;
+
+                   // for (int k = 0; k < size; k++) {
+                   //   result += init_guess((I[dims] + offsets[k][dims])...) *
+                   //   values[k];
+                   // }
                    // Assigning values and reducing to the sum
                    defect_r(I[dims]...) = defect_p(I[dims]...) =
                        rhs(I[dims]...) - result;
 
                    r += defect_r(I[dims]...) * defect_r(I[dims]...);
-                 });
+                 })
+      .wait();
 
-  // Need to fix all the remaining convolution kernels
   // init_guess.print_domain();
 
   // Computing the initial pAp
   q.parallel_for(sycl::range<Dim>((strides[dims])...),
                  sycl::reduction(p_squared_A, sycl::plus<>()),
                  [=](sycl::id<Dim> I, auto &pAp) {
-                   // Computing the convolution for the initial residual
+                   ((I[dims] += padding_width), ...);
+
                    DataType result = convolution::PBE_Convolve_kernel(
                        defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
                        epsilon_r, delta_epsilon, values, offsets, I);
 
+                   // Computing the convolution for the initial residual
+                   //  DataType result = 0;
+                   //  for (int k = 0; k < size; k++) {
+                   //    result +=
+                   //        defect_p((I[dims] + offsets[k][dims])...) *
+                   //        values[k];
+                   //  }
+
                    pAp += result * defect_p(I[dims]...);
-                 });
+                 })
+      .wait();
 
   // init_guess.print_domain();
 
@@ -314,50 +341,53 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   DataType residual = 0;
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  thresh = thresh * residual;
+  // thresh = thresh * residual;
 
+  std::cout << "The residual before the conjugate gradient is: " << residual
+            << std::endl;
   int count = 0;
-  while (thresh < residual) {
+  for (int i = 0; i < num_iters; i++) {
     count++;
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(r_squared_next, sycl::plus<>()),
                    [=](sycl::id<Dim> I, auto &r_squared_plus_1) {
-                     DataType result = convolution::PBE_Convolve_kernel(
-                         defect_p, kappa_map, epsilon_map, kappa_2, epsilon_r,
-                         delta_epsilon, values, offsets, I);
-                     // for (int k = 0; k < size; k++) {
-                     //   result += defect_p((I[dims] + offsets[k][dims])...) *
-                     //   values[k];
-                     // }
-
                      ((I[dims] += padding_width), ...);
                      init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
+
+                     DataType result = convolution::PBE_Convolve_kernel(
+                         defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
+                         epsilon_r, delta_epsilon, values, offsets, I);
+                     //  for (int k = 0; k < size; k++) {
+                     //    result += defect_p((I[dims] + offsets[k][dims])...) *
+                     //    values[k];
+                     //  }
 
                      defect_r(I[dims]...) -= (*alpha) * result;
 
                      r_squared_plus_1 +=
                          defect_r(I[dims]...) * defect_r(I[dims]...);
-                   });
+                   })
+        .wait();
 
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
-      h.single_task([=]() {
-        if (*r_squared == 0) {
-          *beta = 0.;
-        } else {
-          *beta = (*r_squared_next) / (*r_squared);
-        }
-        *r_squared = *r_squared_next;
-        *r_squared_next = 0;
-      });
-    });
+       h.single_task([=]() {
+         if (*r_squared == 0) {
+           *beta = 0.;
+         } else {
+           *beta = (*r_squared_next) / (*r_squared);
+         }
+         *r_squared = *r_squared_next;
+         *r_squared_next = 0;
+       });
+     }).wait();
 
     q.parallel_for(sycl::range<Dim>(strides[dims]...), [=](sycl::id<Dim> I) {
-      ((I[dims] += padding_width), ...);
-      defect_p(I[dims]...) =
-          defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
-    });
+       ((I[dims] += padding_width), ...);
+       defect_p(I[dims]...) =
+           defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
+     }).wait();
 
     // init_guess.print_domain();
 
@@ -369,13 +399,17 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                      DataType result = convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, values, offsets, I);
+                     //  DataType result = 0;
+
                      //  for (int k = 0; k < size; k++) {
                      //    result += defect_p((I[dims] + offsets[k][dims])...) *
                      //              values[k];
                      //  }
+                     //((I[dims] += padding_width), ...);
 
                      pAp += result * defect_p(I[dims]...);
-                   });
+                   })
+        .wait();
 
     if (count % 10 == 0) {
       DataType r_squared_value = 0;
@@ -394,18 +428,39 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
-      h.single_task([=]() {
-        if (*p_squared_A == 0) {
-          *alpha = 0;
-        } else {
-          *alpha = (*r_squared) / (*p_squared_A);
-        }
-        *p_squared_A = 0;
-      });
-    });
+       h.single_task([=]() {
+         if (*p_squared_A == 0) {
+           *alpha = 0;
+         } else {
+           *alpha = (*r_squared) / (*p_squared_A);
+         }
+         *p_squared_A = 0;
+       });
+     }).wait();
   }
 
   std::cout << "We made " << count << " CG iterations." << std::endl;
+  q.wait();
+  q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
+  residual = std::sqrt(residual);
+  std::cout << "The residual after the CG is: " << residual << std::endl;
+}
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
+                   Domain<Dim, strides_all...> &rhs,
+                   Domain<Dim, strides_all...> &defect_r,
+                   Domain<Dim, strides_all...> &defect_p,
+                   Domain<Dim, strides_all...> &kappa_map,
+                   Domain<Dim, strides_all...> &epsilon_map,
+                   const DataType &kappa_2, const DataType grid_step,
+                   const DataType epsilon_r, const DataType delta_epsilon,
+                   const std::array<DataType, size> &values,
+                   const std::array<Offsets, size> &offsets, int num_iters) {
+  CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_map,
+                kappa_2, grid_step, epsilon_r, delta_epsilon, values, offsets,
+                num_iters, std::make_index_sequence<Dim>{});
 }
 
 } // namespace cg_solver
