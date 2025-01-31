@@ -280,7 +280,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    ((I[dims] += padding_width), ...);
 
                    DataType result = convolution::PBE_Convolve_kernel(
-                       defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
+                       init_guess, kappa_map, epsilon_map, kappa_2, grid_step,
                        epsilon_r, delta_epsilon, values, offsets, I);
 
                    // Computing the convolution for the initial residual
@@ -357,6 +357,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                      DataType result = convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, values, offsets, I);
+                     //  DataType result = 0;
                      //  for (int k = 0; k < size; k++) {
                      //    result += defect_p((I[dims] + offsets[k][dims])...) *
                      //    values[k];
@@ -399,13 +400,12 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                      DataType result = convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_map, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, values, offsets, I);
-                     //  DataType result = 0;
+                     // DataType result = 0;
 
-                     //  for (int k = 0; k < size; k++) {
-                     //    result += defect_p((I[dims] + offsets[k][dims])...) *
-                     //              values[k];
-                     //  }
-                     //((I[dims] += padding_width), ...);
+                     // for (int k = 0; k < size; k++) {
+                     //   result += defect_p((I[dims] + offsets[k][dims])...) *
+                     //             values[k];
+                     // }
 
                      pAp += result * defect_p(I[dims]...);
                    })

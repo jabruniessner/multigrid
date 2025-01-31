@@ -118,18 +118,19 @@ DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
   }
 
   // result *= epsilon_r + (delta_epsilon * epsilon_map(I[dims]...));
+  //  assert(epsilon_r + (delta_epsilon * epsilon_map(I[dims]...)) > 0);
   //
-  //  // Adding the gradient part of the position dependence of epsilon
-  //  for (int k = 0; k < Dim; k++) {
-  //    sycl::id<Dim> I2{I}, I3{I};
-  //    I2[k] += 1;
-  //    I3[k] -= 1;
-  //    result += (src(I2[dims]...) - src(I3[dims]...)) * (delta_epsilon) *
-  //              (epsilon_map(I2[dims]...) - epsilon_map(I3[dims]...)) /
-  //              (4 * grid_step);
-  //  }
+  //     // Adding the gradient part of the position dependence of epsilon
+  // for (int k = 0; k < Dim; k++) {
+  //   sycl::id<Dim> I2{I}, I3{I};
+  //   I2[k] += 1;
+  //   I3[k] -= 1;
+  //   result += (src(I2[dims]...) - src(I3[dims]...)) * (delta_epsilon) *
+  //             (epsilon_map(I2[dims]...) - epsilon_map(I3[dims]...)) /
+  //             (4 * grid_step * grid_step);
+  // }
 
-  // result += kappa_map(I[dims]...) * epsilon_r * kappa_2 * src(I[dims]...);
+  result += kappa_map(I[dims]...) * epsilon_r * kappa_2 * src(I[dims]...);
   return result;
 }
 
