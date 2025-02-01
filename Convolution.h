@@ -94,6 +94,51 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                            std::make_index_sequence<Dim>());
 }
 
+template <int direction, typename DataType, Dimension Dim,
+          Length... strides_all, int Dim_2, std::size_t... dims>
+inline DataType
+directional_derivative(const Domain<Dim, strides_all...> &src,
+                       const Domain<Dim, strides_all...> &epsilon_map,
+                       const DataType grid_step, const DataType epsilon_r,
+                       const DataType delta_epsilon, sycl::id<Dim_2> I,
+                       std::index_sequence<dims...>) {
+  sycl::id<Dim_2> I2{I}, I3{I};
+  I2[direction] += 1;
+  I3[direction] -= 1;
+
+  // Evaluating epsilon at the desired points
+  const DataType epsilon_here =
+      (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
+  const DataType epsilon_after =
+      (epsilon_r + epsilon_map(I2[dims]...) * delta_epsilon);
+  const DataType epsilon_before =
+      (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
+
+  const DataType epsilon_upper =
+      2 * epsilon_here * epsilon_after / (epsilon_here + epsilon_after);
+  const DataType epsilon_lower =
+      2 * epsilon_here * epsilon_before / (epsilon_here + epsilon_before);
+
+  const DataType result =
+      (epsilon_upper * (src(I2[dims]...) - src(I[dims]...)) -
+       epsilon_lower * (src(I[dims]...) - src(I3[dims]...))) /
+      (grid_step * grid_step);
+
+  return result;
+}
+
+template <int direction, typename DataType, Dimension Dim,
+          Length... strides_all, int Dim_2>
+inline DataType
+directional_derivative(const Domain<Dim, strides_all...> &src,
+                       const Domain<Dim, strides_all...> &epsilon_map,
+                       const DataType grid_step, const DataType epsilon_r,
+                       const DataType delta_epsilon, sycl::id<Dim_2> I) {
+  return directional_derivative<direction>(src, epsilon_map, grid_step,
+                                           epsilon_r, delta_epsilon, I,
+                                           std::make_index_sequence<Dim>{});
+}
+
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
 DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
@@ -112,25 +157,11 @@ DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
 
   DataType result = 0;
 
-  // Performing the gradient convolution
-  for (int k = 0; k < size; k++) {
-    result += src((I[dims] + offsets[k][dims])...) * values[k];
-  }
+  ((result += directional_derivative<dims>(src, epsilon_map, grid_step,
+                                           epsilon_r, delta_epsilon, I)),
+   ...);
 
-  // result *= epsilon_r + (delta_epsilon * epsilon_map(I[dims]...));
-  //  assert(epsilon_r + (delta_epsilon * epsilon_map(I[dims]...)) > 0);
-  //
-  //     // Adding the gradient part of the position dependence of epsilon
-  // for (int k = 0; k < Dim; k++) {
-  //   sycl::id<Dim> I2{I}, I3{I};
-  //   I2[k] += 1;
-  //   I3[k] -= 1;
-  //   result += (src(I2[dims]...) - src(I3[dims]...)) * (delta_epsilon) *
-  //             (epsilon_map(I2[dims]...) - epsilon_map(I3[dims]...)) /
-  //             (4 * grid_step * grid_step);
-  // }
-
-  result += kappa_map(I[dims]...) * epsilon_r * kappa_2 * src(I[dims]...);
+  result -= kappa_map(I[dims]...) * epsilon_r * kappa_2 * src(I[dims]...);
   return result;
 }
 
