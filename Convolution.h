@@ -228,8 +228,10 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  const std::array<DataType, size> &values,
                  const std::array<Offsets, size> &offsets) {
 
-  PBE_Convolve(dest, src, kappa_map, epsilon_map, kappa_2, grid_step, epsilon_r,
-               delta_epsilon, values, offsets, std::make_index_sequence<Dim>{});
+  // PBE_Convolve(dest, src, kappa_map, epsilon_map, kappa_2, grid_step,
+  // epsilon_r,
+  //              delta_epsilon, values, offsets,
+  //              std::make_index_sequence<Dim>{});
   return 0;
 }
 

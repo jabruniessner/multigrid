@@ -26,7 +26,7 @@ constexpr std::size_t nlev = 4u;
 constexpr std::size_t base_length = 6;
 constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 96;
-constexpr double ionic_strength = 0.15;
+constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     std::cout
         << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
         << std::endl;
+    return 0;
   }
   // int num_iters = std::stoi(argv[3]);
 
@@ -202,17 +203,19 @@ int main(int argc, char *argv[]) {
     auto &kappa_map = kappa_.template get_domain<nlev>();
     auto &epsilon_map_ = epsilon_map.template get_domain<nlev>();
     convolution::PBE_Convolve(
-        rhs, boundary_domain, kappa_map, epsilon_map_, kappa_2, 1., epsilon_r,
+        rhs, boundary_domain, kappa_map, epsilon_map_, kappa_2,
+        static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
         delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
 
-    q.wait();
+    //  q.wait();
 
     q.submit([=](sycl::handler &h) {
        h.single_task([=]() {
          for (int I = 0; I < num_atoms; I++)
-           add_charges_to_distribution(rhs, atoms_device[I].Position,
-                                       atoms_device[I].charge / epsilon,
-                                       spacing<DataType, 1.>{});
+           add_charges_to_distribution(
+               rhs, atoms_device[I].Position,
+               static_cast<DataType>(atoms_device[I].charge / epsilon),
+               spacing<DataType, static_cast<DataType>(1.)>{});
        });
      }).wait();
 
@@ -220,14 +223,15 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::CG_solver_PBE(
-        init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_map_, kappa_2,
-        static_cast<DataType>(1.), epsilon_r, delta_epsilon,
-        diff_operator.get_values(), diff_operator.get_offsets(), num_iters);
+    cg_solver::CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map,
+                             epsilon_map_, kappa_2, static_cast<DataType>(1.),
+                             static_cast<DataType>(epsilon_r), delta_epsilon,
+                             diff_operator.get_values(),
+                             diff_operator.get_offsets(), num_iters);
 
     domain::subtract_domains(init_guess, boundary_domain, init_guess);
 
-    q.wait();
+    //  q.wait();
 
     std::ofstream outfile{filename_out};
     init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);
