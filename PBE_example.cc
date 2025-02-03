@@ -124,9 +124,10 @@ int main(int argc, char *argv[]) {
       .wait();
 
   Domain_Type sol(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
-      boundary_values(q), epsilon_map(q), kappa_(q);
+      boundary_values(q), epsilonx_map(q), epsilony_map(q), epsilonz_map(q),
+      kappa_(q);
 
-  constexpr auto &length = Domain_Type::length;
+  constexpr auto length = Domain_Type::length;
 
   std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
                                         {1, 0, 0},
@@ -167,10 +168,25 @@ int main(int argc, char *argv[]) {
          })
         .wait();
 
-    auto &epsilon_domain = epsilon_map.template get_domain<nlev>();
+    auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      find_dots_in_sphere(atoms_device[I], epsilon_domain,
-                          static_cast<DataType>(1.));
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[0] -= 0.5;
+      find_dots_in_sphere(Atom, epsilonx_domain, static_cast<DataType>(1.));
+    });
+
+    auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[1] -= 0.5;
+      find_dots_in_sphere(Atom, epsilony_domain, static_cast<DataType>(1.));
+    });
+
+    auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[2] -= 0.5;
+      find_dots_in_sphere(Atom, epsilonz_domain, static_cast<DataType>(1.));
     });
 
     // q.parallel_for(sycl::range<1>(epsilon_domain.num_values),
@@ -197,17 +213,22 @@ int main(int argc, char *argv[]) {
 
     // Now we need to coarsen the kappa map and the epsilon map
     coarsen_domains(kappa_);
-    coarsen_domains(epsilon_map);
+    // coarsen_domains(epsilon_map);
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
     auto &kappa_map = kappa_.template get_domain<nlev>();
-    auto &epsilon_map_ = epsilon_map.template get_domain<nlev>();
+    // auto &epsilon_map_ = epsilon_map.template get_domain<nlev>();
+    std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
+                      std::get<2>(length)>,
+               Dim>
+        epsilon_domains{epsilonx_domain, epsilony_domain, epsilonz_domain};
+
     convolution::PBE_Convolve(
-        rhs, boundary_domain, kappa_map, epsilon_map_, kappa_2,
+        rhs, boundary_domain, kappa_map, epsilon_domains, kappa_2,
         static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
         delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
 
-    //  q.wait();
+    //  //  q.wait();
 
     q.submit([=](sycl::handler &h) {
        h.single_task([=]() {
@@ -223,15 +244,15 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map,
-                             epsilon_map_, kappa_2, static_cast<DataType>(1.),
-                             static_cast<DataType>(epsilon_r), delta_epsilon,
-                             diff_operator.get_values(),
-                             diff_operator.get_offsets(), num_iters);
+    cg_solver::CG_solver_PBE(
+        init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
+        kappa_2, static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
+        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets(),
+        num_iters);
 
     domain::subtract_domains(init_guess, boundary_domain, init_guess);
 
-    //  q.wait();
+    //  //  q.wait();
 
     std::ofstream outfile{filename_out};
     init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);

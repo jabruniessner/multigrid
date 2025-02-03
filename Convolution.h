@@ -107,18 +107,22 @@ directional_derivative(const Domain<Dim, strides_all...> &src,
   I3[direction] -= 1;
 
   // Evaluating epsilon at the desired points
-  const DataType epsilon_here =
-      (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
-  const DataType epsilon_after =
-      (epsilon_r + epsilon_map(I2[dims]...) * delta_epsilon);
-  const DataType epsilon_before =
-      (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
+  // const DataType epsilon_here =
+  //     (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
+  // const DataType epsilon_after =
+  //     (epsilon_r + epsilon_map(I2[dims]...) * delta_epsilon);
+  // const DataType epsilon_before =
+  //     (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
 
-  const DataType epsilon_upper =
-      2 * epsilon_here * epsilon_after / (epsilon_here + epsilon_after);
+  // const DataType epsilon_upper =
+  //     2 * epsilon_here * epsilon_after / (epsilon_here + epsilon_after);
+  // const DataType epsilon_lower =
+  //     2 * epsilon_here * epsilon_before / (epsilon_here + epsilon_before);
+
   const DataType epsilon_lower =
-      2 * epsilon_here * epsilon_before / (epsilon_here + epsilon_before);
-
+      (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
+  const DataType epsilon_upper =
+      (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
   const DataType result =
       (epsilon_upper * (src(I2[dims]...) - src(I[dims]...)) -
        epsilon_lower * (src(I[dims]...) - src(I3[dims]...))) /
@@ -141,15 +145,14 @@ directional_derivative(const Domain<Dim, strides_all...> &src,
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
-DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
-                             const Domain<Dim, strides_all...> &kappa_map,
-                             const Domain<Dim, strides_all...> &epsilon_map,
-                             const DataType &kappa_2, const DataType grid_step,
-                             const DataType epsilon_r,
-                             const DataType delta_epsilon,
-                             const std::array<DataType, size> &values,
-                             const std::array<Offsets, size> &offsets,
-                             sycl::id<Dim_2> I, std::index_sequence<dims...>) {
+DataType PBE_Convolve_kernel(
+    const Domain<Dim, strides_all...> &src,
+    const Domain<Dim, strides_all...> &kappa_map,
+    const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
+    const DataType &kappa_2, const DataType grid_step, const DataType epsilon_r,
+    const DataType delta_epsilon, const std::array<DataType, size> &values,
+    const std::array<Offsets, size> &offsets, sycl::id<Dim_2> I,
+    std::index_sequence<dims...>) {
 
   static_assert(
       Dim_2 == Dim,
@@ -157,7 +160,7 @@ DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
 
   DataType result = 0;
 
-  ((result += directional_derivative<dims>(src, epsilon_map, grid_step,
+  ((result += directional_derivative<dims>(src, epsilon_maps[dims], grid_step,
                                            epsilon_r, delta_epsilon, I)),
    ...);
 
@@ -167,17 +170,15 @@ DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
 
 template <typename DataType, typename Offsets, Dimension Dim, std::size_t size,
           Length... strides_all, int Dim2>
-DataType PBE_Convolve_kernel(const Domain<Dim, strides_all...> &src,
-                             const Domain<Dim, strides_all...> &kappa_map,
-                             const Domain<Dim, strides_all...> &epsilon_map,
-                             const DataType &kappa_2, const DataType grid_step,
-                             const DataType epsilon_r,
-                             const DataType delta_epsilon,
-                             const std::array<DataType, size> &values,
-                             const std::array<Offsets, size> &offsets,
-                             sycl::id<Dim2> I) {
+DataType PBE_Convolve_kernel(
+    const Domain<Dim, strides_all...> &src,
+    const Domain<Dim, strides_all...> &kappa_map,
+    const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
+    const DataType &kappa_2, const DataType grid_step, const DataType epsilon_r,
+    const DataType delta_epsilon, const std::array<DataType, size> &values,
+    const std::array<Offsets, size> &offsets, sycl::id<Dim2> I) {
 
-  return PBE_Convolve_kernel(src, kappa_map, epsilon_map, kappa_2, grid_step,
+  return PBE_Convolve_kernel(src, kappa_map, epsilon_maps, kappa_2, grid_step,
                              epsilon_r, delta_epsilon, values, offsets, I,
                              std::make_index_sequence<Dim>{});
 
@@ -191,7 +192,7 @@ template <typename DataType, typename Offsets, std::size_t size, Dimension Dim,
 int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  Domain<Dim, strides_all...> &src,
                  Domain<Dim, strides_all...> &kappa_map,
-                 Domain<Dim, strides_all...> &epsilon_map,
+                 std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
                  const DataType &kappa_2, const DataType grid_step,
                  const DataType epsilon_r, const DataType delta_epsilon,
                  std::array<DataType, size> values,
@@ -205,7 +206,7 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                    [=](sycl::id<Dim> I) {
                      ((I[dims] += src.padding_width), ...);
                      DataType result = PBE_Convolve_kernel(
-                         src, kappa_map, epsilon_map, kappa_2, grid_step,
+                         src, kappa_map, epsilon_maps, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, values, offsets, I);
 
                      dest(I[dims]...) = result;
@@ -222,16 +223,15 @@ template <typename DataType, typename Offsets, size_t size, Dimension Dim,
 int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  Domain<Dim, strides_all...> &src,
                  Domain<Dim, strides_all...> &kappa_map,
-                 Domain<Dim, strides_all...> &epsilon_map,
+                 std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
                  const DataType &kappa_2, const DataType grid_step,
                  const DataType epsilon_r, const DataType delta_epsilon,
                  const std::array<DataType, size> &values,
                  const std::array<Offsets, size> &offsets) {
 
-  // PBE_Convolve(dest, src, kappa_map, epsilon_map, kappa_2, grid_step,
-  // epsilon_r,
-  //              delta_epsilon, values, offsets,
-  //              std::make_index_sequence<Dim>{});
+  PBE_Convolve(dest, src, kappa_map, epsilon_maps, kappa_2, grid_step,
+               epsilon_r, delta_epsilon, values, offsets,
+               std::make_index_sequence<Dim>{});
   return 0;
 }
 
