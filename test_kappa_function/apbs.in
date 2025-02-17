@@ -15,13 +15,13 @@ ion charge -1 conc 0.15 radius 1.500
 pdie 4.0
 sdie 78.4
 chgm spl0
-srfm smol
+srfm mol
 srad 0.0
 swin 0.3
 temp 298.15
 write kappa dx kappa_apbs
 write charge dx charge_apbs
-write pot dx potential_apbs
+write pot dx non_s_potential_apbs
 end
 
 quit
