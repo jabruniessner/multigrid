@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   constexpr auto &length =
       Multigrid_domain<3, nlev, base_length, base_length, base_length>::length;
 
-  std::cout << "The length is: " << std::get<0>(length) << std::endl;
+  // std::cout << "The length is: " << std::get<0>(length) << std::endl;
 
   // std::cout << "After initialization we get:" << std::endl;
   // print_multigrid_domain(lhs_domain1);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
                                      box_length, Integer<base_length>{});
 
-  diff_operator.print_operator();
+  // diff_operator.print_operator();
 
   std::array<OffsetType, 7u> offsets{{{-1, 0, 0},
                                       {1, 0, 0},
@@ -153,10 +153,10 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<0, 0, 0> smoother_sequence{};
+  std::index_sequence<5, 5, 5> smoother_sequence{};
   Jacobi_Smoother j_smoother(rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1.)>{},
+  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-3)>{},
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());

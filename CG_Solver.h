@@ -107,8 +107,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  std::cout << "The residual before the conjugate gradient is: " << residual
-            << std::endl;
+  // std::cout << "The residual before the conjugate gradient is: " << residual
+  //           << std::endl;
 
   int count = 0;
   while (thresh < residual) {
@@ -194,11 +194,11 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     });
   }
 
-  std::cout << "We made " << count << " CG iterations." << std::endl;
+  //  std::cout << "We made " << count << " CG iterations." << std::endl;
   q.wait();
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  std::cout << "The residual after the CG is: " << residual << std::endl;
+  // std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -343,8 +343,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   // thresh = thresh * residual;
 
-  std::cout << "The residual before the conjugate gradient is: " << residual
-            << std::endl;
+  // std::cout << "The residual before the conjugate gradient is: " << residual
+  //           << std::endl;
   int count = 0;
   for (int i = 0; i < num_iters; i++) {
     count++;
@@ -439,11 +439,11 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
      }).wait();
   }
 
-  std::cout << "We made " << count << " CG iterations." << std::endl;
+  //  std::cout << "We made " << count << " CG iterations." << std::endl;
   q.wait();
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  std::cout << "The residual after the CG is: " << residual << std::endl;
+  // std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
