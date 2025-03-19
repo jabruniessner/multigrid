@@ -187,4 +187,15 @@ int main(int argc, char *argv[]) {
   //
   //   // std::cout << "rhs_domain:" << std::endl;
   //   // print_multigrid_domain(rhs_domain);
+
+  // current->template get_domain<nlev>().print_to_output(std::cout);
+
+  std::cout << "lhs_domain_1:" << std::endl;
+  print_multigrid_domain(lhs_domain1);
+
+  std::cout << "lhs_domain_2:" << std::endl;
+  print_multigrid_domain(lhs_domain2);
+
+  std::cout << "rhs_domain:" << std::endl;
+  print_multigrid_domain(rhs_domain);
 }
