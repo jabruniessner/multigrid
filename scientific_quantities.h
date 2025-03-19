@@ -21,6 +21,14 @@ constexpr double const_sqrt(double x, double guess = 1.0) {
              : const_sqrt(x, (guess + x / guess) / 2);
 }
 
+inline double harmonic_average(double x, double y) {
+  return 2 * x * y / (x + y);
+}
+
+template <typename... Elems> inline double arithmetic_average(Elems... elems) {
+  return (elems + ...) / (sizeof...(Elems));
+}
+
 // This function is made to work in SI units, so it takes the IS in units of
 // Mole/m^3
 constexpr double Debye_length_inverse_squared(double IS) {
