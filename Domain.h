@@ -56,9 +56,9 @@ std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
       i, std::make_index_sequence<sizeof...(RestStrides)>{});
 }
 
-template <Dimension Dim, Length... strides_all> struct Domain {
+template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   template <typename... Length>
-  Domain(Paddings padding, sycl::queue &q, int padding_width)
+  Grid(Paddings padding, sycl::queue &q, int padding_width)
       : strides{strides_all...}, padding(padding), padding_width(padding_width),
         q(q)
 
@@ -75,53 +75,6 @@ template <Dimension Dim, Length... strides_all> struct Domain {
         sycl::malloc_device<DataType>(num_values * sizeof(DataType), q);
     q.wait();
     q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
-  }
-
-  void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
-                          DataType zmin, DataType Box_length) const {
-
-#define format_v(X) std::format("{:<+13e} ", X)
-
-    const DataType delta = Box_length / (strides[0] + padding_width);
-    out << "object 1 class gridpositions counts" << " "
-        << strides[0] + 2 * padding_width << " "
-        << strides[1] + 2 * padding_width << " "
-        << strides[2] + 2 * padding_width << std::endl;
-    out << "origin " << format_v(xmin) << format_v(ymin) << format_v(zmin)
-        << std::endl;
-    out << "delta " << format_v(delta) << format_v(0.0) << format_v(0.0)
-        << std::endl;
-    out << "delta " << format_v(0.0) << format_v(delta) << format_v(0.0)
-        << std::endl;
-    out << "delta " << format_v(0.0) << format_v(0.0) << format_v(delta)
-        << std::endl;
-
-    out << "object 2 class gridconnections count "
-        << strides[0] + 2 * padding_width << " "
-        << strides[1] + 2 * padding_width << " "
-        << strides[2] + 2 * padding_width << std::endl;
-
-    out << "object 3 class array type double rank 0 items " << num_values
-        << " data follows" << std::endl;
-
-    std::unique_ptr<DataType[]> values{new DataType[num_values]};
-    q.memcpy(values.get(), values_buff, sizeof(DataType) * num_values).wait();
-
-    for (int i = 0; i < num_values; i++) {
-
-      if (i % 3 == 0 && i != 0) {
-        out << std::endl;
-      }
-      out << format_v(values[i]);
-    }
-    out << std::endl;
-
-    out << "attribute \"dep\" string \"positions\"" << std::endl;
-    out << "object \"regular positions regular connections\" class field"
-        << std::endl;
-    out << "component \"positions\" value 1" << std::endl;
-    out << "component \"connections\" value 2" << std::endl;
-    out << "component \"data\" value 3" << std::endl;
   }
 
   template <typename... Positions>
@@ -148,16 +101,97 @@ template <Dimension Dim, Length... strides_all> struct Domain {
     return k;
   }
 
+  DataType *values_buff;
+  Length strides[Dim];
+  Length num_values;
+  Length num_dofs;
+  Length padding_width;
+  Paddings padding;
+  sycl::queue &q;
+};
+
+template <Dimension Dim, Length... strides_all>
+struct Domain : Grid<DataType, Dim, strides_all...> {
+  Domain(Paddings padding, sycl::queue &q, int padding_width)
+      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {}
+
+  void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
+                          DataType zmin, DataType Box_length) const {
+
+#define format_v(X) std::format("{:<+13e} ", X)
+
+    const DataType delta =
+        Box_length / (this->strides[0] + this->padding_width);
+    out << "object 1 class gridpositions counts" << " "
+        << this->strides[0] + 2 * this->padding_width << " "
+        << this->strides[1] + 2 * this->padding_width << " "
+        << this->strides[2] + 2 * this->padding_width << std::endl;
+    out << "origin " << format_v(xmin) << format_v(ymin) << format_v(zmin)
+        << std::endl;
+    out << "delta " << format_v(delta) << format_v(0.0) << format_v(0.0)
+        << std::endl;
+    out << "delta " << format_v(0.0) << format_v(delta) << format_v(0.0)
+        << std::endl;
+    out << "delta " << format_v(0.0) << format_v(0.0) << format_v(delta)
+        << std::endl;
+
+    out << "object 2 class gridconnections count "
+        << this->strides[0] + 2 * this->padding_width << " "
+        << this->strides[1] + 2 * this->padding_width << " "
+        << this->strides[2] + 2 * this->padding_width << std::endl;
+
+    out << "object 3 class array type double rank 0 items " << this->num_values
+        << " data follows" << std::endl;
+
+    std::unique_ptr<DataType[]> values{new DataType[this->num_values]};
+    this->q
+        .memcpy(values.get(), this->values_buff,
+                sizeof(DataType) * this->num_values)
+        .wait();
+
+    for (int i = 0; i < this->num_values; i++) {
+
+      if (i % 3 == 0 && i != 0) {
+        out << std::endl;
+      }
+      out << format_v(values[i]);
+    }
+    out << std::endl;
+
+    out << "attribute \"dep\" string \"positions\"" << std::endl;
+    out << "object \"regular positions regular connections\" class field"
+        << std::endl;
+    out << "component \"positions\" value 1" << std::endl;
+    out << "component \"connections\" value 2" << std::endl;
+    out << "component \"data\" value 3" << std::endl;
+  }
+
   template <typename... Indices> void print_domain(Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
       for (Position1D i = 0;
-           i < strides[sizeof...(Indices)] + 2 * padding_width; i++)
+           i < this->strides[sizeof...(Indices)] + 2 * this->padding_width; i++)
         print_domain(indices..., i);
       std::cout << std::endl;
     } else {
       std::cout << std::format("{:6.3f} ", this->get_value(indices...));
     }
   };
+
+  template <typename... Indices>
+  void print_domain_to_stream(std::ostream &output, Indices... indices) {
+    if constexpr (sizeof...(Indices) < Dim) {
+      constexpr auto size = sizeof...(Indices);
+      constexpr auto dimension_size =
+          utils::get_stack_element<size>(strides_all...);
+      for (int i = 0; i < dimension_size + 2 * this->padding_width; i++) {
+        print_domain_to_stream(output, indices..., i);
+      }
+    } else {
+      ((std::cout << indices << " "), ...);
+      std::cout << std::format("{:6.3f}", this->get_value(indices...))
+                << std::endl;
+    }
+  }
 
   template <std::size_t... Ints>
   void print_header(std::ostream &output, std::index_sequence<Ints...>) {
@@ -170,34 +204,10 @@ template <Dimension Dim, Length... strides_all> struct Domain {
     print_header(output, std::make_index_sequence<Dim>{});
   }
 
-  template <typename... Indices>
-  void print_domain_to_stream(std::ostream &output, Indices... indices) {
-    if constexpr (sizeof...(Indices) < Dim) {
-      constexpr auto size = sizeof...(Indices);
-      constexpr auto dimension_size =
-          utils::get_stack_element<size>(strides_all...);
-      for (int i = 0; i < dimension_size + 2 * padding_width; i++) {
-        print_domain_to_stream(output, indices..., i);
-      }
-    } else {
-      ((std::cout << indices << " "), ...);
-      std::cout << std::format("{:6.3f}", this->get_value(indices...))
-                << std::endl;
-    }
-  }
-
   void print_to_output(std::ostream &output) {
     print_header(output);
     print_domain_to_stream(output);
   }
-
-  DataType *values_buff;
-  Length strides[Dim];
-  Length num_values;
-  Length num_dofs;
-  Length padding_width;
-  Paddings padding;
-  sycl::queue &q;
 };
 
 template <Dimension Dim, Length... strides_all, std::size_t... dims>
