@@ -23,7 +23,8 @@ int main() {
   std::cout << "Before adding charges: " << std::endl;
   domain.print_domain();
 
-  add_charges_to_distribution(domain, a, spacing<DataType, 1.>{});
+  add_charges_to_distribution(domain, a, static_cast<DataType>(1.),
+                              spacing<DataType, static_cast<DataType>(1.)>{});
 
   std::cout << "After adding charges:" << std::endl;
   domain.print_domain();
