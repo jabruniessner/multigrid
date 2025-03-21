@@ -4,6 +4,8 @@
 #ifndef BLAS_H
 #define BLAS_H
 
+template <typename T> inline constexpr T square(T t) { return t * t; }
+
 template <typename DataType, Dimension Dim>
 struct vector : std::array<DataType, Dim> {
 
