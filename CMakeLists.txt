@@ -8,7 +8,7 @@ project(MultigridSYCL)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -39,6 +39,7 @@ add_executable(create_charge_test test_charge_add.cc)
 add_executable(create_charge_dist create_charge_distribution.cc fileio.cc)
 add_executable(test_kappa_functions test_kappa_function.cc)
 add_executable(PBE_example PBE_example.cc fileio.cc)
+add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
