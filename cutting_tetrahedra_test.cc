@@ -3,10 +3,24 @@
 #include "dot_finder.h"
 #include "hipSYCL/sycl/device_selector.hpp"
 #include "hipSYCL/sycl/queue.hpp"
-#include "hipSYCL/sycl/usm.hpp"
 #include "tetraeda_type.h"
 #include <iostream>
 #include <sycl/sycl.hpp>
+
+constexpr std::size_t Dim = 3;
+
+void find_polygon_cuts(std::array<int, Dim> point) {
+  // Iteration over all cubes
+  for (std::uint8_t i = 0; i < 8; i++) {
+
+    // Iteration over all lines
+    for (std::uint8_t i = 1; i < 8; i++) {
+    }
+    // Iteration over all tetrahedra
+    for (std::uint8_t i = 1; i < 6; i++) {
+    }
+  }
+}
 
 int main(int argc, char *argv[]) {
 
