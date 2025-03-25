@@ -1,7 +1,9 @@
 #include "Atom_types.h"
 #include "Domain.h"
+#include "blas.h"
 #include "dot_finder.h"
 #include "hipSYCL/sycl/device_selector.hpp"
+#include "hipSYCL/sycl/libkernel/marray.hpp"
 #include "hipSYCL/sycl/queue.hpp"
 #include "tetraeda_type.h"
 #include <bitset>
@@ -9,17 +11,39 @@
 #include <sycl/sycl.hpp>
 
 constexpr std::size_t Dim = 3;
+using vector3d = sycl::marray<DataType, Dim>;
+inline constexpr DataType norm(vector3d vec) {
+  DataType n = 0.f;
+  for (auto i : vec)
+    n += i * i;
 
+  return std::sqrt(n);
+}
 // std::countr_zero
 // std::countl_zero
 
-void find_polygon_cuts(std::array<int, Dim> point) {
+void find_polygon_cuts(vector3d point, vector3d center, DataType radius) {
   // Iteration over all cubes
   for (std::uint8_t i = 0; i < 8; i++) {
 
     if (i == 0 || i == 7) {
+      int prefact = (1 - 2 * (i == 7));
+      DataType prefactf = static_cast<DataType>(prefact);
       // Iteration over all lines
+      std::uint8_t cube = (1 << i);
+
       for (std::uint8_t j = 1; i < 8; i++) {
+        auto line = vector3d(((j >> 2) & 1) * prefactf,
+                             ((j >> 1) & 1) * prefactf, (j & 1) * prefactf);
+
+        auto neighbour_point = point + line;
+        // If the point is outside
+        if (norm(neighbour_point - center) < radius) {
+          cube |= (1 << (i + j * prefact));
+        }
+      }
+
+      for (std::uint8_t j = 1; j < 8; j++) {
       }
       // Iteration over all tetrahedra
       for (std::uint8_t j = 1; i < 6; i++) {
@@ -40,13 +64,12 @@ void find_polygon_cuts(std::array<int, Dim> point) {
       std::array<std::uint8_t, 2> other_points{
           static_cast<std::uint8_t>(((i_inv << 1 | i_inv >> (3 - 1)) & ~248)),
           static_cast<std::uint8_t>(((i_inv >> 1 | i_inv << (3 - 1)) & ~248))};
-    };
 
-    // Iteration over all lines
-    for (std::uint8_t j = 1; j <= 2; j++) {
+      // Iteration over all lines
+      for (std::uint8_t j = 1; j <= 2; j++) {
+      }
     }
   }
-}
 }
 
 int main(int argc, char *argv[]) {

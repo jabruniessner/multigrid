@@ -4,6 +4,8 @@
 #ifndef BLAS_H
 #define BLAS_H
 
+namespace blas {
+
 template <typename T> inline constexpr T square(T t) { return t * t; }
 
 template <typename DataType, Dimension Dim>
@@ -54,5 +56,6 @@ template <typename DataType, Dimension Dim>
 inline constexpr DataType norm_squared(const vector<DataType, Dim> vec) {
   return vec * vec;
 }
+} // namespace blas
 
 #endif // !BLAS_H
