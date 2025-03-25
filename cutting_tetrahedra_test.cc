@@ -42,7 +42,9 @@ void find_polygon_cuts(vector3d point, vector3d center, DataType radius) {
           cube |= (1 << (i + j * prefact));
         }
       }
+      // Now we know which points are outside and inside
 
+      // Iterating over all edges in the cube
       for (std::uint8_t j = 1; j < 8; j++) {
       }
       // Iteration over all tetrahedra
