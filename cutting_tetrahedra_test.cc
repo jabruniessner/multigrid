@@ -5,12 +5,17 @@
 #include "hipSYCL/sycl/device_selector.hpp"
 #include "hipSYCL/sycl/libkernel/marray.hpp"
 #include "hipSYCL/sycl/queue.hpp"
+#include "scientific_quantities.h"
 #include "tetraeda_type.h"
 #include <bitset>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
 constexpr std::size_t Dim = 3;
+
+constexpr DataType sqrt3inv = 1 / const_sqrt(3.);
+constexpr DataType sqrt2inv = 1 / const_sqrt(2.);
+
 using vector3d = sycl::marray<DataType, Dim>;
 inline constexpr DataType norm(vector3d vec) {
   DataType n = 0.f;
@@ -45,8 +50,22 @@ void find_polygon_cuts(vector3d point, vector3d center, DataType radius) {
       // Now we know which points are outside and inside
 
       // Iterating over all edges in the cube
+      // All connections to 0
+      for (std::uint8_t j = 1; j < 7; j++) {
+      }
+      // All connections to 7
+      for (std::int8_t j = -1; j > -7; j++) {
+      }
+      // connection between 7-0
+      {
+      }
+      // All connection between other points
       for (std::uint8_t j = 1; j < 8; j++) {
       }
+
+      for (std::uint8_t j = 1; j < 8; j++) {
+      }
+
       // Iteration over all tetrahedra
       for (std::uint8_t j = 1; i < 6; i++) {
       }
