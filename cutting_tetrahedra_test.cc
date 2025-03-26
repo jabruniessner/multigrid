@@ -8,6 +8,7 @@
 #include "scientific_quantities.h"
 #include "tetraeda_type.h"
 #include <bitset>
+#include <chrono>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
   atom_host.Position[0] = 6;
   atom_host.Position[1] = 6;
   atom_host.Position[2] = 6;
-  atom_host.radius = 5;
+  atom_host.radius = .5;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
   // q.memcpy(atom_device, &atom_host, sizeof(Atom<DataType>)).wait();
@@ -129,13 +130,22 @@ int main(int argc, char *argv[]) {
 
   constexpr DataType grid_step = 1;
 
-  auto edge_points = line_sphere_intersection(atom_host, grid_step);
-  for (auto edge_point : edge_points) {
-    for (auto i : edge_point) {
+  auto start = std::chrono::high_resolution_clock::now();
+  auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
+  int j = 0;
+  for (auto edge_cube : edge_cubes) {
+    for (auto i : edge_cube) {
       std::cout << i << " ";
     }
     std::cout << std::endl;
   }
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> duration = end - start;
+
+  // std::cout << "The required time was: " << duration.count() << std::endl;
+
+  // std::cout << "The number of points considered is: " << j << std::endl;
 
   return 0;
 }
