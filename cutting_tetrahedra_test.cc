@@ -67,6 +67,9 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
         point + vector3d{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                          ((i >> 2) & 1) * grid_step};
 
+    vector3d a{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
+               ((i >> 2) & 1) * grid_step};
+
     if (in_sphere(neighbour_point, center, radius)) {
       points |= (1 << i);
     }
@@ -85,13 +88,6 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                         ((i >> 2) & 1) * grid_step};
       distance /= norm(distance);
-
-      std::cout << "The norm is: " << norm(distance) << std::endl;
-      std::cout << "The vector is: ";
-      for (auto val : distance)
-        std::cout << val << " ";
-
-      std::cout << std::endl;
 
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
@@ -210,9 +206,11 @@ int main(int argc, char *argv[]) {
   // std::cout << "The number of points considered is: " << j << std::endl;
 
   DataType grid_step = 1.f;
-  vector3d point{10.f, 10.f, 10.f};
+
   vector3d center{0.1f, 0.1f, 0.1f};
   DataType Radius = std::sqrt(3) * 10.f;
+  vector3d point{1.f, 0.f, 0.f};
+  point = point * (Radius - 0.2f);
 
   find_polygon_cuts(point, center, Radius, grid_step);
 
