@@ -3,12 +3,9 @@
 #include "blas.h"
 #include "dot_finder.h"
 #include "hipSYCL/sycl/device_selector.hpp"
-#include "hipSYCL/sycl/libkernel/marray.hpp"
 #include "hipSYCL/sycl/queue.hpp"
 #include "scientific_quantities.h"
 #include "tetraeda_type.h"
-#include <bitset>
-#include <chrono>
 #include <iostream>
 #include <sycl/sycl.hpp>
 
@@ -89,6 +86,13 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
                         ((i >> 2) & 1) * grid_step};
       distance /= norm(distance);
 
+      std::cout << "The norm is: " << norm(distance) << std::endl;
+      std::cout << "The vector is: ";
+      for (auto val : distance)
+        std::cout << val << " ";
+
+      std::cout << std::endl;
+
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
@@ -144,6 +148,11 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
+  for (DataType num : lengths)
+    std::cout << num << " ";
+
+  std::cout << std::endl;
+
   // Now iterating over all the tetrahedra and computing the
 }
 
@@ -181,24 +190,31 @@ int main(int argc, char *argv[]) {
   // std::cout << "The intersection distance is " << isec_p << std::endl;
   //
 
-  constexpr DataType grid_step = 1;
+  // constexpr DataType grid_step = 1;
 
-  auto start = std::chrono::high_resolution_clock::now();
-  auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
-  int j = 0;
-  for (auto edge_cube : edge_cubes) {
-    for (auto i : edge_cube) {
-      std::cout << i << " ";
-    }
-    std::cout << std::endl;
-  }
-  auto end = std::chrono::high_resolution_clock::now();
+  // auto start = std::chrono::high_resolution_clock::now();
+  // auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
+  // int j = 0;
+  // for (auto edge_cube : edge_cubes) {
+  //   for (auto i : edge_cube) {
+  //     std::cout << i << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
+  // auto end = std::chrono::high_resolution_clock::now();
 
-  std::chrono::duration<double> duration = end - start;
+  // std::chrono::duration<double> duration = end - start;
 
   // std::cout << "The required time was: " << duration.count() << std::endl;
 
   // std::cout << "The number of points considered is: " << j << std::endl;
+
+  DataType grid_step = 1.f;
+  vector3d point{10.f, 10.f, 10.f};
+  vector3d center{0.1f, 0.1f, 0.1f};
+  DataType Radius = std::sqrt(3) * 10.f;
+
+  find_polygon_cuts(point, center, Radius, grid_step);
 
   return 0;
 }
