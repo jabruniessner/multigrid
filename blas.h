@@ -45,6 +45,20 @@ struct vector : std::array<DataType, Dim> {
 
     return return_value;
   }
+
+  inline constexpr vector operator/=(const DataType divisor) {
+    for (DataType &i : *this) {
+      i /= divisor;
+    }
+    return *this;
+  }
+
+  inline constexpr vector operator*=(const DataType factor) {
+    for (DataType &i : (*this)) {
+      i *= factor;
+    }
+    return *this;
+  }
 };
 
 template <typename DataType, Dimension Dim>

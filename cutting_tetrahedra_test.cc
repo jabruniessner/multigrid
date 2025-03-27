@@ -17,7 +17,8 @@ constexpr std::size_t Dim = 3;
 constexpr DataType sqrt3inv = 1 / const_sqrt(3.);
 constexpr DataType sqrt2inv = 1 / const_sqrt(2.);
 
-using vector3d = sycl::marray<DataType, Dim>;
+using vector3d = blas::vector<DataType, Dim>;
+using Position3D = std::array<int, Dim>;
 inline constexpr DataType norm(vector3d vec) {
   DataType n = 0.f;
   for (auto i : vec)
@@ -25,73 +26,125 @@ inline constexpr DataType norm(vector3d vec) {
 
   return std::sqrt(n);
 }
+
+template <Dimension Dim, typename DataType>
+constexpr inline DataType compute_interesect_for_no_princ(
+    std::uint8_t i, DataType &grid_step, blas::vector<DataType, Dim> &point,
+    blas::vector<DataType, Dim> &center, DataType &radius) {
+
+  std::uint8_t distance_num =
+      static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7));
+
+  vector3d distance{(distance_num & 1) * grid_step,
+                    ((distance_num >> 1) & 1) * grid_step,
+                    ((distance_num >> 2) & 1) * grid_step};
+
+  vector3d point_setoff =
+      point + vector3d{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
+                       ((i >> 2) & 1) * grid_step};
+
+  return find_intersection_point_sphere<Dim>(point_setoff, distance, center,
+                                             radius);
+}
+
 // std::countr_zero
 // std::countl_zero
 
-void find_polygon_cuts(vector3d point, vector3d center, DataType radius) {
+// example of cyclic bit shift
+//   static_cast<std::uint8_t>(((i << 1 | i >> (3 - 1)) & ~248) | i),
+//   static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & ~248) | i)};
+
+inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
+                                DataType &radius) {
+  return norm(point - center) < radius;
+}
+
+void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
+                       DataType grid_step) {
   // Iteration over all cubes
+
+  std::array<DataType, 19> lengths{};
+  std::uint8_t points = 0;
   for (std::uint8_t i = 0; i < 8; i++) {
+    const vector3d neighbour_point =
+        point + vector3d{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
+                         ((i >> 2) & 1) * grid_step};
 
-    if (i == 0 || i == 7) {
-      int prefact = (1 - 2 * (i == 7));
-      DataType prefactf = static_cast<DataType>(prefact);
-      // Iteration over all lines
-      std::uint8_t cube = (1 << i);
+    if (in_sphere(neighbour_point, center, radius)) {
+      points |= (1 << i);
+    }
+  }
 
-      for (std::uint8_t j = 1; i < 8; i++) {
-        auto line = vector3d(((j >> 2) & 1) * prefactf,
-                             ((j >> 1) & 1) * prefactf, (j & 1) * prefactf);
+  // Now we know which of the points are in inside the sphere
+  // Now iterating over all
 
-        auto neighbour_point = point + line;
-        // If the point is outside
-        if (norm(neighbour_point - center) < radius) {
-          cube |= (1 << (i + j * prefact));
-        }
-      }
-      // Now we know which points are outside and inside
+  // Iterating over all edges connected to 0;
+  {
+    bool zero_in_sphere = (bool)(points & 1);
+    for (std::uint8_t i = 1; i < 7; i++) {
+      if (static_cast<bool>((points >> i) & 1) == zero_in_sphere)
+        continue;
 
-      // Iterating over all edges in the cube
-      // All connections to 0
-      for (std::uint8_t j = 1; j < 7; j++) {
-      }
-      // All connections to 7
-      for (std::int8_t j = -1; j > -7; j++) {
-      }
-      // connection between 7-0
-      {
-      }
-      // All connection between other points
-      for (std::uint8_t j = 1; j < 8; j++) {
+      vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
+                        ((i >> 2) & 1) * grid_step};
+      distance /= norm(distance);
+
+      DataType isec_p =
+          find_intersection_point_sphere<Dim>(point, distance, center, radius);
+
+      lengths[i] = isec_p;
+    };
+  }
+  // Iterating over all edges connected to 7;
+  {
+    bool seven_in_sphere = (bool)((points >> 7) & 1);
+    for (std::int8_t i = -1; i > -7; i--) {
+      std::uint8_t point_num = 7 + i;
+      // Checking whether the other point is on the other side of the surface
+      if (static_cast<bool>((points >> point_num) & 1) == seven_in_sphere)
+        continue;
+
+      vector3d distance{(i & 1) * (-grid_step), ((i >> 1) & 1) * (-grid_step),
+                        ((i >> 2) & 1) * (-grid_step)};
+
+      distance /= norm(distance);
+
+      DataType isec_p =
+          find_intersection_point_sphere<Dim>(point, distance, center, radius);
+
+      lengths[7 - i - 1] = isec_p;
+    };
+  }
+
+  // Iterating over all edges that are connected to each other
+  {
+    int edge_number = 14;
+    for (std::uint8_t i = 1; i <= 4; i *= 2) {
+
+      bool this_in_sphere = (bool)((points >> i) & 1);
+      std::uint8_t other_point_1 =
+          static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7) | i);
+
+      bool other_in_sphere = (bool)((points >> other_point_1) & 1);
+
+      if (other_in_sphere != this_in_sphere) {
+        lengths[edge_number++] = compute_interesect_for_no_princ(
+            i, grid_step, point, center, radius);
       }
 
-      for (std::uint8_t j = 1; j < 8; j++) {
-      }
+      std::uint8_t other_point_2 =
+          static_cast<std::uint8_t>(((i << 1 | i >> (3 - 1)) & 7) | i);
 
-      // Iteration over all tetrahedra
-      for (std::uint8_t j = 1; i < 6; i++) {
-      }
-    } else if (std::bitset<8>(i).count() == 1) {
-      std::array<std::uint8_t, 2> other_points{
-          static_cast<std::uint8_t>(((i << 1 | i >> (3 - 1)) & ~248) | i),
-          static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & ~248) | i)};
+      other_in_sphere = (bool)((points >> other_point_2) & 1);
 
-      // Iteration over all lines
-      for (std::uint8_t j = 1; j <= 3; j++) {
-      }
-      // Iteration over all tetrahedra
-      for (std::uint8_t j = 1; j <= 2; j++) {
-      }
-    } else {
-      std::uint8_t i_inv = ~i;
-      std::array<std::uint8_t, 2> other_points{
-          static_cast<std::uint8_t>(((i_inv << 1 | i_inv >> (3 - 1)) & ~248)),
-          static_cast<std::uint8_t>(((i_inv >> 1 | i_inv << (3 - 1)) & ~248))};
-
-      // Iteration over all lines
-      for (std::uint8_t j = 1; j <= 2; j++) {
+      if (other_in_sphere != this_in_sphere) {
+        lengths[edge_number++] = compute_interesect_for_no_princ(
+            i, grid_step, point, center, radius);
       }
     }
   }
+
+  // Now iterating over all the tetrahedra and computing the
 }
 
 int main(int argc, char *argv[]) {
