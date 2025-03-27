@@ -110,10 +110,10 @@ int main(int argc, char *argv[]) {
   tetraeda_line_points<3> tet_example;
 
   Atom<DataType> atom_host;
-  atom_host.Position[0] = 6;
-  atom_host.Position[1] = 6;
-  atom_host.Position[2] = 6;
-  atom_host.radius = .5;
+  atom_host.Position[0] = 50;
+  atom_host.Position[1] = 50;
+  atom_host.Position[2] = 50;
+  atom_host.radius = 45;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
   // q.memcpy(atom_device, &atom_host, sizeof(Atom<DataType>)).wait();
