@@ -85,7 +85,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   // Iterating over all edges connected to 0;
   {
     bool zero_in_sphere = (bool)(points & 1);
-    for (std::uint8_t i = 1; i < 7; i++) {
+    for (std::uint8_t i = 1; i <= 7; i++) {
       if (static_cast<bool>((points >> i) & 1) == zero_in_sphere)
         continue;
 
@@ -96,7 +96,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
-      lengths[i] = isec_p;
+      lengths[i % 7] = isec_p;
     };
   }
   // Iterating over all edges connected to 7;
@@ -156,6 +156,22 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       edge_number++;
     }
+  }
+
+  // Now I need to iterate over all tetrahedra in order to find the right
+  // surface
+
+  // Iterating over the tetrahedra
+
+  for (std::uint8_t i = 1; i <= 4; i *= 2) {
+    std::uint8_t other_point_left = (i << 1 | i >> (3 - 1) | i) & 7;
+    std::uint8_t other_point_right = (i >> 1 | i << (3 - 1) | i) & 7;
+    std::array<std::uint8_t, 4> points{0, 7, other_point_left,
+                                       other_point_right};
+
+    for (std::uint8_t j = 0; j < 3; j++)
+      for (std::uint8_t k = j + 1; k < 4; k++) {
+      }
   }
 
   for (DataType num : lengths)
