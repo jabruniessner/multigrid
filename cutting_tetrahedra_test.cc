@@ -26,11 +26,12 @@ inline constexpr DataType norm(vector3d vec) {
 
 template <Dimension Dim, typename DataType>
 constexpr inline DataType compute_interesect_for_no_princ(
-    std::uint8_t i, DataType &grid_step, blas::vector<DataType, Dim> &point,
-    blas::vector<DataType, Dim> &center, DataType &radius) {
+    std::uint8_t i, std::uint8_t distance_num, DataType &grid_step,
+    blas::vector<DataType, Dim> &point, blas::vector<DataType, Dim> &center,
+    DataType &radius) {
 
-  std::uint8_t distance_num =
-      static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7));
+  // std::uint8_t distance_num =
+  //     static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7));
 
   vector3d distance{(distance_num & 1) * grid_step,
                     ((distance_num >> 1) & 1) * grid_step,
@@ -136,7 +137,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       if (other_in_sphere != this_in_sphere) {
         lengths[edge_number] = compute_interesect_for_no_princ(
-            i, grid_step, point, center, radius);
+            i, dir, grid_step, point, center, radius);
       }
 
       edge_number++;
@@ -150,7 +151,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       if (other_in_sphere != this_in_sphere) {
         lengths[edge_number] = compute_interesect_for_no_princ(
-            i, grid_step, point, center, radius);
+            i, dir, grid_step, point, center, radius);
       }
 
       edge_number++;
