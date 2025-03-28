@@ -75,6 +75,9 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
+  std::cout << "The points inside are: " << static_cast<int>(points)
+            << std::endl;
+
   // Now we know which of the points are in inside the sphere
   // Now iterating over all
 
@@ -98,8 +101,8 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   // Iterating over all edges connected to 7;
   {
     bool seven_in_sphere = (bool)((points >> 7) & 1);
-    for (std::int8_t i = -1; i > -7; i--) {
-      std::uint8_t point_num = 7 + i;
+    for (std::uint8_t i = 1; i < 7; i++) {
+      std::uint8_t point_num = 7 - i;
       // Checking whether the other point is on the other side of the surface
       if (static_cast<bool>((points >> point_num) & 1) == seven_in_sphere)
         continue;
@@ -109,16 +112,18 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       distance /= norm(distance);
 
-      DataType isec_p =
-          find_intersection_point_sphere<Dim>(point, distance, center, radius);
+      auto point7 = point + vector3d{grid_step, grid_step, grid_step};
 
-      lengths[7 - i - 1] = isec_p;
+      DataType isec_p =
+          find_intersection_point_sphere<Dim>(point7, distance, center, radius);
+
+      lengths[7 + i - 1] = isec_p;
     };
   }
 
   // Iterating over all edges that are connected to each other
   {
-    int edge_number = 14;
+    int edge_number = 13;
     for (std::uint8_t i = 1; i <= 4; i *= 2) {
 
       bool this_in_sphere = (bool)((points >> i) & 1);
@@ -127,20 +132,28 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       bool other_in_sphere = (bool)((points >> other_point_1) & 1);
 
+      std::uint8_t dir = other_point_1 - i;
+
       if (other_in_sphere != this_in_sphere) {
-        lengths[edge_number++] = compute_interesect_for_no_princ(
+        lengths[edge_number] = compute_interesect_for_no_princ(
             i, grid_step, point, center, radius);
       }
+
+      edge_number++;
 
       std::uint8_t other_point_2 =
           static_cast<std::uint8_t>(((i << 1 | i >> (3 - 1)) & 7) | i);
 
       other_in_sphere = (bool)((points >> other_point_2) & 1);
 
+      dir = other_point_2 - i;
+
       if (other_in_sphere != this_in_sphere) {
-        lengths[edge_number++] = compute_interesect_for_no_princ(
+        lengths[edge_number] = compute_interesect_for_no_princ(
             i, grid_step, point, center, radius);
       }
+
+      edge_number++;
     }
   }
 

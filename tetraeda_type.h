@@ -31,11 +31,16 @@ find_intersection_point_sphere(VType footpoint, VType direction, VType center,
   VType distance_vec = footpoint - center;
   DataType p_half = distance_vec * direction;
   DataType p_half_squared = blas::square(p_half);
-  DataType q = distance_vec * distance_vec - blas::square(radius);
+  DataType distance_vec_squared = distance_vec * distance_vec;
+  DataType radius_squared = blas::square(radius);
+  DataType q = distance_vec_squared - radius_squared;
 
   assert(p_half_squared - q >= 0);
-  return std::sqrt(p_half_squared - q) - p_half;
+  DataType result = (1 - 2 * (distance_vec_squared > radius_squared)) *
+                        std::sqrt(p_half_squared - q) -
+                    p_half;
 
+  return result;
   // return 0;
 }
 
