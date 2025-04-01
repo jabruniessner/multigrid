@@ -9,6 +9,7 @@
 #include <array>
 #include <boost/container/static_vector.hpp>
 #include <cblas.h>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <sycl/sycl.hpp>
@@ -238,10 +239,11 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       if (tetrahedra_points.size() == 0)
         continue;
 
-      std::cout << "The number of points in the tetrahedra is: "
-                << tetrahedra_points.size() << std::endl;
+      // std::cout << "The number of points in the tetrahedra is: "
+      //           << tetrahedra_points.size() << std::endl;
 
-      std::cout << "The points are: " << static_cast<int>(points) << std::endl;
+      // std::cout << "The points are: " << static_cast<int>(points) <<
+      // std::endl;
 
       assert(tetrahedra_points.size() >= 3);
 
@@ -272,6 +274,32 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   // std::cout << "The number of faces is: " << faces.size() << std::endl;
 }
 
+void print_faces_to_ply(std::ostream &stream, std::list<Face> &faces) {
+  stream << "ply\n";
+  stream << "format ascii 1.0\n";
+  stream << "element vertex " << faces.size() * 3 << "\n";
+  stream << "property float x\n";
+  stream << "property float y\n";
+  stream << "property float z\n";
+  stream << "element face " << faces.size() << "\n";
+  stream << "property list uchar int vertex_index\n";
+  stream << "end_header\n";
+
+  for (auto face : faces) {
+    for (auto point : face) {
+      stream << point[0] << " " << point[1] << " " << point[2] << "\n";
+    }
+  }
+
+  int index = 0;
+  for (int i = 0; i < faces.size(); i++) {
+    stream << "3 " << index << " " << index + 1 << " " << index + 2 << "\n";
+    index += 3;
+  }
+
+  stream << std::endl;
+}
+
 int main(int argc, char *argv[]) {
 
   // #ifdef DEBUGMODE
@@ -288,9 +316,9 @@ int main(int argc, char *argv[]) {
   tetraeda_line_points<3> tet_example;
 
   Atom<DataType> atom_host;
-  atom_host.Position[0] = 50;
-  atom_host.Position[1] = 50;
-  atom_host.Position[2] = 50;
+  atom_host.Position[0] = 1;
+  atom_host.Position[1] = 1;
+  atom_host.Position[2] = 1;
   atom_host.radius = 45;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
@@ -330,6 +358,14 @@ int main(int argc, char *argv[]) {
   std::chrono::duration<double> duration = end - start;
 
   std::cout << "The required time was: " << duration.count() << std::endl;
+
+  std::cout << "The number of faces is: " << faces.size() << std::endl;
+
+  std::ofstream file("output.ply");
+
+  print_faces_to_ply(file, faces);
+
+  file.close();
 
   // std::cout << "The number of points considered is: " << j << std::endl;
 
