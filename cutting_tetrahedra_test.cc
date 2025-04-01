@@ -83,8 +83,11 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
-  std::cout << "The points inside are: " << static_cast<int>(points)
-            << std::endl;
+  // std::cout << "The points inside are: " << static_cast<int>(points)
+  //           << std::endl;
+
+  if (points == 0 || points == 255)
+    return;
 
   // Now we know which of the points are in inside the sphere
   // Now iterating over all
@@ -165,10 +168,10 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
-  for (DataType num : lengths)
-    std::cout << num << " ";
+  // for (DataType num : lengths)
+  //   std::cout << num << " ";
 
-  std::cout << std::endl;
+  // std::cout << std::endl;
 
   // Now I need to iterate over all tetrahedra in order to find the right
   // surface
@@ -232,6 +235,14 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
         }
       }
 
+      if (tetrahedra_points.size() == 0)
+        continue;
+
+      std::cout << "The number of points in the tetrahedra is: "
+                << tetrahedra_points.size() << std::endl;
+
+      std::cout << "The points are: " << static_cast<int>(points) << std::endl;
+
       assert(tetrahedra_points.size() >= 3);
 
       if (tetrahedra_points.size() == 3) {
@@ -258,7 +269,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   }
   // Now iterating over all the tetrahedra and computing the faces
 
-  std::cout << "The number of faces is: " << faces.size() << std::endl;
+  // std::cout << "The number of faces is: " << faces.size() << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -295,34 +306,41 @@ int main(int argc, char *argv[]) {
   // std::cout << "The intersection distance is " << isec_p << std::endl;
   //
 
+  std::list<Face> faces;
+
+  vector3d center{50.f, 50.f, 50.f};
+
   // constexpr DataType grid_step = 1;
 
-  // auto start = std::chrono::high_resolution_clock::now();
-  // auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
-  // int j = 0;
-  // for (auto edge_cube : edge_cubes) {
-  //   for (auto i : edge_cube) {
-  //     std::cout << i << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
-  // auto end = std::chrono::high_resolution_clock::now();
+  DataType grid_step = 1.f;
+  auto start = std::chrono::high_resolution_clock::now();
+  auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
+  for (auto edge_cube : edge_cubes) {
+    // for (auto i : edge_cube) {
+    //  std::cout << i << " ";
+    vector3d point{static_cast<DataType>(edge_cube[0]),
+                   static_cast<DataType>(edge_cube[1]),
+                   static_cast<DataType>(edge_cube[2])};
+    find_polygon_cuts(point, center, atom_host.radius, 1.f, faces);
+    // }
+    // std::cout << std::endl;
+  }
+  auto end = std::chrono::high_resolution_clock::now();
 
-  // std::chrono::duration<double> duration = end - start;
+  std::chrono::duration<double> duration = end - start;
 
-  // std::cout << "The required time was: " << duration.count() << std::endl;
+  std::cout << "The required time was: " << duration.count() << std::endl;
 
   // std::cout << "The number of points considered is: " << j << std::endl;
 
-  DataType grid_step = 1.f;
+  // vector3d center{0.1f, 0.1f, 0.1f};
+  // DataType Radius = std::sqrt(3) * 10.f;
+  // vector3d point{1.f, 0.f, 0.f};
+  // point = point * (Radius - 0.2f);
 
-  vector3d center{0.1f, 0.1f, 0.1f};
-  DataType Radius = std::sqrt(3) * 10.f;
-  vector3d point{1.f, 0.f, 0.f};
-  point = point * (Radius - 0.2f);
-  std::list<Face> faces;
+  // std::list<Face> faces;
 
-  find_polygon_cuts(point, center, Radius, grid_step, faces);
+  // find_polygon_cuts(point, center, Radius, grid_step, faces);
 
   return 0;
 }
