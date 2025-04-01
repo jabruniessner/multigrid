@@ -6,7 +6,11 @@
 #include "hipSYCL/sycl/queue.hpp"
 #include "scientific_quantities.h"
 #include "tetraeda_type.h"
+#include <array>
+#include <boost/container/static_vector.hpp>
+#include <cblas.h>
 #include <iostream>
+#include <list>
 #include <sycl/sycl.hpp>
 
 constexpr std::size_t Dim = 3;
@@ -16,8 +20,11 @@ constexpr DataType sqrt2inv = 1 / const_sqrt(2.);
 
 using vector3d = blas::vector<DataType, Dim>;
 using Position3D = std::array<int, Dim>;
+
+using Face = boost::container::static_vector<vector3d, 3>;
+
 inline constexpr DataType norm(vector3d vec) {
-  DataType n = 0.f;
+  DataType n = static_cast<DataType>(0);
   for (auto i : vec)
     n += i * i;
 
@@ -58,7 +65,7 @@ inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
 }
 
 void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
-                       DataType grid_step) {
+                       DataType grid_step, std::list<Face> &faces) {
   // Iteration over all cubes
 
   std::array<DataType, 19> lengths{};
@@ -158,28 +165,100 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
-  // Now I need to iterate over all tetrahedra in order to find the right
-  // surface
-
-  // Iterating over the tetrahedra
-
-  for (std::uint8_t i = 1; i <= 4; i *= 2) {
-    std::uint8_t other_point_left = (i << 1 | i >> (3 - 1) | i) & 7;
-    std::uint8_t other_point_right = (i >> 1 | i << (3 - 1) | i) & 7;
-    std::array<std::uint8_t, 4> points{0, 7, other_point_left,
-                                       other_point_right};
-
-    for (std::uint8_t j = 0; j < 3; j++)
-      for (std::uint8_t k = j + 1; k < 4; k++) {
-      }
-  }
-
   for (DataType num : lengths)
     std::cout << num << " ";
 
   std::cout << std::endl;
 
-  // Now iterating over all the tetrahedra and computing the
+  // Now I need to iterate over all tetrahedra in order to find the right
+  // surface
+
+  // Iterating over the tetrahedra
+
+  // Here we are iterating over all lines in the cube that are connected to
+  // point 0
+  std::uint8_t h = 0;
+  for (std::uint8_t i = 1; i <= 4; i *= 2) {
+    // Finding the other two points in the cube
+    std::uint8_t other_point_left = (i >> 1 | i << (3 - 1) | i) & 7;
+    std::uint8_t other_point_right = (i << 1 | i >> (3 - 1) | i) & 7;
+    std::array<std::uint8_t, 2> second_points{other_point_left,
+                                              other_point_right};
+
+    // Iteration over the two other points (The two tetrahedra the point belongs
+    // to)
+    for (int l = 0; l < 2; l++) {
+
+      boost::container::static_vector<vector3d, 4> tetrahedra_points;
+
+      std::array<std::uint8_t, 4> points_tet{0, 7, i, second_points[l]};
+
+      for (std::uint8_t j = 0; j < 3; j++) {
+        bool inside_first = (points >> points_tet[j] & 1);
+
+        for (std::uint8_t k = j + 1; k < 4; k++) {
+          bool inside_second = (points >> points_tet[k] & 1);
+
+          if (inside_second == inside_first)
+            continue;
+
+          std::uint8_t direction = std::abs(points_tet[k] - points_tet[j]);
+
+          // Computing the prefactor in order to normlaize the direction vector
+          auto inverse_dir = (~direction) & 7;
+
+          auto prefac =
+              (1 + (sqrt2inv - 1) * ((inverse_dir & (inverse_dir - 1)) == 0) +
+               (sqrt3inv - 1) * (direction == 7));
+
+          auto direction_vec = vector3d{(direction & 1) * grid_step,
+                                        ((direction >> 1) & 1) * grid_step,
+                                        ((direction >> 2) & 1) * grid_step} *
+                               prefac;
+
+          std::uint8_t length_index;
+
+          if (j == 0) {
+            length_index = k;
+          } else if (j == 1) {
+            length_index = 7 + k - 1;
+          } else {
+            length_index = 14 + 2 * (h) + l;
+          }
+
+          direction_vec *= lengths[length_index];
+
+          tetrahedra_points.push_back(point + direction_vec);
+        }
+      }
+
+      assert(tetrahedra_points.size() >= 3);
+
+      if (tetrahedra_points.size() == 3) {
+        Face face_points;
+        face_points.assign(tetrahedra_points.begin(), tetrahedra_points.end());
+
+        faces.push_back(face_points);
+
+      } else {
+
+        Face face_points1;
+        face_points1.assign(tetrahedra_points.begin(),
+                            tetrahedra_points.end() - 1);
+
+        faces.push_back(face_points1);
+        Face face_points2;
+        face_points2.assign(tetrahedra_points.begin() + 1,
+                            tetrahedra_points.end());
+        faces.push_back(face_points2);
+      }
+    }
+
+    h++;
+  }
+  // Now iterating over all the tetrahedra and computing the faces
+
+  std::cout << "The number of faces is: " << faces.size() << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -241,8 +320,9 @@ int main(int argc, char *argv[]) {
   DataType Radius = std::sqrt(3) * 10.f;
   vector3d point{1.f, 0.f, 0.f};
   point = point * (Radius - 0.2f);
+  std::list<Face> faces;
 
-  find_polygon_cuts(point, center, Radius, grid_step);
+  find_polygon_cuts(point, center, Radius, grid_step, faces);
 
   return 0;
 }
