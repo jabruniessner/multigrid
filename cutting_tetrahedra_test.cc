@@ -87,6 +87,9 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   // std::cout << "The points inside are: " << static_cast<int>(points)
   //           << std::endl;
 
+  // std::cout << "The points inside are: " << static_cast<int>(points)
+  //           << std::endl;
+
   if (points == 0 || points == 255)
     return;
 
@@ -169,10 +172,15 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
-  // for (DataType num : lengths)
-  //   std::cout << num << " ";
+  for (DataType num : lengths)
+    std::cout << std::format("{:<1.1f} ", num) << " ";
 
-  // std::cout << std::endl;
+  std::cout << std::endl;
+
+  for (int i = 0; i < 19; i++)
+    std::cout << std::format("{:<3} ", i) << " ";
+
+  std::cout << std::endl;
 
   // Now I need to iterate over all tetrahedra in order to find the right
   // surface
@@ -213,26 +221,39 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
           auto prefac =
               (1 + (sqrt2inv - 1) * ((inverse_dir & (inverse_dir - 1)) == 0) +
-               (sqrt3inv - 1) * (direction == 7));
+               (sqrt3inv - sqrt2inv) * (direction == 7));
 
           auto direction_vec = vector3d{(direction & 1) * grid_step,
                                         ((direction >> 1) & 1) * grid_step,
                                         ((direction >> 2) & 1) * grid_step} *
-                               prefac;
+                               (prefac * (1 - 2 * (points_tet[j] == 7)));
+
+          auto point_setoff =
+              point + vector3d{(points_tet[j] & 1) * grid_step,
+                               ((points_tet[j] >> 1) & 1) * grid_step,
+                               ((points_tet[j] >> 2) & 1) * grid_step};
 
           std::uint8_t length_index;
 
+          // if (j == 0) {
+          //   length_index = k;
+          // } else if (j == 1) {
+          //   length_index = 7 + k - 1;
+          // } else {
+          //   length_index = 13 + 2 * (h) + l;
+          // }
           if (j == 0) {
-            length_index = k;
+            length_index = points_tet[k] % 7;
           } else if (j == 1) {
-            length_index = 7 + k - 1;
+            length_index = 13 - points_tet[k];
           } else {
-            length_index = 14 + 2 * (h) + l;
+            length_index = 13 + 2 * (h) + l;
           }
 
-          direction_vec *= lengths[length_index];
+          // std::uint8_t point_index = points_tet[length_index];
 
-          tetrahedra_points.push_back(point + direction_vec);
+          direction_vec *= lengths[length_index];
+          tetrahedra_points.push_back(point_setoff + direction_vec);
         }
       }
 
@@ -319,7 +340,7 @@ int main(int argc, char *argv[]) {
   atom_host.Position[0] = 50;
   atom_host.Position[1] = 50;
   atom_host.Position[2] = 50;
-  atom_host.radius = 1;
+  atom_host.radius = 1.f;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
   // q.memcpy(atom_device, &atom_host, sizeof(Atom<DataType>)).wait();
@@ -344,16 +365,30 @@ int main(int argc, char *argv[]) {
   DataType grid_step = 1.f;
   auto start = std::chrono::high_resolution_clock::now();
   auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
+
+  int i = 0;
   for (auto edge_cube : edge_cubes) {
-    // for (auto i : edge_cube) {
-    //  std::cout << i << " ";
+
+    i++;
+
+    if (i < 9)
+      continue;
+
     vector3d point{static_cast<DataType>(edge_cube[0]),
                    static_cast<DataType>(edge_cube[1]),
                    static_cast<DataType>(edge_cube[2])};
     find_polygon_cuts(point, center, atom_host.radius, 1.f, faces);
-    // }
+
+    // for (auto i : edge_cube) {
+    // std::cout << i << " ";
+    //}
+
     // std::cout << std::endl;
+
+    // break;
   }
+
+  std::cout << "The number of edge cubes is: " << i << std::endl;
   auto end = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double> duration = end - start;

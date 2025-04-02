@@ -36,7 +36,7 @@ find_intersection_point_sphere(VType footpoint, VType direction, VType center,
   DataType q = distance_vec_squared - radius_squared;
 
   assert(p_half_squared - q >= 0);
-  DataType result = (1 - 2 * (distance_vec_squared > radius_squared)) *
+  DataType result = (1 - 2 * (distance_vec_squared >= radius_squared)) *
                         std::sqrt(p_half_squared - q) -
                     p_half;
 
