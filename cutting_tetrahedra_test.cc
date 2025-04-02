@@ -13,6 +13,7 @@
 #include <iostream>
 #include <list>
 #include <sycl/sycl.hpp>
+#include <utility>
 
 constexpr std::size_t Dim = 3;
 
@@ -62,7 +63,7 @@ constexpr inline DataType compute_interesect_for_no_princ(
 
 inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
                                 DataType &radius) {
-  return norm(point - center) < radius;
+  return norm(point - center) <= radius;
 }
 
 void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
@@ -172,15 +173,15 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
     }
   }
 
-  for (DataType num : lengths)
-    std::cout << std::format("{:<1.1f} ", num) << " ";
-
-  std::cout << std::endl;
-
-  for (int i = 0; i < 19; i++)
-    std::cout << std::format("{:<3} ", i) << " ";
-
-  std::cout << std::endl;
+  //  for (DataType num : lengths)
+  //    std::cout << std::format("{:<1.1f} ", num) << " ";
+  //
+  //  std::cout << std::endl;
+  //
+  //  for (int i = 0; i < 19; i++)
+  //    std::cout << std::format("{:<3} ", i) << " ";
+  //
+  //  std::cout << std::endl;
 
   // Now I need to iterate over all tetrahedra in order to find the right
   // surface
@@ -340,10 +341,10 @@ int main(int argc, char *argv[]) {
   atom_host.Position[0] = 50;
   atom_host.Position[1] = 50;
   atom_host.Position[2] = 50;
-  atom_host.radius = 1.f;
+  atom_host.radius = 1.6f;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
-  // q.memcpy(atom_device, &atom_host, sizeof(Atom<DataType>)).wait();
+  // q.memcpy(atom_device, &atom_ost, sizeof(Atom<DataType>)).wait();
   domain::Grid<tetraeda_line_points<3>, 3, 100, 100, 100> tet_grid(
       Paddings::PERIODIC, q, 1);
   // std::cout << "Hello World!" << std::endl;
@@ -365,37 +366,34 @@ int main(int argc, char *argv[]) {
   DataType grid_step = 1.f;
   auto start = std::chrono::high_resolution_clock::now();
   auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
+  auto edge_cubes2 = finding_edge_cubes_helper(
+      atom_host, grid_step, std::make_index_sequence<2>{}, 50, 50);
 
   int i = 0;
   for (auto edge_cube : edge_cubes) {
 
     i++;
 
-    if (i < 9)
-      continue;
+    // for (auto j : edge_cube) {
+    //   std::cout << j << " ";
+    // }
+
+    // std::cout << std::endl;
 
     vector3d point{static_cast<DataType>(edge_cube[0]),
                    static_cast<DataType>(edge_cube[1]),
                    static_cast<DataType>(edge_cube[2])};
-    find_polygon_cuts(point, center, atom_host.radius, 1.f, faces);
-
-    // for (auto i : edge_cube) {
-    // std::cout << i << " ";
-    //}
-
-    // std::cout << std::endl;
-
-    // break;
+    find_polygon_cuts(point, center, atom_host.radius, grid_step, faces);
   }
 
-  std::cout << "The number of edge cubes is: " << i << std::endl;
+  // std::cout << "The number of edge cubes is: " << i << std::endl;
   auto end = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double> duration = end - start;
 
-  std::cout << "The required time was: " << duration.count() << std::endl;
+  // std::cout << "The required time was: " << duration.count() << std::endl;
 
-  std::cout << "The number of faces is: " << faces.size() << std::endl;
+  // std::cout << "The number of faces is: " << faces.size() << std::endl;
 
   std::ofstream file("output.ply");
 

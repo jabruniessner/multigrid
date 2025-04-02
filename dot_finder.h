@@ -218,7 +218,6 @@ finding_edge_cubes_helper(Sphere<DataType, Dim> &sphere, DataType grid_step,
          (blas::square(Position[directions] - grid_step * (positions + .5)) +
           ...));
 
-    // std::cout << "The sqrt_squared_is: " << sqrt_squared_inner << std::endl;
     if (sqrt_squared_inner <= 0) {
       for (int i = lower_bound; i <= upper_bound; i++) {
         co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
@@ -230,14 +229,14 @@ finding_edge_cubes_helper(Sphere<DataType, Dim> &sphere, DataType grid_step,
       const int lower_bound_inner =
           std::floor((current_value - sqrt_inner) / grid_step - .5);
 
-      for (int i = lower_bound; i < lower_bound_inner; i++) {
+      for (int i = lower_bound; i <= lower_bound_inner; i++) {
         co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
       }
 
       const int upper_bound_inner =
           std::ceil((current_value + sqrt_inner) / grid_step - .5);
 
-      for (int i = upper_bound_inner; i < upper_bound; i++) {
+      for (int i = upper_bound_inner; i <= upper_bound; i++) {
         co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
       }
     }
