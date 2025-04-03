@@ -133,6 +133,20 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point7, distance, center, radius);
 
+      //   std::cout << "The intersection point is: " << isec_p << std::endl;
+      //   std::cout << "Point 7 is: " << point7[0] << " " << point7[1] << " "
+      //             << point7[2] << std::endl;
+      //   std::cout << "The distance is: " << distance[0] << " " << distance[1]
+      //             << " " << distance[2] << std::endl;
+      //   std::cout << "The center is: " << center[0] << " " << center[1] << "
+      //   "
+      //             << center[2] << std::endl;
+      //   std::cout << "The radius is: " << radius << std::endl;
+
+      //   std::cout << std::endl;
+      //   std::cout << std::endl;
+      //   std::cout << std::endl;
+
       lengths[7 + i - 1] = isec_p;
     };
   }
@@ -341,7 +355,7 @@ int main(int argc, char *argv[]) {
   atom_host.Position[0] = 50;
   atom_host.Position[1] = 50;
   atom_host.Position[2] = 50;
-  atom_host.radius = 1.6f;
+  atom_host.radius = 45.f;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
   // q.memcpy(atom_device, &atom_ost, sizeof(Atom<DataType>)).wait();
@@ -367,7 +381,7 @@ int main(int argc, char *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
   auto edge_cubes = finding_edge_cubes(atom_host, grid_step);
   auto edge_cubes2 = finding_edge_cubes_helper(
-      atom_host, grid_step, std::make_index_sequence<2>{}, 50, 50);
+      atom_host, grid_step, std::make_index_sequence<2>{}, 47, 49);
 
   int i = 0;
   for (auto edge_cube : edge_cubes) {
@@ -384,6 +398,8 @@ int main(int argc, char *argv[]) {
                    static_cast<DataType>(edge_cube[1]),
                    static_cast<DataType>(edge_cube[2])};
     find_polygon_cuts(point, center, atom_host.radius, grid_step, faces);
+
+    // break;
   }
 
   // std::cout << "The number of edge cubes is: " << i << std::endl;
