@@ -66,8 +66,9 @@ inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
   return norm(point - center) <= radius;
 }
 
+template <template <typename> typename container>
 void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
-                       DataType grid_step, std::list<Face> &faces) {
+                       DataType grid_step, container<Face> &faces) {
   // Iteration over all cubes
 
   std::array<DataType, 19> lengths{};
@@ -310,7 +311,8 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   // std::cout << "The number of faces is: " << faces.size() << std::endl;
 }
 
-void print_faces_to_ply(std::ostream &stream, std::list<Face> &faces) {
+template <template <typename> typename container>
+void print_faces_to_ply(std::ostream &stream, container<Face> &faces) {
   stream << "ply\n";
   stream << "format ascii 1.0\n";
   stream << "element vertex " << faces.size() * 3 << "\n";
@@ -370,7 +372,8 @@ int main(int argc, char *argv[]) {
   // std::cout << "The intersection distance is " << isec_p << std::endl;
   //
 
-  std::list<Face> faces;
+  std::vector<Face> faces;
+  faces.reserve(300000);
 
   vector3d center{atom_host.Position[0], atom_host.Position[1],
                   atom_host.Position[2]};
@@ -402,14 +405,16 @@ int main(int argc, char *argv[]) {
     // break;
   }
 
+  std::cout << "The number of edge cubes is: " << i << std::endl;
+
   // std::cout << "The number of edge cubes is: " << i << std::endl;
   auto end = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double> duration = end - start;
 
-  // std::cout << "The required time was: " << duration.count() << std::endl;
+  std::cout << "The required time was: " << duration.count() << std::endl;
 
-  // std::cout << "The number of faces is: " << faces.size() << std::endl;
+  std::cout << "The number of faces is: " << faces.size() << std::endl;
 
   std::ofstream file("output.ply");
 
