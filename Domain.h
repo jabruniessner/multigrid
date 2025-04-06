@@ -71,10 +71,9 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    values_buff =
-        sycl::malloc_device<DataType>(num_values * sizeof(DataType), q);
+    values_buff = sycl::malloc_device<DataType>(num_values, q);
     q.wait();
-    q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+    // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
   template <typename... Positions>
@@ -113,7 +112,9 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
 template <Dimension Dim, Length... strides_all>
 struct Domain : Grid<DataType, Dim, strides_all...> {
   Domain(Paddings padding, sycl::queue &q, int padding_width)
-      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {}
+      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {
+    q.memset(this->values_buff, 0, this->num_values * sizeof(DataType)).wait();
+  }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
                           DataType zmin, DataType Box_length) const {
