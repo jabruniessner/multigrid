@@ -292,10 +292,11 @@ finding_edge_cubes(Sphere<DataType, Dim> &sphere, const DataType grid_step) {
       sphere, grid_step, std::make_index_sequence<0u>{}));
 }
 
-template <typename cutter, typename DataType, typename Tet_type,
+template <typename Cutter, typename DataType, typename Tet_type,
           std::size_t... DomainSize, Dimension Dim, typename... Positions,
           Length... directions>
-void cutting_cubes_helper(domain::Grid<Tet_type, DomainSize...> &tet_grid,
+void cutting_cubes_helper(Cutter cutter,
+                          domain::Grid<Tet_type, Dim, DomainSize...> &tet_grid,
                           Sphere<DataType, Dim> &sphere, DataType grid_step,
                           std::index_sequence<directions...>,
                           Positions... positions) {
@@ -341,8 +342,8 @@ void cutting_cubes_helper(domain::Grid<Tet_type, DomainSize...> &tet_grid,
         // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
         // Here come the necessary routines to cut the tetrahedra
         //
-        cutter::find_polygon_cuts(tet_grid, sphere.Position, sphere.radius,
-                                  grid_step, positions..., i);
+        cutter(tet_grid, sphere.Position, sphere.radius, grid_step,
+               positions..., i);
       }
     } else if (sqrt_squared_inner > 0) {
 
@@ -354,8 +355,8 @@ void cutting_cubes_helper(domain::Grid<Tet_type, DomainSize...> &tet_grid,
       for (int i = lower_bound; i <= lower_bound_inner; i++) {
         // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
         // Here come the necessary routines to cut the tetrahedra
-        cutter::find_polygon_cuts(tet_grid, sphere.Position, sphere.radius,
-                                  grid_step, positions..., i);
+        cutter(tet_grid, sphere.Position, sphere.radius, grid_step,
+               positions..., i);
       }
 
       const int upper_bound_inner =
@@ -364,8 +365,8 @@ void cutting_cubes_helper(domain::Grid<Tet_type, DomainSize...> &tet_grid,
       for (int i = upper_bound_inner; i <= upper_bound; i++) {
         // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
         // Here come the necessary routines to cut the tetrahedra
-        cutter::find_polygon_cuts(tet_grid, sphere.Position, sphere.radius,
-                                  grid_step, positions..., i);
+        cutter(tet_grid, sphere.Position, sphere.radius, grid_step,
+               positions..., i);
       }
     }
 
@@ -413,9 +414,12 @@ void cutting_cubes_helper(domain::Grid<Tet_type, DomainSize...> &tet_grid,
   }
 }
 
-template <typename cutter, typename DataType, Dimension Dim>
-void cutting_cubes(Sphere<DataType, Dim> &sphere, const DataType grid_step) {
-  cutting_cubes_helper<cutter>(sphere, grid_step,
+template <typename Cutter, typename DataType, typename Tet_type, Dimension Dim,
+          Length... DomainSize>
+void cutting_cubes(Cutter cutter,
+                   domain::Grid<Tet_type, Dim, DomainSize...> tet_grid,
+                   Sphere<DataType, Dim> &sphere, const DataType grid_step) {
+  cutting_cubes_helper<cutter>(tet_grid, sphere, grid_step,
                                std::make_index_sequence<0u>{});
 }
 

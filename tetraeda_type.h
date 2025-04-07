@@ -24,9 +24,8 @@ struct tetraeda_line_points
 // which the line intersects the sphere. It is the programmers responsibility to
 // ensure that the norm of the direction vector is 1.
 template <Dimension Dim, typename VType>
-inline constexpr DataType
-find_intersection_point_sphere(VType footpoint, VType direction, VType center,
-                               DataType radius) {
+inline DataType find_intersection_point_sphere(VType footpoint, VType direction,
+                                               VType center, DataType radius) {
 
   VType distance_vec = footpoint - center;
   DataType p_half = distance_vec * direction;
