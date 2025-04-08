@@ -11,8 +11,10 @@
 #include <array>
 #include <boost/container/static_vector.hpp>
 // #include <cblas.h>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <list>
 #include <sycl/sycl.hpp>
 #include <utility>
@@ -26,6 +28,9 @@ constexpr std::size_t Dim = 3;
 
 constexpr DataType sqrt3inv = 1 / const_sqrt(3.);
 constexpr DataType sqrt2inv = 1 / const_sqrt(2.);
+
+constexpr DataType Upper_limit =
+    static_cast<DataType>(std::numeric_limits<std::uint32_t>::max());
 
 using vector3d = blas::vector<DataType, Dim>;
 using Position3D = std::array<int, Dim>;
@@ -68,7 +73,7 @@ inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
 
 template <typename DataType>
 void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
-                       DataType grid_step, DataType *lengths) {
+                       DataType grid_step, std::uint32_t *lengths) {
   // Iteration over all cubes
   std::uint8_t points = 0;
   for (std::uint8_t i = 0; i < 8; i++) {
@@ -97,17 +102,24 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                         ((i >> 2) & 1) * grid_step};
-      distance /= norm(distance);
 
-      DataType isec_p =
-          find_intersection_point_sphere<Dim>(point, distance, center, radius);
+      DataType dist_norm = norm(distance);
+      distance /= dist_norm;
 
-      sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+      DataType isec_p = i;
+      // find_intersection_point_sphere<Dim>(point, distance, center, radius);
+
+      std::uint32_t isec_p_int =
+          static_cast<std::uint32_t>(isec_p / dist_norm * Upper_limit);
+
+      sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
           edge(lengths[i % 7]);
 
-      zero_in_sphere && (!other) ? edge = edge.fetch_min(isec_p)
-                                 : edge = edge.fetch_max(isec_p);
+      // zero_in_sphere && (!other) ? edge = edge.fetch_min(isec_p_int)
+      //                            : edge = edge.fetch_max(isec_p_int);
+
+      edge = isec_p_int;
     };
   }
   // Iterating over all edges connected to 7;
@@ -123,18 +135,26 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       vector3d distance{(i & 1) * (-grid_step), ((i >> 1) & 1) * (-grid_step),
                         ((i >> 2) & 1) * (-grid_step)};
 
-      distance /= norm(distance);
+      DataType dist_norm = norm(distance);
+
+      distance /= dist_norm;
 
       auto point7 = point + vector3d{grid_step, grid_step, grid_step};
 
-      DataType isec_p =
-          find_intersection_point_sphere<Dim>(point7, distance, center, radius);
-      sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+      DataType isec_p = i;
+      // find_intersection_point_sphere<Dim>(point7, distance, center, radius);
+
+      std::uint32_t isec_p_int =
+          static_cast<std::uint32_t>(isec_p / dist_norm * Upper_limit);
+
+      sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
           edge(lengths[7 + i - 1]);
 
-      seven_in_sphere && (!other) ? edge = edge.fetch_min(isec_p)
-                                  : edge = edge.fetch_max(isec_p);
+      // seven_in_sphere && (!other) ? edge = edge.fetch_min(isec_p_int)
+      //                             : edge = edge.fetch_max(isec_p_int);
+
+      edge = isec_p_int;
     };
   }
 
@@ -152,14 +172,22 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       std::uint8_t dir = other_point_1 - i;
 
       if (other_in_sphere != this_in_sphere) {
-        auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
-                                                      center, radius);
+        auto isec_p = i;
 
-        sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+        // compute_interesect_for_no_princ(i, dir, grid_step, point, center,
+        //                                 radius);
+
+        std::uint32_t isec_p_int =
+            static_cast<std::uint32_t>(isec_p * Upper_limit);
+
+        sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
             edge(lengths[edge_number]);
 
-        this_in_sphere ? edge.fetch_max(isec_p) : edge.fetch_min(isec_p);
+        // this_in_sphere ? edge.fetch_max(isec_p_int)
+        //                : edge.fetch_min(isec_p_int);
+
+        edge = isec_p_int;
       }
 
       edge_number++;
@@ -172,13 +200,19 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
 
       if (other_in_sphere != this_in_sphere) {
 
-        auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
-                                                      center, radius);
+        auto isec_p = i;
 
-        sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+        // compute_interesect_for_no_princ(i, dir, grid_step, point, center,
+        //                                 radius);
+        std::uint32_t isec_p_int =
+            static_cast<std::uint32_t>(isec_p * Upper_limit);
+        sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
             edge(lengths[edge_number]);
-        this_in_sphere ? edge.fetch_max(isec_p) : edge.fetch_min(isec_p);
+        // this_in_sphere ? edge.fetch_max(isec_p_int)
+        //                : edge.fetch_min(isec_p_int);
+
+        edge = isec_p_int;
       }
 
       edge_number++;
