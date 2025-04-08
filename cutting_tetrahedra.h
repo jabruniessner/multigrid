@@ -66,12 +66,9 @@ inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
   return norm(point - center) <= radius;
 }
 
-template <template <typename, std::size_t> typename container>
-void find_polygon_cuts(
-    vector3d &point, vector3d &center, DataType &radius, DataType grid_step,
-    container<sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
-                               sycl::memory_scope::device>,
-              19> &lengths) {
+template <typename DataType>
+void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
+                       DataType grid_step, DataType *lengths) {
   // Iteration over all cubes
   std::uint8_t points = 0;
   for (std::uint8_t i = 0; i < 8; i++) {
@@ -93,7 +90,9 @@ void find_polygon_cuts(
   {
     bool zero_in_sphere = (bool)(points & 1);
     for (std::uint8_t i = 1; i <= 7; i++) {
-      if (static_cast<bool>((points >> i) & 1) == zero_in_sphere)
+
+      bool other = (static_cast<bool>((points >> i) & 1));
+      if (other == zero_in_sphere)
         continue;
 
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
@@ -103,7 +102,12 @@ void find_polygon_cuts(
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
-      lengths[i % 7] = isec_p;
+      sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+                       sycl::memory_scope::device>
+          edge(lengths[i % 7]);
+
+      zero_in_sphere && (!other) ? edge = edge.fetch_min(isec_p)
+                                 : edge = edge.fetch_max(isec_p);
     };
   }
   // Iterating over all edges connected to 7;
@@ -112,7 +116,8 @@ void find_polygon_cuts(
     for (std::uint8_t i = 1; i < 7; i++) {
       std::uint8_t point_num = 7 - i;
       // Checking whether the other point is on the other side of the surface
-      if (static_cast<bool>((points >> point_num) & 1) == seven_in_sphere)
+      bool other = (static_cast<bool>((points >> point_num) & 1));
+      if (other == seven_in_sphere)
         continue;
 
       vector3d distance{(i & 1) * (-grid_step), ((i >> 1) & 1) * (-grid_step),
@@ -124,7 +129,12 @@ void find_polygon_cuts(
 
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point7, distance, center, radius);
-      lengths[7 + i - 1] = isec_p;
+      sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+                       sycl::memory_scope::device>
+          edge(lengths[7 + i - 1]);
+
+      seven_in_sphere && (!other) ? edge = edge.fetch_min(isec_p)
+                                  : edge = edge.fetch_max(isec_p);
     };
   }
 
@@ -142,12 +152,17 @@ void find_polygon_cuts(
       std::uint8_t dir = other_point_1 - i;
 
       if (other_in_sphere != this_in_sphere) {
-        lengths[edge_number] = compute_interesect_for_no_princ(
-            i, dir, grid_step, point, center, radius);
+        auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
+                                                      center, radius);
+
+        sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+                         sycl::memory_scope::device>
+            edge(lengths[edge_number]);
+
+        this_in_sphere ? edge.fetch_max(isec_p) : edge.fetch_min(isec_p);
       }
 
       edge_number++;
-
       std::uint8_t other_point_2 =
           static_cast<std::uint8_t>(((i << 1 | i >> (3 - 1)) & 7) | i);
 
@@ -156,8 +171,14 @@ void find_polygon_cuts(
       dir = other_point_2 - i;
 
       if (other_in_sphere != this_in_sphere) {
-        lengths[edge_number] = compute_interesect_for_no_princ(
-            i, dir, grid_step, point, center, radius);
+
+        auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
+                                                      center, radius);
+
+        sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
+                         sycl::memory_scope::device>
+            edge(lengths[edge_number]);
+        this_in_sphere ? edge.fetch_max(isec_p) : edge.fetch_min(isec_p);
       }
 
       edge_number++;

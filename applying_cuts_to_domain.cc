@@ -8,6 +8,7 @@
 #include <array>
 #include <cstddef>
 #include <iostream>
+// #include <mdspan>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
 
@@ -15,6 +16,8 @@ constexpr int Dim = 3;
 constexpr int side_length = 353;
 
 using DataType = float;
+
+template <typename T> struct TD;
 
 using cube_edges = std::array<sycl::half, 19>;
 using cube_edges_refs =
@@ -29,8 +32,8 @@ using cube_tetrahedrons = std::array<sycl::half, 6>;
 using cube_tetrahedrons_refs = std::array<sycl::atomic<sycl::half>, 6>;
 
 struct Cutter {
-  void operator()(const domain::Grid<cube_edges_refs, Dim, side_length,
-                                     side_length, side_length> &tet_grid,
+  void operator()(const domain::Grid<DataType, Dim + 1, side_length,
+                                     side_length, side_length, 19> &tet_grid,
                   const DataType *sphere_position, const DataType sphere_radius,
                   const DataType grid_step, const std::size_t position_0,
                   const std::size_t position_1,
@@ -42,10 +45,13 @@ struct Cutter {
     Cutter_utils::vector3d center{sphere_position[0], sphere_position[1],
                                   sphere_position[2]};
     DataType radius = sphere_radius;
-    // Cutter_utils::find_polygon_cuts(
-    //     point, center, radius, grid_step,
-    //     tet_grid(position_0, position_1, position_2));
+    Cutter_utils::find_polygon_cuts(
+        point, center, radius, grid_step,
+        &tet_grid(position_0, position_1, position_2, 0));
     //  Implement the cutting logic here
+    //  for (int i = 0; i < 19; ++i) {
+    //    tet_grid(position_0, position_1, position_2, i) = 0;
+    //  }
   }
 };
 
@@ -63,24 +69,64 @@ int main(int argc, char *argv[]) {
   std::cout << "The size of a edge_ref is " << sizeof(edge_ref) << std::endl;
 
   sycl::gpu_selector selector;
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
+  //  sycl::queue q(selector,
+  //                sycl::property_list{sycl::property::queue::out_of_order{}});
 
-  domain::Grid<cube_edges, Dim, side_length, side_length, side_length>
+  sycl::queue q(selector);
+
+  domain::Grid<DataType, Dim + 1, side_length, side_length, side_length, 19>
       grid_edges(Paddings::PERIODIC, q, 1);
+  {
+    auto start = std::chrono::high_resolution_clock::now();
 
-  domain::Grid<cube_edges_refs, Dim, side_length, side_length, side_length>
-      grid_edges_refs(Paddings::PERIODIC, q, 1);
+    q.memset(grid_edges.values_buff, 0,
+             sizeof(DataType) * grid_edges.num_values);
+    q.wait();
 
-  domain::Grid<cube_tetrahedrons, Dim, side_length, side_length, side_length>
-      grid_tetrahedrons(Paddings::PERIODIC, q, 1);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_seconds1 = end - start;
 
-  domain::Grid<cube_tetrahedrons_refs, Dim, side_length, side_length,
-               side_length>
-      grid_tetrahedrons_refs(Paddings::PERIODIC, q, 1);
+    std::cout << "Elapsed time for memset: " << elapsed_seconds1.count()
+              << "s\n";
+  }
 
-  domain::Domain<Dim, side_length, side_length, side_length> values(
-      Paddings::PERIODIC, q, 1);
+  {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    q.memset(grid_edges.values_buff, 0,
+             sizeof(DataType) * grid_edges.num_values);
+    q.wait();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_seconds1 = end - start;
+
+    std::cout << "Elapsed time for memset: " << elapsed_seconds1.count()
+              << "s\n";
+  }
+
+  auto start2 = std::chrono::high_resolution_clock::now();
+  q.parallel_for(sycl::range<1>(grid_edges.num_values), [=](sycl::id<1> i) {
+     grid_edges.values_buff[i] = 0;
+   }).wait();
+  auto end2 = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> elapsed_seconds2 = end2 - start2;
+  std::cout << "Elapsed time for parallel_for: " << elapsed_seconds2.count()
+            << "s\n";
+
+  // domain::Grid<cube_edges_refs, Dim, side_length, side_length, side_length>
+  //     grid_edges_refs(Paddings::PERIODIC, q, 1);
+
+  //  domain::Grid<cube_tetrahedrons, Dim, side_length, side_length,
+  //  side_length>
+  //      grid_tetrahedrons(Paddings::PERIODIC, q, 1);
+  //
+  //  domain::Grid<cube_tetrahedrons_refs, Dim, side_length, side_length,
+  //               side_length>
+  //      grid_tetrahedrons_refs(Paddings::PERIODIC, q, 1);
+  //
+  //  domain::Domain<Dim, side_length, side_length, side_length> values(
+  //      Paddings::PERIODIC, q, 1);
 
   // std::this_thread::sleep_for(std::chrono::seconds(20));
 
@@ -116,10 +162,15 @@ int main(int argc, char *argv[]) {
            sizeof(Atom<DataType>) * atoms_vector.size())
       .wait();
 
+  // TD<decltype(grid_edges)> grid_edges_t;
+
+  // for (int i = 0; i < 400; i++)
   q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
-     Atom<DataType> atom = atoms_device[i];
-     cutting_cubes(cutter, grid_edges_refs, atom, grid_step);
-   }).wait();
+    Atom<DataType> atom = atoms_device[i];
+    cutting_cubes(cutter, grid_edges, atom, grid_step);
+  });
+
+  q.wait();
 
   auto end = std::chrono::high_resolution_clock::now();
 

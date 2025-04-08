@@ -22,7 +22,7 @@ template <typename Cutter, typename DataType, typename Tet_type,
           Length... directions>
 void cutting_cubes_helper(
     const Cutter &cutter,
-    const domain::Grid<Tet_type, Dim, DomainSize...> &tet_grid,
+    const domain::Grid<Tet_type, Dim + 1, DomainSize...> &tet_grid,
     const Sphere<DataType, Dim> &sphere, DataType grid_step,
     const std::index_sequence<directions...>, Positions... positions) {
 
@@ -143,10 +143,10 @@ void cutting_cubes_helper(
 
 template <typename Cutter, typename DataType, typename Tet_type, Dimension Dim,
           Length... DomainSize>
-void cutting_cubes(const Cutter &cutter,
-                   const domain::Grid<Tet_type, Dim, DomainSize...> &tet_grid,
-                   const Sphere<DataType, Dim> &sphere,
-                   const DataType grid_step) {
+void cutting_cubes(
+    const Cutter &cutter,
+    const domain::Grid<Tet_type, Dim + 1, DomainSize...> &tet_grid,
+    const Sphere<DataType, Dim> &sphere, const DataType grid_step) {
   cutting_cubes_helper(cutter, tet_grid, sphere, grid_step,
                        std::make_index_sequence<0u>{});
 }
