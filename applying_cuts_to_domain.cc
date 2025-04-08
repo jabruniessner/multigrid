@@ -110,6 +110,8 @@ int main(int argc, char *argv[]) {
   Atom<DataType> *atoms_device =
       sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
 
+  auto start = std::chrono::high_resolution_clock::now();
+
   q.memcpy(atoms_device, atoms_vector.data(),
            sizeof(Atom<DataType>) * atoms_vector.size())
       .wait();
@@ -118,6 +120,12 @@ int main(int argc, char *argv[]) {
      Atom<DataType> atom = atoms_device[i];
      cutting_cubes(cutter, grid_edges_refs, atom, grid_step);
    }).wait();
+
+  auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> elapsed_seconds = end - start;
+
+  std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
 
   std::cout << "Hello, World!" << std::endl;
   return 0;
