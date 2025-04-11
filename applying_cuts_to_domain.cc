@@ -33,12 +33,12 @@ using cube_tetrahedrons = std::array<sycl::half, 6>;
 using cube_tetrahedrons_refs = std::array<sycl::atomic<sycl::half>, 6>;
 
 struct Cutter {
-  void operator()(const domain::Grid<std::uint32_t, Dim + 1, side_length,
-                                     side_length, side_length, 19> &tet_grid,
-                  const DataType *sphere_position, const DataType sphere_radius,
-                  const DataType grid_step, const std::size_t position_0,
-                  const std::size_t position_1,
-                  const std::size_t position_2) const {
+  template <std::size_t... side_lengths>
+  void operator()(
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths...> &tet_grid,
+      const DataType *sphere_position, const DataType sphere_radius,
+      const DataType grid_step, const std::size_t position_0,
+      const std::size_t position_1, const std::size_t position_2) const {
 
     Cutter_utils::vector3d point{static_cast<DataType>(position_0),
                                  static_cast<DataType>(position_1),
@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
   std::cout << "The size of a edge_ref is " << sizeof(edge_ref) << std::endl;
 
   sycl::gpu_selector selector;
-  //  sycl::queue q(selector,
-  //                sycl::property_list{sycl::property::queue::out_of_order{}});
+  sycl::queue q(selector,
+                sycl::property_list{sycl::property::queue::in_order{}});
 
-  sycl::queue q(selector);
+  // sycl::queue q(selector);
 
-  domain::Grid<std::uint32_t, Dim + 1, side_length, side_length, side_length,
-               19>
-      grid_edges(Paddings::PERIODIC, q, 1);
+  domain::Grid<std::uint32_t, Dim + 1, 510, 510, 60, 19> grid_edges(
+      Paddings::PERIODIC, q, 1);
+
   {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -142,15 +142,14 @@ int main(int argc, char *argv[]) {
   Atom<DataType> *atoms_device =
       sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
 
-  auto start = std::chrono::high_resolution_clock::now();
-
   q.memcpy(atoms_device, atoms_vector.data(),
            sizeof(Atom<DataType>) * atoms_vector.size())
       .wait();
 
-  // TD<decltype(grid_edges)> grid_edges_t;
+  // // TD<decltype(grid_edges)> grid_edges_t;
 
-  for (int i = 0; i < 400; i++)
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int i = 0; i < 100; i++)
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Atom<DataType> atom = atoms_device[i];
       cutting_cubes(cutter, grid_edges, atom, grid_step);
@@ -164,6 +163,6 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
 
-  std::cout << "Hello, World!" << std::endl;
+  // std::cout << "Hello, World!" << std::endl;
   return 0;
 }
