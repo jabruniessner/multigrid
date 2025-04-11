@@ -6,7 +6,7 @@
 #include <iostream>
 
 #ifndef TETRAEDA_TYPE_H
-#define TERTAEDA_TYPE_H
+#define TETRAEDA_TYPE_H
 
 template <Dimension Dim>
 struct tetraeda_line_points

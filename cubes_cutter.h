@@ -3,6 +3,7 @@
 #include "blas.h"
 #include "predefinitions.h"
 #include "scientific_quantities.h"
+#include "tetraeda_type.h"
 #include "utils.h"
 #include <array>
 #include <bits/elements_of.h>
