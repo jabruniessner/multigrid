@@ -15,6 +15,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_COMPILER "acpp")
 
+include_directories("mdspan")
+
 #endif()
 
 # Add the executable

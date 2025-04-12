@@ -4,12 +4,11 @@
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
-// #include "tetraeda_type.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <experimental/mdspan>
 #include <iostream>
-// #include <mdspan>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
 
@@ -35,7 +34,8 @@ using cube_tetrahedrons_refs = std::array<sycl::atomic<sycl::half>, 6>;
 struct Cutter {
   template <std::size_t... side_lengths>
   void operator()(
-      const domain::Grid<std::uint32_t, Dim + 1, side_lengths...> &tet_grid,
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
+      const domain::Grid<std::uint8_t, Dim, side_lengths...> &inside_outside,
       const DataType *sphere_position, const DataType sphere_radius,
       const DataType grid_step, const std::size_t position_0,
       const std::size_t position_1, const std::size_t position_2) const {
@@ -46,9 +46,11 @@ struct Cutter {
     Cutter_utils::vector3d center{sphere_position[0], sphere_position[1],
                                   sphere_position[2]};
     DataType radius = sphere_radius;
-    Cutter_utils::find_polygon_cuts(
+    std::uint8_t points = Cutter_utils::find_polygon_cuts(
         point, center, radius, grid_step,
         &tet_grid(position_0, position_1, position_2, 0));
+
+    inside_outside(position_0, position_1, position_2) = points;
     //   Implement the cutting logic here
     // for (int i = 0; i < 19; ++i) {
     //   tet_grid(position_0, position_1, position_2, i) = 0;
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "The size of a edge_ref is " << sizeof(edge_ref) << std::endl;
 
-  sycl::gpu_selector selector;
+  sycl::cpu_selector selector;
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
@@ -79,7 +81,13 @@ int main(int argc, char *argv[]) {
   domain::Grid<std::uint32_t, Dim + 1, 100, 100, 100, 19> grid_edges(
       Paddings::PERIODIC, q, 1);
 
-  q.memset(grid_edges.values_buff, 0, sizeof(DataType) * grid_edges.num_values);
+  domain::Grid<std::uint8_t, Dim, 100, 100, 100> inside_outside(
+      Paddings::PERIODIC, q, 1);
+
+  q.memset(grid_edges.values_buff, 0,
+           sizeof(std::uint32_t) * grid_edges.num_values);
+  q.memset(inside_outside.values_buff, 0,
+           sizeof(std::uint8_t) * inside_outside.num_values);
   q.wait();
 
   auto start2 = std::chrono::high_resolution_clock::now();
@@ -96,7 +104,7 @@ int main(int argc, char *argv[]) {
 
   std::list<Atom<DataType>> atoms;
 
-  std::array<DataType, 3> origin = {-50, -50, -50};
+  // std::array<DataType, 3> origin = {-50, -50, -50};
 
   atoms.push_back({.charge = 1.0f});
   atoms.back().Position = {50.f, 50.f, 50.f};
@@ -122,15 +130,51 @@ int main(int argc, char *argv[]) {
   // // TD<decltype(grid_edges)> grid_edges_t;
 
   auto start = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < 100; i++)
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
-      Atom<DataType> atom = atoms_device[i];
-      cutting_cubes(cutter, grid_edges, atom, grid_step);
-    });
+  // for (int i = 0; i < 100; i++)
+  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
+    Atom<DataType> atom = atoms_device[i];
+    cutting_cubes(cutter, grid_edges, inside_outside, atom, grid_step);
+  });
 
   q.wait();
 
   auto end = std::chrono::high_resolution_clock::now();
+
+  std::vector<std::uint8_t> inside_outside_host;
+  inside_outside_host.reserve(inside_outside.num_values);
+
+  q.memcpy(inside_outside_host.data(), inside_outside.values_buff,
+           sizeof(std::uint8_t) * inside_outside.num_values)
+      .wait();
+
+  auto inside_outside_span =
+      std::mdspan(inside_outside_host.data(), 100, 100, 100);
+
+  // Copy the grid_edges back to the host
+  std::vector<std::uint32_t> grid_edges_host;
+  grid_edges_host.reserve(grid_edges.num_values);
+  q.memcpy(grid_edges_host.data(), grid_edges.values_buff,
+           sizeof(std::uint32_t) * grid_edges.num_values)
+      .wait();
+
+  auto grid_edges_span = std::mdspan(grid_edges_host.data(), 100, 100, 100, 19);
+
+  int cut_cells = 0;
+
+  for (int i = 0; i < inside_outside_span.extent(0); i++) {
+    for (int j = 0; j < inside_outside_span.extent(1); j++) {
+      for (int k = 0; k < inside_outside_span.extent(2); k++) {
+
+        std::uint8_t inside_outside_value = inside_outside_span[i, j, k];
+        if (inside_outside_value == 0 || inside_outside_value == 255)
+          continue;
+
+        std::uint32_t *grid_value = &(grid_edges_span[i, j, k, 0]);
+      }
+    }
+  }
+
+  std::cout << "Number of cut cells: " << cut_cells << std::endl;
 
   std::chrono::duration<double> elapsed_seconds = end - start;
 

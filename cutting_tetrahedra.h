@@ -72,8 +72,9 @@ inline constexpr bool in_sphere(const vector3d &point, const vector3d &center,
 }
 
 template <typename DataType>
-void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
-                       DataType grid_step, std::uint32_t *lengths) {
+std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
+                               DataType &radius, DataType grid_step,
+                               std::uint32_t *lengths) {
   // Iteration over all cubes
   std::uint8_t points = 0;
   for (std::uint8_t i = 0; i < 8; i++) {
@@ -90,7 +91,7 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
   }
 
   if (points == 0 || points == 255)
-    return;
+    return points;
 
   {
     bool zero_in_sphere = (bool)(points & 1);
@@ -216,6 +217,8 @@ void find_polygon_cuts(vector3d &point, vector3d &center, DataType &radius,
       edge_number++;
     }
   }
+
+  return points;
 }
 
 template <template <typename> typename container>
