@@ -41,6 +41,7 @@ add_executable(test_kappa_functions test_kappa_function.cc)
 add_executable(PBE_example PBE_example.cc fileio.cc)
 add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
+add_executable(applying_cuts_test_debug applying_cuts_to_domain_debug.cc fileio.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
