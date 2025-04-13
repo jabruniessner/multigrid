@@ -5,6 +5,7 @@
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
+#include "ply_file_writer.h"
 #include <array>
 #include <boost/container/static_vector.hpp>
 #include <cstddef>
@@ -188,6 +189,10 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  std::ofstream outfile("cut_faces_simple.ply");
+
+  ply::print_faces_to_ply(outfile, faces);
 
   std::cout << "Number of cut cells: " << cut_cells << std::endl;
 
