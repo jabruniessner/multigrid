@@ -1,5 +1,6 @@
 #include "Atom_types.h"
 #include "Domain.h"
+#include "compute_faces.h"
 #include "cutting_tetrahedra.h"
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
@@ -166,16 +167,24 @@ int main(int argc, char *argv[]) {
 
   int cut_cells = 0;
 
+  std::list<Face> faces;
+
   for (int i = 0; i < inside_outside_span.extent(0); i++) {
     for (int j = 0; j < inside_outside_span.extent(1); j++) {
       for (int k = 0; k < inside_outside_span.extent(2); k++) {
 
-        std::uint8_t inside_outside_value = inside_outside_span[i, j, k];
-        if (inside_outside_value == 0 || inside_outside_value == 255)
+        std::uint8_t points = inside_outside_span[i, j, k];
+        if (points == 0 || points == 255)
           continue;
 
         std::uint32_t *grid_value = &(grid_edges_span[i, j, k, 0]);
         std::span<std::uint32_t> grid_value_span(grid_value, 19);
+
+        vector3d point{static_cast<DataType>(i * grid_step),
+                       static_cast<DataType>(j * grid_step),
+                       static_cast<DataType>(k * grid_step)};
+
+        compute_faces(points, grid_step, point, grid_value_span, faces);
       }
     }
   }

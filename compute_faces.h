@@ -16,7 +16,7 @@ constexpr DataType sqrt3inv = 1 / const_sqrt(3);
 
 template <template <typename T> typename Container>
 void compute_faces(const std::uint8_t points, const DataType grid_step,
-                   const vector3d &point, std::span<DataType, 19> lengths,
+                   const vector3d &point, std::span<std::uint32_t> lengths,
                    Container<Face> &faces) {
 
   std::uint8_t h = 0;
@@ -56,7 +56,7 @@ void compute_faces(const std::uint8_t points, const DataType grid_step,
           auto direction_vec = vector3d{(direction & 1) * grid_step,
                                         ((direction >> 1) & 1) * grid_step,
                                         ((direction >> 2) & 1) * grid_step} *
-                               (prefac * (1 - 2 * (points_tet[j] == 7)));
+                               ((1 - 2 * (points_tet[j] == 7)));
 
           auto point_setoff =
               point + vector3d{(points_tet[j] & 1) * grid_step,
@@ -82,7 +82,14 @@ void compute_faces(const std::uint8_t points, const DataType grid_step,
 
           // std::uint8_t point_index = points_tet[length_index];
 
-          direction_vec *= lengths[length_index];
+          using length_type = decltype(lengths)::element_type;
+          constexpr DataType max_length_inv =
+              1.f /
+              static_cast<DataType>(std::numeric_limits<length_type>::max());
+
+          direction_vec *=
+              static_cast<DataType>(lengths[length_index]) * max_length_inv;
+
           tetrahedra_points.push_back(point_setoff + direction_vec);
         }
       }
