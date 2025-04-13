@@ -104,14 +104,14 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                         ((i >> 2) & 1) * grid_step};
 
-      DataType dist_norm = norm(distance);
-      distance /= dist_norm;
+      DataType dist_norm_inv = norm(distance);
+      distance *= dist_norm_inv;
 
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
       std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p / dist_norm * Upper_limit);
+          static_cast<std::uint32_t>(isec_p / dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
@@ -136,9 +136,9 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       vector3d distance{(i & 1) * (-grid_step), ((i >> 1) & 1) * (-grid_step),
                         ((i >> 2) & 1) * (-grid_step)};
 
-      DataType dist_norm = norm(distance);
+      DataType dist_norm_inv = 1 / norm(distance);
 
-      distance /= dist_norm;
+      distance *= dist_norm_inv;
 
       auto point7 = point + vector3d{grid_step, grid_step, grid_step};
 
@@ -146,7 +146,7 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
           find_intersection_point_sphere<Dim>(point7, distance, center, radius);
 
       std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p / dist_norm * Upper_limit);
+          static_cast<std::uint32_t>(isec_p / dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>

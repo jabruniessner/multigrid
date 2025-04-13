@@ -5,10 +5,12 @@
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
 #include <array>
+#include <boost/container/static_vector.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <experimental/mdspan>
 #include <iostream>
+#include <span>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
 
@@ -27,6 +29,9 @@ using cube_edges_refs =
 
 using edge_ref = sycl::atomic_ref<DataType, sycl::memory_order::relaxed,
                                   sycl::memory_scope::device>;
+
+using vector3d = blas::vector<DataType, Dim>;
+using Face = boost::container::static_vector<vector3d, 3>;
 
 using cube_tetrahedrons = std::array<sycl::half, 6>;
 using cube_tetrahedrons_refs = std::array<sycl::atomic<sycl::half>, 6>;
@@ -170,6 +175,7 @@ int main(int argc, char *argv[]) {
           continue;
 
         std::uint32_t *grid_value = &(grid_edges_span[i, j, k, 0]);
+        std::span<std::uint32_t> grid_value_span(grid_value, 19);
       }
     }
   }
