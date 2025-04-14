@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <experimental/mdspan>
 #include <iostream>
+#include <limits>
 #include <span>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   atoms.push_back({.charge = 1.0f});
   atoms.back().Position = {50.f, 50.f, 50.f};
-  atoms.back().radius = 45.f;
+  atoms.back().radius = 0.5f;
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
@@ -155,7 +156,10 @@ int main(int argc, char *argv[]) {
       .wait();
 
   auto inside_outside_span =
-      std::mdspan(inside_outside_host.data(), 100, 100, 100);
+      std::mdspan(inside_outside_host.data(), 102, 102, 102);
+
+  std::cout << "inside_outside size: " << inside_outside.num_values
+            << std::endl;
 
   // Copy the grid_edges back to the host
   std::vector<std::uint32_t> grid_edges_host;
@@ -164,7 +168,8 @@ int main(int argc, char *argv[]) {
            sizeof(std::uint32_t) * grid_edges.num_values)
       .wait();
 
-  auto grid_edges_span = std::mdspan(grid_edges_host.data(), 100, 100, 100, 19);
+  auto grid_edges_span = std::mdspan(grid_edges_host.data(), 102, 102, 102, 21);
+  std::cout << "grid_edges size: " << grid_edges.num_values << std::endl;
 
   int cut_cells = 0;
 
@@ -178,14 +183,28 @@ int main(int argc, char *argv[]) {
         if (points == 0 || points == 255)
           continue;
 
-        std::uint32_t *grid_value = &(grid_edges_span[i, j, k, 0]);
-        std::span<std::uint32_t> grid_value_span(grid_value, 19);
+        std::uint32_t *grid_values = &(grid_edges_span[i, j, k, 0]);
+        std::span<std::uint32_t> grid_value_span(grid_values, 21);
 
         vector3d point{static_cast<DataType>(i * grid_step),
                        static_cast<DataType>(j * grid_step),
                        static_cast<DataType>(k * grid_step)};
 
+        for (int l = 0; l < 21; l++) {
+          std::cout << static_cast<DataType>(grid_value_span[l]) /
+                           static_cast<DataType>(
+                               std::numeric_limits<std::uint32_t>::max())
+                    << " ";
+        }
+
+        std::cout << std::endl;
+
         compute_faces(points, grid_step, point, grid_value_span, faces);
+
+        std::cout << i << " " << j << " " << k << " "
+                  << static_cast<int>(points) << std::endl;
+
+        cut_cells++;
       }
     }
   }

@@ -75,6 +75,7 @@ template <typename DataType>
 std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
                                DataType &radius, DataType grid_step,
                                std::uint32_t *lengths) {
+
   // Iteration over all cubes
   std::uint8_t points = 0;
   for (std::uint8_t i = 0; i < 8; i++) {
@@ -104,18 +105,22 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                         ((i >> 2) & 1) * grid_step};
 
-      DataType dist_norm_inv = norm(distance);
+      DataType dist_norm_inv = 1 / norm(distance);
       distance *= dist_norm_inv;
 
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
       std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p / dist_norm_inv * Upper_limit);
+          static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
           edge(lengths[i % 7]);
+
+      std::uint32_t expected_value = 0;
+
+      edge.compare_exchange_weak(expected_value, isec_p_int);
 
       zero_in_sphere && (!other) ? edge.fetch_min(isec_p_int)
                                  : edge.fetch_max(isec_p_int);
@@ -146,11 +151,14 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
           find_intersection_point_sphere<Dim>(point7, distance, center, radius);
 
       std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p / dist_norm_inv * Upper_limit);
+          static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
           edge(lengths[7 + i - 1]);
+
+      std::uint32_t expected_value = 0;
+      edge.compare_exchange_weak(expected_value, isec_p_int);
 
       seven_in_sphere && (!other) ? edge.fetch_min(isec_p_int)
                                   : edge.fetch_max(isec_p_int);
@@ -183,6 +191,9 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
                          sycl::memory_scope::device>
             edge(lengths[edge_number]);
 
+        std::uint32_t expected_value = 0;
+        edge.compare_exchange_weak(expected_value, isec_p_int);
+
         this_in_sphere ? edge.fetch_max(isec_p_int)
                        : edge.fetch_min(isec_p_int);
 
@@ -207,6 +218,9 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
         sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
             edge(lengths[edge_number]);
+
+        std::uint32_t expected_value = 0;
+        edge.compare_exchange_weak(expected_value, isec_p_int);
 
         this_in_sphere ? edge.fetch_max(isec_p_int)
                        : edge.fetch_min(isec_p_int);
