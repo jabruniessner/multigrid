@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   atoms.push_back({.charge = 1.0f});
   atoms.back().Position = {50.f, 50.f, 50.f};
-  atoms.back().radius = 0.5f;
+  atoms.back().radius = 45.f;
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
@@ -190,24 +190,32 @@ int main(int argc, char *argv[]) {
                        static_cast<DataType>(j * grid_step),
                        static_cast<DataType>(k * grid_step)};
 
-        for (int l = 0; l < 21; l++) {
-          std::cout << static_cast<DataType>(grid_value_span[l]) /
-                           static_cast<DataType>(
-                               std::numeric_limits<std::uint32_t>::max())
-                    << " ";
-        }
+        std::cout << ++cut_cells << " ";
+
+        // if (cut_cells < 2)
+        //   continue;
+
+        //  for (int l = 0; l < 21; l++) {
+        //    std::cout << static_cast<DataType>(grid_value_span[l]) /
+        //                     static_cast<DataType>(
+        //                         std::numeric_limits<std::uint32_t>::max())
+        //              << " ";
+        //  }
 
         std::cout << std::endl;
 
         compute_faces(points, grid_step, point, grid_value_span, faces);
 
-        std::cout << i << " " << j << " " << k << " "
-                  << static_cast<int>(points) << std::endl;
+        // std::cout << i << " " << j << " " << k << " "
+        //           << static_cast<int>(points) << std::endl;
 
-        cut_cells++;
+        // if (1 == cut_cells)
+        //   goto endloop;
       }
     }
   }
+
+endloop:
 
   std::ofstream outfile("cut_faces_simple.ply");
 

@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
   atom_host.Position[0] = 50;
   atom_host.Position[1] = 50;
   atom_host.Position[2] = 50;
-  atom_host.radius = 45.f;
+  atom_host.radius = 1.f;
 
   // Atom<DataType> *atom_device = sycl::malloc_host<Atom<DataType>>(1, q);
   // q.memcpy(atom_device, &atom_ost, sizeof(Atom<DataType>)).wait();

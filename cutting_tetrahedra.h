@@ -32,6 +32,9 @@ constexpr DataType sqrt2inv = 1 / const_sqrt(2.);
 constexpr DataType Upper_limit =
     static_cast<DataType>(std::numeric_limits<std::uint32_t>::max());
 
+constexpr std::uint32_t Upper_limit_int =
+    std::numeric_limits<std::uint32_t>::max();
+
 using vector3d = blas::vector<DataType, Dim>;
 using Position3D = std::array<int, Dim>;
 
@@ -111,8 +114,15 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point, distance, center, radius);
 
-      std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
+      std::uint32_t isec_p_int;
+
+      if (isec_p * dist_norm_inv >= 1)
+        isec_p_int = Upper_limit_int;
+      else if (isec_p * dist_norm_inv <= 0)
+        isec_p_int = 0;
+      else
+        isec_p_int =
+            static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
@@ -150,8 +160,15 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       DataType isec_p =
           find_intersection_point_sphere<Dim>(point7, distance, center, radius);
 
-      std::uint32_t isec_p_int =
-          static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
+      std::uint32_t isec_p_int;
+
+      if (isec_p * dist_norm_inv >= 1)
+        isec_p_int = Upper_limit_int;
+      else if (isec_p * dist_norm_inv <= 0)
+        isec_p_int = 0;
+      else
+        isec_p_int =
+            static_cast<std::uint32_t>(isec_p * dist_norm_inv * Upper_limit);
 
       sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                        sycl::memory_scope::device>
@@ -184,8 +201,13 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
         auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
                                                       center, radius);
 
-        std::uint32_t isec_p_int =
-            static_cast<std::uint32_t>(isec_p * Upper_limit);
+        std::uint32_t isec_p_int;
+        if (isec_p >= 1)
+          isec_p_int = Upper_limit_int;
+        else if (isec_p <= 0)
+          isec_p_int = 0;
+        else
+          isec_p_int = static_cast<std::uint32_t>(isec_p * Upper_limit);
 
         sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
@@ -212,8 +234,14 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
 
         auto isec_p = compute_interesect_for_no_princ(i, dir, grid_step, point,
                                                       center, radius);
-        std::uint32_t isec_p_int =
-            static_cast<std::uint32_t>(isec_p * Upper_limit);
+
+        std::uint32_t isec_p_int;
+        if (isec_p >= 1)
+          isec_p_int = Upper_limit_int;
+        else if (isec_p <= 0)
+          isec_p_int = 0;
+        else
+          isec_p_int = static_cast<std::uint32_t>(isec_p * Upper_limit);
 
         sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                          sycl::memory_scope::device>
