@@ -24,7 +24,7 @@ template <typename Cutter, typename DataType, std::size_t... DomainSize,
 void cutting_cubes_helper(
     const Cutter &cutter,
     const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., 19> &tet_grid,
-    const domain::Grid<std::uint8_t, Dim, DomainSize...> &inside_outside,
+    const domain::Grid<std::uint32_t, Dim, DomainSize...> &inside_outside,
     const Sphere<DataType, Dim> &sphere, DataType grid_step,
     const std::index_sequence<directions...>, Positions... positions) {
 
@@ -58,47 +58,50 @@ void cutting_cubes_helper(
     const int upper_bound =
         std::floor((current_value + sqrt_outer) / grid_step - .5);
 
-    auto sqrt_squared_inner =
-        (blas::square(radius_inner) -
-         (blas::square(Position[directions] - grid_step * (positions + .5)) +
-          ...));
+    //  auto sqrt_squared_inner =
+    //      (blas::square(radius_inner) -
+    //       (blas::square(Position[directions] - grid_step * (positions + .5))
+    //       +
+    //        ...));
 
-    if (sqrt_squared_inner <= 0) {
-      for (int i = lower_bound; i <= upper_bound; i++) {
+    //  if (sqrt_squared_inner <= 0) {
+    for (int i = lower_bound; i <= upper_bound; i++) {
 
-        // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
-        // Here come the necessary routines to cut the tetrahedra
-        //
-        cutter(tet_grid, inside_outside,
-               static_cast<const DataType *>(sphere.Position.data()),
-               sphere.radius, grid_step, positions..., i);
-      }
-    } else if (sqrt_squared_inner > 0) {
-
-      const auto sqrt_inner = std::sqrt(sqrt_squared_inner);
-
-      const int lower_bound_inner =
-          std::floor((current_value - sqrt_inner) / grid_step - .5);
-
-      for (int i = lower_bound; i <= lower_bound_inner; i++) {
-        // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
-        // Here come the necessary routines to cut the tetrahedra
-        cutter(tet_grid, inside_outside,
-               static_cast<const DataType *>(sphere.Position.data()),
-               sphere.radius, grid_step, positions..., i);
-      }
-
-      const int upper_bound_inner =
-          std::ceil((current_value + sqrt_inner) / grid_step - .5);
-
-      for (int i = upper_bound_inner; i <= upper_bound; i++) {
-        // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
-        // Here come the necessary routines to cut the tetrahedra
-        cutter(tet_grid, inside_outside,
-               static_cast<const DataType *>(sphere.Position.data()),
-               sphere.radius, grid_step, positions..., i);
-      }
+      // co_yield std::array<int, Dim>{static_cast<int>(positions)..., i};
+      // Here come the necessary routines to cut the tetrahedra
+      //
+      cutter(tet_grid, inside_outside,
+             static_cast<const DataType *>(sphere.Position.data()),
+             sphere.radius, grid_step, positions..., i);
     }
+    //    } else if (sqrt_squared_inner > 0) {
+    //
+    //      const auto sqrt_inner = std::sqrt(sqrt_squared_inner);
+    //
+    //      const int lower_bound_inner =
+    //          std::floor((current_value - sqrt_inner) / grid_step - .5);
+    //
+    //      for (int i = lower_bound; i <= lower_bound_inner; i++) {
+    //        // co_yield std::array<int, Dim>{static_cast<int>(positions)...,
+    //        i};
+    //        // Here come the necessary routines to cut the tetrahedra
+    //        cutter(tet_grid, inside_outside,
+    //               static_cast<const DataType *>(sphere.Position.data()),
+    //               sphere.radius, grid_step, positions..., i);
+    //      }
+    //
+    //      const int upper_bound_inner =
+    //          std::ceil((current_value + sqrt_inner) / grid_step - .5);
+    //
+    //      for (int i = upper_bound_inner; i <= upper_bound; i++) {
+    //        // co_yield std::array<int, Dim>{static_cast<int>(positions)...,
+    //        i};
+    //        // Here come the necessary routines to cut the tetrahedra
+    //        cutter(tet_grid, inside_outside,
+    //               static_cast<const DataType *>(sphere.Position.data()),
+    //               sphere.radius, grid_step, positions..., i);
+    //      }
+    //    }
 
   } else if constexpr (sizeof...(directions) == 0) {
 
@@ -151,7 +154,7 @@ template <typename Cutter, typename DataType, Dimension Dim,
 void cutting_cubes(
     const Cutter &cutter,
     const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., 19> &tet_grid,
-    const domain::Grid<std::uint8_t, Dim, DomainSize...> &inside_outside,
+    const domain::Grid<std::uint32_t, Dim, DomainSize...> &inside_outside,
     const Sphere<DataType, Dim> &sphere, const DataType grid_step) {
   cutting_cubes_helper(cutter, tet_grid, inside_outside, sphere, grid_step,
                        std::make_index_sequence<0u>{});

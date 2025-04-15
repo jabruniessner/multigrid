@@ -43,7 +43,7 @@ struct Cutter {
   template <std::size_t... side_lengths>
   void operator()(
       const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
-      const domain::Grid<std::uint8_t, Dim, side_lengths...> &inside_outside,
+      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
       const DataType *sphere_position, const DataType sphere_radius,
       const DataType grid_step, const std::size_t position_0,
       const std::size_t position_1, const std::size_t position_2) const {
@@ -54,11 +54,16 @@ struct Cutter {
     Cutter_utils::vector3d center{sphere_position[0], sphere_position[1],
                                   sphere_position[2]};
     DataType radius = sphere_radius;
-    std::uint8_t points = Cutter_utils::find_polygon_cuts(
+    std::uint32_t points = Cutter_utils::find_polygon_cuts(
         point, center, radius, grid_step,
         &tet_grid(position_0, position_1, position_2, 0));
 
-    inside_outside(position_0, position_1, position_2) = points;
+    sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
+                     sycl::memory_scope::device>
+        atomic_inside_outside(
+            inside_outside(position_0, position_1, position_2));
+
+    atomic_inside_outside.fetch_or(points);
     //   Implement the cutting logic here
     // for (int i = 0; i < 19; ++i) {
     //   tet_grid(position_0, position_1, position_2, i) = 0;
@@ -89,13 +94,13 @@ int main(int argc, char *argv[]) {
   domain::Grid<std::uint32_t, Dim + 1, 100, 100, 100, 19> grid_edges(
       Paddings::PERIODIC, q, 1);
 
-  domain::Grid<std::uint8_t, Dim, 100, 100, 100> inside_outside(
+  domain::Grid<std::uint32_t, Dim, 100, 100, 100> inside_outside(
       Paddings::PERIODIC, q, 1);
 
   q.memset(grid_edges.values_buff, 0,
            sizeof(std::uint32_t) * grid_edges.num_values);
   q.memset(inside_outside.values_buff, 0,
-           sizeof(std::uint8_t) * inside_outside.num_values);
+           sizeof(std::uint32_t) * inside_outside.num_values);
   q.wait();
 
   auto start2 = std::chrono::high_resolution_clock::now();
@@ -115,8 +120,11 @@ int main(int argc, char *argv[]) {
   // std::array<DataType, 3> origin = {-50, -50, -50};
 
   atoms.push_back({.charge = 1.0f});
-  atoms.back().Position = {50.f, 50.f, 50.f};
-  atoms.back().radius = 45.f;
+  atoms.back().Position = {40.f, 50.f, 50.f};
+  atoms.back().radius = 20.f;
+  atoms.push_back({.charge = -1.0f});
+  atoms.back().Position = {60.f, 50.f, 50.f};
+  atoms.back().radius = 20.f;
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
@@ -148,11 +156,11 @@ int main(int argc, char *argv[]) {
 
   auto end = std::chrono::high_resolution_clock::now();
 
-  std::vector<std::uint8_t> inside_outside_host;
+  std::vector<std::uint32_t> inside_outside_host;
   inside_outside_host.reserve(inside_outside.num_values);
 
   q.memcpy(inside_outside_host.data(), inside_outside.values_buff,
-           sizeof(std::uint8_t) * inside_outside.num_values)
+           sizeof(std::uint32_t) * inside_outside.num_values)
       .wait();
 
   auto inside_outside_span =
@@ -190,7 +198,7 @@ int main(int argc, char *argv[]) {
                        static_cast<DataType>(j * grid_step),
                        static_cast<DataType>(k * grid_step)};
 
-        std::cout << ++cut_cells << " ";
+        // std::cout << ++cut_cells << " ";
 
         // if (cut_cells < 2)
         //   continue;
@@ -202,7 +210,7 @@ int main(int argc, char *argv[]) {
         //              << " ";
         //  }
 
-        std::cout << std::endl;
+        // std::cout << std::endl;
 
         compute_faces(points, grid_step, point, grid_value_span, faces);
 
@@ -215,7 +223,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-endloop:
+  // endloop:
 
   std::ofstream outfile("cut_faces_simple.ply");
 
