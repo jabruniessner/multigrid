@@ -45,7 +45,7 @@ inline DataType find_intersection_point_sphere(VType footpoint, VType direction,
   }
 
   DataType result =
-      (1 - 2 * (distance_vec_squared >= radius_squared && p_half < 0)) *
+      (1 - 2 * (distance_vec_squared > radius_squared && p_half < 0)) *
           std::sqrt(p_half_squared - q) -
       p_half;
 

@@ -120,11 +120,11 @@ int main(int argc, char *argv[]) {
   // std::array<DataType, 3> origin = {-50, -50, -50};
 
   atoms.push_back({.charge = 1.0f});
-  atoms.back().Position = {40.f, 50.f, 50.f};
-  atoms.back().radius = 20.f;
-  atoms.push_back({.charge = -1.0f});
-  atoms.back().Position = {60.f, 50.f, 50.f};
-  atoms.back().radius = 20.f;
+  atoms.back().Position = {50.5f, 50.f, 50.f};
+  atoms.back().radius = 0.5f;
+  // atoms.push_back({.charge = -1.0f});
+  // atoms.back().Position = {49.f, 50.f, 50.f};
+  // atoms.back().radius = 1.5f;
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
@@ -199,31 +199,33 @@ int main(int argc, char *argv[]) {
                        static_cast<DataType>(k * grid_step)};
 
         // std::cout << ++cut_cells << " ";
+        //
+        ++cut_cells;
 
-        // if (cut_cells < 2)
-        //   continue;
+        //  if (cut_cells < 5)
+        //    continue;
 
-        //  for (int l = 0; l < 21; l++) {
-        //    std::cout << static_cast<DataType>(grid_value_span[l]) /
-        //                     static_cast<DataType>(
-        //                         std::numeric_limits<std::uint32_t>::max())
-        //              << " ";
-        //  }
+        for (int l = 0; l < 21; l++) {
+          std::cout << static_cast<DataType>(grid_value_span[l]) /
+                           static_cast<DataType>(
+                               std::numeric_limits<std::uint32_t>::max())
+                    << " ";
+        }
 
-        // std::cout << std::endl;
+        std::cout << std::endl;
 
         compute_faces(points, grid_step, point, grid_value_span, faces);
 
-        // std::cout << i << " " << j << " " << k << " "
-        //           << static_cast<int>(points) << std::endl;
+        std::cout << i << " " << j << " " << k << " "
+                  << static_cast<int>(points) << std::endl;
 
-        // if (1 == cut_cells)
-        //   goto endloop;
+        //  if (5 == cut_cells)
+        //    goto endloop;
       }
     }
   }
 
-  // endloop:
+endloop:
 
   std::ofstream outfile("cut_faces_simple.ply");
 
