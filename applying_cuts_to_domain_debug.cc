@@ -73,12 +73,11 @@ struct Cutter {
 
 int main(int argc, char *argv[]) {
 
-  //  if (argc != 5) {
-  //    std::cerr << "Usage: " << argv[0]
-  //              << " <input_pqr_file> origin_x origin_y origin_z" <<
-  //              std::endl;
-  //    return 1;
-  //  }
+  if (argc != 5) {
+    std::cerr << "Usage: " << argv[0]
+              << " <input_pqr_file> origin_x origin_y origin_z" << std::endl;
+    return 1;
+  }
 
   // std::cout << "The size of an std::array<sycl::half, 19> is "
   //           << sizeof(cube_edges) << std::endl;
@@ -119,17 +118,28 @@ int main(int argc, char *argv[]) {
 
   // std::array<DataType, 3> origin = {-50, -50, -50};
 
-  atoms.push_back({.charge = -1.0f});
-  atoms.back().Position = {50.f, 50.f, 50.f};
-  atoms.back().radius = 0.5f;
-  atoms.push_back({.charge = 1.0f});
-  atoms.back().Position = {50.5f, 50.f, 50.f};
-  atoms.back().radius = 0.5f;
+  // atoms.push_back({.charge = -1.0f});
+  // atoms.back().Position = {60.f, 50.f, 50.f};
+  // atoms.back().radius = 20.f;
+  // atoms.push_back({.charge = 1.0f});
+  // atoms.back().Position = {40.f, 50.f, 50.f};
+  // atoms.back().radius = 20.f;
+
+  std::string filename = argv[1];
+  DataType origin_x = std::atof(argv[2]);
+  DataType origin_y = std::atof(argv[3]);
+  DataType origin_z = std::atof(argv[4]);
+
+  read_pqr_file(filename, atoms);
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
 
   for (auto &atom : atoms) {
+    atom.Position[0] -= origin_x;
+    atom.Position[1] -= origin_y;
+    atom.Position[2] -= origin_z;
+    atom.radius += 1.5f;
     atoms_vector.push_back(atom);
   }
 
