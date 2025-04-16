@@ -132,8 +132,8 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
 
       edge.compare_exchange_weak(expected_value, isec_p_int);
 
-      zero_in_sphere && (!other) ? edge.fetch_min(isec_p_int)
-                                 : edge.fetch_max(isec_p_int);
+      zero_in_sphere && (!other) ? edge.fetch_max(isec_p_int)
+                                 : edge.fetch_min(isec_p_int);
 
       // edge = isec_p_int;
     };
@@ -177,8 +177,8 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       std::uint32_t expected_value = 0;
       edge.compare_exchange_weak(expected_value, isec_p_int);
 
-      seven_in_sphere && (!other) ? edge.fetch_min(isec_p_int)
-                                  : edge.fetch_max(isec_p_int);
+      seven_in_sphere && (!other) ? edge.fetch_max(isec_p_int)
+                                  : edge.fetch_min(isec_p_int);
 
       // edge = isec_p_int;
     };

@@ -119,12 +119,12 @@ int main(int argc, char *argv[]) {
 
   // std::array<DataType, 3> origin = {-50, -50, -50};
 
+  atoms.push_back({.charge = -1.0f});
+  atoms.back().Position = {50.f, 50.f, 50.f};
+  atoms.back().radius = 0.5f;
   atoms.push_back({.charge = 1.0f});
   atoms.back().Position = {50.5f, 50.f, 50.f};
-  atoms.back().radius = 2.f;
-  //  atoms.push_back({.charge = -1.0f});
-  //  atoms.back().Position = {50.f, 50.f, 50.f};
-  //  atoms.back().radius = 0.5f;
+  atoms.back().radius = 0.5f;
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
