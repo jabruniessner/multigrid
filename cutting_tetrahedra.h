@@ -1,7 +1,7 @@
 #include "Atom_types.h"
 #include "Domain.h"
 #include "blas.h"
-#include "cubes_cutter.h"
+// #include "cubes_cutter.h"
 #include "hipSYCL/sycl/device_selector.hpp"
 #include "hipSYCL/sycl/libkernel/atomic_ref.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"

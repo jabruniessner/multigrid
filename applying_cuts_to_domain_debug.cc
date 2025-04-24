@@ -1,6 +1,7 @@
 #include "Atom_types.h"
 #include "Domain.h"
 #include "compute_faces.h"
+#include "cubes_cutter.h"
 #include "cutting_tetrahedra.h"
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
@@ -19,6 +20,11 @@
 
 constexpr int Dim = 3;
 constexpr int side_length = 353;
+
+constexpr int side_length_x = 510;
+constexpr int side_length_y = 510;
+constexpr int side_length_z = 60;
+constexpr int num_edges = 19;
 
 using DataType = float;
 
@@ -39,38 +45,6 @@ using Face = boost::container::static_vector<vector3d, 3>;
 using cube_tetrahedrons = std::array<sycl::half, 6>;
 using cube_tetrahedrons_refs = std::array<sycl::atomic<sycl::half>, 6>;
 
-struct Cutter {
-  template <std::size_t... side_lengths>
-  void operator()(
-      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
-      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
-      const DataType *sphere_position, const DataType sphere_radius,
-      const DataType grid_step, const std::size_t position_0,
-      const std::size_t position_1, const std::size_t position_2) const {
-
-    Cutter_utils::vector3d point{static_cast<DataType>(position_0),
-                                 static_cast<DataType>(position_1),
-                                 static_cast<DataType>(position_2)};
-    Cutter_utils::vector3d center{sphere_position[0], sphere_position[1],
-                                  sphere_position[2]};
-    DataType radius = sphere_radius;
-    std::uint32_t points = Cutter_utils::find_polygon_cuts(
-        point, center, radius, grid_step,
-        &tet_grid(position_0, position_1, position_2, 0));
-
-    sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
-                     sycl::memory_scope::device>
-        atomic_inside_outside(
-            inside_outside(position_0, position_1, position_2));
-
-    atomic_inside_outside.fetch_or(points);
-    //   Implement the cutting logic here
-    // for (int i = 0; i < 19; ++i) {
-    //   tet_grid(position_0, position_1, position_2, i) = 0;
-    // }
-  }
-};
-
 int main(int argc, char *argv[]) {
 
   if (argc != 5) {
@@ -90,11 +64,12 @@ int main(int argc, char *argv[]) {
 
   // sycl::queue q(selector);
 
-  domain::Grid<std::uint32_t, Dim + 1, 100, 100, 100, 19> grid_edges(
-      Paddings::PERIODIC, q, 1);
+  domain::Grid<std::uint32_t, Dim + 1, side_length_x, side_length_y,
+               side_length_z, num_edges>
+      grid_edges(Paddings::PERIODIC, q, 1);
 
-  domain::Grid<std::uint32_t, Dim, 100, 100, 100> inside_outside(
-      Paddings::PERIODIC, q, 1);
+  domain::Grid<std::uint32_t, Dim, side_length_x, side_length_y, side_length_z>
+      inside_outside(Paddings::PERIODIC, q, 1);
 
   q.memset(grid_edges.values_buff, 0,
            sizeof(std::uint32_t) * grid_edges.num_values);
@@ -108,9 +83,9 @@ int main(int argc, char *argv[]) {
    }).wait();
   auto end2 = std::chrono::high_resolution_clock::now();
 
-  std::chrono::duration<double> elapsed_seconds2 = end2 - start2;
-  std::cout << "Elapsed time for parallel_for: " << elapsed_seconds2.count()
-            << "s\n";
+  // std::chrono::duration<double> elapsed_seconds2 = end2 - start2;
+  // std::cout << "Elapsed time for parallel_for: " << elapsed_seconds2.count()
+  //           << "s\n";
 
   const DataType grid_step = 1.f;
 
@@ -139,11 +114,11 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= origin_x;
     atom.Position[1] -= origin_y;
     atom.Position[2] -= origin_z;
-    atom.radius += 1.5f;
+    // atom.radius += 1.5f;
     atoms_vector.push_back(atom);
   }
 
-  Cutter cutter{};
+  cubes_cutter::Cutter cutter{};
 
   // Copy atoms to device
   Atom<DataType> *atoms_device =
@@ -159,12 +134,17 @@ int main(int argc, char *argv[]) {
   // for (int i = 0; i < 100; i++)
   q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
     Atom<DataType> atom = atoms_device[i];
-    cutting_cubes(cutter, grid_edges, inside_outside, atom, grid_step);
+    cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
+                                grid_step);
   });
 
   q.wait();
 
   auto end = std::chrono::high_resolution_clock::now();
+
+  std::chrono::duration<double> elapsed_seconds = end - start;
+
+  std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
 
   std::vector<std::uint32_t> inside_outside_host;
   inside_outside_host.reserve(inside_outside.num_values);
@@ -174,7 +154,8 @@ int main(int argc, char *argv[]) {
       .wait();
 
   auto inside_outside_span =
-      std::mdspan(inside_outside_host.data(), 102, 102, 102);
+      std::mdspan(inside_outside_host.data(), side_length_x + 2,
+                  side_length_y + 2, side_length_z + 2);
 
   std::cout << "inside_outside size: " << inside_outside.num_values
             << std::endl;
@@ -186,7 +167,10 @@ int main(int argc, char *argv[]) {
            sizeof(std::uint32_t) * grid_edges.num_values)
       .wait();
 
-  auto grid_edges_span = std::mdspan(grid_edges_host.data(), 102, 102, 102, 21);
+  auto grid_edges_span =
+      std::mdspan(grid_edges_host.data(), side_length_x + 2, side_length_y + 2,
+                  side_length_z + 2, num_edges + 2);
+
   std::cout << "grid_edges size: " << grid_edges.num_values << std::endl;
 
   int cut_cells = 0;
@@ -202,14 +186,12 @@ int main(int argc, char *argv[]) {
           continue;
 
         std::uint32_t *grid_values = &(grid_edges_span[i, j, k, 0]);
-        std::span<std::uint32_t> grid_value_span(grid_values, 21);
+        std::span<std::uint32_t> grid_value_span(grid_values, num_edges + 2);
 
         vector3d point{static_cast<DataType>(i * grid_step),
                        static_cast<DataType>(j * grid_step),
                        static_cast<DataType>(k * grid_step)};
 
-        // std::cout << ++cut_cells << " ";
-        //
         ++cut_cells;
 
         //  if (cut_cells < 5)
@@ -242,10 +224,6 @@ endloop:
   ply::print_faces_to_ply(outfile, faces);
 
   std::cout << "Number of cut cells: " << cut_cells << std::endl;
-
-  std::chrono::duration<double> elapsed_seconds = end - start;
-
-  std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
 
   // std::cout << "Hello, World!" << std::endl;
   return 0;

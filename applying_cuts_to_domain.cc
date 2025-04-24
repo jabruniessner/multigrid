@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <iostream>
 // #include <mdspan>
+#include "cubes_cutter.h"
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
 
@@ -162,7 +163,8 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 100; i++)
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Atom<DataType> atom = atoms_device[i];
-      cutting_cubes(cutter, grid_edges, inside_outside, atom, grid_step);
+      cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
+                                  grid_step);
     });
 
   q.wait();

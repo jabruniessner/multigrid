@@ -14,10 +14,10 @@ using Face = boost::container::static_vector<vector3d, 3>;
 constexpr DataType sqrt2inv = 1 / const_sqrt(2);
 constexpr DataType sqrt3inv = 1 / const_sqrt(3);
 
-template <template <typename T> typename Container>
+template <typename Container>
 void compute_faces(const std::uint8_t points, const DataType grid_step,
                    const vector3d &point, std::span<std::uint32_t> lengths,
-                   Container<Face> &faces) {
+                   Container &faces) {
 
   std::uint8_t h = 0;
   for (std::uint8_t i = 1; i <= 4; i *= 2) {

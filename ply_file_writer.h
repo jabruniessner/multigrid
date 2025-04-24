@@ -11,8 +11,9 @@ namespace ply {
 using vector3d = blas::vector<DataType, 3>;
 using Face = boost::container::static_vector<vector3d, 3>;
 
-template <template <typename> typename container>
-void print_faces_to_ply(std::ostream &stream, container<Face> &faces) {
+// template <template <typename> typename container>
+template <typename Container>
+void print_faces_to_ply(std::ostream &stream, Container &faces) {
   stream << "ply\n";
   stream << "format ascii 1.0\n";
   stream << "element vertex " << faces.size() * 3 << "\n";

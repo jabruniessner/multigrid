@@ -1,6 +1,7 @@
 #include "Atom_types.h"
 #include "Domain.h"
 #include "blas.h"
+#include "cutting_tetrahedra.h"
 #include "predefinitions.h"
 #include "scientific_quantities.h"
 #include "tetraeda_type.h"
@@ -18,6 +19,40 @@
 
 #ifndef CUBES_CUTTER_H
 #define CUBES_CUTTER_H
+
+namespace cubes_cutter {
+
+struct Cutter {
+  template <std::size_t Dim, std::size_t... side_lengths>
+  void operator()(
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
+      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
+      const DataType *sphere_position, const DataType sphere_radius,
+      const DataType grid_step, const std::size_t position_0,
+      const std::size_t position_1, const std::size_t position_2) const {
+
+    Cutter_utils::vector3d point{static_cast<DataType>(position_0),
+                                 static_cast<DataType>(position_1),
+                                 static_cast<DataType>(position_2)};
+    Cutter_utils::vector3d center{sphere_position[0], sphere_position[1],
+                                  sphere_position[2]};
+    DataType radius = sphere_radius;
+    std::uint32_t points = Cutter_utils::find_polygon_cuts(
+        point, center, radius, grid_step,
+        &tet_grid(position_0, position_1, position_2, 0));
+
+    sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
+                     sycl::memory_scope::device>
+        atomic_inside_outside(
+            inside_outside(position_0, position_1, position_2));
+
+    atomic_inside_outside.fetch_or(points);
+    //   Implement the cutting logic here
+    // for (int i = 0; i < 19; ++i) {
+    //   tet_grid(position_0, position_1, position_2, i) = 0;
+    // }
+  }
+};
 
 template <typename Cutter, typename DataType, std::size_t... DomainSize,
           Dimension Dim, typename... Positions, Length... directions>
@@ -159,5 +194,7 @@ void cutting_cubes(
   cutting_cubes_helper(cutter, tet_grid, inside_outside, sphere, grid_step,
                        std::make_index_sequence<0u>{});
 }
+
+} // namespace cubes_cutter
 
 #endif
