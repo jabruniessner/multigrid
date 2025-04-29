@@ -6,6 +6,7 @@
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
+#include "hipSYCL/sycl/libkernel/nd_item.hpp"
 #include "ply_file_writer.h"
 #include <array>
 #include <boost/container/static_vector.hpp>
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "The size of a edge_ref is " << sizeof(edge_ref) << std::endl;
 
-  sycl::cpu_selector selector;
+  sycl::gpu_selector selector;
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
@@ -77,11 +78,11 @@ int main(int argc, char *argv[]) {
            sizeof(std::uint32_t) * inside_outside.num_values);
   q.wait();
 
-  auto start2 = std::chrono::high_resolution_clock::now();
-  q.parallel_for(sycl::range<1>(grid_edges.num_values), [=](sycl::id<1> i) {
-     grid_edges.values_buff[i] = 0;
-   }).wait();
-  auto end2 = std::chrono::high_resolution_clock::now();
+  //  auto start2 = std::chrono::high_resolution_clock::now();
+  //  q.parallel_for(sycl::range<1>(grid_edges.num_values), [=](sycl::id<1> i) {
+  //     grid_edges.values_buff[i] = 0;
+  //   }).wait();
+  //  auto end2 = std::chrono::high_resolution_clock::now();
 
   // std::chrono::duration<double> elapsed_seconds2 = end2 - start2;
   // std::cout << "Elapsed time for parallel_for: " << elapsed_seconds2.count()
@@ -132,11 +133,15 @@ int main(int argc, char *argv[]) {
 
   auto start = std::chrono::high_resolution_clock::now();
   // for (int i = 0; i < 100; i++)
+
   q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
     Atom<DataType> atom = atoms_device[i];
     cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
                                 grid_step);
   });
+
+  int *num_iterations = sycl::malloc_device<int>(sizeof(int), q);
+  q.memset(num_iterations, 0, sizeof(int)).wait();
 
   q.wait();
 
@@ -200,7 +205,7 @@ int main(int argc, char *argv[]) {
         //    for (int l = 0; l < 21; l++) {
         //      std::cout << static_cast<DataType>(grid_value_span[l]) /
         //                       static_cast<DataType>(
-        //                           std::numeric_limits<std::uint32_t>::max())
+        // std::numeric_limits<std::uint32_t>::max())
         //                << " ";
         //    }
 
@@ -225,6 +230,6 @@ endloop:
 
   std::cout << "Number of cut cells: " << cut_cells << std::endl;
 
-  // std::cout << "Hello, World!" << std::endl;
+  std::cout << "Hello, World!" << std::endl;
   return 0;
 }
