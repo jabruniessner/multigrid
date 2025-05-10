@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
-set(CMAKE_CXX_FLAGS_DEBUG "--targets=omp.library-only -DDEBUGMODE -g")
+set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_COMPILER "acpp")
@@ -44,6 +44,7 @@ add_executable(PBE_example PBE_example.cc fileio.cc)
 add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
 add_executable(applying_cuts_test_debug applying_cuts_to_domain_debug.cc fileio.cc)
+add_executable(sort_atoms sort_atoms.cpp fileio.cc)
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 

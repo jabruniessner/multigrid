@@ -5,6 +5,7 @@
 #include "predefinitions.h"
 #include "scientific_quantities.h"
 #include "tetraeda_type.h"
+#include "tprint.hpp"
 #include "utils.h"
 #include <array>
 #include <bits/elements_of.h>
@@ -40,6 +41,14 @@ struct Cutter {
     std::uint32_t points = Cutter_utils::find_polygon_cuts(
         point, center, radius, grid_step,
         &tet_grid(position_0, position_1, position_2, 0));
+    //
+    const std::size_t i = 342;
+    // syclx::printf("%d %d %d", position_0, position_1, position_2); // NOLINT
+
+    //  std::cout << position_0 << " " << position_1 << " " << position_2
+    //            << std::endl; // NOLINT
+
+    // tet_grid(position_0, position_1, position_2, 0)++; //);
 
     sycl::atomic_ref<std::uint32_t, sycl::memory_order::relaxed,
                      sycl::memory_scope::device>
@@ -47,10 +56,6 @@ struct Cutter {
             inside_outside(position_0, position_1, position_2));
 
     atomic_inside_outside.fetch_or(points);
-    //   Implement the cutting logic here
-    // for (int i = 0; i < 19; ++i) {
-    //   tet_grid(position_0, position_1, position_2, i) = 0;
-    // }
   }
 };
 
