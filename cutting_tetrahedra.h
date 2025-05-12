@@ -58,7 +58,7 @@ constexpr inline DataType compute_interesect_for_no_princ(
   //     static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7));
 
   vector3d distance{(distance_num & 1) * grid_step,
-                    ((distance_num >> 1) & 1) * grid_step,
+                    ((distance_num >> 2) & 1) * grid_step,
                     ((distance_num >> 2) & 1) * grid_step};
 
   vector3d point_setoff =
@@ -108,7 +108,13 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       vector3d distance{(i & 1) * grid_step, ((i >> 1) & 1) * grid_step,
                         ((i >> 2) & 1) * grid_step};
 
-      DataType dist_norm_inv = 1 / norm(distance);
+      auto inverse_dir = (~i) & 7;
+      auto prefac =
+          (1 + (sqrt2inv - 1) * ((inverse_dir & (inverse_dir - 1)) == 0) +
+           (sqrt3inv - sqrt2inv) * (i == 7));
+
+      DataType dist_norm_inv = prefac; // 1 / norm(distance);
+
       distance *= dist_norm_inv;
 
       DataType isec_p =
@@ -151,7 +157,13 @@ std::uint8_t find_polygon_cuts(vector3d &point, vector3d &center,
       vector3d distance{(i & 1) * (-grid_step), ((i >> 1) & 1) * (-grid_step),
                         ((i >> 2) & 1) * (-grid_step)};
 
-      DataType dist_norm_inv = 1 / norm(distance);
+      auto inverse_dir = (~i) & 7;
+
+      auto prefac =
+          (1 + (sqrt2inv - 1) * ((inverse_dir & (inverse_dir - 1)) == 0) +
+           (sqrt3inv - sqrt2inv) * (i == 7));
+
+      DataType dist_norm_inv = prefac; // 1 / norm(distance);
 
       distance *= dist_norm_inv;
 

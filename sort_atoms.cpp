@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   DataType origin_x = std::atof(argv[2]), origin_y = std::atof(argv[3]),
            origin_z = std::atof(argv[4]);
 
-  sycl::cpu_selector selector;
+  sycl::gpu_selector selector;
   sycl::queue q(selector);
 
   domain::Grid<std::uint32_t, Dim + 1, side_length_x, side_length_y,
@@ -143,14 +143,15 @@ int main(int argc, char *argv[]) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  for (int i = 0; i < 100; i++)
-    for (int j = 0; j < sorted_atoms.size(); j++)
-      q.parallel_for(sycl::range<1>(sorted_atoms[j].size()),
-                     [=](sycl::id<1> i) {
-                       Atom<DataType> atom = atoms_device_data[j][i];
-                       cubes_cutter::cutting_cubes(
-                           cutter, grid_edges, inside_outside, atom, grid_step);
-                     });
+  // for (int i = 0; i < 100; i++)
+  for (int j = 0; j < sorted_atoms.size(); j++) {
+    Atom<DataType> *atoms_device_pointer = atoms_device[j];
+    q.parallel_for(sycl::range<1>(sorted_atoms[j].size()), [=](sycl::id<1> i) {
+      Atom<DataType> atom = atoms_device_pointer[i];
+      cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
+                                  grid_step);
+    });
+  }
 
   auto end_iterations = std::chrono::high_resolution_clock::now();
 

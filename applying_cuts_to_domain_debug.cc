@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= origin_x;
     atom.Position[1] -= origin_y;
     atom.Position[2] -= origin_z;
-    // atom.radius += 1.5f;
+    atom.radius += 1.5f;
     atoms_vector.push_back(atom);
   }
 

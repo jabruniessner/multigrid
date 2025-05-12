@@ -41,8 +41,10 @@ struct Cutter {
     std::uint32_t points = Cutter_utils::find_polygon_cuts(
         point, center, radius, grid_step,
         &tet_grid(position_0, position_1, position_2, 0));
-    //
-    const std::size_t i = 342;
+
+    // tet_grid(position_0, position_1, position_2, 0)++;
+    // syclx::printf("Hello World form inside lambda!"); // NOLINT
+    // const std::size_t i = 342;
     // syclx::printf("%d %d %d", position_0, position_1, position_2); // NOLINT
 
     //  std::cout << position_0 << " " << position_1 << " " << position_2
