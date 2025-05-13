@@ -58,7 +58,7 @@ constexpr inline DataType compute_interesect_for_no_princ(
   //     static_cast<std::uint8_t>(((i >> 1 | i << (3 - 1)) & 7));
 
   vector3d distance{(distance_num & 1) * grid_step,
-                    ((distance_num >> 2) & 1) * grid_step,
+                    ((distance_num >> 1) & 1) * grid_step,
                     ((distance_num >> 2) & 1) * grid_step};
 
   vector3d point_setoff =
