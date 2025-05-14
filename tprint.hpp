@@ -1,5 +1,8 @@
 #include <charconv>
 
+#ifndef TRPINTF_HPP
+#define TRPINTF_HPP
+
 namespace {
 
 // Base case for recursion
@@ -20,7 +23,7 @@ int my_sprintf(char *str, const char *format, T value, Args... args) {
   while (*format) {
     // Handle the %d format for integers
     if (*format == '%' && *(format + 1) == 'd') {
-      format += 2;  // Skip the %d
+      format += 2; // Skip the %d
       // Adative cpp bug
       // If we put this code block in a template function
       //   template <typename T> void format_d(char *str, T value) {
@@ -63,11 +66,10 @@ int my_sprintf(char *str, const char *format, T value, Args... args) {
   *str = '\0';
   return str - start;
 }
-}  // namespace
+} // namespace
 
 namespace syclx {
-template <typename... Args>
-void printf(const char *format, Args... args) {
+template <typename... Args> void printf(const char *format, Args... args) {
 #ifdef __ACPP__
   char buffr[256];
   my_sprintf(buffr, format, args...);
@@ -76,4 +78,6 @@ void printf(const char *format, Args... args) {
   sycl::ext::oneapi::experimental::printf(format, args...);
 #endif
 }
-}  // namespace syclx
+} // namespace syclx
+
+#endif // TPRINTF_HPP

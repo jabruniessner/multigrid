@@ -46,6 +46,7 @@ add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
 add_executable(applying_cuts_test_debug applying_cuts_to_domain_debug.cc fileio.cc)
 add_executable(sort_atoms sort_atoms.cpp fileio.cc)
 add_executable(create_dumbell create_dumbell.cc fileio.cc)
+add_executable(volume_comp_test test_volume_computation.cc)
 
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
