@@ -224,9 +224,9 @@ int main(int argc, char *argv[]) {
 
 endloop:
 
-  std::ofstream outfile("cut_faces_simple.ply");
+  // std::ofstream outfile("cut_faces_simple.ply");
 
-  ply::print_faces_to_ply(outfile, faces);
+  // ply::print_faces_to_ply(outfile, faces);
 
   std::cout << "Number of cut cells: " << cut_cells << std::endl;
 

@@ -1,3 +1,4 @@
+#include "concepts.h"
 #include "predefinitions.h"
 #include <array>
 
@@ -70,6 +71,29 @@ template <typename DataType, Dimension Dim>
 inline constexpr DataType norm_squared(const vector<DataType, Dim> vec) {
   return vec * vec;
 }
+
+template <typename DataType, std::size_t Dim,
+          subscriptable<std::size_t>... Vector_Types>
+inline DataType determinant(const Vector_Types &...vectors) {
+
+  vector<DataType, Dim> Matrix[] = {vectors...};
+  return Matrix[0][0] *
+             (Matrix[1][1] * Matrix[2][2] - Matrix[1][2] * Matrix[2][1]) -
+         Matrix[0][1] *
+             (Matrix[1][0] * Matrix[2][2] - Matrix[1][2] * Matrix[2][0]) +
+         Matrix[0][2] *
+             (Matrix[1][0] * Matrix[2][1] - Matrix[1][1] * Matrix[2][0]);
+}
+
+inline DataType determinant(DataType Matrix[3][3]) {
+  return Matrix[0][0] *
+             (Matrix[1][1] * Matrix[2][2] - Matrix[1][2] * Matrix[2][1]) -
+         Matrix[0][1] *
+             (Matrix[1][0] * Matrix[2][2] - Matrix[1][2] * Matrix[2][0]) +
+         Matrix[0][2] *
+             (Matrix[1][0] * Matrix[2][1] - Matrix[1][1] * Matrix[2][0]);
+}
+
 } // namespace blas
 
 #endif // !BLAS_H
