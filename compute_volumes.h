@@ -39,6 +39,8 @@ inline DataType two_point_helper(std::array<DataType, 4> &lengths,
   volume_data +=
       std::abs(determinant<DataType, 3>(a - first, b - first, c - first));
   volume_data +=
+      std::abs(determinant<DataType, 3>(second - first, b - first, c - first));
+  volume_data +=
       std::abs(determinant<DataType, 3>(a - second, b - second, c - second));
   return volume_data;
 }
@@ -58,7 +60,7 @@ struct Volume_comp {
                   std::size_t position_0, std::size_t position_1,
                   std::size_t position_2) {
 
-    std::array<std::uint8_t, 6> tetrahedra_array{};
+    std::array<std::uint8_t, 6> tetrahedra_array{0, 0, 0, 0, 0, 0};
     if (point & 1)
       for (int i = 0; i < 6; ++i)
         tetrahedra_array[i] += 1;
@@ -95,14 +97,17 @@ struct Volume_comp {
         std::uint8_t other_point = static_cast<std::uint8_t>(
             ((j >> (1 + k) | j << (3 - (1 + k))) & 7) | j);
 
-        other_point = other_point + j;
+        // other_point = other_point + j; //This is deleted because addition
+        // with j is already in the line above
 
         if (tetrahedra_array[2 * i + k] == 0)
           tetrahedra_span[2 * i + k] = 0;
         else if (tetrahedra_array[2 * i + k] == 4)
           tetrahedra_span[2 * i + k] = 1.f;
-        else if (tetrahedra_array[i] == 1 || tetrahedra_array[i] == 3) {
-          std::uint8_t one_point = tetrahedra_array[i] == 1 ? point : ~point;
+        else if (tetrahedra_array[2 * i + k] == 1 ||
+                 tetrahedra_array[2 * i + k] == 3) {
+          std::uint8_t one_point =
+              tetrahedra_array[2 * i + k] == 1 ? point : ~point;
           auto volume =
               ((one_point >> 7) & 1)
                   ? conv32(tet_grid_span[0]) * conv32(tet_grid_span[13 - j]) *
@@ -119,9 +124,9 @@ struct Volume_comp {
                         conv32(tet_grid_span[13 + j + k]);
 
           tetrahedra_span[2 * i + k] =
-              tetrahedra_array[i] == 1 ? volume : 1 - volume;
+              tetrahedra_array[2 * i + k] == 1 ? volume : 1 - volume;
 
-        } else // if(tetrahedra_array[i]==2)
+        } else // if(tetrahedra_array[2*i+k]==2)
         {
           // This is the place where I will have to resume tomorrow
           //(Only the case for two points left)
@@ -149,7 +154,7 @@ struct Volume_comp {
 
             a = {0.f, length[0], length[0]};
             b = {length[1], length[1], length[1]};
-            c = {0.f, length[2], 0.f};
+            c = {0.f, length[2], 1.f};
 
             negative = (point >> 7) & 1;
 
