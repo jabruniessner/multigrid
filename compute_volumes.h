@@ -118,10 +118,10 @@ struct Volume_comp {
               : (one_point >> j) & 1
                   ? (1 - conv32(tet_grid_span[j])) *
                         (1 - conv32(tet_grid_span[13 - j])) *
-                        conv32(tet_grid_span[13 + j + k])
+                        conv32(tet_grid_span[13 + 2 * i + k])
                   : (1 - conv32(tet_grid_span[other_point])) *
                         (1 - conv32(tet_grid_span[13 - other_point])) *
-                        conv32(tet_grid_span[13 + j + k]);
+                        conv32(tet_grid_span[13 + 2 * i + k]);
 
           tetrahedra_span[2 * i + k] =
               tetrahedra_array[2 * i + k] == 1 ? volume : 1 - volume;
@@ -146,7 +146,7 @@ struct Volume_comp {
 
             length = {conv32(tet_grid_span[other_point]),
                       conv32(tet_grid_span[0]),
-                      conv32(tet_grid_span[13 + j + k]),
+                      conv32(tet_grid_span[13 + 2 * i + k]),
                       1 - conv32(tet_grid_span[13 - j])};
 
             first = {0.f, 0.f, 1.f};
@@ -182,7 +182,7 @@ struct Volume_comp {
                       ((point >> j) & 1))) // for points (0,2) or (1, 3)
           {
             length = {conv32(tet_grid_span[j]), conv32(tet_grid_span[0]),
-                      1 - conv32(tet_grid_span[13 + j + k]),
+                      1 - conv32(tet_grid_span[13 + 2 * i + k]),
                       1 - conv32(tet_grid_span[13 - other_point])};
 
             first = {0.f, 1.f, 1.f};

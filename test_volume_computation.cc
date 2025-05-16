@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
   std::array<DataType, 14 * 6> volume_tetrahedra_values{};
   std::mdspan volume_tetrahedra(volume_tetrahedra_values.data(), 14, 6);
 
-  DataType radius = 100;
-  Cutter_utils::vector3d center{200.f, 200.f, 200.f};
+  DataType radius = 1000;
+  Cutter_utils::vector3d center{2000.f, 2000.f, 2000.f};
   std::array<Cutter_utils::vector3d, 14> points{};
 
   for (int i = 0; i < 3; i++)
@@ -38,7 +38,11 @@ int main(int argc, char *argv[]) {
   }
 
   for (auto &point : points)
-    point = point * (radius / norm(point) - norm(point) / 2.f) + center;
+    point = point * (radius / norm(point) - norm(point) / 2.f) + center -
+            volume_computer::vector3d{
+                static_cast<DataType>(std::signbit(point[0])),
+                static_cast<DataType>(std::signbit(point[1])),
+                static_cast<DataType>(std::signbit(point[2]))};
 
   std::cout << "The points after scaling are: " << std::endl;
   for (auto point : points) {
@@ -47,6 +51,7 @@ int main(int argc, char *argv[]) {
 
   std::printf("The computed volumes are: \n");
   for (int i = 0; i < 14; i++) {
+    // for (int i = 1; i < 2; i++) {
     std::uint8_t point = Cutter_utils::find_polygon_cuts(
         points[i], center, radius, 1.0f, &cube_edges[i, 0]);
 
