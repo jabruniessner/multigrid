@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::printf("The computed volumes are: \n");
-  for (int i = 6; i < 14; i++) {
+  for (int i = 6; i < 7; i++) {
     // for (int i = 1; i < 2; i++) {
     std::uint8_t point = Cutter_utils::find_polygon_cuts(
         points[i], center, radius, 1.0f, &cube_edges[i, 0]);

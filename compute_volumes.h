@@ -196,7 +196,7 @@ struct Volume_comp {
           }
 
           auto volume = two_point_helper(length, a, b, c, first, second);
-          tetrahedra_span[2 * i + k] = ~negative ? volume : 1 - volume;
+          tetrahedra_span[2 * i + k] = !negative ? volume : 1 - volume;
         }
       }
 
