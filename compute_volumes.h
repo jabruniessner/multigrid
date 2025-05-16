@@ -121,7 +121,7 @@ struct Volume_comp {
                         conv32(tet_grid_span[13 + 2 * i + k])
                   : (1 - conv32(tet_grid_span[other_point])) *
                         (1 - conv32(tet_grid_span[13 - other_point])) *
-                        conv32(tet_grid_span[13 + 2 * i + k]);
+                        (1 - conv32(tet_grid_span[13 + 2 * i + k]));
 
           tetrahedra_span[2 * i + k] =
               tetrahedra_array[2 * i + k] == 1 ? volume : 1 - volume;

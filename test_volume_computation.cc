@@ -37,12 +37,35 @@ int main(int argc, char *argv[]) {
     std::printf("%2.0f %2.0f %2.0f\n", point[0], point[1], point[2]);
   }
 
-  for (auto &point : points)
+  for (int i = 0; i < 6; i++) {
+    auto &point = points[i];
     point = point * (radius / norm(point) - norm(point) / 2.f) + center -
             volume_computer::vector3d{
                 static_cast<DataType>(std::signbit(point[0])),
                 static_cast<DataType>(std::signbit(point[1])),
-                static_cast<DataType>(std::signbit(point[2]))};
+                static_cast<DataType>(std::signbit(point[2]))}; //*
+  }
+
+  for (int i = 6; i < 9; i++) {
+    auto &point = points[i];
+    point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) + center;
+    // point = point * ((radius) / norm(point)) + center;
+  }
+
+  for (int i = 9; i < 14; i++) {
+    auto &point = points[i];
+    point = point * ((radius - 1 / std::sqrt(3)) / norm(point)) + center;
+  }
+
+  //  for (auto &point : points)
+  //    //  point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) +
+  //    center; point = point * (radius / norm(point) - norm(point) / 2.f) +
+  //    center -
+  //            volume_computer::vector3d{
+  //                static_cast<DataType>(std::signbit(point[0])),
+  //                static_cast<DataType>(std::signbit(point[1])),
+  //                static_cast<DataType>(std::signbit(point[2]))}; //*
+  //  // norm(point);
 
   std::cout << "The points after scaling are: " << std::endl;
   for (auto point : points) {
@@ -50,7 +73,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::printf("The computed volumes are: \n");
-  for (int i = 0; i < 14; i++) {
+  for (int i = 6; i < 14; i++) {
     // for (int i = 1; i < 2; i++) {
     std::uint8_t point = Cutter_utils::find_polygon_cuts(
         points[i], center, radius, 1.0f, &cube_edges[i, 0]);
