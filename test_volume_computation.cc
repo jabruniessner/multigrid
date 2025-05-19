@@ -8,26 +8,37 @@
 #include <iostream>
 #include <ostream>
 
+template <typename DataType> class TD;
+
+constexpr int num_points = 34;
+
 int main(int argc, char *argv[]) {
 
   cubes_cutter::Cutter cutter{};
   volume_computer::Volume_comp v_comp{};
 
-  std::array<std::uint32_t, 14 * 19> cube_edges_values{};
-  std::mdspan cube_edges(cube_edges_values.data(), 14, 19);
+  std::array<std::uint32_t, num_points * 19> cube_edges_values{};
+  std::mdspan cube_edges(cube_edges_values.data(), num_points, 19);
 
-  std::array<DataType, 14 * 6> volume_tetrahedra_values{};
-  std::mdspan volume_tetrahedra(volume_tetrahedra_values.data(), 14, 6);
+  std::array<DataType, num_points * 6> volume_tetrahedra_values{};
+  std::mdspan volume_tetrahedra(volume_tetrahedra_values.data(), num_points, 6);
+
+  // TD<DataType> helllo;
 
   DataType radius = 1000;
-  Cutter_utils::vector3d center{2000.f, 2000.f, 2000.f};
-  std::array<Cutter_utils::vector3d, 14> points{};
+  Cutter_utils::vector3d center{2000., 2000., 2000.};
+  std::array<Cutter_utils::vector3d, num_points> points{};
 
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 2; j++)
       points[2 * i + j][i] = 1.f - 2 * j;
 
   int num = 6;
+  for (DataType i = -1; i <= 1; i += 2)
+    for (DataType j = -1; j <= 1; j += 2)
+      for (DataType k = -1; k <= 1; k += 2)
+        points[num++] = {i, j, k};
+
   for (DataType i = -1; i <= 1; i += 2)
     for (DataType j = -1; j <= 1; j += 2)
       for (DataType k = -1; k <= 1; k += 2)
@@ -52,18 +63,51 @@ int main(int argc, char *argv[]) {
     // point = point * ((radius) / norm(point)) + center;
   }
 
-  {
-    auto &point = points[10];
-    point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) + center;
-  }
+  //  {
+  //    auto &point = points[10];
+  //    point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) + center;
+  //  }
+
+  //  for (int i = 9; i < 14; i++) {
+  //    if (i == 10)
+  //      continue;
+  //
+  //    auto &point = points[i];
+  //    point = point * ((radius - 1 / std::sqrt(3)) / norm(point)) + center;
+  //  }
 
   for (int i = 9; i < 14; i++) {
-    if (i == 10)
-      continue;
-
     auto &point = points[i];
-    point = point * ((radius - 1 / std::sqrt(3)) / norm(point)) + center;
+    point = point * (-1) * ((radius - 2 / std::sqrt(3)) / norm(point)) +
+            center -
+            volume_computer::vector3d{
+                static_cast<DataType>(std::signbit(-point[0])),
+                static_cast<DataType>(std::signbit(-point[1])),
+                static_cast<DataType>(std::signbit(-point[2]))};
   }
+
+  for (int i = 14; i < 22; i++) {
+    auto &point = points[i];
+    point = point * (-1) * ((radius - 1 / std::sqrt(3)) / norm(point)) +
+            center -
+            volume_computer::vector3d{
+                static_cast<DataType>(std::signbit(-point[0])),
+                static_cast<DataType>(std::signbit(-point[1])),
+                static_cast<DataType>(std::signbit(-point[2]))};
+  }
+
+  int cube_number = 22;
+  for (int i = 0; i < 3; i++)
+    for (int j = -1; j < 2; j += 2)
+      for (int k = -1; k < 2; k += 2) {
+        auto &point = points[cube_number++];
+        point[i] = 0;
+        point[(i + 1) % 3] = j;
+        point[(i + 2) % 3] = k;
+
+        point = point * (radius / norm(point)) -
+                volume_computer::vector3d{0.5, 0.5, 0.5} + center;
+      }
 
   //  for (auto &point : points)
   //    //  point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) +
@@ -81,10 +125,10 @@ int main(int argc, char *argv[]) {
   }
 
   std::printf("The computed volumes are: \n");
-  for (int i = 6; i < 14; i++) {
+  for (int i = 23; i < 24; i++) {
     // for (int i = 1; i < 2; i++) {
     std::uint8_t point = Cutter_utils::find_polygon_cuts(
-        points[i], center, radius, 1.0f, &cube_edges[i, 0]);
+        points[i], center, radius, 1.0, &cube_edges[i, 0]);
 
     std::printf("The points are: %b\n", point);
 
@@ -98,8 +142,8 @@ int main(int argc, char *argv[]) {
                 position_1 = static_cast<std::size_t>(points[i][1]),
                 position_2 = static_cast<std::size_t>(points[i][2]);
 
-    std::printf("The Positions are: %3lu %3lu %3lu\n", position_0, position_1,
-                position_2);
+    std::printf("The Positions are: %8.3f %8.3f %8.3f\n", points[i][0],
+                points[i][1], points[i][2]);
 
     v_comp(tet_grid_span, point, tetrahedra_span, sphere_position, radius,
            grid_step, position_0, position_1, position_2);

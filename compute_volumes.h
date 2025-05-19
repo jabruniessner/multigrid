@@ -110,7 +110,8 @@ struct Volume_comp {
               tetrahedra_array[2 * i + k] == 1 ? point : ~point;
           auto volume =
               ((one_point >> 7) & 1)
-                  ? conv32(tet_grid_span[0]) * conv32(tet_grid_span[13 - j]) *
+                  ? (1 - conv32(tet_grid_span[0])) *
+                        conv32(tet_grid_span[13 - j]) *
                         conv32(tet_grid_span[13 - other_point])
               : (one_point & 1)
                   ? conv32(tet_grid_span[0]) * conv32(tet_grid_span[j]) *
@@ -172,7 +173,7 @@ struct Volume_comp {
             second = first + vector3d{1.f, 0.f, 0.f} * length.back();
 
             a = {0.f, 0.f, 1 - length[0]};
-            b = {length[1], length[1], 0.f};
+            b = {length[1], length[1], 1.f};
             c = {0.f, 1 - length[2], 1 - length[2]};
 
             negative = point & 1;
