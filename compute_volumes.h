@@ -40,8 +40,9 @@ inline DataType two_point_helper(std::array<DataType, 4> &lengths,
       std::abs(determinant<DataType, 3>(a - first, b - first, c - first));
   volume_data +=
       std::abs(determinant<DataType, 3>(second - first, b - first, c - first));
-  volume_data +=
-      std::abs(determinant<DataType, 3>(a - second, b - second, c - second));
+  // volume_data +=
+  //     std::abs(determinant<DataType, 3>(a - second, b - second, c - second));
+  //      I think the line above is incorrect
   return volume_data;
 }
 

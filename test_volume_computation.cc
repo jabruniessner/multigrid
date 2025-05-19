@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
 
   // TD<DataType> helllo;
 
-  DataType radius = 1000;
-  Cutter_utils::vector3d center{2000., 2000., 2000.};
+  DataType radius = 10000;
+  Cutter_utils::vector3d center{20000., 20000., 20000.};
   std::array<Cutter_utils::vector3d, num_points> points{};
 
   for (int i = 0; i < 3; i++)
@@ -57,11 +57,11 @@ int main(int argc, char *argv[]) {
                 static_cast<DataType>(std::signbit(point[2]))}; //*
   }
 
-  for (int i = 6; i < 9; i++) {
-    auto &point = points[i];
-    point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) + center;
-    // point = point * ((radius) / norm(point)) + center;
-  }
+  // for (int i = 6; i < 9; i++) {
+  //   auto &point = points[i];
+  //   point = point * ((radius + 1 / std::sqrt(3)) / norm(point)) + center;
+  //   // point = point * ((radius) / norm(point)) + center;
+  // }
 
   //  {
   //    auto &point = points[10];
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   //    point = point * ((radius - 1 / std::sqrt(3)) / norm(point)) + center;
   //  }
 
-  for (int i = 9; i < 14; i++) {
+  for (int i = 6; i < 14; i++) {
     auto &point = points[i];
     point = point * (-1) * ((radius - 2 / std::sqrt(3)) / norm(point)) +
             center -
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::printf("The computed volumes are: \n");
-  for (int i = 23; i < 24; i++) {
+  for (int i = 0; i < 34; i++) {
     // for (int i = 1; i < 2; i++) {
     std::uint8_t point = Cutter_utils::find_polygon_cuts(
         points[i], center, radius, 1.0, &cube_edges[i, 0]);
