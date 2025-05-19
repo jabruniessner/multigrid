@@ -56,22 +56,20 @@ int main(int argc, char *argv[]) {
   for (int stage = 0; stage < num_stages; stage++)
     for (int i = 0; i < 6; i++) {
       auto &point = points_span[stage, i];
-      point = point * (radius / norm(point) - norm(point) / 2.f) + center -
-              volume_computer::vector3d{
-                  static_cast<DataType>(std::signbit(point[0])),
-                  static_cast<DataType>(std::signbit(point[1])),
-                  static_cast<DataType>(std::signbit(point[2]))}; //*
+      point = point * ((radius + stage / (num_stages * 2.0)) / norm(point)) +
+              center - volume_computer::vector3d{0.5, 0.5, 0.5};
     }
 
-  for (int i = 6; i < 14; i++) {
-    auto &point = points[i];
-    point = point * (-1) * ((radius - 2 / std::sqrt(3)) / norm(point)) +
-            center -
-            volume_computer::vector3d{
-                static_cast<DataType>(std::signbit(-point[0])),
-                static_cast<DataType>(std::signbit(-point[1])),
-                static_cast<DataType>(std::signbit(-point[2]))};
-  }
+  for (int stage = 0; stage < num_stages; stage++)
+    for (int i = 6; i < 14; i++) {
+      auto &point = points_span[stage, i];
+      point = point * (-1) * ((radius - 2 / std::sqrt(3)) / norm(point)) +
+              center -
+              volume_computer::vector3d{
+                  static_cast<DataType>(std::signbit(-point[0])),
+                  static_cast<DataType>(std::signbit(-point[1])),
+                  static_cast<DataType>(std::signbit(-point[2]))};
+    }
 
   for (int i = 14; i < 22; i++) {
     auto &point = points[i];
