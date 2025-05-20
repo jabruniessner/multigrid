@@ -8,7 +8,7 @@ project(MultigridSYCL)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -48,6 +48,7 @@ add_executable(sort_atoms sort_atoms.cpp fileio.cc)
 add_executable(create_dumbell create_dumbell.cc fileio.cc)
 add_executable(volume_comp_test test_volume_computation.cc)
 add_executable(volume_comp_test_tw test_volume_computation_tw_sphere.cc)
+add_executable(compute_vol_2_spheres compute_volume_2_spheres.cc)
 
 
 

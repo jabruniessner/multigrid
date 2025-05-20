@@ -54,12 +54,12 @@ inline DataType conv32(std::uint32_t value) {
 struct Volume_comp {
 
   void operator()(std::span<std::uint32_t, 19> tet_grid_span,
-                  const std::uint8_t point,
+                  const std::uint32_t point,
                   std::span<DataType, 6> tetrahedra_span,
-                  std::span<DataType, 3> sphere_position,
+                  std::span<const DataType, 3> sphere_position,
                   const DataType sphere_radius, const DataType grid_step,
                   std::size_t position_0, std::size_t position_1,
-                  std::size_t position_2) {
+                  std::size_t position_2) const {
 
     std::array<std::uint8_t, 6> tetrahedra_array{0, 0, 0, 0, 0, 0};
     if (point & 1)
@@ -207,24 +207,27 @@ struct Volume_comp {
 
   template <std::size_t Dim, std::size_t... side_lengths>
   void operator()(
-      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
-      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
-      const domain::Grid<DataType, Dim + 1, side_lengths..., 6> &tetrahedra,
       const DataType *sphere_position, const DataType sphere_radius,
       const DataType grid_step, const std::size_t position_0,
-      const std::size_t position_1, const std::size_t position_2) const {
+      const std::size_t position_1, const std::size_t position_2,
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
+      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
+      const domain::Grid<DataType, Dim + 1, side_lengths..., 6> &tetrahedra)
+      const {
 
-    auto &point = inside_outside(position_0, position_1, position_2);
+    std::uint32_t point = inside_outside(position_0, position_1, position_2);
     std::array<std::uint8_t, 6> tetrahedra_array{};
-    std::span<DataType> tetrahedra_span(
+    std::span<DataType, 6> tetrahedra_span(
         &tetrahedra(position_0, position_1, position_2, 0), 6);
 
-    std::span<std::uint32_t> tet_grid_span(
+    std::span<std::uint32_t, 19> tet_grid_span(
         &tet_grid(position_0, position_1, position_2, 0), 19);
 
-    this->operator()(tet_grid_span, point, tetrahedra_span, sphere_position,
-                     sphere_radius, grid_step, position_0, position_1,
-                     position_2);
+    std::span<const DataType, 3> sphere_position_span(sphere_position, 3);
+
+    this->operator()(tet_grid_span, point, tetrahedra_span,
+                     sphere_position_span, sphere_radius, grid_step, position_0,
+                     position_1, position_2);
   }
 }; // Struct Volume_comp
 

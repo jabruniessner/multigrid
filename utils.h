@@ -36,18 +36,25 @@ auto get_tail(Arg1 &&arg1, Args &...args) {
 }
 
 template <std::size_t Offset, std::size_t... Is>
-std::index_sequence<(Offset + Is)...> add_offset(std::index_sequence<Is...>) {
+constexpr std::index_sequence<(Offset + Is)...>
+add_offset(std::index_sequence<Is...>) {
   return {};
 }
 
 template <std::size_t Offset, std::size_t N>
-auto make_index_sequence_with_offset() {
+constexpr auto make_index_sequence_with_offset() {
   return add_offset<Offset>(std::make_index_sequence<N>{});
 }
 
 template <typename Tuple, std::size_t... Ints>
 std::tuple<std::tuple_element_t<Ints, Tuple>...>
 extract_tuple(Tuple &&tuple, std::index_sequence<Ints...>) {
+  return {std::get<Ints>(std::forward<Tuple>(tuple))...};
+}
+
+template <typename Tuple, std::size_t... Ints>
+std::tuple<std::tuple_element_t<Ints, Tuple>...>
+extract_tuple(Tuple &tuple, std::index_sequence<Ints...>) {
   return {std::get<Ints>(std::forward<Tuple>(tuple))...};
 }
 

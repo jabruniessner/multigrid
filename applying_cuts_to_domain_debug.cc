@@ -18,6 +18,7 @@
 #include <span>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
+#include <tuple>
 
 constexpr int Dim = 3;
 constexpr int side_length = 353;
@@ -27,7 +28,7 @@ constexpr int side_length_y = 510;
 constexpr int side_length_z = 60;
 constexpr int num_edges = 19;
 
-using DataType = float;
+// using DataType = float;
 
 template <typename T> struct TD;
 
@@ -115,7 +116,7 @@ int main(int argc, char *argv[]) {
     atom.Position[0] -= origin_x;
     atom.Position[1] -= origin_y;
     atom.Position[2] -= origin_z;
-    atom.radius += 1.5f;
+    // atom.radius += 1.5f;
     atoms_vector.push_back(atom);
   }
 
@@ -132,13 +133,15 @@ int main(int argc, char *argv[]) {
   // // TD<decltype(grid_edges)> grid_edges_t;
 
   auto start = std::chrono::high_resolution_clock::now();
-  // for (int i = 0; i < 100; i++)
 
-  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
-    Atom<DataType> atom = atoms_device[i];
-    cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
-                                grid_step);
-  });
+  for (int i = 0; i < 100; i++)
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
+      Atom<DataType> &atom = atoms_device[i];
+      auto arg_tuple =
+          std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
+                                grid_step, grid_edges, inside_outside);
+      cubes_cutter::cutting_cubes(cutter, arg_tuple);
+    });
 
   int *num_iterations = sycl::malloc_device<int>(sizeof(int), q);
   q.memset(num_iterations, 0, sizeof(int)).wait();
@@ -224,9 +227,9 @@ int main(int argc, char *argv[]) {
 
 endloop:
 
-  // std::ofstream outfile("cut_faces_simple.ply");
+  std::ofstream outfile("cut_faces_simple.ply");
 
-  // ply::print_faces_to_ply(outfile, faces);
+  ply::print_faces_to_ply(outfile, faces);
 
   std::cout << "Number of cut cells: " << cut_cells << std::endl;
 
