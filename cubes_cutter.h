@@ -81,8 +81,8 @@ void cutting_cubes_helper(
     const auto &Position = sphere.Position;
     const auto &current_value = Position[sizeof...(directions)];
     const auto radius_outer = sphere.radius + sqrt_Dim * grid_step;
-    const auto radius_inner =
-        std::max(sphere.radius - sqrt_Dim * grid_step, 0.f);
+    const auto radius_inner = std::max(sphere.radius - sqrt_Dim * grid_step,
+                                       static_cast<DataType>(0.));
 
     auto sqrt_squared_outer =
         (blas::square(radius_outer) -
