@@ -125,12 +125,12 @@ void cutting_cubes_helper(
 
       auto domains_tuple = utils::extract_tuple(arg_tuple, i_seq_os);
 
-      auto arg_tuple_inner1 =
-          std::make_tuple(static_cast<const DataType *>(sphere.Position.data()),
-                          sphere.radius, grid_step, positions..., i);
+      auto sphere_position_pointer = sphere.Position.data();
 
-      auto arg_tuple_inner =
-          std::tuple_cat(std::move(arg_tuple_inner1), domains_tuple);
+      auto arg_tuple_inner1 = std::forward_as_tuple(
+          sphere_position_pointer, sphere.radius, grid_step, positions..., i);
+
+      auto arg_tuple_inner = std::tuple_cat(arg_tuple_inner1, domains_tuple);
 
       std::apply(cutter, arg_tuple_inner);
     }
