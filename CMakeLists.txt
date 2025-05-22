@@ -49,6 +49,7 @@ add_executable(create_dumbell create_dumbell.cc fileio.cc)
 add_executable(volume_comp_test test_volume_computation.cc)
 add_executable(volume_comp_test_tw test_volume_computation_tw_sphere.cc)
 add_executable(compute_vol_2_spheres compute_volume_2_spheres.cc)
+add_executable(partial_volume_computes computing_partial_volumes.cc fileio.cc)
 
 
 

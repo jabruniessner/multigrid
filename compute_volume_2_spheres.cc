@@ -65,10 +65,9 @@ int main(int argc, char *argv[]) {
 
   volume_computer::Volume_comp v_comp{};
   q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> i) {
-    Atom<DataType> atom = atoms_device[i];
-    auto arg_tuple = std::forward_as_tuple(
-        static_cast<Sphere<DataType, Dim> &>(atom), grid_step, grid_edges,
-        inside_outside, Volumes_tetrahedra);
+    Sphere<DataType, Dim> atom = atoms_device[i];
+    auto arg_tuple = std::forward_as_tuple(atom, grid_step, grid_edges,
+                                           inside_outside, Volumes_tetrahedra);
     cubes_cutter::cutting_cubes(v_comp, arg_tuple);
   });
 
