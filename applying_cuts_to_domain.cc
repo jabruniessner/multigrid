@@ -13,6 +13,7 @@
 #include "cubes_cutter.h"
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
+#include <tuple>
 
 constexpr int Dim = 3;
 constexpr int side_length = 353;
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
   domain::Grid<std::uint32_t, Dim + 1, 510, 510, 60, 19> grid_edges(
       Paddings::PERIODIC, q, 1);
 
-  domain::Grid<std::uint8_t, Dim, 510, 510, 60> inside_outside(
+  domain::Grid<std::uint32_t, Dim, 510, 510, 60> inside_outside(
       Paddings::PERIODIC, q, 1);
 
   {
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
              sizeof(std::uint32_t) * grid_edges.num_values);
 
     q.memset(inside_outside.values_buff, 0,
-             sizeof(std::uint8_t) * inside_outside.num_values);
+             sizeof(std::uint32_t) * inside_outside.num_values);
 
     q.wait();
 
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
     atoms_vector.push_back(atom);
   }
 
-  Cutter cutter{};
+  cubes_cutter::Cutter cutter{};
 
   // Copy atoms to device
   Atom<DataType> *atoms_device =
@@ -163,8 +164,10 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < 100; i++)
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Atom<DataType> atom = atoms_device[i];
-      cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
-                                  grid_step);
+      auto arg_tuple =
+          std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
+                                grid_step, grid_edges, inside_outside);
+      cubes_cutter::cutting_cubes(cutter, arg_tuple);
     });
 
   q.wait();

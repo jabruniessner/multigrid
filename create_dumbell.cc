@@ -18,6 +18,7 @@
 #include <span>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
+#include <tuple>
 
 constexpr int Dim = 3;
 constexpr int side_length = 353;
@@ -136,8 +137,10 @@ int main(int argc, char *argv[]) {
 
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Atom<DataType> atom = atoms_device[i];
-      cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
-                                  grid_step);
+      auto arg_tuple =
+          std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
+                                grid_step, grid_edges, inside_outside);
+      cubes_cutter::cutting_cubes(cutter, arg_tuple);
     });
 
   int *num_iterations = sycl::malloc_device<int>(sizeof(int), q);

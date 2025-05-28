@@ -28,7 +28,8 @@ int main(int argc, char *argv[]) {
   // TD<DataType> helllo;
 
   DataType radius = 10000;
-  Cutter_utils::vector3d center{20000., 20000., 20000.};
+  Cutter_utils::vector3d center{(DataType)20000., (DataType)20000.,
+                                (DataType)20000.};
   std::array<Cutter_utils::vector3d, num_stages * num_points> points{};
   std::mdspan points_span(points.data(), num_stages, num_points);
 
@@ -60,7 +61,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 6; i++) {
       auto &point = points_span[stage, i];
       point = point * ((radius + stage / (num_stages * 2.0)) / norm(point)) +
-              center - volume_computer::vector3d{0.5, 0.5, 0.5};
+              center -
+              volume_computer::vector3d{(DataType)0.5, (DataType)0.5,
+                                        (DataType)0.5};
     }
 
   for (int stage = 0; stage <= num_stages; stage++)
@@ -102,7 +105,9 @@ int main(int argc, char *argv[]) {
 
           point = point * ((radius + std::sqrt(2.) * stage / (2 * num_stages)) /
                            norm(point)) -
-                  volume_computer::vector3d{0.5, 0.5, 0.5} + center;
+                  volume_computer::vector3d{(DataType)0.5, (DataType)0.5,
+                                            (DataType)0.5} +
+                  center;
         }
   }
 
@@ -135,7 +140,8 @@ int main(int argc, char *argv[]) {
       //  std::cout << std::endl;
 
       std::uint8_t point = Cutter_utils::find_polygon_cuts(
-          points_span[stage, i], center, radius, 1.0, &cube_edges[stage, i, 0]);
+          points_span[stage, i], center, radius, (DataType)1.0,
+          &cube_edges[stage, i, 0]);
 
       // std::printf("The points are: %b\n", point);
 

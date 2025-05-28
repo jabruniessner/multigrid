@@ -148,8 +148,10 @@ int main(int argc, char *argv[]) {
     Atom<DataType> *atoms_device_pointer = atoms_device[j];
     q.parallel_for(sycl::range<1>(sorted_atoms[j].size()), [=](sycl::id<1> i) {
       Atom<DataType> atom = atoms_device_pointer[i];
-      cubes_cutter::cutting_cubes(cutter, grid_edges, inside_outside, atom,
-                                  grid_step);
+      auto arg_tuple =
+          std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
+                                grid_step, grid_edges, inside_outside);
+      cubes_cutter::cutting_cubes(cutter, arg_tuple);
     });
   }
 

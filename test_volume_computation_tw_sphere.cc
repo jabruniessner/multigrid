@@ -29,19 +29,20 @@ int main(int argc, char *argv[]) {
   // TD<DataType> helllo;
 
   DataType radius = 10000;
-  Cutter_utils::vector3d center1{1., 1., 1.};
+  Cutter_utils::vector3d center1{(DataType)1., (DataType)1., (DataType)1.};
   center1 = center1 * ((10000 + std::sqrt(3.) / (6.)) / std::sqrt(3.));
   Cutter_utils::vector3d center2 = center1 * (-1);
 
-  Cutter_utils::vector3d point_org{-0.5, -0.5, -0.5};
+  Cutter_utils::vector3d point_org{(DataType)-0.5, (DataType)-0.5,
+                                   (DataType)-0.5};
 
   std::printf("The computed volumes are: \n");
 
   std::uint8_t point1 = Cutter_utils::find_polygon_cuts(
-      point_org, center1, radius, 1.0, cube_edges_values.data());
+      point_org, center1, radius, (DataType)1.0, cube_edges_values.data());
 
   std::uint8_t point2 = Cutter_utils::find_polygon_cuts(
-      point_org, center2, radius, 1.0, cube_edges_values.data());
+      point_org, center2, radius, (DataType)1.0, cube_edges_values.data());
 
   std::uint8_t point = point2 | point1;
 
