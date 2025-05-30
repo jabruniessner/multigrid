@@ -1,5 +1,6 @@
 #include "predefinitions.h"
 #include "utils.h"
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <format>
@@ -107,6 +108,8 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   Length padding_width;
   Paddings padding;
   sycl::queue &q;
+
+  static constexpr std::array<Length, Dim> length{strides_all...};
 };
 
 template <Dimension Dim, Length... strides_all>
@@ -365,12 +368,10 @@ int subtract_and_multiply_domains(Domain<Dim, strides_all...> &dest,
   assert(dest.q == a.q && a.q == b.q);
   assert(dest.num_values == a.num_values && b.num_values == a.num_values);
 
-  auto &q = dest.q;
-
   assert(dest.padding_width == a.padding_width &&
          a.padding_width == b.padding_width);
 
-  q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i) {
+  dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i) {
     dest.values_buff[i] = val * a.values_buff[i] - b.values_buff[i];
   });
 

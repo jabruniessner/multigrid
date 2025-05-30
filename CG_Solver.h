@@ -1,5 +1,6 @@
 #include "Convolution.h"
 #include "Domain.h"
+#include "tprint.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -292,12 +293,15 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    // }
                    // Assigning values and reducing to the sum
                    defect_r(I[dims]...) = defect_p(I[dims]...) =
-                       rhs(I[dims]...) - result;
+                       rhs(I[dims]...) - result; // Shouldn't this be a plus?
 
                    r += defect_r(I[dims]...) * defect_r(I[dims]...);
                  })
       .wait();
 
+  // DataType r_squared_host = 0;
+  // q.memcpy(&r_squared_host, r_squared, sizeof(DataType)).wait();
+  // std::cout << "The residual is: " << r_squared_host << std::endl;
   // init_guess.print_domain();
 
   // Computing the initial pAp
@@ -430,15 +434,15 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
-      h.single_task([=]() {
-        if (*p_squared_A == 0) {
-          *alpha = 0;
-        } else {
-          *alpha = (*r_squared) / (*p_squared_A);
-        }
-        *p_squared_A = 0;
-      });
-    });
+       h.single_task([=]() {
+         if (*p_squared_A == 0) {
+           *alpha = 0;
+         } else {
+           *alpha = (*r_squared) / (*p_squared_A);
+         }
+         *p_squared_A = 0;
+       });
+     }).wait();
   }
 
   //  std::cout << "We made " << count << " CG iterations." << std::endl;

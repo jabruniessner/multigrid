@@ -172,16 +172,26 @@ struct Jacobi_Smoother_PBE {
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
+    std::cout << "The number of iterations is " << num_iters << std::endl;
+
     auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     auto &kappa_domain = kappa.template get_domain<level>();
-    auto &epsilon_x_domain = epsilon_x.template get_domain<level>();
-    auto &epsilon_y_domain = epsilon_y.template get_domain<level>();
-    auto &epsilon_z_domain = epsilon_z.template get_domain<level>();
+    auto epsilon_x_domain = epsilon_x.template get_domain<level>();
+    auto epsilon_y_domain = epsilon_y.template get_domain<level>();
+    auto epsilon_z_domain = epsilon_z.template get_domain<level>();
+    // using domain_type = decltype(epsilon_x_domain);
 
-    std::array<Domain<Dim, base_length...>, 3> epsilon_maps{
-        epsilon_x_domain, epsilon_y, epsilon_z};
+    //  std::array<domain_type, 3> epsilon_maps{epsilon_x_domain,
+    //  epsilon_y_domain,
+    //                                          epsilon_z_domain};
+    //
+    constexpr auto lengths = decltype(epsilon_x.domain)::length;
+    std::array<Domain<Dim, std::get<0>(lengths), std::get<1>(lengths),
+                      std::get<2>(lengths)>,
+               Dim>
+        epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
 
     const DataType h =
         box_length / (std::get<0>(rhs.template get_length<level>()) + 1);
@@ -192,8 +202,10 @@ struct Jacobi_Smoother_PBE {
       return;
     } else {
       for (int i = 0; i < num_iters; i++) {
+        std::array<Dimension, Dim> strides_array =
+            std::to_array(dest_domain.strides);
 
-        auto range = std::make_from_tuple<sycl::range<Dim>>(dest.strides);
+        auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
         dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
           DataType DinvA = -convolution::PBE_Convolve_kernel(
@@ -201,20 +213,24 @@ struct Jacobi_Smoother_PBE {
               epsilon_r, delta_epsilon, values, offsets, I);
 
           DataType diag_inverse_denominator =
-              kappa_domain(I[0], I[1], I[2]) * kappa_2;
+              kappa_domain(I[0], I[1], I[2]) * kappa_2 * epsilon_r;
 
           // We first need to compute the right diagonal value
-          for (int i = 0; i < Dim; i++) {
-            sycl::id<Dim> I2, I3;
-            I2[i] += 1;
-            I3[i] -= 1;
+          for (int j = 0; j < Dim; j++) {
+            sycl::id<Dim> I2{I}, I3{I};
+            I2[j] += 1;
+            I3[j] -= 1;
+
+            //  const DataType epsilon_lower =
+            //      epsilon_r + epsilon_maps[j](I2[0], I2[1], I[2]) *
+            //      delta_epsilon;
+
+            //  diag_inverse_denominator += epsilon_lower;
 
             const DataType epsilon_lower =
-                (epsilon_r +
-                 epsilon_maps[i](I3[0], I3[1], I3[2]) * delta_epsilon);
+                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
             const DataType epsilon_upper =
-                (epsilon_r +
-                 epsilon_maps[i](I2[0], I2[1], I2[3]) * delta_epsilon);
+                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
 
             diag_inverse_denominator = epsilon_lower + epsilon_upper;
           }
