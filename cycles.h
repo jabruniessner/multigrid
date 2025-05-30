@@ -139,6 +139,116 @@ struct Jacobi_Smoother {
   }
 };
 
+template <Dimension Dim, typename DataType, typename OffsetType,
+          std::size_t length, std::size_t nlev, Length... base_length>
+struct Jacobi_Smoother_PBE {
+  Jacobi_Smoother_PBE() {};
+
+  Jacobi_Smoother_PBE(Multigrid_domain<Dim, nlev, base_length...>,
+                      std::array<DataType, length> values,
+                      std::array<OffsetType, length> offsets) {}
+
+  template <std::size_t num> struct TD;
+
+  template <std::size_t level, std::size_t... Num_Iters>
+  void operator()(Integer<level>, std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
+                  Multigrid_domain<Dim, nlev, base_length...> &src,
+                  Multigrid_domain<Dim, nlev, base_length...> &rhs,
+                  Multigrid_domain<Dim, nlev, base_length...> &kappa,
+                  Multigrid_domain<Dim, nlev, base_length...> &epsilon_x,
+                  Multigrid_domain<Dim, nlev, base_length...> &epsilon_y,
+                  Multigrid_domain<Dim, nlev, base_length...> &epsilon_z,
+                  const DataType &kappa_2, const DataType grid_step,
+                  const DataType epsilon_r, const DataType delta_epsilon,
+                  std::array<DataType, length> &values,
+                  std::array<OffsetType, length> &offsets,
+                  const DataType &box_length, const DataType omega)
+
+  {
+
+    static_assert(sizeof...(Num_Iters) == 1 ||
+                  sizeof...(Num_Iters) == nlev - 1);
+
+    constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
+
+    auto &dest_domain = dest.template get_domain<level>();
+    auto &src_domain = src.template get_domain<level>();
+    auto &rhs_domain = rhs.template get_domain<level>();
+    auto &kappa_domain = kappa.template get_domain<level>();
+    auto &epsilon_x_domain = epsilon_x.template get_domain<level>();
+    auto &epsilon_y_domain = epsilon_y.template get_domain<level>();
+    auto &epsilon_z_domain = epsilon_z.template get_domain<level>();
+
+    std::array<Domain<Dim, base_length...>, 3> epsilon_maps{
+        epsilon_x_domain, epsilon_y, epsilon_z};
+
+    const DataType h =
+        box_length / (std::get<0>(rhs.template get_length<level>()) + 1);
+    const DataType diag_inverse = omega * (h * h) / (2 * Dim);
+    const DataType diag_inverse_helper = omega * (h * h);
+
+    if constexpr (num_iters == 0) {
+      return;
+    } else {
+      for (int i = 0; i < num_iters; i++) {
+
+        auto range = std::make_from_tuple<sycl::range<Dim>>(dest.strides);
+
+        dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+          DataType DinvA = -convolution::PBE_Convolve_kernel(
+              src_domain, kappa_domain, epsilon_maps, kappa_2, grid_step,
+              epsilon_r, delta_epsilon, values, offsets, I);
+
+          DataType diag_inverse_denominator =
+              kappa_domain(I[0], I[1], I[2]) * kappa_2;
+
+          // We first need to compute the right diagonal value
+          for (int i = 0; i < Dim; i++) {
+            sycl::id<Dim> I2, I3;
+            I2[i] += 1;
+            I3[i] -= 1;
+
+            const DataType epsilon_lower =
+                (epsilon_r +
+                 epsilon_maps[i](I3[0], I3[1], I3[2]) * delta_epsilon);
+            const DataType epsilon_upper =
+                (epsilon_r +
+                 epsilon_maps[i](I2[0], I2[1], I2[3]) * delta_epsilon);
+
+            diag_inverse_denominator = epsilon_lower + epsilon_upper;
+          }
+
+          const DataType diag_inverse =
+              diag_inverse_helper / (diag_inverse_denominator);
+
+          dest_domain(I[0], I[1], I[2]) =
+              src_domain(I[0], I[2], I[2]) -
+              diag_inverse * dest_domain(I[0], I[1], I[2]) +
+              diag_inverse * rhs_domain(I[0], I[1], I[2]);
+        });
+
+        std::swap(dest_domain.values_buff, src_domain.values_buff);
+      }
+
+      std::swap(dest_domain.values_buff, src_domain.values_buff);
+    }
+  }
+
+  template <std::size_t... Num_Iters>
+  void operator()(std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
+                  Multigrid_domain<Dim, nlev, base_length...> &src,
+                  Multigrid_domain<Dim, nlev, base_length...> &rhs,
+                  std::array<DataType, length> &values,
+                  std::array<OffsetType, length> &offsets, DataType &box_length)
+
+  {
+    this->operator()(Integer<nlev>{}, dest, src, rhs, values, offsets,
+                     box_length);
+  }
+};
+
 template <typename Pre_Smoother, typename Post_Smoother, typename Solver,
           Dimension Dim, std::size_t length, std::size_t length_diff_op,
           std::size_t length_coarsening_op, typename DataType, std::size_t nlev,

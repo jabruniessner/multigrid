@@ -244,7 +244,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    const DataType &kappa_2, const DataType grid_step,
                    const DataType epsilon_r, const DataType delta_epsilon,
                    const std::array<DataType, size> &values,
-                   const std::array<Offsets, size> &offsets, int num_iters,
+                   const std::array<Offsets, size> &offsets, DataType thresh,
                    const std::index_sequence<dims...> &) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
@@ -341,12 +341,13 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   DataType residual = 0;
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  // thresh = thresh * residual;
+  thresh = thresh * residual;
 
   // std::cout << "The residual before the conjugate gradient is: " << residual
   //           << std::endl;
   int count = 0;
-  for (int i = 0; i < num_iters; i++) {
+  // for (int i = 0; i < num_iters; i++)
+  while (thresh < residual) {
     count++;
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(r_squared_next, sycl::plus<>()),
@@ -403,7 +404,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                      // DataType result = 0;
 
                      // for (int k = 0; k < size; k++) {
-                     //   result += defect_p((I[dims] + offsets[k][dims])...) *
+                     //   result += defect_p((I[dims] + offsets[k][dims])...)
+                     //   *
                      //             values[k];
                      // }
 
@@ -428,15 +430,15 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
-       h.single_task([=]() {
-         if (*p_squared_A == 0) {
-           *alpha = 0;
-         } else {
-           *alpha = (*r_squared) / (*p_squared_A);
-         }
-         *p_squared_A = 0;
-       });
-     }).wait();
+      h.single_task([=]() {
+        if (*p_squared_A == 0) {
+          *alpha = 0;
+        } else {
+          *alpha = (*r_squared) / (*p_squared_A);
+        }
+        *p_squared_A = 0;
+      });
+    });
   }
 
   //  std::cout << "We made " << count << " CG iterations." << std::endl;
@@ -457,11 +459,39 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    const DataType &kappa_2, const DataType grid_step,
                    const DataType epsilon_r, const DataType delta_epsilon,
                    const std::array<DataType, size> &values,
-                   const std::array<Offsets, size> &offsets, int num_iters) {
+                   const std::array<Offsets, size> &offsets, DataType thresh) {
   CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_maps,
                 kappa_2, grid_step, epsilon_r, delta_epsilon, values, offsets,
-                num_iters, std::make_index_sequence<Dim>{});
+                thresh, std::make_index_sequence<Dim>{});
 }
+
+template <typename DataType, typename Offsets, std::size_t size,
+          DataType thresh, Dimension Dim, Length... strides_all>
+struct PBE_Solver_CG {
+  PBE_Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
+                const std::array<DataType, size> &,
+                const std::array<Offsets, size> &)
+      : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
+        defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
+
+  void operator()(Domain<Dim, strides_all...> &init_guess,
+                  Domain<Dim, strides_all...> &rhs,
+                  Domain<Dim, strides_all...> &defect_r,
+                  Domain<Dim, strides_all...> &defectr_p,
+                  Domain<Dim, strides_all...> &kappa_map,
+                  std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
+                  const DataType &kappa_2, const DataType grid_step,
+                  const DataType epsilon_r, const DataType delta_epsilon,
+                  const std::array<DataType, size> &values,
+                  const std::array<Offsets, size> &offsets) {
+    CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_maps,
+                  kappa_2, grid_step, epsilon_r, delta_epsilon, values, offsets,
+                  thresh);
+  }
+
+  Domain<Dim, strides_all...> defect_r;
+  Domain<Dim, strides_all...> defect_p;
+};
 
 } // namespace cg_solver
 
