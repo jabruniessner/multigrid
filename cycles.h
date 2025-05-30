@@ -198,6 +198,11 @@ struct Jacobi_Smoother_PBE {
     const DataType diag_inverse = omega * (h * h) / (2 * Dim);
     const DataType diag_inverse_helper = omega * (h * h);
 
+    std::cout << "Diag inverse helper: " << diag_inverse_helper << std::endl;
+    std::cout << "omega: " << omega << std::endl;
+    std::cout << "h: " << h << std::endl;
+    std::cout << "Box length: " << box_length << std::endl;
+
     if constexpr (num_iters == 0) {
       return;
     } else {
@@ -208,9 +213,15 @@ struct Jacobi_Smoother_PBE {
         auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
         dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+          I[0] += src_domain.padding_width;
+          I[1] += src_domain.padding_width;
+          I[2] += src_domain.padding_width;
+
           DataType DinvA = -convolution::PBE_Convolve_kernel(
               src_domain, kappa_domain, epsilon_maps, kappa_2, grid_step,
               epsilon_r, delta_epsilon, values, offsets, I);
+
+          // std::cout << DinvA << std::endl;
 
           DataType diag_inverse_denominator =
               kappa_domain(I[0], I[1], I[2]) * kappa_2 * epsilon_r;
@@ -221,27 +232,55 @@ struct Jacobi_Smoother_PBE {
             I2[j] += 1;
             I3[j] -= 1;
 
-            //  const DataType epsilon_lower =
-            //      epsilon_r + epsilon_maps[j](I2[0], I2[1], I[2]) *
-            //      delta_epsilon;
-
-            //  diag_inverse_denominator += epsilon_lower;
-
             const DataType epsilon_lower =
-                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
+                epsilon_r +
+                epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
             const DataType epsilon_upper =
-                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
+                epsilon_r +
+                epsilon_maps[j](I2[0], I2[1], I2[2]) * delta_epsilon;
 
-            diag_inverse_denominator = epsilon_lower + epsilon_upper;
+            diag_inverse_denominator += epsilon_lower + epsilon_upper;
           }
+
+          //  if (I == sycl::id<Dim>{1, 1, 1}) {
+          //    std::cout << "src_domain value: " << src_domain(I[0], I[1],
+          //    I[2])
+          //              << std::endl;
+          //    std::cout << "dest_domain value: " << dest_domain(I[0], I[1],
+          //    I[2])
+          //              << std::endl;
+          //    std::cout << "diag_inverse value: " << diag_inverse <<
+          //    std::endl; std::cout << "rhs_domain value: " << rhs_domain(I[0],
+          //    I[1], I[2])
+          //              << std::endl;
+
+          //    std::cout << "DinvA: " << DinvA << std::endl;
+
+          //    std::cout << "The result is: "
+          //              << src_domain(I[0], I[1], I[2]) - diag_inverse * DinvA
+          //              +
+          //                     diag_inverse * rhs_domain(I[0], I[1], I[2])
+          //              << std::endl;
+          //}
 
           const DataType diag_inverse =
               diag_inverse_helper / (diag_inverse_denominator);
 
           dest_domain(I[0], I[1], I[2]) =
-              src_domain(I[0], I[2], I[2]) -
-              diag_inverse * dest_domain(I[0], I[1], I[2]) +
+              src_domain(I[0], I[1], I[2]) - diag_inverse * DinvA +
               diag_inverse * rhs_domain(I[0], I[1], I[2]);
+
+          // if (I == sycl::id<Dim>{1, 1, 1}) {
+          //   std::cout << "The result is: " << dest_domain(I[0], I[1], I[2])
+          //             << std::endl;
+
+          //   std::cout << "The diag_inverse is: " << diag_inverse <<
+          //   std::endl; std::cout << "The diag_inverse_helper is: " <<
+          //   diag_inverse_helper
+          //             << std::endl;
+          //   std::cout << "The diag_inverse_denominator is: "
+          //             << diag_inverse_denominator << std::endl;
+          // }
         });
 
         std::swap(dest_domain.values_buff, src_domain.values_buff);
