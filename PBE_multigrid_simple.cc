@@ -24,14 +24,14 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 64;
-constexpr DataType omega = 4. / 5.;
+constexpr std::size_t base_length = 16;
+constexpr DataType omega = .5;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
-constexpr DataType grid_step = 0.125;
+constexpr DataType grid_step = 0.5;
 
 // constexpr DataType delta_epsilon = 0;
 constexpr DataType delta_epsilon =
@@ -326,8 +326,9 @@ int main(int argc, char *argv[]) {
     //                      smoothing_steps);
     //  }
 
-    cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2, grid_step,
-              epsilon_r, delta_epsilon);
+    // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
+    // grid_step,
+    //           epsilon_r, delta_epsilon);
 
     // cg_solver::CG_solver_PBE(
     //     init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
@@ -339,11 +340,11 @@ int main(int argc, char *argv[]) {
 
     //  q.wait();
 
-    // Jacobi_Smoother_PBE j_smoother(rhs_domain);
-    // std::index_sequence<1000000> iter_nums{};
-    // j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
-    //            epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-    //            static_cast<DataType>(1.), epsilon_r, delta_epsilon, omega);
+    // Jacobi_Smoother_4BE j_smoother(rhs_domain);
+    std::index_sequence<50000> iter_nums{};
+    j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
+               epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+               epsilon_r, delta_epsilon, omega);
 
     //   sol.get_domain().print_domain();
     //   //
