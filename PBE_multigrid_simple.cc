@@ -23,15 +23,15 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 4;
+constexpr std::size_t nlev = 1u;
+constexpr std::size_t base_length = 64;
 constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
-constexpr DataType grid_step = 1.0;
+constexpr DataType grid_step = 0.125;
 
 // constexpr DataType delta_epsilon = 0;
 constexpr DataType delta_epsilon =
@@ -47,12 +47,14 @@ DataType sqr(double val) { return val * val; }
 template <std::size_t level = nlev>
 void Set_boundary_conditions(Atom<DataType> *atoms, std::size_t num_atoms,
                              const Domain_Type_upper &domain, std::size_t x,
-                             std::size_t y, std::size_t z) {
+                             std::size_t y, std::size_t z,
+                             const DataType grid_step) {
   DataType buffer_value = 0;
   for (int i = 0; i < num_atoms; i++) {
-    const DataType distance = std::sqrt(sqr(x - atoms[i].Position[0]) +
-                                        sqr(y - atoms[i].Position[1]) +
-                                        sqr(z - atoms[i].Position[2]));
+    const DataType distance =
+        std::sqrt(sqr(x * grid_step - atoms[i].Position[0]) +
+                  sqr(y * grid_step - atoms[i].Position[1]) +
+                  sqr(z * grid_step - atoms[i].Position[2]));
 
     buffer_value +=
         DH_Sphere(atoms[i].radius, atoms[i].charge, distance, kappa);
@@ -150,8 +152,8 @@ int main(int argc, char *argv[]) {
                       // as it is only applied to the right hand side
                       // anyways
 
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
-                                     box_length, Integer<base_length>{});
+  //  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+  //                                     box_length, Integer<base_length>{});
 
   std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
   std::array<DataType, 1u> values_coarse{1.};
@@ -167,41 +169,44 @@ int main(int argc, char *argv[]) {
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1], 0);
+                                         boundary_domain, I[0], I[1], 0,
+                                         grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
                                          boundary_domain, I[0], I[1],
-                                         std::get<2>(length) + 1);
+                                         std::get<2>(length) + 1, grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, 0, I[0], I[1]);
+                                         boundary_domain, 0, I[0], I[1],
+                                         grid_step);
+           Set_boundary_conditions<nlev>(
+               atoms_device, num_atoms, boundary_domain,
+               std::get<0>(length) + 1, I[0], I[1], grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain,
-                                         std::get<0>(length) + 1, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], 0, I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0],
-                                         std::get<1>(length) + 1, I[1]);
+                                         boundary_domain, I[0], 0, I[1],
+                                         grid_step);
+           Set_boundary_conditions<nlev>(
+               atoms_device, num_atoms, boundary_domain, I[0],
+               std::get<1>(length) + 1, I[1], grid_step);
          })
         .wait();
 
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5;
+      Atom.Position[0] -= grid_step / 2.;
       find_dots_in_sphere(Atom, epsilonx_domain, grid_step);
     });
 
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[1] -= 0.5;
+      Atom.Position[1] -= grid_step / 2.;
       find_dots_in_sphere(Atom, epsilony_domain, grid_step);
     });
 
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[2] -= 0.5;
+      Atom.Position[2] -= grid_step / 2.;
       find_dots_in_sphere(Atom, epsilonz_domain, grid_step);
     });
 
@@ -286,7 +291,7 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
+    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
                                        sol.template get_domain<1>(), values_op,
                                        offsets_op);
 
@@ -295,31 +300,34 @@ int main(int argc, char *argv[]) {
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
     std::index_sequence<1> num_iters{};
-    std::index_sequence<1000000> smoothing_steps;
+    std::index_sequence<500000> smoothing_steps;
 
-    for (int i = 0; i < iter_num; i++) {
+    //  for (int i = 0; i < iter_num; i++) {
 
-      DataType const residual =
-          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
-                               lhs_domain2.template get_domain<nlev>(),
-                               kappa_.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilonz_map.template get_domain<nlev>(),
-                               kappa_2, grid_step, epsilon_r, delta_epsilon);
+    //    DataType const residual =
+    //        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+    //                             sol.template get_domain<nlev>(),
+    //                             lhs_domain2.template get_domain<nlev>(),
+    //                             kappa_.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilonz_map.template get_domain<nlev>(),
+    //                             kappa_2, grid_step, epsilon_r,
+    //                             delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
+    //    std::cout << "The residual after " << i << " iterations is " <<
+    //    residual
+    //              << std::endl;
 
-      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
-                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
-                        smoothing_steps, smoothing_steps);
-    }
+    //    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+    //                      epsilony_map, epsilonz_map, kappa_, kappa_2,
+    //                      grid_step, epsilon_r, delta_epsilon, omega,
+    //                      num_iters, coarser, smoothing_steps,
+    //                      smoothing_steps);
+    //  }
 
-    // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-    //           (DataType)1.0, epsilon_r, delta_epsilon);
+    cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2, grid_step,
+              epsilon_r, delta_epsilon);
 
     // cg_solver::CG_solver_PBE(
     //     init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
