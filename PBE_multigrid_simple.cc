@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     //       static_cast<DataType>(epsilon_r), delta_epsilon,
     //       diff_operator.get_values(), diff_operator.get_offsets(), thresh);
 
-    domain::subtract_domains(init_guess, boundary_domain, init_guess);
+    // domain::subtract_domains(init_guess, boundary_domain, init_guess);
 
     //  q.wait();
 
