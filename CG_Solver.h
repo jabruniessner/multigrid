@@ -234,8 +234,8 @@ struct Solver_CG {
   Domain<Dim, strides_all...> defect_p;
 };
 
-template <typename DataType, typename Offsets, size_t size, Dimension Dim,
-          Length... strides_all, std::size_t... dims>
+template <typename DataType, Dimension Dim, Length... strides_all,
+          std::size_t... dims>
 void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    Domain<Dim, strides_all...> &rhs,
                    Domain<Dim, strides_all...> &defect_r,
@@ -244,9 +244,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
                    const DataType &kappa_2, const DataType grid_step,
                    const DataType epsilon_r, const DataType delta_epsilon,
-                   const std::array<DataType, size> &values,
-                   const std::array<Offsets, size> &offsets, DataType thresh,
-                   const std::index_sequence<dims...> &) {
+                   DataType thresh, const std::index_sequence<dims...> &) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
   assert(defect_r.num_values == defect_p.num_values &&
@@ -282,7 +280,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
                    DataType result = convolution::PBE_Convolve_kernel(
                        init_guess, kappa_map, epsilon_maps, kappa_2, grid_step,
-                       epsilon_r, delta_epsilon, values, offsets, I);
+                       epsilon_r, delta_epsilon, I);
 
                    // Computing the convolution for the initial residual
                    // DataType result = 0;
@@ -312,7 +310,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
                    DataType result = convolution::PBE_Convolve_kernel(
                        defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
-                       epsilon_r, delta_epsilon, values, offsets, I);
+                       epsilon_r, delta_epsilon, I);
 
                    // Computing the convolution for the initial residual
                    //  DataType result = 0;
@@ -361,7 +359,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
                      DataType result = convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
-                         epsilon_r, delta_epsilon, values, offsets, I);
+                         epsilon_r, delta_epsilon, I);
                      //  DataType result = 0;
                      //  for (int k = 0; k < size; k++) {
                      //    result += defect_p((I[dims] + offsets[k][dims])...) *
@@ -404,7 +402,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
                      DataType result = convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
-                         epsilon_r, delta_epsilon, values, offsets, I);
+                         epsilon_r, delta_epsilon, I);
                      // DataType result = 0;
 
                      // for (int k = 0; k < size; k++) {
@@ -452,8 +450,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   // std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
-template <typename DataType, typename Offsets, size_t size, Dimension Dim,
-          Length... strides_all, std::size_t... dims>
+template <typename DataType, Dimension Dim, Length... strides_all,
+          std::size_t... dims>
 void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    Domain<Dim, strides_all...> &rhs,
                    Domain<Dim, strides_all...> &defect_r,
@@ -462,11 +460,10 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
                    const DataType &kappa_2, const DataType grid_step,
                    const DataType epsilon_r, const DataType delta_epsilon,
-                   const std::array<DataType, size> &values,
-                   const std::array<Offsets, size> &offsets, DataType thresh) {
+                   DataType thresh) {
   CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_maps,
-                kappa_2, grid_step, epsilon_r, delta_epsilon, values, offsets,
-                thresh, std::make_index_sequence<Dim>{});
+                kappa_2, grid_step, epsilon_r, delta_epsilon, thresh,
+                std::make_index_sequence<Dim>{});
 }
 
 template <typename DataType, typename Offsets, std::size_t size,
@@ -480,17 +477,14 @@ struct PBE_Solver_CG {
 
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs,
-                  Domain<Dim, strides_all...> &defect_r,
-                  Domain<Dim, strides_all...> &defectr_p,
+                  // Domain<Dim, strides_all...> &defect_r,
+                  // Domain<Dim, strides_all...> &defectr_p,
                   Domain<Dim, strides_all...> &kappa_map,
                   std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
                   const DataType &kappa_2, const DataType grid_step,
-                  const DataType epsilon_r, const DataType delta_epsilon,
-                  const std::array<DataType, size> &values,
-                  const std::array<Offsets, size> &offsets) {
+                  const DataType epsilon_r, const DataType delta_epsilon) {
     CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_maps,
-                  kappa_2, grid_step, epsilon_r, delta_epsilon, values, offsets,
-                  thresh);
+                  kappa_2, grid_step, epsilon_r, delta_epsilon, thresh);
   }
 
   Domain<Dim, strides_all...> defect_r;

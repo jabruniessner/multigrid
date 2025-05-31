@@ -13,6 +13,7 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
+#include <exception>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -234,10 +235,9 @@ int main(int argc, char *argv[]) {
                Dim>
         epsilon_domains{epsilonx_domain, epsilony_domain, epsilonz_domain};
 
-    convolution::PBE_Convolve(
-        rhs, boundary_domain, kappa_map, epsilon_domains, kappa_2,
-        static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
-        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
+    convolution::PBE_Convolve(rhs, boundary_domain, kappa_map, epsilon_domains,
+                              kappa_2, static_cast<DataType>(1.),
+                              static_cast<DataType>(epsilon_r), delta_epsilon);
 
     // rhs.print_domain();
 
@@ -257,37 +257,44 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    //  cg_solver::CG_solver_PBE(
-    //      init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
-    //      kappa_2, static_cast<DataType>(1.),
-    //      static_cast<DataType>(epsilon_r), delta_epsilon,
-    //      diff_operator.get_values(), diff_operator.get_offsets(), thresh);
+    // cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{}, init_guess,
+    //                                    values_op, offsets_op);
 
-    //  domain::subtract_domains(init_guess, boundary_domain, init_guess);
+    // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
+    //          (DataType)1.0, epsilon_r, delta_epsilon);
 
-    q.wait();
+    //   cg_solver::CG_solver_PBE(
+    //       init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
+    //       kappa_2, static_cast<DataType>(1.),
+    //       static_cast<DataType>(epsilon_r), delta_epsilon,
+    //       diff_operator.get_values(), diff_operator.get_offsets(), thresh);
 
-    Jacobi_Smoother_PBE j_smoother(rhs_domain, values_op, offsets_op);
+    domain::subtract_domains(init_guess, boundary_domain, init_guess);
+
+    //  q.wait();
+
+    Jacobi_Smoother_PBE j_smoother(rhs_domain);
     std::index_sequence<1000000> iter_nums{};
     j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
                epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-               static_cast<DataType>(1.), epsilon_r, delta_epsilon, values_op,
-               offsets_op, box_length, omega);
+               static_cast<DataType>(1.), epsilon_r, delta_epsilon, box_length,
+               omega);
 
-    // sol.get_domain().print_domain();
-    //
-    //  Smoothing operator
-    std::array<DataType, 7u>
-        values{-omega * 1. / 6., -omega * 1. / 6., -1. + omega,
-               -omega * 1. / 6., -omega * 1. / 6., -omega * 1 / 6.,
-               -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
+    //   sol.get_domain().print_domain();
+    //   //
+    //   //  Smoothing operator
+    //   std::array<DataType, 7u>
+    //       values{-omega * 1. / 6., -omega * 1. / 6., -1. + omega,
+    //              -omega * 1. / 6., -omega * 1. / 6., -omega * 1 / 6.,
+    //              -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
 
     // sol.get_domain().print_domain();
     //  Here I am checking out the previous smoother
-    // Jacobi_Smoother j_smoother(rhs_domain, values_op, offsets_op);
-    // std::index_sequence<1> num_iters{};
-    // j_smoother(Integer<1>{}, num_iters, sol, lhs_domain1, rhs_domain, values,
-    //            offsets_op, box_length, omega);
+    //  Jacobi_Smoother j_smoother(rhs_domain);
+    //  std::index_sequence<1> num_iters{};
+    //   j_smoother(Integer<1>{}, num_iters, sol, lhs_domain1, rhs_domain,
+    //   values,
+    //              offsets_op, box_length, omega);
 
     // sol.get_domain().print_domain();
 
