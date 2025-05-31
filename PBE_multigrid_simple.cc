@@ -23,14 +23,15 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 8;
+constexpr std::size_t nlev = 2u;
+constexpr std::size_t base_length = 4;
 constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
+constexpr DataType grid_step = 1.0;
 
 // constexpr DataType delta_epsilon = 0;
 constexpr DataType delta_epsilon =
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   if (argc < 3) {
     std::cout
-        << "Usage: ./this_program in_file out_file x_min y_min z_min thresh"
+        << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
         << std::endl;
     return 0;
   }
@@ -110,9 +111,9 @@ int main(int argc, char *argv[]) {
   auto x_min = std::stod(argv[3]);
   auto y_min = std::stod(argv[4]);
   auto z_min = std::stod(argv[5]);
-  DataType thresh = std::stod(argv[6]);
+  int iter_num = std::stof(argv[6]);
 
-  std::printf("The threshold is %f\n", thresh);
+  // std::printf("The threshold is %f\n", thresh);
 
   for (auto &atom : atom_list) {
     atom.Position[0] -= x_min;
@@ -152,6 +153,14 @@ int main(int argc, char *argv[]) {
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
                                      box_length, Integer<base_length>{});
 
+  std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
+  std::array<DataType, 1u> values_coarse{1.};
+
+  Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
+                               Integer<base_length>{});
+
+  coarser.print_operator();
+
   {
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
     q.parallel_for(
@@ -179,21 +188,21 @@ int main(int argc, char *argv[]) {
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
       Atom.Position[0] -= 0.5;
-      find_dots_in_sphere(Atom, epsilonx_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(Atom, epsilonx_domain, grid_step);
     });
 
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
       Atom.Position[1] -= 0.5;
-      find_dots_in_sphere(Atom, epsilony_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(Atom, epsilony_domain, grid_step);
     });
 
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
       Atom.Position[2] -= 0.5;
-      find_dots_in_sphere(Atom, epsilonz_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(Atom, epsilonz_domain, grid_step);
     });
 
     // q.parallel_for(sycl::range<1>(epsilon_domain.num_values),
@@ -211,7 +220,7 @@ int main(int argc, char *argv[]) {
       auto atom = atoms_device[I];
       atom.radius += 1.5;
       //                       diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(atom, kappa_domain, grid_step);
     });
 
     // Inverting the kappa domain because the original functions marks the
@@ -221,11 +230,24 @@ int main(int argc, char *argv[]) {
                                         : kappa_domain.values_buff[I] = 1;
      }).wait();
 
+    {
+      std::ofstream outfile{"kappa_map_own.dx"};
+      kappa_domain.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    }
+
     // Now we need to coarsen the kappa map and the epsilon map
     coarsen_domains(kappa_);
     coarsen_domains(epsilonx_map);
     coarsen_domains(epsilony_map);
     coarsen_domains(epsilonz_map);
+
+    q.wait();
+
+    auto kappa_coarse = kappa_.template get_domain<1>();
+    {
+      std::ofstream outfile{"kappa_coarse_own.dx"};
+      kappa_coarse.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    }
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
     auto &kappa_map = kappa_.template get_domain<nlev>();
@@ -236,7 +258,7 @@ int main(int argc, char *argv[]) {
         epsilon_domains{epsilonx_domain, epsilony_domain, epsilonz_domain};
 
     convolution::PBE_Convolve(rhs, boundary_domain, kappa_map, epsilon_domains,
-                              kappa_2, static_cast<DataType>(1.),
+                              kappa_2, grid_step,
                               static_cast<DataType>(epsilon_r), delta_epsilon);
 
     // rhs.print_domain();
@@ -245,40 +267,75 @@ int main(int argc, char *argv[]) {
 
     q.submit([=](sycl::handler &h) {
        h.single_task([=]() {
-         for (int I = 0; I < num_atoms; I++)
+         for (int I = 0; I < num_atoms; I++) {
+
            add_charges_to_distribution(
                rhs, atoms_device[I].Position,
                static_cast<DataType>(atoms_device[I].charge / epsilon),
-               spacing<DataType, static_cast<DataType>(1.)>{});
+               spacing<DataType, grid_step>{});
+         }
        });
      }).wait();
+
+    {
+      std::ofstream outfile{"charges_map_own.dx"};
+      rhs.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    }
 
     auto &defect_p = lhs_domain1.get_domain();
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    // cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{}, init_guess,
-    //                                    values_op, offsets_op);
+    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
+                                       sol.template get_domain<1>(), values_op,
+                                       offsets_op);
+
+    Jacobi_Smoother_PBE j_smoother(rhs_domain);
+
+    V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
+
+    std::index_sequence<1> num_iters{};
+    std::index_sequence<1000000> smoothing_steps;
+
+    for (int i = 0; i < iter_num; i++) {
+
+      DataType const residual =
+          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+                               sol.template get_domain<nlev>(),
+                               lhs_domain2.template get_domain<nlev>(),
+                               kappa_.template get_domain<nlev>(),
+                               epsilony_map.template get_domain<nlev>(),
+                               epsilony_map.template get_domain<nlev>(),
+                               epsilonz_map.template get_domain<nlev>(),
+                               kappa_2, grid_step, epsilon_r, delta_epsilon);
+
+      std::cout << "The residual after " << i << " iterations is " << residual
+                << std::endl;
+
+      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
+                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
+                        smoothing_steps, smoothing_steps);
+    }
 
     // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-    //          (DataType)1.0, epsilon_r, delta_epsilon);
+    //           (DataType)1.0, epsilon_r, delta_epsilon);
 
-    //   cg_solver::CG_solver_PBE(
-    //       init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
-    //       kappa_2, static_cast<DataType>(1.),
-    //       static_cast<DataType>(epsilon_r), delta_epsilon,
-    //       diff_operator.get_values(), diff_operator.get_offsets(), thresh);
+    // cg_solver::CG_solver_PBE(
+    //     init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
+    //     kappa_2, static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
+    //     delta_epsilon, diff_operator.get_values(),
+    //     diff_operator.get_offsets(), thresh);
 
     // domain::subtract_domains(init_guess, boundary_domain, init_guess);
 
     //  q.wait();
 
-    Jacobi_Smoother_PBE j_smoother(rhs_domain);
-    std::index_sequence<1000000> iter_nums{};
-    j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
-               epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-               static_cast<DataType>(1.), epsilon_r, delta_epsilon, box_length,
-               omega);
+    // Jacobi_Smoother_PBE j_smoother(rhs_domain);
+    // std::index_sequence<1000000> iter_nums{};
+    // j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
+    //            epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+    //            static_cast<DataType>(1.), epsilon_r, delta_epsilon, omega);
 
     //   sol.get_domain().print_domain();
     //   //
@@ -303,7 +360,7 @@ int main(int argc, char *argv[]) {
     domain::add_domains(init_guess, boundary_domain, init_guess);
 
     std::ofstream outfile{filename_out};
-    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
 
     //  init_guess.print_domain();
   }

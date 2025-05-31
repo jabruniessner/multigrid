@@ -76,6 +76,30 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
   return std::sqrt(result / sol.num_values);
 }
 
+template <Dimension Dim, Length... strides_all>
+DataType compute_residual_PBE(Domain<Dim, strides_all...> &rhs,
+                              Domain<Dim, strides_all...> &sol,
+                              Domain<Dim, strides_all...> &helper,
+                              Domain<Dim, strides_all...> &kappa_map,
+                              Domain<Dim, strides_all...> &epsilon_x,
+                              Domain<Dim, strides_all...> &epsilon_y,
+                              Domain<Dim, strides_all...> &epsilon_z,
+                              DataType Kappa_2, DataType grid_step,
+                              DataType epsilon_r, DataType delta_epsilon) {
+
+  std::array<Domain<Dim, strides_all...>, Dim> epsilon_maps{
+      epsilon_x, epsilon_y, epsilon_z};
+
+  convolution::PBE_Convolve(helper, sol, kappa_map, epsilon_maps, Kappa_2,
+                            grid_step, epsilon_r, delta_epsilon);
+
+  subtract_domains(helper, rhs, helper);
+
+  DataType result;
+  domain_compute_norm_squared(result, helper);
+  return std::sqrt(result / sol.num_values);
+}
+
 template <Dimension Dim, typename DataType, typename OffsetType,
           std::size_t length, std::size_t nlev, Length... base_length>
 struct Jacobi_Smoother {
@@ -158,7 +182,7 @@ struct Jacobi_Smoother_PBE {
                   Multigrid_domain<Dim, nlev, base_length...> &epsilon_z,
                   const DataType &kappa_2, const DataType grid_step,
                   const DataType epsilon_r, const DataType delta_epsilon,
-                  const DataType &box_length, const DataType omega)
+                  const DataType omega)
 
   {
 
@@ -188,8 +212,7 @@ struct Jacobi_Smoother_PBE {
                Dim>
         epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
 
-    const DataType h =
-        box_length / (std::get<0>(rhs.template get_length<level>()) + 1);
+    const DataType h = grid_step;
     const DataType diag_inverse_helper = omega * (h * h);
 
     //  std::cout << "Diag inverse helper: " << diag_inverse_helper <<
@@ -394,13 +417,16 @@ struct V_Cycle_base {
 };
 
 template <typename Pre_Smoother, typename Post_Smoother, typename Solver,
-          Dimension Dim, std::size_t length, std::size_t length_diff_op,
-          typename DataType, std::size_t nlev, std::size_t level = nlev,
+          Dimension Dim, typename DataType, std::size_t nlev,
+          std::size_t length_coarsening_op, std::size_t level = nlev,
           std::size_t base_length1 = 1, std::size_t... base_length>
 struct V_Cycle_PBE {
   V_Cycle_PBE(Pre_Smoother &presmoother, Post_Smoother &post_smoother,
               Solver &solver,
-              Multigrid_domain<Dim, nlev, base_length1, base_length...> &) {}
+              Multigrid_domain<Dim, nlev, base_length1, base_length...> &,
+              Multi_Level_operator<Dim, DataType, length_coarsening_op,
+                                   base_length1, nlev>)
+      : solver(solver) {}
 
   //  template <std::size_t... Ts> struct TD;
   //
@@ -416,8 +442,10 @@ struct V_Cycle_PBE {
       Multigrid_domain<Dim, nlev, base_length1, base_length...> &epsilon_z,
       Multigrid_domain<Dim, nlev, base_length1, base_length...> &kappa_map,
       DataType kappa_2, DataType grid_step, DataType epsilon_r,
-      DataType delta_epsilon, DataType box_length, DataType omega,
+      DataType delta_epsilon, DataType omega,
       std::index_sequence<Num_Iters...> num_iters_,
+      Multi_Level_operator<Dim, DataType, length_coarsening_op, base_length1,
+                           nlev> &coarsening_operator,
 
       std::index_sequence<Num_Iters_Smoother_Pre...> smoother_iters_pre,
       std::index_sequence<Num_Iters_Smoother_Post...> smoother_iters_post) {
@@ -431,7 +459,7 @@ struct V_Cycle_PBE {
       auto epsilon_y_domain = epsilon_y.template get_domain<iter_level>();
       auto epsilon_z_domain = epsilon_z.template get_domain<iter_level>();
 
-      constexpr auto lengths = decltype(epsilon_x.domain)::length;
+      constexpr auto lengths = decltype(epsilon_x_domain)::length;
       std::array<Domain<Dim, std::get<0>(lengths), std::get<1>(lengths),
                         std::get<2>(lengths)>,
                  Dim>
@@ -447,42 +475,61 @@ struct V_Cycle_PBE {
       constexpr std::size_t num_iters =
           get_num_iters<iter_level, Num_Iters...>();
 
+      std::cout << "The number of iterations on level " << iter_level << " is "
+                << num_iters << std::endl;
+
+      auto epsilon_x_domain = epsilon_x.template get_domain<iter_level>();
+      auto epsilon_y_domain = epsilon_y.template get_domain<iter_level>();
+      auto epsilon_z_domain = epsilon_z.template get_domain<iter_level>();
+
+      constexpr auto lengths = decltype(epsilon_x.domain)::length;
+      std::array<Domain<Dim, std::get<0>(lengths), std::get<1>(lengths),
+                        std::get<2>(lengths)>,
+                 Dim>
+          epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
+
       for (int j = 0; j < num_iters; j++) {
+
         pre_smoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
-                     rhs_domain, box_length, omega);
+                     rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
+                     kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
 
-        //    convolution::Convolve(current.template get_domain<iter_level>(),
-        //                          next.template get_domain<iter_level>(),
-        //                          Diff_operator.template
-        //                          get_values<iter_level>(),
-        //                          Diff_operator.template
-        //                          get_offsets<iter_level>());
+        // This computes -A, in this case
+        convolution::PBE_Convolve(current.template get_domain<iter_level>(),
+                                  next.template get_domain<iter_level>(),
+                                  kappa_map.template get_domain<iter_level>(),
+                                  epsilon_maps, kappa_2, grid_step, epsilon_r,
+                                  delta_epsilon);
 
-        //    subtract_domains(current.template get_domain<iter_level>(),
-        //                     rhs_domain.template get_domain<iter_level>(),
-        //                     current.template get_domain<iter_level>());
+        // This needs to be add, because the Convolve returns the negative
+        add_domains(current.template get_domain<iter_level>(),
+                    rhs_domain.template get_domain<iter_level>(),
+                    current.template get_domain<iter_level>());
 
-        //    level_transition::coarsening(
-        //        rhs_domain.template get_domain<iter_level - 1>(),
-        //        current.template get_domain<iter_level>(),
-        //        coarsening_operator.template get_values<iter_level>(),
-        //        coarsening_operator.template get_offsets<iter_level>());
+        level_transition::coarsening(
+            rhs_domain.template get_domain<iter_level - 1>(),
+            current.template get_domain<iter_level>(),
+            coarsening_operator.template get_values<iter_level>(),
+            coarsening_operator.template get_offsets<iter_level>());
 
-        //    iteration<iter_level - 1>(next, current, rhs_domain,
-        //    Smooth_operator,
-        //                              Diff_operator, coarsening_operator,
-        //                              box_length, omega, num_iters_,
-        //                              smoother_iters_pre,
-        //                              smoother_iters_post);
+        iteration<iter_level - 1>(next, current, rhs_domain, epsilon_x,
+                                  epsilon_y, epsilon_z, kappa_map, kappa_2,
+                                  2 * grid_step, epsilon_r, delta_epsilon,
+                                  omega, num_iters_, coarsening_operator,
+                                  smoother_iters_pre, smoother_iters_post);
 
-        //    level_transition::refinement(
-        //        current.template get_domain<iter_level>(),
-        //        next.template get_domain<iter_level - 1>());
+        level_transition::refinement(
+            current.template get_domain<iter_level>(),
+            next.template get_domain<iter_level - 1>());
 
-        //    add_domains(next.template get_domain<iter_level>(),
-        //                next.template get_domain<iter_level>(),
-        //                current.template get_domain<iter_level>());
+        add_domains(next.template get_domain<iter_level>(),
+                    next.template get_domain<iter_level>(),
+                    current.template get_domain<iter_level>());
       }
+
+      post_smoother(Integer<iter_level>{}, smoother_iters_pre, current, next,
+                    rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
+                    kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
 
       //  post_smoother(Integer<iter_level>{}, smoother_iters_post, current,
       //  next,

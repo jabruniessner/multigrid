@@ -278,7 +278,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                  [=](sycl::id<Dim> I, auto &r) {
                    ((I[dims] += padding_width), ...);
 
-                   DataType result = convolution::PBE_Convolve_kernel(
+                   DataType result = -convolution::PBE_Convolve_kernel(
                        init_guess, kappa_map, epsilon_maps, kappa_2, grid_step,
                        epsilon_r, delta_epsilon, I);
 
@@ -308,7 +308,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                  [=](sycl::id<Dim> I, auto &pAp) {
                    ((I[dims] += padding_width), ...);
 
-                   DataType result = convolution::PBE_Convolve_kernel(
+                   DataType result = -convolution::PBE_Convolve_kernel(
                        defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
                        epsilon_r, delta_epsilon, I);
 
@@ -357,7 +357,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                      ((I[dims] += padding_width), ...);
                      init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
 
-                     DataType result = convolution::PBE_Convolve_kernel(
+                     DataType result = -convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, I);
                      //  DataType result = 0;
@@ -400,7 +400,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                    [=](sycl::id<Dim> I, auto &pAp) {
                      ((I[dims] += padding_width), ...);
 
-                     DataType result = convolution::PBE_Convolve_kernel(
+                     DataType result = -convolution::PBE_Convolve_kernel(
                          defect_p, kappa_map, epsilon_maps, kappa_2, grid_step,
                          epsilon_r, delta_epsilon, I);
                      // DataType result = 0;
