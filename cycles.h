@@ -93,7 +93,7 @@ DataType compute_residual_PBE(Domain<Dim, strides_all...> &rhs,
   convolution::PBE_Convolve(helper, sol, kappa_map, epsilon_maps, Kappa_2,
                             grid_step, epsilon_r, delta_epsilon);
 
-  subtract_domains(helper, rhs, helper);
+  add_domains(helper, rhs, helper);
 
   DataType result;
   domain_compute_norm_squared(result, helper);

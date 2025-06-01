@@ -25,7 +25,7 @@ using namespace convolution;
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
 constexpr std::size_t base_length = 2;
-constexpr DataType omega = 4. / 5.;
+constexpr DataType omega = 1.;
 constexpr DataType box_length = 4;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
@@ -315,36 +315,33 @@ int main(int argc, char *argv[]) {
                                        sol.template get_domain<1>(), values_op,
                                        offsets_op);
 
-    Jacobi_Smoother_PBE j_smoother(rhs_domain);
+    Gauss_Seidel_PBE j_smoother(rhs_domain);
 
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
     std::index_sequence<1> num_iters{};
-    std::index_sequence<500000> smoothing_steps;
+    std::index_sequence<2> smoothing_steps;
 
-    //  for (int i = 0; i < iter_num; i++) {
+    for (int i = 0; i < iter_num; i++) {
 
-    //    DataType const residual =
-    //        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-    //                             sol.template get_domain<nlev>(),
-    //                             lhs_domain2.template get_domain<nlev>(),
-    //                             kappa_.template get_domain<nlev>(),
-    //                             epsilony_map.template get_domain<nlev>(),
-    //                             epsilony_map.template get_domain<nlev>(),
-    //                             epsilonz_map.template get_domain<nlev>(),
-    //                             kappa_2, grid_step, epsilon_r,
-    //                             delta_epsilon);
+      DataType const residual =
+          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+                               sol.template get_domain<nlev>(),
+                               lhs_domain2.template get_domain<nlev>(),
+                               kappa_.template get_domain<nlev>(),
+                               epsilony_map.template get_domain<nlev>(),
+                               epsilony_map.template get_domain<nlev>(),
+                               epsilonz_map.template get_domain<nlev>(),
+                               kappa_2, grid_step, epsilon_r, delta_epsilon);
 
-    //    std::cout << "The residual after " << i << " iterations is " <<
-    //    residual
-    //              << std::endl;
+      std::cout << "The residual after " << i << " iterations is " << residual
+                << std::endl;
 
-    //    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-    //                      epsilony_map, epsilonz_map, kappa_, kappa_2,
-    //                      grid_step, epsilon_r, delta_epsilon, omega,
-    //                      num_iters, coarser, smoothing_steps,
-    //                      smoothing_steps);
-    //  }
+      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
+                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
+                        smoothing_steps, smoothing_steps);
+    }
 
     // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
     // grid_step,
@@ -362,12 +359,13 @@ int main(int argc, char *argv[]) {
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-    std::index_sequence<30> iter_nums{};
-    j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
-               epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-               epsilon_r, delta_epsilon, omega);
+    //  std::index_sequence<30> iter_nums{};
+    //  j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain,
+    //  kappa_,
+    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+    //             epsilon_r, delta_epsilon, omega);
 
-    sol.get_domain().print_domain();
+    // sol.get_domain().print_domain();
     //   //
     //   //  Smoothing operator
     //   std::array<DataType, 7u>
@@ -388,9 +386,10 @@ int main(int argc, char *argv[]) {
     // rhs_domain.get_domain().print_domain();
 
     domain::add_domains(init_guess, boundary_domain, init_guess);
+    init_guess.print_domain();
 
-    std::ofstream outfile{filename_out};
-    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
+    //  std::ofstream outfile{filename_out};
+    //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
 
     //  init_guess.print_domain();
   }
