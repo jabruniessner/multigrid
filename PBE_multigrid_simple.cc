@@ -24,18 +24,17 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 16;
-constexpr DataType omega = .5;
-constexpr DataType box_length = 16;
+constexpr std::size_t base_length = 2;
+constexpr DataType omega = 4. / 5.;
+constexpr DataType box_length = 4;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
-constexpr DataType kappa_2 = kappa * kappa;
+constexpr DataType kappa_2 = 0;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step = 0.5;
 
 // constexpr DataType delta_epsilon = 0;
-constexpr DataType delta_epsilon =
-    (epsilon_p - epsilon_r); // Difference in epsilon
+constexpr DataType delta_epsilon = 0; // Difference in epsilon
 
 using Domain_Type =
     Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
@@ -164,51 +163,71 @@ int main(int argc, char *argv[]) {
   coarser.print_operator();
 
   {
+
+    const DataType epsilon_r = 1;
+    std::cout << "Warning epsilon_r is set to: " << epsilon_r << std::endl;
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
+    // q.parallel_for(
+    //      sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+    //      [=](sycl::id<2> I) {
+    //        Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                      boundary_domain, I[0], I[1], 0,
+    //                                      grid_step);
+    //        Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                      boundary_domain, I[0], I[1],
+    //                                      std::get<2>(length) + 1, grid_step);
+    //        Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                      boundary_domain, 0, I[0], I[1],
+    //                                      grid_step);
+    //        Set_boundary_conditions<nlev>(
+    //            atoms_device, num_atoms, boundary_domain,
+    //            std::get<0>(length) + 1, I[0], I[1], grid_step);
+    //        Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                      boundary_domain, I[0], 0, I[1],
+    //                                      grid_step);
+    //        Set_boundary_conditions<nlev>(
+    //            atoms_device, num_atoms, boundary_domain, I[0],
+    //            std::get<1>(length) + 1, I[1], grid_step);
+    //      })
+    //     .wait();
+
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1], 0,
-                                         grid_step);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1],
-                                         std::get<2>(length) + 1, grid_step);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, 0, I[0], I[1],
-                                         grid_step);
-           Set_boundary_conditions<nlev>(
-               atoms_device, num_atoms, boundary_domain,
-               std::get<0>(length) + 1, I[0], I[1], grid_step);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], 0, I[1],
-                                         grid_step);
-           Set_boundary_conditions<nlev>(
-               atoms_device, num_atoms, boundary_domain, I[0],
-               std::get<1>(length) + 1, I[1], grid_step);
+           boundary_domain(I[0], I[1], 0) = 0.;
+           boundary_domain(I[0], I[1], std::get<2>(length) + 1) = 1.;
+           boundary_domain(0, I[0], I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(I[0], 0, I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
+               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
          })
         .wait();
 
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= grid_step / 2.;
-      find_dots_in_sphere(Atom, epsilonx_domain, grid_step);
-    });
+    //    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I)
+    //    {
+    //      Sphere<DataType, Dim> Atom = atoms_device[I];
+    //      Atom.Position[0] -= grid_step / 2.;
+    //      find_dots_in_sphere(Atom, epsilonx_domain, grid_step);
+    //    });
 
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[1] -= grid_step / 2.;
-      find_dots_in_sphere(Atom, epsilony_domain, grid_step);
-    });
+    //  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+    //    Sphere<DataType, Dim> Atom = atoms_device[I];
+    //    Atom.Position[1] -= grid_step / 2.;
+    //    find_dots_in_sphere(Atom, epsilony_domain, grid_step);
+    //  });
 
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[2] -= grid_step / 2.;
-      find_dots_in_sphere(Atom, epsilonz_domain, grid_step);
-    });
+    //  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+    //    Sphere<DataType, Dim> Atom = atoms_device[I];
+    //    Atom.Position[2] -= grid_step / 2.;
+    //    find_dots_in_sphere(Atom, epsilonz_domain, grid_step);
+    //  });
 
     // q.parallel_for(sycl::range<1>(epsilon_domain.num_values),
     //                [=](sycl::id<1> I) {
@@ -221,24 +240,25 @@ int main(int argc, char *argv[]) {
     std::cout << "The size if the atoms vector is: " << atoms_vector.size()
               << std::endl;
     auto &kappa_domain = kappa_.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      auto atom = atoms_device[I];
-      atom.radius += 1.5;
-      //                       diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain, grid_step);
-    });
+    //  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+    //    auto atom = atoms_device[I];
+    //    atom.radius += 1.5;
+    //    //                       diff_operator.get_offsets(), 1e-2);
+    //    find_dots_in_sphere(atom, kappa_domain, grid_step);
+    //  });
 
-    // Inverting the kappa domain because the original functions marks the
-    // points inside the protein with 1.
-    q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1> I) {
-       kappa_domain.values_buff[I] != 0 ? kappa_domain.values_buff[I] = 0
-                                        : kappa_domain.values_buff[I] = 1;
-     }).wait();
+    //  // Inverting the kappa domain because the original functions marks the
+    //  // points inside the protein with 1.
+    //  q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1>
+    //  I) {
+    //     kappa_domain.values_buff[I] != 0 ? kappa_domain.values_buff[I] = 0
+    //                                      : kappa_domain.values_buff[I] = 1;
+    //   }).wait();
 
-    {
-      std::ofstream outfile{"kappa_map_own.dx"};
-      kappa_domain.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
-    }
+    //  {
+    //    std::ofstream outfile{"kappa_map_own.dx"};
+    //    kappa_domain.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    //  }
 
     // Now we need to coarsen the kappa map and the epsilon map
     coarsen_domains(kappa_);
@@ -248,11 +268,11 @@ int main(int argc, char *argv[]) {
 
     q.wait();
 
-    auto kappa_coarse = kappa_.template get_domain<1>();
-    {
-      std::ofstream outfile{"kappa_coarse_own.dx"};
-      kappa_coarse.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
-    }
+    //  auto kappa_coarse = kappa_.template get_domain<1>();
+    //  {
+    //    std::ofstream outfile{"kappa_coarse_own.dx"};
+    //    kappa_coarse.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    //  }
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
     auto &kappa_map = kappa_.template get_domain<nlev>();
@@ -270,22 +290,22 @@ int main(int argc, char *argv[]) {
 
     //  //  q.wait();
 
-    q.submit([=](sycl::handler &h) {
-       h.single_task([=]() {
-         for (int I = 0; I < num_atoms; I++) {
+    //  q.submit([=](sycl::handler &h) {
+    //     h.single_task([=]() {
+    //       for (int I = 0; I < num_atoms; I++) {
 
-           add_charges_to_distribution(
-               rhs, atoms_device[I].Position,
-               static_cast<DataType>(atoms_device[I].charge / epsilon),
-               spacing<DataType, grid_step>{});
-         }
-       });
-     }).wait();
+    //         add_charges_to_distribution(
+    //             rhs, atoms_device[I].Position,
+    //             static_cast<DataType>(atoms_device[I].charge / epsilon),
+    //             spacing<DataType, grid_step>{});
+    //       }
+    //     });
+    //   }).wait();
 
-    {
-      std::ofstream outfile{"charges_map_own.dx"};
-      rhs.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
-    }
+    //  {
+    //    std::ofstream outfile{"charges_map_own.dx"};
+    //    rhs.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    //  }
 
     auto &defect_p = lhs_domain1.get_domain();
     auto &defect_r = lhs_domain2.get_domain();
@@ -341,12 +361,13 @@ int main(int argc, char *argv[]) {
     //  q.wait();
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
-    std::index_sequence<50000> iter_nums{};
+
+    std::index_sequence<30> iter_nums{};
     j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
                epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
                epsilon_r, delta_epsilon, omega);
 
-    //   sol.get_domain().print_domain();
+    sol.get_domain().print_domain();
     //   //
     //   //  Smoothing operator
     //   std::array<DataType, 7u>
