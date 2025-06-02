@@ -25,16 +25,17 @@ using namespace convolution;
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
 constexpr std::size_t base_length = 8;
-constexpr DataType omega = 1.5;
+constexpr DataType omega = 1.;
 constexpr DataType box_length = 8;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
-constexpr DataType kappa_2 = 0;
+constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step = 0.5;
 
 // constexpr DataType delta_epsilon = 0;
-constexpr DataType delta_epsilon = 0; // Difference in epsilon
+constexpr DataType delta_epsilon =
+    epsilon_p - epsilon_r; // Difference in epsilon
 
 using Domain_Type =
     Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
@@ -297,12 +298,14 @@ int main(int argc, char *argv[]) {
                                        sol.template get_domain<1>(), values_op,
                                        offsets_op);
 
-    Jacobi_Smoother_PBE j_smoother(rhs_domain);
+    // Jacobi_Smoother_PBE j_smoother(rhs_domain);
+    //
+    Gauss_Seidel_PBE j_smoother(rhs_domain);
 
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
     std::index_sequence<1> num_iters{};
-    std::index_sequence<2> smoothing_steps;
+    std::index_sequence<5> smoothing_steps;
 
     for (int i = 0; i < iter_num; i++) {
 
