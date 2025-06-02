@@ -322,26 +322,29 @@ int main(int argc, char *argv[]) {
     std::index_sequence<1> num_iters{};
     std::index_sequence<2> smoothing_steps;
 
-    for (int i = 0; i < iter_num; i++) {
+    //  for (int i = 0; i < iter_num; i++) {
 
-      DataType const residual =
-          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
-                               lhs_domain2.template get_domain<nlev>(),
-                               kappa_.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilonz_map.template get_domain<nlev>(),
-                               kappa_2, grid_step, epsilon_r, delta_epsilon);
+    //    DataType const residual =
+    //        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+    //                             sol.template get_domain<nlev>(),
+    //                             lhs_domain2.template get_domain<nlev>(),
+    //                             kappa_.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilonz_map.template get_domain<nlev>(),
+    //                             kappa_2, grid_step, epsilon_r,
+    //                             delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
+    //    std::cout << "The residual after " << i << " iterations is " <<
+    //    residual
+    //              << std::endl;
 
-      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
-                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
-                        smoothing_steps, smoothing_steps);
-    }
+    //    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+    //                      epsilony_map, epsilonz_map, kappa_, kappa_2,
+    //                      grid_step, epsilon_r, delta_epsilon, omega,
+    //                      num_iters, coarser, smoothing_steps,
+    //                      smoothing_steps);
+    //  }
 
     // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
     // grid_step,
@@ -359,11 +362,10 @@ int main(int argc, char *argv[]) {
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-    //  std::index_sequence<30> iter_nums{};
-    //  j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain,
-    //  kappa_,
-    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-    //             epsilon_r, delta_epsilon, omega);
+    std::index_sequence<30> iter_nums{};
+    j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
+               epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+               epsilon_r, delta_epsilon, omega);
 
     // sol.get_domain().print_domain();
     //   //
