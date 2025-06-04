@@ -358,7 +358,7 @@ struct Gauss_Seidel_PBE {
     auto epsilon_x_domain = epsilon_x.template get_domain<level>();
     auto epsilon_y_domain = epsilon_y.template get_domain<level>();
     auto epsilon_z_domain = epsilon_z.template get_domain<level>();
-    constexpr auto lengths = decltype(epsilon_x.domain)::length;
+    constexpr auto lengths = decltype(epsilon_x_domain)::length;
     std::array<Domain<Dim, std::get<0>(lengths), std::get<1>(lengths),
                       std::get<2>(lengths)>,
                Dim>
