@@ -253,8 +253,7 @@ struct Jacobi_Smoother_PBE {
                 epsilon_r +
                 epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
             const DataType epsilon_upper =
-                epsilon_r +
-                epsilon_maps[j](I2[0], I2[1], I2[2]) * delta_epsilon;
+                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
 
             diag_inverse_denominator += epsilon_lower + epsilon_upper;
           }
@@ -365,7 +364,7 @@ struct Gauss_Seidel_PBE {
         epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
 
     const DataType h = grid_step;
-    const DataType diag_inverse_helper = (h * h);
+    const DataType diag_inverse_helper = 1; // (h * h);
 
     if constexpr (num_iters == 0) {
       return;
@@ -384,15 +383,9 @@ struct Gauss_Seidel_PBE {
 
             if ((I[0] + I[1] + I[2]) % 2 == color) {
 
-              auto &intermediate = color == 0 ? src_domain : dest_domain;
-              DataType Off_diagonal_contribution = convolution::PBE_GS_kernel(
-                  intermediate, kappa_domain, epsilon_maps, kappa_2, grid_step,
-                  epsilon_r, delta_epsilon, I);
-
               DataType diag_inverse_denominator =
-                  kappa_domain(I[0], I[1], I[2]) * kappa_2 * epsilon_r;
+                  kappa_domain(I[0], I[1], I[2]) * h * h * kappa_2 * epsilon_r;
 
-              // We first need to compute the right diagonal value
               for (int j = 0; j < Dim; j++) {
                 sycl::id<Dim> I2{I}, I3{I};
                 I2[j] += 1;
@@ -403,25 +396,33 @@ struct Gauss_Seidel_PBE {
                     epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
                 const DataType epsilon_upper =
                     epsilon_r +
-                    epsilon_maps[j](I2[0], I2[1], I2[2]) * delta_epsilon;
+                    epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
 
                 diag_inverse_denominator += epsilon_lower + epsilon_upper;
               }
 
-              const DataType diag_inverse =
-                  diag_inverse_helper / (diag_inverse_denominator);
-
-              dest_domain(I[0], I[1], I[2]) =
-                  (1 - omega) * src_domain(I[0], I[1], I[2]) +
-                  (omega)*diag_inverse * (rhs_domain(I[0], I[1], I[2]) -
-                                          Off_diagonal_contribution);
+              src_domain(I[0], I[1], I[2]) =
+                  (rhs_domain(I[0], I[1], I[2]) +
+                   epsilon_y_domain(I[0], I[1], I[2]) *
+                       src_domain(I[0], I[1] + 1, I[2]) +
+                   epsilon_y_domain(I[0], I[1] - 1, I[2]) *
+                       src_domain(I[0], I[1] - 1, I[2]) +
+                   epsilon_x_domain(I[0], I[1], I[2]) *
+                       src_domain(I[0] + 1, I[1], I[2]) +
+                   epsilon_x_domain(I[0] - 1, I[1], I[2]) *
+                       src_domain(I[0] - 1, I[1], I[2]) +
+                   epsilon_z_domain(I[0], I[1], I[2] - 1) *
+                       src_domain(I[0], I[1], I[2] - 1) +
+                   epsilon_z_domain(I[0], I[1], I[2]) *
+                       src_domain(I[0], I[1], I[2] + 1)) /
+                  (diag_inverse_denominator);
             }
           });
 
-        std::swap(dest_domain.values_buff, src_domain.values_buff);
+        // std::swap(dest_domain.values_buff, src_domain.values_buff);
       }
 
-      std::swap(dest_domain.values_buff, src_domain.values_buff);
+      // std::swap(dest_domain.values_buff, src_domain.values_buff);
     }
   }
 

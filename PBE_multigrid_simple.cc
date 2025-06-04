@@ -25,11 +25,11 @@ using namespace convolution;
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
 constexpr std::size_t base_length = 8;
-constexpr DataType omega = .9;
+constexpr DataType omega = 1.;
 constexpr DataType box_length = 8;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
-constexpr DataType kappa_2 = kappa * kappa; // kappa * kappa;
+constexpr DataType kappa_2 = 0; // kappa * kappa; // kappa * kappa;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step = 0.5;
 
@@ -326,11 +326,11 @@ int main(int argc, char *argv[]) {
                 << std::endl;
 
       std::index_sequence<1> iter_nums{};
-      j_smoother(Integer<nlev>{}, iter_nums, *a, *b, rhs_domain, kappa_,
+      j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
                  epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
                  epsilon_r, delta_epsilon, omega);
 
-      std::swap(a, b);
+      // std::swap(a, b);
 
       // v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
       //                   epsilony_map, epsilonz_map, kappa_, kappa_2,
