@@ -78,7 +78,7 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type domain) {
 
 int main(int argc, char *argv[]) {
 
-  // epsilon_r = 1.0;
+  // constexpr DataType epsilon_r = 1.0;
 
   using OffsetType = std::array<int, Dim>;
 
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   {
 
     const DataType epsilon_r = 1;
-    std::cout << "Warning epsilon_r is set to: " << epsilon_r << std::endl;
+    std::cout << "Warning: epsilon_r is set to: " << epsilon_r << std::endl;
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
     // q.parallel_for(
     //      sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
@@ -362,10 +362,11 @@ int main(int argc, char *argv[]) {
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-    std::index_sequence<30> iter_nums{};
-    j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain, kappa_,
-               epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-               epsilon_r, delta_epsilon, omega);
+    std::index_sequence<3> iter_nums{};
+    for (int i = 0; i < iter_num; i++)
+      j_smoother(Integer<1>{}, iter_nums, sol, sol, rhs_domain, kappa_,
+                 epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+                 epsilon_r, delta_epsilon, omega);
 
     // sol.get_domain().print_domain();
     //   //
@@ -389,6 +390,12 @@ int main(int argc, char *argv[]) {
 
     domain::add_domains(init_guess, boundary_domain, init_guess);
     init_guess.print_domain();
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "The right hand side is: " << std::endl;
+    std::cout << "<<========================>>" << std::endl;
+    rhs.print_domain();
 
     //  std::ofstream outfile{filename_out};
     //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
