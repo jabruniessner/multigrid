@@ -350,7 +350,7 @@ struct Gauss_Seidel_PBE {
 
     std::cout << "The number of iterations is " << num_iters << std::endl;
 
-    auto &dest_domain = dest.template get_domain<level>();
+    // auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     auto &kappa_domain = kappa.template get_domain<level>();
@@ -371,53 +371,84 @@ struct Gauss_Seidel_PBE {
     } else {
       for (int i = 0; i < num_iters; i++) {
         std::array<Dimension, Dim> strides_array =
-            std::to_array(dest_domain.strides);
+            std::to_array(src_domain.strides);
+
+        //  std::cout << std::endl;
+        //  std::cout << std::endl;
+
+        //  std::cout << "Before " << i << " iterations " << std::endl;
+        //  std::cout << "<<==================================>>" << std::endl;
+
+        //  src_domain.print_domain();
 
         auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
         for (int color = 0; color < 2; color++)
-          dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
-            I[0] += src_domain.padding_width;
-            I[1] += src_domain.padding_width;
-            I[2] += src_domain.padding_width;
+          // src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+          for (std::size_t i = 0; i < strides_array[0]; i++)
+            for (std::size_t j = 0; j < strides_array[1]; j++)
+              for (std::size_t k = 0; k < strides_array[2]; k++) {
+                sycl::id<Dim> I{i, j, k};
+                I[0] += src_domain.padding_width;
+                I[1] += src_domain.padding_width;
+                I[2] += src_domain.padding_width;
 
-            if ((I[0] + I[1] + I[2]) % 2 == color) {
+                if ((I[0] + I[1] + I[2]) % 2 == color) {
 
-              DataType diag_inverse_denominator =
-                  kappa_domain(I[0], I[1], I[2]) * h * h * kappa_2 * epsilon_r;
+                  DataType diag_inverse_denominator =
+                      kappa_domain(I[0], I[1], I[2]) * h * h * kappa_2 *
+                      epsilon_r;
 
-              for (int j = 0; j < Dim; j++) {
-                sycl::id<Dim> I2{I}, I3{I};
-                I2[j] += 1;
-                I3[j] -= 1;
+                  for (int j = 0; j < Dim; j++) {
+                    sycl::id<Dim> I2{I}, I3{I};
+                    I2[j] += 1;
+                    I3[j] -= 1;
 
-                const DataType epsilon_lower =
-                    epsilon_r +
-                    epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
-                const DataType epsilon_upper =
-                    epsilon_r +
-                    epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
+                    const DataType epsilon_lower =
+                        epsilon_r +
+                        epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
+                    const DataType epsilon_upper =
+                        epsilon_r +
+                        epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
 
-                diag_inverse_denominator += epsilon_lower + epsilon_upper;
+                    diag_inverse_denominator += epsilon_lower + epsilon_upper;
+                  }
+
+                  volatile DataType val = src_domain(I[0], I[1], I[2]);
+
+#define GET_EPSILON(eps, x, y, z) (epsilon_r + eps(x, y, z) * delta_epsilon)
+
+                  src_domain(I[0], I[1], I[2]) =
+                      (rhs_domain(I[0], I[1], I[2]) * h * h +
+                       GET_EPSILON(epsilon_y_domain, I[0], I[1], I[2]) *
+                           src_domain(I[0], I[1] + 1, I[2]) +
+                       GET_EPSILON(epsilon_y_domain, I[0], I[1] - 1, I[2]) *
+                           src_domain(I[0], I[1] - 1, I[2]) +
+                       GET_EPSILON(epsilon_x_domain, I[0], I[1], I[2]) *
+                           src_domain(I[0] + 1, I[1], I[2]) +
+                       GET_EPSILON(epsilon_x_domain, I[0] - 1, I[1], I[2]) *
+                           src_domain(I[0] - 1, I[1], I[2]) +
+                       GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2] - 1) *
+                           src_domain(I[0], I[1], I[2] - 1) +
+                       GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2]) *
+                           src_domain(I[0], I[1], I[2] + 1)) /
+                      (diag_inverse_denominator);
+
+                  val = src_domain(I[0], I[1], I[2]);
+
+                  volatile int dummy = 0;
+                }
               }
 
-              src_domain(I[0], I[1], I[2]) =
-                  (rhs_domain(I[0], I[1], I[2]) +
-                   epsilon_y_domain(I[0], I[1], I[2]) *
-                       src_domain(I[0], I[1] + 1, I[2]) +
-                   epsilon_y_domain(I[0], I[1] - 1, I[2]) *
-                       src_domain(I[0], I[1] - 1, I[2]) +
-                   epsilon_x_domain(I[0], I[1], I[2]) *
-                       src_domain(I[0] + 1, I[1], I[2]) +
-                   epsilon_x_domain(I[0] - 1, I[1], I[2]) *
-                       src_domain(I[0] - 1, I[1], I[2]) +
-                   epsilon_z_domain(I[0], I[1], I[2] - 1) *
-                       src_domain(I[0], I[1], I[2] - 1) +
-                   epsilon_z_domain(I[0], I[1], I[2]) *
-                       src_domain(I[0], I[1], I[2] + 1)) /
-                  (diag_inverse_denominator);
-            }
-          });
+        //);
+
+        //  std::cout << std::endl;
+        //  std::cout << std::endl;
+
+        //  std::cout << "After " << i << " iterations " << std::endl;
+        //  std::cout << "<<==================================>>" << std::endl;
+
+        //  src_domain.print_domain();
 
         // std::swap(dest_domain.values_buff, src_domain.values_buff);
       }
