@@ -373,13 +373,13 @@ struct Gauss_Seidel_PBE {
         std::array<Dimension, Dim> strides_array =
             std::to_array(src_domain.strides);
 
-        std::cout << std::endl;
-        std::cout << std::endl;
+        //  std::cout << std::endl;
+        //  std::cout << std::endl;
 
-        std::cout << "Before " << i << " iterations " << std::endl;
-        std::cout << "<<==================================>>" << std::endl;
+        //  std::cout << "Before " << i << " iterations " << std::endl;
+        //  std::cout << "<<==================================>>" << std::endl;
 
-        src_domain.print_domain();
+        //  src_domain.print_domain();
 
         auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
@@ -416,19 +416,21 @@ struct Gauss_Seidel_PBE {
 
                   volatile DataType val = src_domain(I[0], I[1], I[2]);
 
+#define GET_EPSILON(eps, x, y, z) (epsilon_r + eps(x, y, z) * delta_epsilon)
+
                   src_domain(I[0], I[1], I[2]) =
-                      (rhs_domain(I[0], I[1], I[2]) +
-                       epsilon_y_domain(I[0], I[1], I[2]) *
+                      (rhs_domain(I[0], I[1], I[2]) * h * h +
+                       GET_EPSILON(epsilon_y_domain, I[0], I[1], I[2]) *
                            src_domain(I[0], I[1] + 1, I[2]) +
-                       epsilon_y_domain(I[0], I[1] - 1, I[2]) *
+                       GET_EPSILON(epsilon_y_domain, I[0], I[1] - 1, I[2]) *
                            src_domain(I[0], I[1] - 1, I[2]) +
-                       epsilon_x_domain(I[0], I[1], I[2]) *
+                       GET_EPSILON(epsilon_x_domain, I[0], I[1], I[2]) *
                            src_domain(I[0] + 1, I[1], I[2]) +
-                       epsilon_x_domain(I[0] - 1, I[1], I[2]) *
+                       GET_EPSILON(epsilon_x_domain, I[0] - 1, I[1], I[2]) *
                            src_domain(I[0] - 1, I[1], I[2]) +
-                       epsilon_z_domain(I[0], I[1], I[2] - 1) *
+                       GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2] - 1) *
                            src_domain(I[0], I[1], I[2] - 1) +
-                       epsilon_z_domain(I[0], I[1], I[2]) *
+                       GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2]) *
                            src_domain(I[0], I[1], I[2] + 1)) /
                       (diag_inverse_denominator);
 
@@ -440,13 +442,13 @@ struct Gauss_Seidel_PBE {
 
         //);
 
-        std::cout << std::endl;
-        std::cout << std::endl;
+        //  std::cout << std::endl;
+        //  std::cout << std::endl;
 
-        std::cout << "After " << i << " iterations " << std::endl;
-        std::cout << "<<==================================>>" << std::endl;
+        //  std::cout << "After " << i << " iterations " << std::endl;
+        //  std::cout << "<<==================================>>" << std::endl;
 
-        src_domain.print_domain();
+        //  src_domain.print_domain();
 
         // std::swap(dest_domain.values_buff, src_domain.values_buff);
       }
