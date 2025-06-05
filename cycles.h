@@ -350,7 +350,7 @@ struct Gauss_Seidel_PBE {
 
     std::cout << "The number of iterations is " << num_iters << std::endl;
 
-    // auto &dest_domain = dest.template get_domain<level>();
+    auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     auto &kappa_domain = kappa.template get_domain<level>();
@@ -418,7 +418,7 @@ struct Gauss_Seidel_PBE {
 
 #define GET_EPSILON(eps, x, y, z) (epsilon_r + eps(x, y, z) * delta_epsilon)
 
-                  src_domain(I[0], I[1], I[2]) =
+                  dest_domain(I[0], I[1], I[2]) = src_domain(I[0], I[1], I[2]) =
                       (rhs_domain(I[0], I[1], I[2]) * h * h +
                        GET_EPSILON(epsilon_y_domain, I[0], I[1], I[2]) *
                            src_domain(I[0], I[1] + 1, I[2]) +

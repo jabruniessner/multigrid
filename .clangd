@@ -1,0 +1,4 @@
+CompileFlags:
+  Add: [-fsycl, -I/home/jakob/AdaptiveCpp/installation/include/AdaptiveCpp,
+         -Imdspan/,
+        --std=c++23]

@@ -26,7 +26,7 @@ constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
 constexpr std::size_t base_length = 8;
 constexpr DataType omega = 1.;
-constexpr DataType box_length = 8;
+constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = 0; // kappa * kappa; // kappa * kappa;
@@ -305,12 +305,16 @@ int main(int argc, char *argv[]) {
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
     std::index_sequence<1> num_iters{};
-    std::index_sequence<8> smoothing_steps;
+    std::index_sequence<10> smoothing_steps;
 
     auto *a = &sol;
     auto *b = &lhs_domain1;
 
     for (int i = 0; i < iter_num; i++) {
+
+      //  cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
+      //  grid_step,
+      //            epsilon_r, delta_epsilon);
 
       DataType const residual =
           compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
@@ -325,24 +329,19 @@ int main(int argc, char *argv[]) {
       std::cout << "The residual after " << i << " iterations is " << residual
                 << std::endl;
 
-      std::index_sequence<1> iter_nums{};
-      j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
-                 epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-                 epsilon_r, delta_epsilon, omega);
+      //   std::index_sequence<1> iter_nums{};
+      //   j_smoother(Integer<nlev>{}, iter_nums, *a, *b, rhs_domain, kappa_,
+      //              epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+      //              grid_step, epsilon_r, delta_epsilon, omega);
 
-      // std::swap(a, b);
+      //   std::swap(a, b);
 
-      // v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-      //                   epsilony_map, epsilonz_map, kappa_, kappa_2,
-      //                   grid_step, epsilon_r, delta_epsilon, omega,
-      //                   num_iters, coarser, smoothing_steps,
-      //                   smoothing_steps);
+      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
+                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
+                        smoothing_steps, smoothing_steps);
     }
-    //
-    //    // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-    //    // grid_step,
-    //    //           epsilon_r, delta_epsilon);
-    //
+
     // cg_solver::CG_solver_PBE(
     //    //     init_guess, rhs, defect_r, defect_p, kappa_map,
     //    epsilon_domains,
