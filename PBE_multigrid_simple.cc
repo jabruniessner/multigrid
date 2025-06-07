@@ -30,6 +30,7 @@ constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = 0; // kappa * kappa; // kappa * kappa;
+constexpr DataType kappa_2 = kappa * kappa; // kappa * kappa;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step = 0.5;
 
