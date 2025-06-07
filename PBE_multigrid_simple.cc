@@ -29,7 +29,6 @@ constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
-constexpr DataType kappa_2 = 0; // kappa * kappa; // kappa * kappa;
 constexpr DataType kappa_2 = kappa * kappa; // kappa * kappa;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step = 0.5;
@@ -169,6 +168,9 @@ int main(int argc, char *argv[]) {
     // const DataType epsilon_r = 1;  //Dangerous parameter
     std::cout << "Warning epsilon_r is set to: " << epsilon_r << std::endl;
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
+
+    // This code is commented out because I would like to print the charge
+    // distribution on its own
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
@@ -240,8 +242,9 @@ int main(int argc, char *argv[]) {
      }).wait();
 
     //  {
-    //    std::ofstream outfile{"kappa_map_own.dx"};
-    //    kappa_domain.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    //    std::ofstream outfile{"test_kappa_function/kappa_map_own.dx"};
+    //    kappa_domain.print_dx_to_stream(outfile, x_min, y_min, z_min,
+    //    box_length);
     //  }
 
     // Now we need to coarsen the kappa map and the epsilon map
@@ -287,8 +290,8 @@ int main(int argc, char *argv[]) {
      }).wait();
 
     //  {
-    //    std::ofstream outfile{"charges_map_own.dx"};
-    //    rhs.print_dx_to_stream(outfile, x_min, y_min, z_min, 16);
+    //    std::ofstream outfile{"test_kappa_function/charges_map_own.dx"};
+    //    rhs.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
     //  }
 
     auto &defect_p = lhs_domain1.get_domain();
@@ -296,8 +299,8 @@ int main(int argc, char *argv[]) {
     auto &init_guess = sol.get_domain();
 
     cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
-                                       sol.template get_domain<1>(), values_op,
-                                       offsets_op);
+                                       sol.template get_domain<nlev>(),
+                                       values_op, offsets_op);
 
     // Jacobi_Smoother_PBE j_smoother(rhs_domain);
     //
@@ -311,37 +314,40 @@ int main(int argc, char *argv[]) {
     auto *a = &sol;
     auto *b = &lhs_domain1;
 
-    for (int i = 0; i < iter_num; i++) {
+    //  for (int i = 0; i < iter_num; i++) {
 
-      //  cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-      //  grid_step,
-      //            epsilon_r, delta_epsilon);
+    cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2, grid_step,
+              epsilon_r, delta_epsilon);
 
-      DataType const residual =
-          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
-                               lhs_domain2.template get_domain<nlev>(),
-                               kappa_.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
-                               epsilonz_map.template get_domain<nlev>(),
-                               kappa_2, grid_step, epsilon_r, delta_epsilon);
+    //    DataType const residual =
+    //        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+    //                             sol.template get_domain<nlev>(),
+    //                             lhs_domain2.template get_domain<nlev>(),
+    //                             kappa_.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilonz_map.template get_domain<nlev>(),
+    //                             kappa_2, grid_step, epsilon_r,
+    //                             delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
+    //    std::cout << "The residual after " << i << " iterations is " <<
+    //    residual
+    //              << std::endl;
 
-      //   std::index_sequence<1> iter_nums{};
-      //   j_smoother(Integer<nlev>{}, iter_nums, *a, *b, rhs_domain, kappa_,
-      //              epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-      //              grid_step, epsilon_r, delta_epsilon, omega);
+    //    //   std::index_sequence<1> iter_nums{};
+    //    //   j_smoother(Integer<nlev>{}, iter_nums, *a, *b, rhs_domain,
+    //    kappa_,
+    //    //              epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+    //    //              grid_step, epsilon_r, delta_epsilon, omega);
 
-      //   std::swap(a, b);
+    //    //   std::swap(a, b);
 
-      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
-                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
-                        smoothing_steps, smoothing_steps);
-    }
+    //    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+    //                      epsilony_map, epsilonz_map, kappa_, kappa_2,
+    //                      grid_step, epsilon_r, delta_epsilon, omega,
+    //                      num_iters, coarser, smoothing_steps,
+    //                      smoothing_steps);
+    //  }
 
     // cg_solver::CG_solver_PBE(
     //    //     init_guess, rhs, defect_r, defect_p, kappa_map,
