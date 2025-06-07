@@ -299,8 +299,8 @@ int main(int argc, char *argv[]) {
     auto &init_guess = sol.get_domain();
 
     cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
-                                       sol.template get_domain<nlev>(),
-                                       values_op, offsets_op);
+                                       sol.template get_domain<1>(), values_op,
+                                       offsets_op);
 
     // Jacobi_Smoother_PBE j_smoother(rhs_domain);
     //
