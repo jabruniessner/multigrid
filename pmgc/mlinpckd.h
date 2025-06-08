@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -49,12 +54,7 @@
 #ifndef MLINPCKD_H_
 #define MLINPCKD_H_
 
-#include "apbscfg.h"
-
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
+#include "abps_macros.h"
 
 /** @brief   Solves the double precision symmetric positive definite band system
  *           A*X = B using the factors computed by dpbco or dpbfa
@@ -66,20 +66,19 @@
  *           not occur if the subroutines are called correctly and info == 0
  *  @note    Replaces dpbsl from mgsubd.f
  */
-VEXTERNC void Vdpbsl(
-        double *abd, ///< The output from dpbco or dpbfa
-        int *lda,    ///< The leading dimension of the array abd
-        int *n,      ///< The order of the matrix a
-        int *m,      ///< The number of diagonals above the main diagonal
-        double *b    ///< The right hand side vector
-        );
+VEXTERNC void
+Vdpbsl(double *abd, ///< The output from dpbco or dpbfa
+       int *lda,    ///< The leading dimension of the array abd
+       int *n,      ///< The order of the matrix a
+       int *m,      ///< The number of diagonals above the main diagonal
+       double *b    ///< The right hand side vector
+);
 
 /** Translation of LINPACK daxpy subroutine
  * *     jack dongarra, linpack, 3/11/78.
  * */
-VEXTERNC void Vdaxpy(int n, double da,
-        double *dx, int incx,
-        double *dy, int incy);
+VEXTERNC void Vdaxpy(int n, double da, double *dx, int incx, double *dy,
+                     int incy);
 
 /** Translation of LINPACK ddot subroutine
  * *     jack dongarra, linpack, 3/11/78.

@@ -15,19 +15,19 @@
  * Additional contributing authors listed in the code documentation.
  *
  * Copyright (c) 2010-2020 Battelle Memorial Institute.
- * Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.
- * Portions Copyright (c) 2002-2012, Washington University in St. Louis.
- * Portions Copyright (c) 2002-2020, Nathan A. Baker.  
- * Portions Copyright (c) 1999-2002, The Regents of the University of California.
- * Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Developed at the Pacific Northwest National Laboratory, operated by Battelle
+ * Memorial Institute, Pacific Northwest Division for the U.S. Department
+ * Energy. Portions Copyright (c) 2002-2012, Washington University in St. Louis.
+ * Portions Copyright (c) 2002-2020, Nathan A. Baker.
+ * Portions Copyright (c) 1999-2002, The Regents of the University of
+ * California. Portions Copyright (c) 1995, Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -53,613 +53,545 @@
  */
 
 #include "mgdrvd.h"
+#include "vhal.h"
 
-VPUBLIC void Vmgdriv(int* iparm, double* rparm,
-        int* iwork, double* rwork, double* u,
-        double* xf, double* yf, double* zf,
-        double* gxcf, double* gycf, double* gzcf,
-        double* a1cf, double* a2cf, double* a3cf,
-        double* ccf, double* fcf, double* tcf) {
+VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
+                     double *u, double *xf, double *yf, double *zf,
+                     double *gxcf, double *gycf, double *gzcf, double *a1cf,
+                     double *a2cf, double *a3cf, double *ccf, double *fcf,
+                     double *tcf) {
 
-    // The following variables will be returned from mgsz
-    int nxc    = 0;
-    int nyc    = 0;
-    int nzc    = 0;
-    int nf     = 0;
-    int nc     = 0;
-    int narr   = 0;
-    int narrc  = 0;
-    int n_rpc  = 0;
-    int n_iz   = 0;
-    int n_ipc  = 0;
-    int iretot = 0;
-    int iintot = 0;
+  // The following variables will be returned from mgsz
+  int nxc = 0;
+  int nyc = 0;
+  int nzc = 0;
+  int nf = 0;
+  int nc = 0;
+  int narr = 0;
+  int narrc = 0;
+  int n_rpc = 0;
+  int n_iz = 0;
+  int n_ipc = 0;
+  int iretot = 0;
+  int iintot = 0;
 
-    // Miscellaneous variables
-    int nrwk   = 0;
-    int niwk   = 0;
-    int nx     = 0;
-    int ny     = 0;
-    int nz     = 0;
-    int nlev   = 0;
-    int ierror = 0;
-    int mxlv   = 0;
-    int mgcoar = 0;
-    int mgdisc = 0;
-    int mgsolv = 0;
-    int k_iz   = 0;
-    int k_ipc  = 0;
-    int k_rpc  = 0;
-    int k_ac   = 0;
-    int k_cc   = 0;
-    int k_fc   = 0;
-    int k_pc   = 0;
+  // Miscellaneous variables
+  int nrwk = 0;
+  int niwk = 0;
+  int nx = 0;
+  int ny = 0;
+  int nz = 0;
+  int nlev = 0;
+  int ierror = 0;
+  int mxlv = 0;
+  int mgcoar = 0;
+  int mgdisc = 0;
+  int mgsolv = 0;
+  int k_iz = 0;
+  int k_ipc = 0;
+  int k_rpc = 0;
+  int k_ac = 0;
+  int k_cc = 0;
+  int k_fc = 0;
+  int k_pc = 0;
 
-    // Utility pointers to help in passing values
-    int *iz     = VNULL;
-    int *ipc    = VNULL;
-    double *rpc = VNULL;
-    double *pc  = VNULL;
-    double *ac  = VNULL;
-    double *cc  = VNULL;
-    double *fc  = VNULL;
+  // Utility pointers to help in passing values
+  int *iz = VNULL;
+  int *ipc = VNULL;
+  double *rpc = VNULL;
+  double *pc = VNULL;
+  double *ac = VNULL;
+  double *cc = VNULL;
+  double *fc = VNULL;
 
-    // Decode some parameters
-    nrwk   = VAT(iparm, 1);
-    niwk   = VAT(iparm, 2);
-    nx     = VAT(iparm, 3);
-    ny     = VAT(iparm, 4);
-    nz     = VAT(iparm, 5);
-    nlev   = VAT(iparm, 6);
+  // Decode some parameters
+  nrwk = VAT(iparm, 1);
+  niwk = VAT(iparm, 2);
+  nx = VAT(iparm, 3);
+  ny = VAT(iparm, 4);
+  nz = VAT(iparm, 5);
+  nlev = VAT(iparm, 6);
 
-    // Perform some checks on input
-    VASSERT_MSG1(nlev > 0, "nlev must be positive: %d", nlev);
-    VASSERT_MSG1(  nx > 0, "nx must be positive: %d", nx);
-    VASSERT_MSG1(  ny > 0, "nv must be positive: %d", ny);
-    VASSERT_MSG1(  nz > 0, "nz must be positive: %d", nz);
+  // Perform some checks on input
+  // VASSERT_MSG1(nlev > 0, "nlev must be positive: %d", nlev);
+  // VASSERT_MSG1(  nx > 0, "nx must be positive: %d", nx);
+  // VASSERT_MSG1(  ny > 0, "nv must be positive: %d", ny);
+  // VASSERT_MSG1(  nz > 0, "nz must be positive: %d", nz);
 
-    mxlv = Vmaxlev(nx, ny, nz);
-    VASSERT_MSG2(
-        nlev <= mxlv,
-        "number of levels exceeds maximum: %d > %d",
-        nlev, mxlv
-        );
+  mxlv = Vmaxlev(nx, ny, nz);
+  // VASSERT_MSG2(nlev <= mxlv, "number of levels exceeds maximum: %d > %d",
+  // nlev,
+  //              mxlv);
 
+  // Extract basic grid sizes, etc.
+  mgcoar = VAT(iparm, 18);
+  mgdisc = VAT(iparm, 19);
+  mgsolv = VAT(iparm, 21);
 
-    // Extract basic grid sizes, etc.
-    mgcoar = VAT(iparm, 18);
-    mgdisc = VAT(iparm, 19);
-    mgsolv = VAT(iparm, 21);
+  Vmgsz(&mgcoar, &mgdisc, &mgsolv, &nx, &ny, &nz, &nlev, &nxc, &nyc, &nzc, &nf,
+        &nc, &narr, &narrc, &n_rpc, &n_iz, &n_ipc, &iretot, &iintot);
 
-    Vmgsz(&mgcoar, &mgdisc, &mgsolv,
-                &nx, &ny, &nz,
-                &nlev,
-                &nxc, &nyc, &nzc,
-                &nf, &nc,
-                &narr, &narrc,
-                &n_rpc, &n_iz, &n_ipc,
-                &iretot, &iintot);
+  // Perform some more checks on input
+  //  VASSERT_MSG2(iretot >= nrwk, "real workspace exceeds maximum size: %d >
+  //  %d",
+  //               nrwk, iretot);
+  //  VASSERT_MSG2(iintot >= niwk,
+  //               "integer workspace exceeds maximum size: %d > %d", niwk,
+  //               iintot);
 
-    // Perform some more checks on input
-    VASSERT_MSG2(
-        iretot >= nrwk,
-        "real workspace exceeds maximum size: %d > %d",
-        nrwk, iretot
-        );
-    VASSERT_MSG2(
-        iintot >= niwk,
-        "integer workspace exceeds maximum size: %d > %d",
-        niwk, iintot
-        );
+  // Split up the integer work array
+  k_iz = 1;
+  k_ipc = k_iz + n_iz;
 
-    // Split up the integer work array
-    k_iz  = 1;
-    k_ipc = k_iz + n_iz;
+  // Split up the real work array ***
+  k_rpc = 1;
+  k_cc = k_rpc + n_rpc;
+  k_fc = k_cc + narr;
+  k_pc = k_fc + narr;
+  k_ac = k_pc + 27 * narrc;
+  // k_ac_after =  4 * nf +  4 * narrc;
+  // k_ac_after =  4 * nf + 14 * narrc;
+  // k_ac_after = 14 * nf + 14 * narrc;
 
-    // Split up the real work array ***
-    k_rpc = 1;
-    k_cc  = k_rpc + n_rpc;
-    k_fc  = k_cc  + narr;
-    k_pc  = k_fc  + narr;
-    k_ac  = k_pc  + 27 * narrc;
-    // k_ac_after =  4 * nf +  4 * narrc;
-    // k_ac_after =  4 * nf + 14 * narrc;
-    // k_ac_after = 14 * nf + 14 * narrc;
+  iz = RAT(iwork, k_iz);
+  ipc = RAT(iwork, k_ipc);
 
-    iz  = RAT(iwork, k_iz);
-    ipc = RAT(iwork, k_ipc);
+  rpc = RAT(rwork, k_rpc);
+  pc = RAT(rwork, k_pc);
+  ac = RAT(rwork, k_ac);
+  cc = RAT(rwork, k_cc);
+  fc = RAT(rwork, k_fc);
 
-    rpc = RAT(rwork, k_rpc);
-    pc  = RAT(rwork, k_pc);
-    ac  = RAT(rwork, k_ac);
-    cc  = RAT(rwork, k_cc);
-    fc  = RAT(rwork, k_fc);
-
-    // Call the multigrid driver
-    Vmgdriv2(iparm, rparm,
-                &nx, &ny, &nz,
-                u,
-                iz, ipc, rpc,
-                pc, ac, cc, fc,
-                xf, yf, zf,
-                gxcf, gycf, gzcf,
-                a1cf, a2cf, a3cf,
-                ccf, fcf, tcf);
+  // Call the multigrid driver
+  Vmgdriv2(iparm, rparm, &nx, &ny, &nz, u, iz, ipc, rpc, pc, ac, cc, fc, xf, yf,
+           zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
 }
 
-VPUBLIC void Vmgdriv2(int *iparm, double *rparm,
-        int *nx, int *ny, int *nz,
-        double *u,
-        int *iz, int *ipc, double *rpc,
-        double *pc, double *ac, double *cc, double *fc,
-        double *xf, double *yf, double *zf,
-        double *gxcf, double *gycf, double *gzcf,
-        double *a1cf, double *a2cf, double *a3cf,
-        double *ccf, double *fcf, double *tcf) {
+VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
+                      double *u, int *iz, int *ipc, double *rpc, double *pc,
+                      double *ac, double *cc, double *fc, double *xf,
+                      double *yf, double *zf, double *gxcf, double *gycf,
+                      double *gzcf, double *a1cf, double *a2cf, double *a3cf,
+                      double *ccf, double *fcf, double *tcf) {
 
-    // @todo Document this function
+  // @todo Document this function
 
-    // Miscellaneous Variables
-    int mgkey     = 0;
-    int itmax     = 0;
-    int iok       = 0;
-    int iinfo     = 0;
-    int istop     = 0;
-    int ipkey     = 0;
-    int nu1       = 0;
-    int nu2       = 0;
-    int ilev      = 0;
-    int ido       = 0;
-    int iters     = 0;
-    int ierror    = 0;
-    int nlev_real = 0;
-    int ibound    = 0;
-    int mgprol    = 0;
-    int mgcoar    = 0;
-    int mgsolv    = 0;
-    int mgdisc    = 0;
-    int mgsmoo    = 0;
-    int iperf     = 0;
-    int mode      = 0;
+  // Miscellaneous Variables
+  int mgkey = 0;
+  int itmax = 0;
+  int iok = 0;
+  int iinfo = 0;
+  int istop = 0;
+  int ipkey = 0;
+  int nu1 = 0;
+  int nu2 = 0;
+  int ilev = 0;
+  int ido = 0;
+  int iters = 0;
+  int ierror = 0;
+  int nlev_real = 0;
+  int ibound = 0;
+  int mgprol = 0;
+  int mgcoar = 0;
+  int mgsolv = 0;
+  int mgdisc = 0;
+  int mgsmoo = 0;
+  int iperf = 0;
+  int mode = 0;
 
-    double epsiln  = 0.0;
-    double epsmac  = 0.0;
-    double errtol  = 0.0;
-    double omegal  = 0.0;
-    double omegan  = 0.0;
-    double bf      = 0.0;
-    double oh      = 0.0;
-    double tsetupf = 0.0;
-    double tsetupc = 0.0;
-    double tsolve  = 0.0;
+  double epsiln = 0.0;
+  double epsmac = 0.0;
+  double errtol = 0.0;
+  double omegal = 0.0;
+  double omegan = 0.0;
+  double bf = 0.0;
+  double oh = 0.0;
+  double tsetupf = 0.0;
+  double tsetupc = 0.0;
+  double tsolve = 0.0;
 
+  // More miscellaneous variables
+  int itmax_p = 0;
+  int iters_p = 0;
+  int iok_p = 0;
+  int iinfo_p = 0;
 
+  double errtol_p = 0.0;
+  double rho_p = 0.0;
+  double rho_min = 0.0;
+  double rho_max = 0.0;
+  double rho_min_mod = 0.0;
+  double rho_max_mod = 0.0;
 
-    // More miscellaneous variables
-    int itmax_p = 0;
-    int iters_p = 0;
-    int iok_p   = 0;
-    int iinfo_p = 0;
+  int nxf = 0;
+  int nyf = 0;
+  int nzf = 0;
+  int nxc = 0;
+  int nyc = 0;
+  int nzc = 0;
+  int level = 0;
+  int nlevd = 0;
 
-    double errtol_p    = 0.0;
-    double rho_p       = 0.0;
-    double rho_min     = 0.0;
-    double rho_max     = 0.0;
-    double rho_min_mod = 0.0;
-    double rho_max_mod = 0.0;
+  // Utility variables
+  int numlev = 0;
 
-    int nxf   = 0;
-    int nyf   = 0;
-    int nzf   = 0;
-    int nxc   = 0;
-    int nyc   = 0;
-    int nzc   = 0;
-    int level = 0;
-    int nlevd = 0;
+  // Get the value of nlev here because it is needed for the iz matrix
+  int nlev = VAT(iparm, 6);
+  MAT2(iz, 50, nlev);
 
+  // Decode integer parameters from the iparm array
+  nu1 = VAT(iparm, 7);
+  nu2 = VAT(iparm, 8);
+  mgkey = VAT(iparm, 9);
+  itmax = VAT(iparm, 10);
+  istop = VAT(iparm, 11);
+  iinfo = VAT(iparm, 12);
+  ipkey = VAT(iparm, 14);
+  mode = VAT(iparm, 16);
+  mgprol = VAT(iparm, 17);
+  mgcoar = VAT(iparm, 18);
+  mgdisc = VAT(iparm, 19);
+  mgsmoo = VAT(iparm, 20);
+  mgsolv = VAT(iparm, 21);
+  iperf = VAT(iparm, 22);
 
+  // Decode real parameters from the rparm array
+  errtol = VAT(rparm, 1);
+  omegal = VAT(rparm, 9);
+  omegan = VAT(rparm, 10);
 
-    // Utility variables
-    int numlev = 0;
+  /// @todo replace timer setup
+  Vprtstp(0, -99, 0.0, 0.0, 0.0);
 
-    // Get the value of nlev here because it is needed for the iz matrix
-    int nlev   = VAT(iparm,  6);
-    MAT2(iz, 50, nlev);
+  // Build the multigrid data structure in iz
+  Vbuildstr(nx, ny, nz, &nlev, iz);
 
-    // Decode integer parameters from the iparm array
-    nu1    = VAT(iparm,  7);
-    nu2    = VAT(iparm,  8);
-    mgkey  = VAT(iparm,  9);
-    itmax  = VAT(iparm, 10);
-    istop  = VAT(iparm, 11);
-    iinfo  = VAT(iparm, 12);
-    ipkey  = VAT(iparm, 14);
-    mode   = VAT(iparm, 16);
-    mgprol = VAT(iparm, 17);
-    mgcoar = VAT(iparm, 18);
-    mgdisc = VAT(iparm, 19);
-    mgsmoo = VAT(iparm, 20);
-    mgsolv = VAT(iparm, 21);
-    iperf  = VAT(iparm, 22);
+  // Start the timer
+  // Vnm_tstart(30, "Vmgdrv2: fine problem setup");
 
-    // Decode real parameters from the rparm array
-    errtol = VAT(rparm,  1);
-    omegal = VAT(rparm,  9);
-    omegan = VAT(rparm, 10);
+  // Build operator and rhs on fine grid
+  ido = 0;
+  Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
+            &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
 
-    /// @todo replace timer setup
-    Vprtstp(0, -99, 0.0, 0.0, 0.0);
+  // Stop the timer
+  // Vnm_tstop(30, "Vmgdrv2: fine problem setup");
 
-    // Build the multigrid data structure in iz
-    Vbuildstr(nx, ny, nz, &nlev, iz);
+  // Start the timer
+  // Vnm_tstart(30, "Vmgdrv2: coarse problem setup");
 
-    // Start the timer
-    Vnm_tstart(30, "Vmgdrv2: fine problem setup");
+  // Build operator and rhs on all coarse grids
+  ido = 1;
+  Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
+            &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
 
-    // Build operator and rhs on fine grid
-    ido = 0;
-    Vbuildops(nx, ny, nz,
-            &nlev, &ipkey, &iinfo, &ido, iz,
-            &mgprol, &mgcoar, &mgsolv, &mgdisc,
-            ipc, rpc, pc, ac, cc, fc,
-            xf, yf, zf,
-            gxcf, gycf, gzcf,
-            a1cf, a2cf, a3cf,
-            ccf, fcf, tcf);
+  // Stop the timer
+  // Vnm_tstop(30, "Vmgdrv2: coarse problem setup");
 
-    // Stop the timer
-    Vnm_tstop(30, "Vmgdrv2: fine problem setup");
+  // Determine Machine Epsilon
+  // epsiln = Vnm_epsmac();
 
-    // Start the timer
-    Vnm_tstart(30, "Vmgdrv2: coarse problem setup");
+  /******************************************************************
+   *** analysis ***
+   *** note: we destroy the rhs function "fc" here in "mpower" ***
+   ******************************************************************/
 
-    // Build operator and rhs on all coarse grids
-    ido = 1;
-    Vbuildops(nx, ny, nz,
-            &nlev, &ipkey, &iinfo, &ido, iz,
-            &mgprol, &mgcoar, &mgsolv, &mgdisc,
-            ipc, rpc, pc, ac, cc, fc,
-            xf, yf, zf,
-            gxcf, gycf, gzcf,
-            a1cf, a2cf, a3cf,
-            ccf, fcf, tcf);
+  // errtol and itmax
+  itmax_p = 1000;
+  iok_p = 0;
+  nlev_real = nlev;
+  nlevd = nlev_real;
 
-    // Stop the timer
-    Vnm_tstop(30, "Vmgdrv2: coarse problem setup");
+  // Finest level initialization
+  nxf = *nx;
+  nyf = *ny;
+  nzf = *nz;
 
-    // Determine Machine Epsilon
-    epsiln = Vnm_epsmac();
+  // Go down grids: compute max/min eigenvalues of all operators
+  for (level = 1; level <= nlev_real; level++) {
+    nlevd = nlev_real - level + 1;
 
-    /******************************************************************
-        *** analysis ***
-        *** note: we destroy the rhs function "fc" here in "mpower" ***
-        ******************************************************************/
+    // Move down the grids
+    if (level != 1) {
 
-    // errtol and itmax
-    itmax_p   = 1000;
-    iok_p     = 0;
-    nlev_real = nlev;
-    nlevd     = nlev_real;
+      // Find new grid size
+      numlev = 1;
+      Vmkcors(&numlev, &nxf, &nyf, &nzf, &nxc, &nyc, &nzc);
 
-    // Finest level initialization
-    nxf  = *nx;
-    nyf  = *ny;
-    nzf  = *nz;
+      // New grid size ***
+      nxf = nxc;
+      nyf = nyc;
+      nzf = nzc;
+    }
 
-    // Go down grids: compute max/min eigenvalues of all operators
-    for (level=1; level <= nlev_real; level++) {
-        nlevd = nlev_real - level + 1;
+    if (iinfo > 1) {
+      printf("Analysis ==> (%3d, %3d, %3d)", nxf, nyf, nzf);
+    }
 
-        // Move down the grids
-        if (level != 1) {
+    // Largest eigenvalue of the system matrix A
+    if (iperf == 1 || iperf == 3) {
 
-            // Find new grid size
-            numlev = 1;
-            Vmkcors(&numlev, &nxf, &nyf, &nzf, &nxc, &nyc, &nzc);
+      if (iinfo > 1) {
+        printf("Power calculating rho(A)");
+      }
 
-            // New grid size ***
-            nxf = nxc;
-            nyf = nyc;
-            nzf = nzc;
-        }
+      iters_p = 0;
+      iinfo_p = iinfo;
+      errtol_p = 1.0e-4;
 
-        if (iinfo > 1) {
-            VMESSAGE3("Analysis ==> (%3d, %3d, %3d)", nxf, nyf, nzf);
-        }
+      Vpower(&nxf, &nyf, &nzf, iz, &level, ipc, rpc, ac, cc, a1cf, a2cf, a3cf,
+             ccf, &rho_max, &rho_max_mod, &errtol_p, &itmax_p, &iters_p,
+             &iinfo_p);
 
+      if (iinfo > 1) {
+        printf("Power iters   = %d", iters_p);
+        printf("Power eigmax  = %f", rho_max);
+        printf("Power (MODEL) = %f", rho_max_mod);
+      }
 
-        // Largest eigenvalue of the system matrix A
-        if (iperf == 1 || iperf == 3) {
+      // Smallest eigenvalue of the system matrix A
+      if (iinfo > 1) {
+        printf("Ipower calculating lambda_min(A)...");
+      }
 
-            if (iinfo > 1) {
-                VMESSAGE0("Power calculating rho(A)");
-            }
+      iters_p = 0;
+      iinfo_p = iinfo;
+      errtol_p = 1.0e-4;
 
-            iters_p   = 0;
-            iinfo_p   = iinfo;
-            errtol_p  = 1.0e-4;
+      Vazeros(&nxf, &nyf, &nzf, u);
 
-            Vpower(&nxf, &nyf, &nzf,
-                    iz, &level,
-                    ipc, rpc, ac, cc,
-                    a1cf, a2cf, a3cf, ccf,
-                    &rho_max, &rho_max_mod, &errtol_p,
-                    &itmax_p, &iters_p, &iinfo_p);
+      Vipower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_min,
+              &rho_min_mod, &errtol_p, &itmax_p, &iters_p, &nlevd, &level,
+              &nlev_real, &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal,
+              &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, tcf);
 
-            if (iinfo > 1) {
-                VMESSAGE1("Power iters   = %d", iters_p);
-                VMESSAGE1("Power eigmax  = %f", rho_max);
-                VMESSAGE1("Power (MODEL) = %f", rho_max_mod);
-            }
+      if (iinfo > 1) {
+        printf("Ipower iters   = %d", iters_p);
+        printf("Ipower eigmin  = %f", rho_min);
+        printf("Ipower (MODEL) = %f", rho_min_mod);
 
-            // Smallest eigenvalue of the system matrix A
-            if (iinfo > 1) {
-                VMESSAGE0("Ipower calculating lambda_min(A)...");
-            }
+        // Condition number estimate
+        printf("Condition number  = %f", rho_max / rho_min);
+        printf("Condition (MODEL) = %f", rho_max_mod / rho_min_mod);
+      }
+    }
 
-            iters_p   = 0;
-            iinfo_p   = iinfo;
-            errtol_p  = 1.0e-4;
+    // Spectral radius of the multigrid operator M
+    // NOTE: due to lack of vectors, we destroy "fc" in mpower...
+    if (iperf == 2 || iperf == 3) {
 
-            Vazeros(&nxf, &nyf, &nzf, u);
+      if (iinfo > 1) {
+        printf("Mpower calculating rho(M)");
+      }
 
-            Vipower(&nxf, &nyf, &nzf, u, iz,
-                    a1cf, a2cf, a3cf, ccf, fcf,
-                    &rho_min, &rho_min_mod, &errtol_p, &itmax_p, &iters_p,
-                    &nlevd, &level, &nlev_real, &mgsolv,
-                    &iok_p, &iinfo_p, &epsiln, &errtol, &omegal,
-                    &nu1, &nu2, &mgsmoo,
-                    ipc, rpc, pc, ac, cc, tcf);
+      iters_p = 0;
+      iinfo_p = iinfo;
+      errtol_p = epsiln;
 
-            if (iinfo > 1) {
-                VMESSAGE1("Ipower iters   = %d", iters_p);
-                VMESSAGE1("Ipower eigmin  = %f", rho_min);
-                VMESSAGE1("Ipower (MODEL) = %f", rho_min_mod);
+      Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
 
-                // Condition number estimate
-                VMESSAGE1("Condition number  = %f", rho_max / rho_min);
-                VMESSAGE1("Condition (MODEL) = %f", rho_max_mod / rho_min_mod);
-            }
-        }
+      WARN_UNTESTED;
+      Vmpower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_p,
+              &errtol_p, &itmax_p, &iters_p, &nlevd, &level, &nlev_real,
+              &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal, &nu1, &nu2,
+              &mgsmoo, ipc, rpc, pc, ac, cc, fc, tcf);
 
-        // Spectral radius of the multigrid operator M
-        // NOTE: due to lack of vectors, we destroy "fc" in mpower...
-        if (iperf == 2 || iperf == 3) {
-
-            if (iinfo > 1) {
-                VMESSAGE0("Mpower calculating rho(M)");
-            }
-
-            iters_p   = 0;
-            iinfo_p   = iinfo;
-            errtol_p  = epsiln;
-
-            Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
-
-            WARN_UNTESTED;
-            Vmpower(&nxf, &nyf, &nzf, u, iz,
-                            a1cf, a2cf, a3cf, ccf, fcf,
-                            &rho_p, &errtol_p, &itmax_p, &iters_p,
-                            &nlevd, &level, &nlev_real, &mgsolv,
-                            &iok_p, &iinfo_p, &epsiln,
-                            &errtol, &omegal, &nu1, &nu2, &mgsmoo,
-                            ipc, rpc, pc, ac, cc, fc, tcf);
-
-            if (iinfo > 1) {
-                VMESSAGE1("Mpower iters  = %d", iters_p);
-                VMESSAGE1("Mpower rho(M) = %f", rho_p);
-            }
-        }
-
-        // Reinitialize the solution function
-
-        Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
-
-        // Next grid
+      if (iinfo > 1) {
+        printf("Mpower iters  = %d", iters_p);
+        printf("Mpower rho(M) = %f", rho_p);
+      }
     }
 
     // Reinitialize the solution function
-        Vazeros(nx, ny, nz, u);
 
-    /*******************************************************************
-     *** this overwrites the rhs array provided by pde specification ***
-     ***** compute an algebraically produced rhs for the given tcf *****/
+    Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
 
-    if (istop == 4 || istop == 5 || iperf != 0 ) {
+    // Next grid
+  }
 
-            if (iinfo > 1) {
-                VMESSAGE0("Generating algebraic RHS from your soln...");
-            }
+  // Reinitialize the solution function
+  Vazeros(nx, ny, nz, u);
 
+  /*******************************************************************
+   *** this overwrites the rhs array provided by pde specification ***
+   ***** compute an algebraically produced rhs for the given tcf *****/
 
-            WARN_UNTESTED;
-            Vbuildalg(nx, ny, nz, &mode, &nlev, iz,
-                    ipc, rpc, ac, cc, ccf, tcf, fc, fcf);
+  if (istop == 4 || istop == 5 || iperf != 0) {
+
+    if (iinfo > 1) {
+      printf("Generating algebraic RHS from your soln...");
     }
 
-    /*******************************************************************/
+    WARN_UNTESTED;
+    Vbuildalg(nx, ny, nz, &mode, &nlev, iz, ipc, rpc, ac, cc, ccf, tcf, fc,
+              fcf);
+  }
 
-    // Impose zero dirichlet boundary conditions (now in source fcn)
-        VfboundPMG00(nx, ny, nz, u);
+  /*******************************************************************/
 
-    // Start the timer
-    Vnm_tstart(30, "Vmgdrv2: solve");
+  // Impose zero dirichlet boundary conditions (now in source fcn)
+  VfboundPMG00(nx, ny, nz, u);
 
-    // Call specified multigrid method
-    if (mode == 0 || mode == 2) {
-            nlev_real = nlev;
-            iok  = 1;
-            ilev = 1;
+  // Start the timer
+  // Vnm_tstart(30, "Vmgdrv2: solve");
 
-            if (mgkey == 0) {
+  // Call specified multigrid method
+  if (mode == 0 || mode == 2) {
+    nlev_real = nlev;
+    iok = 1;
+    ilev = 1;
 
-                Vmvcs(nx, ny, nz,
-                        u, iz, a1cf, a2cf, a3cf, ccf,
-                        &istop, &itmax, &iters, &ierror, &nlev,
-                        &ilev, &nlev_real, &mgsolv,
-                        &iok, &iinfo, &epsiln, &errtol, &omegal,
-                        &nu1, &nu2, &mgsmoo,
-                        ipc, rpc, pc, ac, cc, fc, tcf);
+    if (mgkey == 0) {
 
-            } else if (mgkey == 1) {
+      Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
+            &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
+            &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
+            tcf);
 
-                Vmvcs(nx, ny, nz,
-                        u, iz, a1cf, a2cf, a3cf, ccf,
-                        &istop, &itmax, &iters, &ierror, &nlev,
-                        &ilev, &nlev_real, &mgsolv,
-                        &iok, &iinfo, &epsiln, &errtol, &omegal,
-                        &nu1, &nu2, &mgsmoo,
-                        ipc, rpc, pc, ac, cc, fc, tcf);
+    } else if (mgkey == 1) {
 
-            } else {
-                VABORT_MSG1("Bad mgkey given: %d", mgkey);
-            }
+      Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
+            &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
+            &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
+            tcf);
+
+    } else {
+      printf("Bad mgkey given: %d", mgkey);
+      exit(-1);
     }
+  }
 
-    if (mode == 1 || mode == 2) {
+  if (mode == 1 || mode == 2) {
 
-            nlev_real = nlev;
-            iok  = 1;
-            ilev = 1;
+    nlev_real = nlev;
+    iok = 1;
+    ilev = 1;
 
-            if (mgkey == 0) {
+    if (mgkey == 0) {
 
-                Vmvfas(nx, ny, nz,
-                        u, iz, a1cf, a2cf, a3cf, ccf, fcf,
-                        &istop, &itmax, &iters, &ierror, &nlev,
-                        &ilev, &nlev_real, &mgsolv,
-                        &iok, &iinfo, &epsiln, &errtol, &omegan,
-                        &nu1, &nu2, &mgsmoo,
-                        ipc, rpc, pc, ac, cc, fc, tcf);
+      Vmvfas(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &istop, &itmax,
+             &iters, &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo,
+             &epsiln, &errtol, &omegan, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac,
+             cc, fc, tcf);
 
-            } else if (mgkey == 1) {
+    } else if (mgkey == 1) {
 
-                Vfmvfas(nx, ny, nz,
-                        u, iz,
-                        a1cf, a2cf, a3cf, ccf, fcf,
-                        &istop, &itmax, &iters, &ierror, &nlev,
-                        &ilev, &nlev_real, &mgsolv,
-                        &iok, &iinfo, &epsiln, &errtol, &omegan,
-                        &nu1, &nu2, &mgsmoo,
-                        ipc, rpc, pc, ac, cc, fc, tcf);
+      Vfmvfas(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &istop, &itmax,
+              &iters, &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo,
+              &epsiln, &errtol, &omegan, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac,
+              cc, fc, tcf);
 
-        } else {
-            VABORT_MSG1("Bad mgkey given: %d", mgkey);
-        }
+    } else {
+      printf("Bad mgkey given: %d", mgkey);
+      exit(-1);
     }
+  }
 
-    // Stop the timer
-    Vnm_tstop(30, "Vmgdrv2: solve");
+  // Stop the timer
+  // Vnm_tstop(30, "Vmgdrv2: solve");
 
-    // Restore boundary conditions
-    ibound = 1;
+  // Restore boundary conditions
+  ibound = 1;
 
-    VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf);
+  VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf);
 }
 
+VPUBLIC void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv, int *nx, int *ny,
+                   int *nz, int *nlev, int *nxc, int *nyc, int *nzc, int *nf,
+                   int *nc, int *narr, int *narrc, int *n_rpc, int *n_iz,
+                   int *n_ipc, int *iretot, int *iintot) {
 
+  // Constants: num of different types of arrays in mg code
+  int num_nf = 0;
+  int num_narr = 2;
+  int num_narrc = 27;
 
-VPUBLIC void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv,
-        int *nx, int *ny, int *nz,
-        int *nlev,
-        int *nxc, int *nyc, int *nzc,
-        int *nf, int *nc,
-        int *narr, int *narrc,
-        int *n_rpc, int *n_iz, int *n_ipc,
-        int *iretot, int *iintot) {
+  // Misc variables
+  int nc_band, num_band, n_band;
+  int nxf, nyf, nzf;
+  int level;
+  int num_nf_oper, num_narrc_oper;
 
-    // Constants: num of different types of arrays in mg code
-    int num_nf = 0;
-    int num_narr = 2;
-    int num_narrc = 27;
+  // Utility variables
+  int numlev;
 
-    // Misc variables
-    int nc_band, num_band, n_band;
-    int nxf, nyf, nzf;
-    int level;
-    int num_nf_oper, num_narrc_oper;
+  // Go down grids: compute max/min eigenvalues of all operators
+  *nf = *nx * *ny * *nz;
 
-    // Utility variables
-    int numlev;
+  *narr = *nf;
 
-    // Go down grids: compute max/min eigenvalues of all operators
-    *nf   = *nx * *ny * *nz;
+  nxf = *nx;
+  nyf = *ny;
+  nzf = *nz;
 
-    *narr = *nf;
+  *nxc = *nx;
+  *nyc = *ny;
+  *nzc = *nz;
 
-    nxf  = *nx;
-    nyf  = *ny;
-    nzf  = *nz;
+  for (level = 2; level <= *nlev; level++) {
 
-    *nxc  = *nx;
-    *nyc  = *ny;
-    *nzc  = *nz;
+    // find new grid size ***
 
-    for (level=2; level<=*nlev; level++) {
+    numlev = 1;
+    Vmkcors(&numlev, &nxf, &nyf, &nzf, nxc, nyc, nzc);
 
-        //find new grid size ***
+    // New grid size
+    nxf = *nxc;
+    nyf = *nyc;
+    nzf = *nzc;
 
-        numlev = 1;
-        Vmkcors(&numlev, &nxf, &nyf, &nzf, nxc, nyc, nzc);
+    // Add the unknowns on this level to the total
+    *narr += nxf * nyf * nzf;
+  }
+  *nc = *nxc * *nyc * *nzc;
+  *narrc = *narr - *nf;
 
-        // New grid size
-        nxf = *nxc;
-        nyf = *nyc;
-        nzf = *nzc;
+  // Box or fem on fine grid?
+  if (*mgdisc == 0) {
+    num_nf_oper = 4;
+  } else if (*mgdisc == 1) {
+    num_nf_oper = 14;
+  } else {
+    printf("Vmgsz: invalid mgdisc parameter: %d\n", *mgdisc);
+  }
 
-        // Add the unknowns on this level to the total
-        *narr += nxf * nyf * nzf;
-    }
-    *nc = *nxc * *nyc * *nzc;
-    *narrc = *narr - *nf;
+  // Galerkin or standard coarsening?
+  if ((*mgcoar == 0 || *mgcoar == 1) && *mgdisc == 0) {
+    num_narrc_oper = 4;
+  } else if (*mgcoar == 2) {
+    num_narrc_oper = 14;
+  } else {
+    printf("Vmgsz: invalid mgcoar parameter: %d\n", *mgcoar);
+  }
 
-    // Box or fem on fine grid?
-    if (*mgdisc == 0) {
-        num_nf_oper = 4;
-    } else if (*mgdisc == 1) {
-        num_nf_oper = 14;
-    } else {
-        Vnm_print(2, "Vmgsz: invalid mgdisc parameter: %d\n", *mgdisc);
-    }
-
-    // Galerkin or standard coarsening?
+  // Symmetric banded linpack storage on coarse grid
+  if (*mgsolv == 0) {
+    n_band = 0;
+  } else if (*mgsolv == 1) {
     if ((*mgcoar == 0 || *mgcoar == 1) && *mgdisc == 0) {
-        num_narrc_oper = 4;
-    } else if (*mgcoar == 2) {
-        num_narrc_oper = 14;
+      num_band = 1 + (*nxc - 2) * (*nyc - 2);
     } else {
-        Vnm_print(2, "Vmgsz: invalid mgcoar parameter: %d\n", *mgcoar);
+      num_band = 1 + (*nxc - 2) * (*nyc - 2) + (*nxc - 2) + 1;
     }
+    nc_band = (*nxc - 2) * (*nyc - 2) * (*nzc - 2);
+    n_band = nc_band * num_band;
+  } else {
+    printf("Vmgsz: invalid mgsolv parameter: %d\n", *mgsolv);
+  }
 
-    // Symmetric banded linpack storage on coarse grid
-    if (*mgsolv == 0) {
-        n_band = 0;
-    } else if (*mgsolv == 1) {
-        if ((*mgcoar == 0 || *mgcoar == 1) && *mgdisc == 0) {
-            num_band = 1 + (*nxc - 2) * (*nyc - 2);
-        } else {
-            num_band = 1 + (*nxc - 2) * (*nyc - 2) + (*nxc - 2) + 1;
-        }
-        nc_band = (*nxc - 2) * (*nyc - 2) * (*nzc - 2);
-        n_band  = nc_band * num_band;
-    } else {
-        Vnm_print(2, "Vmgsz: invalid mgsolv parameter: %d\n", *mgsolv);
-    }
+  // Info work array required storage
+  *n_rpc = 100 * (*nlev + 1);
 
-    // Info work array required storage
-    *n_rpc = 100 * (*nlev + 1);
+  // Resulting total required real storage for method
+  *iretot = num_narr * *narr + (num_nf + num_nf_oper) * *nf +
+            (num_narrc + num_narrc_oper) * *narrc + n_band + *n_rpc;
 
-    // Resulting total required real storage for method
-    *iretot = num_narr * *narr
-            + (num_nf    + num_nf_oper) * *nf
-            + (num_narrc + num_narrc_oper) * *narrc
-            + n_band
-            + *n_rpc;
+  // The integer storage parameters ***
+  *n_iz = 50 * (*nlev + 1);
+  *n_ipc = 100 * (*nlev + 1);
 
-    // The integer storage parameters ***
-    *n_iz  = 50  * (*nlev + 1);
-    *n_ipc = 100 * (*nlev + 1);
-
-    // Resulting total required integer storage for method
-    *iintot = *n_iz + *n_ipc;
+  // Resulting total required integer storage for method
+  *iintot = *n_iz + *n_ipc;
 }

@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -49,44 +54,38 @@
 #ifndef _VBUILDA_H_
 #define _VBUILDA_H_
 
-#include "apbscfg.h"
+// #include "apbscfg.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
+#include "abps_macros.h"
 
 /** @brief   Break the matrix data-structure into diagonals and then call the
  *           matrix build routine
  *  @ingroup PMGC
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA(
-        int*    nx,      /**< @todo:Doc */
-        int*    ny,      /**< @todo:Doc */
-        int*    nz,      /**< @todo:Doc */
-        int*    ipkey,   /**< @todo:Doc */
-        int*    mgdisc,  /**< @todo:Doc */
-        int*    numdia,  /**< @todo:Doc */
-        int*    ipc,     /**< @todo:Doc */
-        double* rpc,     /**< @todo:Doc */
-        double* ac,      /**< @todo:Doc */
-        double* cc,      /**< @todo:Doc */
-        double* fc,      /**< @todo:Doc */
-        double* xf,      /**< @todo:Doc */
-        double* yf,      /**< @todo:Doc */
-        double* zf,      /**< @todo:Doc */
-        double* gxcf,    /**< @todo:Doc */
-        double* gycf,    /**< @todo:Doc */
-        double* gzcf,    /**< @todo:Doc */
-        double* a1cf,    /**< @todo:Doc */
-        double* a2cf,    /**< @todo:Doc */
-        double* a3cf,    /**< @todo:Doc */
-        double* ccf,     /**< @todo:Doc */
-        double* fcf      /**< @todo:Doc */
-        );
-
-
+VEXTERNC void VbuildA(int *nx,      /**< @todo:Doc */
+                      int *ny,      /**< @todo:Doc */
+                      int *nz,      /**< @todo:Doc */
+                      int *ipkey,   /**< @todo:Doc */
+                      int *mgdisc,  /**< @todo:Doc */
+                      int *numdia,  /**< @todo:Doc */
+                      int *ipc,     /**< @todo:Doc */
+                      double *rpc,  /**< @todo:Doc */
+                      double *ac,   /**< @todo:Doc */
+                      double *cc,   /**< @todo:Doc */
+                      double *fc,   /**< @todo:Doc */
+                      double *xf,   /**< @todo:Doc */
+                      double *yf,   /**< @todo:Doc */
+                      double *zf,   /**< @todo:Doc */
+                      double *gxcf, /**< @todo:Doc */
+                      double *gycf, /**< @todo:Doc */
+                      double *gzcf, /**< @todo:Doc */
+                      double *a1cf, /**< @todo:Doc */
+                      double *a2cf, /**< @todo:Doc */
+                      double *a3cf, /**< @todo:Doc */
+                      double *ccf,  /**< @todo:Doc */
+                      double *fcf   /**< @todo:Doc */
+);
 
 /** @brief
  *
@@ -158,33 +157,31 @@ VEXTERNC void VbuildA(
  *            b(index2) = b(index2) - (1-ike)*coef*bnd_data
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA_fv(
-                int*    nx,     /**< @todo:Doc */
-        int*    ny,     /**< @todo:Doc */
-        int*    nz,     /**< @todo:Doc */
-        int*    ipkey,  /**< @todo:Doc */
-        int*    numdia, /**< @todo:Doc */
-        int*    ipc,    /**< @todo:Doc */
-        double* rpc,    /**< @todo:Doc */
-        double* oC,     /**< @todo:Doc */
-        double* cc,     /**< @todo:Doc */
-        double* fc,     /**< @todo:Doc */
-        double* oE,     /**< @todo:Doc */
-        double* oN,     /**< @todo:Doc */
-        double* uC,     /**< @todo:Doc */
-        double* xf,     /**< @todo:Doc */
-        double* yf,     /**< @todo:Doc */
-        double* zf,     /**< @todo:Doc */
-        double* gxcf,   /**< @todo:Doc */
-        double* gycf,   /**< @todo:Doc */
-        double* gzcf,   /**< @todo:Doc */
-        double* a1cf,   /**< @todo:Doc */
-        double* a2cf,   /**< @todo:Doc */
-        double* a3cf,   /**< @todo:Doc */
-        double* ccf,    /**< @todo:Doc */
-        double* fcf     /**< @todo:Doc */
-        );
-
+VEXTERNC void VbuildA_fv(int *nx,      /**< @todo:Doc */
+                         int *ny,      /**< @todo:Doc */
+                         int *nz,      /**< @todo:Doc */
+                         int *ipkey,   /**< @todo:Doc */
+                         int *numdia,  /**< @todo:Doc */
+                         int *ipc,     /**< @todo:Doc */
+                         double *rpc,  /**< @todo:Doc */
+                         double *oC,   /**< @todo:Doc */
+                         double *cc,   /**< @todo:Doc */
+                         double *fc,   /**< @todo:Doc */
+                         double *oE,   /**< @todo:Doc */
+                         double *oN,   /**< @todo:Doc */
+                         double *uC,   /**< @todo:Doc */
+                         double *xf,   /**< @todo:Doc */
+                         double *yf,   /**< @todo:Doc */
+                         double *zf,   /**< @todo:Doc */
+                         double *gxcf, /**< @todo:Doc */
+                         double *gycf, /**< @todo:Doc */
+                         double *gzcf, /**< @todo:Doc */
+                         double *a1cf, /**< @todo:Doc */
+                         double *a2cf, /**< @todo:Doc */
+                         double *a3cf, /**< @todo:Doc */
+                         double *ccf,  /**< @todo:Doc */
+                         double *fcf   /**< @todo:Doc */
+);
 
 /** @brief  Finite element method discretization
  *
@@ -263,51 +260,40 @@ VEXTERNC void VbuildA_fv(
  *  @todo    Update brief description
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA_fe(
-                int*    nx,     /**< @todo:Doc */
-        int*    ny,     /**< @todo:Doc */
-        int*    nz,     /**< @todo:Doc */
-        int*    ipkey,  /**< @todo:Doc */
-        int*    numdia, /**< @todo:Doc */
-        int*    ipc,    /**< @todo:Doc */
-        double* rpc,    /**< @todo:Doc */
-        double* oC,     /**< @todo:Doc */
-        double* cc,     /**< @todo:Doc */
-        double* fc,     /**< @todo:Doc */
-        double* oE,     /**< @todo:Doc */
-        double* oN,     /**< @todo:Doc */
-        double* uC,     /**< @todo:Doc */
-                double* oNE,    /**< @todo:Doc */
-                double* oNW,    /**< @todo:Doc */
-                double* uE,     /**< @todo:Doc */
-                double* uW,     /**< @todo:Doc */
-                double* uN,     /**< @todo:Doc */
-                double* uS,     /**< @todo:Doc */
-                double* uNE,    /**< @todo:Doc */
-                double* uNW,    /**< @todo:Doc */
-                double* uSE,    /**< @todo:Doc */
-                double* uSW,    /**< @todo:Doc */
-        double* xf,     /**< @todo:Doc */
-        double* yf,     /**< @todo:Doc */
-        double* zf,     /**< @todo:Doc */
-        double* gxcf,   /**< @todo:Doc */
-        double* gycf,   /**< @todo:Doc */
-        double* gzcf,   /**< @todo:Doc */
-        double* a1cf,   /**< @todo:Doc */
-        double* a2cf,   /**< @todo:Doc */
-        double* a3cf,   /**< @todo:Doc */
-        double* ccf,    /**< @todo:Doc */
-        double* fcf     /**< @todo:Doc */
-        );
-
-
-
-
-
-
-
-
-
-
+VEXTERNC void VbuildA_fe(int *nx,      /**< @todo:Doc */
+                         int *ny,      /**< @todo:Doc */
+                         int *nz,      /**< @todo:Doc */
+                         int *ipkey,   /**< @todo:Doc */
+                         int *numdia,  /**< @todo:Doc */
+                         int *ipc,     /**< @todo:Doc */
+                         double *rpc,  /**< @todo:Doc */
+                         double *oC,   /**< @todo:Doc */
+                         double *cc,   /**< @todo:Doc */
+                         double *fc,   /**< @todo:Doc */
+                         double *oE,   /**< @todo:Doc */
+                         double *oN,   /**< @todo:Doc */
+                         double *uC,   /**< @todo:Doc */
+                         double *oNE,  /**< @todo:Doc */
+                         double *oNW,  /**< @todo:Doc */
+                         double *uE,   /**< @todo:Doc */
+                         double *uW,   /**< @todo:Doc */
+                         double *uN,   /**< @todo:Doc */
+                         double *uS,   /**< @todo:Doc */
+                         double *uNE,  /**< @todo:Doc */
+                         double *uNW,  /**< @todo:Doc */
+                         double *uSE,  /**< @todo:Doc */
+                         double *uSW,  /**< @todo:Doc */
+                         double *xf,   /**< @todo:Doc */
+                         double *yf,   /**< @todo:Doc */
+                         double *zf,   /**< @todo:Doc */
+                         double *gxcf, /**< @todo:Doc */
+                         double *gycf, /**< @todo:Doc */
+                         double *gzcf, /**< @todo:Doc */
+                         double *a1cf, /**< @todo:Doc */
+                         double *a2cf, /**< @todo:Doc */
+                         double *a3cf, /**< @todo:Doc */
+                         double *ccf,  /**< @todo:Doc */
+                         double *fcf   /**< @todo:Doc */
+);
 
 #endif /* _VBUILDA_H_ */

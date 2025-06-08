@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -49,17 +54,13 @@
 #ifndef _NEWTOND_H_
 #define _NEWTOND_H_
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
-#include "pmgc/matvecd.h"
-#include "pmgc/mikpckd.h"
-#include "pmgc/mgcsd.h"
-#include "pmgc/mgsubd.h"
-#include "pmgc/powerd.h"
+#include "matvecd.h"
+#include "mgcsd.h"
+#include "mgsubd.h"
+#include "mikpckd.h"
+#include "powerd.h"
 
 /** @brief   Nested iteration for an inexact-newton-multilevel method.
  *  @ingroup PMGC
@@ -67,43 +68,42 @@
  *
  *  @note    Replaces fnewton from newtond.f
  */
-VPUBLIC void Vfnewton(
-        int *nx,        ///< @todo: Doc
-        int *ny,        ///< @todo: Doc
-        int *nz,        ///< @todo: Doc
-        double *x,      ///< @todo: Doc
-        int *iz,        ///< @todo: Doc
-        double *w0,     ///< @todo: Doc
-        double *w1,     ///< @todo: Doc
-        double *w2,     ///< @todo: Doc
-        double *w3,     ///< @todo: Doc
-        int *istop,     ///< @todo: Doc
-        int *itmax,     ///< @todo: Doc
-        int *iters,     ///< @todo: Doc
-        int *ierror,    ///< @todo: Doc
-        int *nlev,      ///< @todo: Doc
-        int *ilev,      ///< @todo: Doc
-        int *nlev_real, ///< @todo: Doc
-        int *mgsolv,    ///< @todo: Doc
-        int *iok,       ///< @todo: Doc
-        int *iinfo,     ///< @todo: Doc
-        double *epsiln, ///< @todo: Doc
-        double *errtol, ///< @todo: Doc
-        double *omega,  ///< @todo: Doc
-        int *nu1,       ///< @todo: Doc
-        int *nu2,       ///< @todo: Doc
-        int *mgsmoo,    ///< @todo: Doc
-        double *cprime, ///< @todo: Doc
-        double *rhs,    ///< @todo: Doc
-        double *xtmp,   ///< @todo: Doc
-        int *ipc,       ///< @todo: Doc
-        double *rpc,    ///< @todo: Doc
-        double *pc,     ///< @todo: Doc
-        double *ac,     ///< @todo: Doc
-        double *cc,     ///< @todo: Doc
-        double *fc,     ///< @todo: Doc
-        double *tru     ///< @todo: Doc
-        );
+VPUBLIC void Vfnewton(int *nx,        ///< @todo: Doc
+                      int *ny,        ///< @todo: Doc
+                      int *nz,        ///< @todo: Doc
+                      double *x,      ///< @todo: Doc
+                      int *iz,        ///< @todo: Doc
+                      double *w0,     ///< @todo: Doc
+                      double *w1,     ///< @todo: Doc
+                      double *w2,     ///< @todo: Doc
+                      double *w3,     ///< @todo: Doc
+                      int *istop,     ///< @todo: Doc
+                      int *itmax,     ///< @todo: Doc
+                      int *iters,     ///< @todo: Doc
+                      int *ierror,    ///< @todo: Doc
+                      int *nlev,      ///< @todo: Doc
+                      int *ilev,      ///< @todo: Doc
+                      int *nlev_real, ///< @todo: Doc
+                      int *mgsolv,    ///< @todo: Doc
+                      int *iok,       ///< @todo: Doc
+                      int *iinfo,     ///< @todo: Doc
+                      double *epsiln, ///< @todo: Doc
+                      double *errtol, ///< @todo: Doc
+                      double *omega,  ///< @todo: Doc
+                      int *nu1,       ///< @todo: Doc
+                      int *nu2,       ///< @todo: Doc
+                      int *mgsmoo,    ///< @todo: Doc
+                      double *cprime, ///< @todo: Doc
+                      double *rhs,    ///< @todo: Doc
+                      double *xtmp,   ///< @todo: Doc
+                      int *ipc,       ///< @todo: Doc
+                      double *rpc,    ///< @todo: Doc
+                      double *pc,     ///< @todo: Doc
+                      double *ac,     ///< @todo: Doc
+                      double *cc,     ///< @todo: Doc
+                      double *fc,     ///< @todo: Doc
+                      double *tru     ///< @todo: Doc
+);
 
 /** @brief   Inexact-newton-multilevel method.
  *  @ingroup PMGC
@@ -111,44 +111,42 @@ VPUBLIC void Vfnewton(
  *
  *  @note    Replaces newton from newtond.f
  */
-VEXTERNC void Vnewton(
-        int *nx,        ///< @todo: Doc
-        int *ny,        ///< @todo: Doc
-        int *nz,        ///< @todo: Doc
-        double *x,      ///< @todo: Doc
-        int *iz,        ///< @todo: Doc
-        double *w0,     ///< @todo: Doc
-        double *w1,     ///< @todo: Doc
-        double *w2,     ///< @todo: Doc
-        double *w3,     ///< @todo: Doc
-        int *istop,     ///< @todo: Doc
-        int *itmax,     ///< @todo: Doc
-        int *iters,     ///< @todo: Doc
-        int *ierror,    ///< @todo: Doc
-        int *nlev,      ///< @todo: Doc
-        int *ilev,      ///< @todo: Doc
-        int *nlev_real, ///< @todo: Doc
-        int *mgsolv,    ///< @todo: Doc
-        int *iok,       ///< @todo: Doc
-        int *iinfo,     ///< @todo: Doc
-        double *epsiln, ///< @todo: Doc
-        double *errtol, ///< @todo: Doc
-        double *omega,  ///< @todo: Doc
-        int *nu1,       ///< @todo: Doc
-        int *nu2,       ///< @todo: Doc
-        int *mgsmoo,    ///< @todo: Doc
-        double *cprime, ///< @todo: Doc
-        double *rhs,    ///< @todo: Doc
-        double *xtmp,   ///< @todo: Doc
-        int *ipc,       ///< @todo: Doc
-        double *rpc,    ///< @todo: Doc
-        double *pc,     ///< @todo: Doc
-        double *ac,     ///< @todo: Doc
-        double *cc,     ///< @todo: Doc
-        double *fc,     ///< @todo: Doc
-        double *tru     ///< @todo: Doc
-        );
-
+VEXTERNC void Vnewton(int *nx,        ///< @todo: Doc
+                      int *ny,        ///< @todo: Doc
+                      int *nz,        ///< @todo: Doc
+                      double *x,      ///< @todo: Doc
+                      int *iz,        ///< @todo: Doc
+                      double *w0,     ///< @todo: Doc
+                      double *w1,     ///< @todo: Doc
+                      double *w2,     ///< @todo: Doc
+                      double *w3,     ///< @todo: Doc
+                      int *istop,     ///< @todo: Doc
+                      int *itmax,     ///< @todo: Doc
+                      int *iters,     ///< @todo: Doc
+                      int *ierror,    ///< @todo: Doc
+                      int *nlev,      ///< @todo: Doc
+                      int *ilev,      ///< @todo: Doc
+                      int *nlev_real, ///< @todo: Doc
+                      int *mgsolv,    ///< @todo: Doc
+                      int *iok,       ///< @todo: Doc
+                      int *iinfo,     ///< @todo: Doc
+                      double *epsiln, ///< @todo: Doc
+                      double *errtol, ///< @todo: Doc
+                      double *omega,  ///< @todo: Doc
+                      int *nu1,       ///< @todo: Doc
+                      int *nu2,       ///< @todo: Doc
+                      int *mgsmoo,    ///< @todo: Doc
+                      double *cprime, ///< @todo: Doc
+                      double *rhs,    ///< @todo: Doc
+                      double *xtmp,   ///< @todo: Doc
+                      int *ipc,       ///< @todo: Doc
+                      double *rpc,    ///< @todo: Doc
+                      double *pc,     ///< @todo: Doc
+                      double *ac,     ///< @todo: Doc
+                      double *cc,     ///< @todo: Doc
+                      double *fc,     ///< @todo: Doc
+                      double *tru     ///< @todo: Doc
+);
 
 /** @brief   Form the jacobian system.
  *  @ingroup PMGC
@@ -156,20 +154,19 @@ VEXTERNC void Vnewton(
  *
  *  @note    Replaces getjac from newtond.f
  */
-VEXTERNC void Vgetjac(
-        int *nx,        ///< @todo: Doc
-        int *ny,        ///< @todo: Doc
-        int *nz,        ///< @todo: Doc
-        int *nlev_real, ///< @todo: Doc
-        int *iz,        ///< @todo: Doc
-        int *lev,       ///< @todo: Doc
-        int *ipkey,     ///< @todo: Doc
-        double *x,      ///< @todo: Doc
-        double *r,      ///< @todo: Doc
-        double *cprime, ///< @todo: Doc
-        double *rhs,    ///< @todo: Doc
-        double *cc,     ///< @todo: Doc
-        double *pc      ///< @todo: Doc
-        );
+VEXTERNC void Vgetjac(int *nx,        ///< @todo: Doc
+                      int *ny,        ///< @todo: Doc
+                      int *nz,        ///< @todo: Doc
+                      int *nlev_real, ///< @todo: Doc
+                      int *iz,        ///< @todo: Doc
+                      int *lev,       ///< @todo: Doc
+                      int *ipkey,     ///< @todo: Doc
+                      double *x,      ///< @todo: Doc
+                      double *r,      ///< @todo: Doc
+                      double *cprime, ///< @todo: Doc
+                      double *rhs,    ///< @todo: Doc
+                      double *cc,     ///< @todo: Doc
+                      double *pc      ///< @todo: Doc
+);
 
 #endif /* _NEWTOND_H_ */

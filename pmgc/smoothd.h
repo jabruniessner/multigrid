@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -49,14 +54,10 @@
 #ifndef _SMOOTHD_H_
 #define _SMOOTHD_H_
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
-#include "pmgc/gsd.h"
-#include "pmgc/cgd.h"
+#include "cgd.h"
+#include "gsd.h"
 
 /** @brief   call the appropriate linear smoothing routine.
  *  @ingroup PMGC
@@ -64,27 +65,26 @@
  *
  *  @note    Replaces smooth from smoothd.f
  */
-VEXTERNC void Vsmooth(
-        int    *nx,       ///< @todo: Doc
-        int    *ny,       ///< @todo: Doc
-        int    *nz,       ///< @todo: Doc
-        int    *ipc,      ///< @todo: Doc
-        double *rpc,      ///< @todo: Doc
-        double *ac,       ///< @todo: Doc
-        double *cc,       ///< @todo: Doc
-        double *fc,       ///< @todo: Doc
-        double *x,        ///< @todo: Doc
-        double *w1,       ///< @todo: Doc
-        double *w2,       ///< @todo: Doc
-        double *r,        ///< @todo: Doc
-        int    *itmax,    ///< @todo: Doc
-        int    *iters,    ///< @todo: Doc
-        double *errtol,   ///< @todo: Doc
-        double *omega,    ///< @todo: Doc
-        int    *iresid,   ///< @todo: Doc
-        int    *iadjoint, ///< @todo: Doc
-        int    *meth      ///< @todo: Doc
-        );
+VEXTERNC void Vsmooth(int *nx,        ///< @todo: Doc
+                      int *ny,        ///< @todo: Doc
+                      int *nz,        ///< @todo: Doc
+                      int *ipc,       ///< @todo: Doc
+                      double *rpc,    ///< @todo: Doc
+                      double *ac,     ///< @todo: Doc
+                      double *cc,     ///< @todo: Doc
+                      double *fc,     ///< @todo: Doc
+                      double *x,      ///< @todo: Doc
+                      double *w1,     ///< @todo: Doc
+                      double *w2,     ///< @todo: Doc
+                      double *r,      ///< @todo: Doc
+                      int *itmax,     ///< @todo: Doc
+                      int *iters,     ///< @todo: Doc
+                      double *errtol, ///< @todo: Doc
+                      double *omega,  ///< @todo: Doc
+                      int *iresid,    ///< @todo: Doc
+                      int *iadjoint,  ///< @todo: Doc
+                      int *meth       ///< @todo: Doc
+);
 
 /** @brief   call the appropriate non-linear smoothing routine.
  *  @ingroup PMGC
@@ -92,27 +92,25 @@ VEXTERNC void Vsmooth(
  *
  *  @note    Replaces nsmooth from nsmoothd.f
  */
-VEXTERNC void Vnsmooth(
-        int    *nx,       ///< @todo: Doc
-        int    *ny,       ///< @todo: Doc
-        int    *nz,       ///< @todo: Doc
-        int    *ipc,      ///< @todo: Doc
-        double *rpc,      ///< @todo: Doc
-        double *ac,       ///< @todo: Doc
-        double *cc,       ///< @todo: Doc
-        double *fc,       ///< @todo: Doc
-        double *x,        ///< @todo: Doc
-        double *w1,       ///< @todo: Doc
-        double *w2,       ///< @todo: Doc
-        double *r,        ///< @todo: Doc
-        int    *itmax,    ///< @todo: Doc
-        int    *iters,    ///< @todo: Doc
-        double *errtol,   ///< @todo: Doc
-        double *omega,    ///< @todo: Doc
-        int    *iresid,   ///< @todo: Doc
-        int    *iadjoint, ///< @todo: Doc
-        int    *meth      ///< @todo: Doc
-        );
-
+VEXTERNC void Vnsmooth(int *nx,        ///< @todo: Doc
+                       int *ny,        ///< @todo: Doc
+                       int *nz,        ///< @todo: Doc
+                       int *ipc,       ///< @todo: Doc
+                       double *rpc,    ///< @todo: Doc
+                       double *ac,     ///< @todo: Doc
+                       double *cc,     ///< @todo: Doc
+                       double *fc,     ///< @todo: Doc
+                       double *x,      ///< @todo: Doc
+                       double *w1,     ///< @todo: Doc
+                       double *w2,     ///< @todo: Doc
+                       double *r,      ///< @todo: Doc
+                       int *itmax,     ///< @todo: Doc
+                       int *iters,     ///< @todo: Doc
+                       double *errtol, ///< @todo: Doc
+                       double *omega,  ///< @todo: Doc
+                       int *iresid,    ///< @todo: Doc
+                       int *iadjoint,  ///< @todo: Doc
+                       int *meth       ///< @todo: Doc
+);
 
 #endif /* _SMOOTHD_H_ */

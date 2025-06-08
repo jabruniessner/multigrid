@@ -14,15 +14,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -52,19 +57,14 @@
 
 #include "math.h"
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "pmgc/mypdec.h"
-
-#define MAXIONS    50
-#define MAXPOLY   50
-#define ZSMALL     1.0e-20
-#define ZLARGE     1.0e20
+#define MAXIONS 50
+#define MAXPOLY 50
+#define ZSMALL 1.0e-20
+#define ZLARGE 1.0e20
 #define SINH_MIN -85.0
-#define SINH_MAX  85.0
+#define SINH_MAX 85.0
 
 /// @todo  Remove dependencies on global variables
 extern double v1, v2, v3, conc1, conc2, conc3, vol, relSize;
@@ -82,15 +82,13 @@ extern double sconc[MAXIONS];
  *  @note    Replaces mypdefinitlpbe from mypde.f
  */
 VEXTERNC void Vmypdefinitlpbe(
-        int *tnion,       ///< The number if ionic species
-        double *tcharge,  ///< The charge in electrons
-        double *tsconc    /**< Prefactor for conterion Bolzmann distribution
-                           *   terms.  Basically a scaled concentration
-                           *     -(ion concentration/bulkIonicStrength)/2
-                           */
-        );
-
-
+    int *tnion,      ///< The number if ionic species
+    double *tcharge, ///< The charge in electrons
+    double *tsconc   /**< Prefactor for conterion Bolzmann distribution
+                      *   terms.  Basically a scaled concentration
+                      *     -(ion concentration/bulkIonicStrength)/2
+                      */
+);
 
 /** @brief   Set up the ionic species to be used in later calculations.  This
  *           must be called before any other of the routines in this file.
@@ -100,15 +98,13 @@ VEXTERNC void Vmypdefinitlpbe(
  *  @note    Replaces mypdefinitnpbe from mypde.f
  */
 VEXTERNC void Vmypdefinitnpbe(
-        int *tnion,       ///< The number if ionic species
-        double *tcharge,  ///< The charge in electrons
-        double *tsconc    /**< Prefactor for conterion Bolzmann distribution
-                           *   terms.  Basically a scaled concentration
-                           *     -(ion concentration/bulkIonicStrength)/2
-                           */
-        );
-
-
+    int *tnion,      ///< The number if ionic species
+    double *tcharge, ///< The charge in electrons
+    double *tsconc   /**< Prefactor for conterion Bolzmann distribution
+                      *   terms.  Basically a scaled concentration
+                      *     -(ion concentration/bulkIonicStrength)/2
+                      */
+);
 
 /** @brief   Set up the ionic species to be used in later calculations.  This
  *           must be called before any other of the routines in this file.
@@ -118,17 +114,15 @@ VEXTERNC void Vmypdefinitnpbe(
  *  @note    Replaces mypdefinitsmpbe from mypde.f
  */
 VEXTERNC void Vmypdefinitsmpbe(
-        int *tnion,       ///< The number if ionic species
-        double *tcharge,  ///< The charge in electrons
-        double *tsconc,   /**< Prefactor for conterion Bolzmann distribution
-                           *   terms.  Basically a scaled concentration
-                           *     -(ion concentration/bulkIonicStrength)/2
-                           */
-        double *smvolume, ///< @todo: Doc
-        double *smsize    ///< @todo: Doc
-        );
-
-
+    int *tnion,       ///< The number if ionic species
+    double *tcharge,  ///< The charge in electrons
+    double *tsconc,   /**< Prefactor for conterion Bolzmann distribution
+                       *   terms.  Basically a scaled concentration
+                       *     -(ion concentration/bulkIonicStrength)/2
+                       */
+    double *smvolume, ///< @todo: Doc
+    double *smsize    ///< @todo: Doc
+);
 
 /** @brief   Define the nonlinearity (vector version)
  *  @ingroup PMGC
@@ -136,17 +130,14 @@ VEXTERNC void Vmypdefinitsmpbe(
  *
  *  @note    Replaces c_vec from mypde.f
  */
-VEXTERNC void Vc_vec(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int *nx,      ///< @todo: Doc
-        int *ny,      ///< @todo: Doc
-        int *nz,      ///< @todo: Doc
-        int *ipkey    ///< @todo: Doc
-        );
-
-
+VEXTERNC void Vc_vec(double *coef, ///< @todo: Doc
+                     double *uin,  ///< @todo: Doc
+                     double *uout, ///< @todo: Doc
+                     int *nx,      ///< @todo: Doc
+                     int *ny,      ///< @todo: Doc
+                     int *nz,      ///< @todo: Doc
+                     int *ipkey    ///< @todo: Doc
+);
 
 /** @brief   Define the derivative of the nonlinearity (vector version)
  *  @ingroup PMGC
@@ -154,37 +145,32 @@ VEXTERNC void Vc_vec(
  *
  *  @note    Replaces dc_vec from mypde.f
  */
-VEXTERNC void Vdc_vec(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int    *nx,   ///< @todo: Doc
-        int    *ny,   ///< @todo: Doc
-        int    *nz,   ///< @todo: Doc
-        int    *ipkey ///< @todo: Doc
-        );
+VEXTERNC void Vdc_vec(double *coef, ///< @todo: Doc
+                      double *uin,  ///< @todo: Doc
+                      double *uout, ///< @todo: Doc
+                      int *nx,      ///< @todo: Doc
+                      int *ny,      ///< @todo: Doc
+                      int *nz,      ///< @todo: Doc
+                      int *ipkey    ///< @todo: Doc
+);
 
-VEXTERNC void Vdc_vecpmg(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int    *nx,   ///< @todo: Doc
-        int    *ny,   ///< @todo: Doc
-        int    *nz,   ///< @todo: Doc
-        int    *ipkey ///< @todo: Doc
-        );
+VEXTERNC void Vdc_vecpmg(double *coef, ///< @todo: Doc
+                         double *uin,  ///< @todo: Doc
+                         double *uout, ///< @todo: Doc
+                         int *nx,      ///< @todo: Doc
+                         int *ny,      ///< @todo: Doc
+                         int *nz,      ///< @todo: Doc
+                         int *ipkey    ///< @todo: Doc
+);
 
-VEXTERNC void Vdc_vecsmpbe(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int    *nx,   ///< @todo: Doc
-        int    *ny,   ///< @todo: Doc
-        int    *nz,   ///< @todo: Doc
-        int    *ipkey ///< @todo: Doc
-        );
-
-
+VEXTERNC void Vdc_vecsmpbe(double *coef, ///< @todo: Doc
+                           double *uin,  ///< @todo: Doc
+                           double *uout, ///< @todo: Doc
+                           int *nx,      ///< @todo: Doc
+                           int *ny,      ///< @todo: Doc
+                           int *nz,      ///< @todo: Doc
+                           int *ipkey    ///< @todo: Doc
+);
 
 /** @brief   Define the nonlinearity (vector version)
  *  @ingroup PMGC
@@ -192,17 +178,14 @@ VEXTERNC void Vdc_vecsmpbe(
  *
  *  @note    Replaces c_vecpmg from mypde.f
  */
-VEXTERNC void Vc_vecpmg(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int *nx,      ///< @todo: Doc
-        int *ny,      ///< @todo: Doc
-        int *nz,      ///< @todo: Doc
-        int *ipkey    ///< @todo: Doc
-        );
-
-
+VEXTERNC void Vc_vecpmg(double *coef, ///< @todo: Doc
+                        double *uin,  ///< @todo: Doc
+                        double *uout, ///< @todo: Doc
+                        int *nx,      ///< @todo: Doc
+                        int *ny,      ///< @todo: Doc
+                        int *nz,      ///< @todo: Doc
+                        int *ipkey    ///< @todo: Doc
+);
 
 /** @brief   Define the nonlinearity (vector version)
  *  @ingroup PMGC
@@ -210,14 +193,13 @@ VEXTERNC void Vc_vecpmg(
  *
  *  @note    Replaces c_vecpmg from mypde.f
  */
-VEXTERNC void Vc_vecsmpbe(
-        double *coef, ///< @todo: Doc
-        double *uin,  ///< @todo: Doc
-        double *uout, ///< @todo: Doc
-        int *nx,      ///< @todo: Doc
-        int *ny,      ///< @todo: Doc
-        int *nz,      ///< @todo: Doc
-        int *ipkey    ///< @todo: Doc
-        );
+VEXTERNC void Vc_vecsmpbe(double *coef, ///< @todo: Doc
+                          double *uin,  ///< @todo: Doc
+                          double *uout, ///< @todo: Doc
+                          int *nx,      ///< @todo: Doc
+                          int *ny,      ///< @todo: Doc
+                          int *nz,      ///< @todo: Doc
+                          int *ipkey    ///< @todo: Doc
+);
 
 #endif /* _MYPDE_H_ */

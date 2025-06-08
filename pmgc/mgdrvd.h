@@ -18,15 +18,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -54,16 +59,12 @@
 #ifndef _MGDRVD_H_
 #define _MGDRVD_H_
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
-#include "pmgc/mgsubd.h"
-#include "pmgc/mgcsd.h"
-#include "pmgc/powerd.h"
-#include "pmgc/mgfasd.h"
+#include "mgcsd.h"
+#include "mgfasd.h"
+#include "mgsubd.h"
+#include "powerd.h"
 
 /** @brief   Multilevel solver driver
  *  @ingroup PMGC
@@ -71,25 +72,24 @@
  *
  *  Replaces mgdriv from mgdrvd.f
  */
-VEXTERNC void Vmgdriv(
-        int* iparm,    ///< @todo: Doc
-        double* rparm, ///< @todo: Doc
-        int* iwork,    ///< @todo: Doc
-        double* rwork, ///< @todo: Doc
-        double* u,     ///< @todo: Doc
-        double* xf,    ///< @todo: Doc
-        double* yf,    ///< @todo: Doc
-        double* zf,    ///< @todo: Doc
-        double* gxcf,  ///< @todo: Doc
-        double* gycf,  ///< @todo: Doc
-        double* gzcf,  ///< @todo: Doc
-        double* a1cf,  ///< @todo: Doc
-        double* a2cf,  ///< @todo: Doc
-        double* a3cf,  ///< @todo: Doc
-        double* ccf,   ///< @todo: Doc
-        double* fcf,   ///< @todo: Doc
-        double* tcf    ///< @todo: Doc
-        );
+VEXTERNC void Vmgdriv(int *iparm,    ///< @todo: Doc
+                      double *rparm, ///< @todo: Doc
+                      int *iwork,    ///< @todo: Doc
+                      double *rwork, ///< @todo: Doc
+                      double *u,     ///< @todo: Doc
+                      double *xf,    ///< @todo: Doc
+                      double *yf,    ///< @todo: Doc
+                      double *zf,    ///< @todo: Doc
+                      double *gxcf,  ///< @todo: Doc
+                      double *gycf,  ///< @todo: Doc
+                      double *gzcf,  ///< @todo: Doc
+                      double *a1cf,  ///< @todo: Doc
+                      double *a2cf,  ///< @todo: Doc
+                      double *a3cf,  ///< @todo: Doc
+                      double *ccf,   ///< @todo: Doc
+                      double *fcf,   ///< @todo: Doc
+                      double *tcf    ///< @todo: Doc
+);
 
 /** @brief   Solves the pde using the multi-grid method
  *  @ingroup PMGC
@@ -127,35 +127,32 @@ VEXTERNC void Vmgdriv(
  *      operator, some initial parameter settings in an integer and a
  *      real parameter array, and various work arrays.
  */
-VEXTERNC void Vmgdriv2(
-        int *iparm,    ///< @todo: Doc
-        double *rparm, ///< @todo: Doc
-        int *nx,       ///< @todo: Doc
-        int *ny,       ///< @todo: Doc
-        int *nz,       ///< @todo: Doc
-        double *u,     ///< @todo: Doc
-        int *iz,       ///< @todo: Doc
-        int *ipc,      ///< @todo: Doc
-        double *rpc,   ///< @todo: Doc
-        double *pc,    ///< @todo: Doc
-        double *ac,    ///< @todo: Doc
-        double *cc,    ///< @todo: Doc
-        double *fc,    ///< @todo: Doc
-        double *xf,    ///< @todo: Doc
-        double *yf,    ///< @todo: Doc
-        double *zf,    ///< @todo: Doc
-        double *gxcf,  ///< @todo: Doc
-        double *gycf,  ///< @todo: Doc
-        double *gzcf,  ///< @todo: Doc
-        double *a1cf,  ///< @todo: Doc
-        double *a2cf,  ///< @todo: Doc
-        double *a3cf,  ///< @todo: Doc
-        double *ccf,   ///< @todo: Doc
-        double *fcf,   ///< @todo: Doc
-        double *tcf    ///< @todo: Doc
-        );
-
-
+VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
+                       double *rparm, ///< @todo: Doc
+                       int *nx,       ///< @todo: Doc
+                       int *ny,       ///< @todo: Doc
+                       int *nz,       ///< @todo: Doc
+                       double *u,     ///< @todo: Doc
+                       int *iz,       ///< @todo: Doc
+                       int *ipc,      ///< @todo: Doc
+                       double *rpc,   ///< @todo: Doc
+                       double *pc,    ///< @todo: Doc
+                       double *ac,    ///< @todo: Doc
+                       double *cc,    ///< @todo: Doc
+                       double *fc,    ///< @todo: Doc
+                       double *xf,    ///< @todo: Doc
+                       double *yf,    ///< @todo: Doc
+                       double *zf,    ///< @todo: Doc
+                       double *gxcf,  ///< @todo: Doc
+                       double *gycf,  ///< @todo: Doc
+                       double *gzcf,  ///< @todo: Doc
+                       double *a1cf,  ///< @todo: Doc
+                       double *a2cf,  ///< @todo: Doc
+                       double *a3cf,  ///< @todo: Doc
+                       double *ccf,   ///< @todo: Doc
+                       double *fcf,   ///< @todo: Doc
+                       double *tcf    ///< @todo: Doc
+);
 
 /** @brief   This routine computes the required sizes of the real and integer
  *           work arrays for the multigrid code.  these two sizes are a
@@ -226,28 +223,25 @@ VEXTERNC void Vmgdriv2(
  *
  *  Replaces mgsz from mgdrvd.f
  */
-VEXTERNC void Vmgsz(
-        int *mgcoar, ///< @todo: Doc
-        int *mgdisc, ///< @todo: Doc
-        int *mgsolv, ///< @todo: Doc
-        int *nx,     ///< @todo: Doc
-        int *ny,     ///< @todo: Doc
-        int *nz,     ///< @todo: Doc
-        int *nlev,   ///< @todo: Doc
-        int *nxc,    ///< @todo: Doc
-        int *nyc,    ///< @todo: Doc
-        int *nzc,    ///< @todo: Doc
-        int *nf,     ///< @todo: Doc
-        int *nc,     ///< @todo: Doc
-        int *narr,   ///< @todo: Doc
-        int *narrc,  ///< @todo: Doc
-        int *n_rpc,  ///< @todo: Doc
-        int *n_iz,   ///< @todo: Doc
-        int *n_ipc,  ///< @todo: Doc
-        int *iretot, ///< @todo: Doc
-        int *iintot  ///< @todo: Doc
-        );
-
-
+VEXTERNC void Vmgsz(int *mgcoar, ///< @todo: Doc
+                    int *mgdisc, ///< @todo: Doc
+                    int *mgsolv, ///< @todo: Doc
+                    int *nx,     ///< @todo: Doc
+                    int *ny,     ///< @todo: Doc
+                    int *nz,     ///< @todo: Doc
+                    int *nlev,   ///< @todo: Doc
+                    int *nxc,    ///< @todo: Doc
+                    int *nyc,    ///< @todo: Doc
+                    int *nzc,    ///< @todo: Doc
+                    int *nf,     ///< @todo: Doc
+                    int *nc,     ///< @todo: Doc
+                    int *narr,   ///< @todo: Doc
+                    int *narrc,  ///< @todo: Doc
+                    int *n_rpc,  ///< @todo: Doc
+                    int *n_iz,   ///< @todo: Doc
+                    int *n_ipc,  ///< @todo: Doc
+                    int *iretot, ///< @todo: Doc
+                    int *iintot  ///< @todo: Doc
+);
 
 #endif /* _MGDRVD_H_ */

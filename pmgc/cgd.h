@@ -14,15 +14,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -50,33 +55,29 @@
 #ifndef _CGD_H_
 #define _CGD_H_
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
+#include "matvecd.h"
+#include "mikpckd.h"
 
-#include "generic/vhal.h"
-#include "pmgc/matvecd.h"
-#include "pmgc/mikpckd.h"
-
-VEXTERNC void Vcghs(
-        int *nx,        ///< @todo  Document
-        int *ny,        ///< @todo  Document
-        int *nz,        ///< @todo  Document
-        int *ipc,       ///< @todo  Document
-        double *rpc,    ///< @todo  Document
-        double *ac,     ///< @todo  Document
-        double *cc,     ///< @todo  Document
-        double *fc,     ///< @todo  Document
-        double *x,      ///< @todo  Document
-        double *p,      ///< @todo  Document
-        double *ap,     ///< @todo  Document
-        double *r,      ///< @todo  Document
-        int *itmax,     ///< @todo  Document
-        int *iters,     ///< @todo  Document
-        double *errtol, ///< @todo  Document
-        double *omega,  ///< @todo  Document
-        int *iresid,    ///< @todo  Document
-        int *iadjoint   ///< @todo  Document
-        );
+VEXTERNC void Vcghs(int *nx,        ///< @todo  Document
+                    int *ny,        ///< @todo  Document
+                    int *nz,        ///< @todo  Document
+                    int *ipc,       ///< @todo  Document
+                    double *rpc,    ///< @todo  Document
+                    double *ac,     ///< @todo  Document
+                    double *cc,     ///< @todo  Document
+                    double *fc,     ///< @todo  Document
+                    double *x,      ///< @todo  Document
+                    double *p,      ///< @todo  Document
+                    double *ap,     ///< @todo  Document
+                    double *r,      ///< @todo  Document
+                    int *itmax,     ///< @todo  Document
+                    int *iters,     ///< @todo  Document
+                    double *errtol, ///< @todo  Document
+                    double *omega,  ///< @todo  Document
+                    int *iresid,    ///< @todo  Document
+                    int *iadjoint   ///< @todo  Document
+);
 
 #endif /* _CGD_H_ */

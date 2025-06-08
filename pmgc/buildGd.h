@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -49,25 +54,19 @@
 #ifndef _BUILDGD_H_
 #define _BUILDGD_H_
 
-#include "maloc/maloc.h"
+#include "abps_macros.h"
 
-#include "apbscfg.h"
-
-#include "generic/vhal.h"
-#include "generic/vmatrix.h"
-
-VEXTERNC void VbuildG(
-        int    *nxf,    ///< @todo: doc
-        int    *nyf,    ///< @todo: doc
-        int    *nzf,    ///< @todo: doc
-        int    *nxc,    ///< @todo: doc
-        int    *nyc,    ///< @todo: doc
-        int    *nzc,    ///< @todo: doc
-        int    *numdia, ///< @todo: doc
-        double *pcFF,   ///< @todo: doc
-        double *acFF,   ///< @todo: doc
-        double *ac      ///< @todo: doc
-        );
+VEXTERNC void VbuildG(int *nxf,     ///< @todo: doc
+                      int *nyf,     ///< @todo: doc
+                      int *nzf,     ///< @todo: doc
+                      int *nxc,     ///< @todo: doc
+                      int *nyc,     ///< @todo: doc
+                      int *nzc,     ///< @todo: doc
+                      int *numdia,  ///< @todo: doc
+                      double *pcFF, ///< @todo: doc
+                      double *acFF, ///< @todo: doc
+                      double *ac    ///< @todo: doc
+);
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
  *           a 1-point (i.e., diagonal) fine grid matrix.
@@ -141,58 +140,55 @@ VEXTERNC void VbuildG(
  *      ])
  *    ]):
  */
-VEXTERNC void VbuildG_1(
-        int    *nxf,  ///< @todo: doc
-        int    *nyf,  ///< @todo: doc
-        int    *nzf,  ///< @todo: doc
-        int    *nx,   ///< @todo: doc
-        int    *ny,   ///< @todo: doc
-        int    *nz,   ///< @todo: doc
-        double *oPC,  ///< @todo: doc
-        double *oPN,  ///< @todo: doc
-        double *oPS,  ///< @todo: doc
-        double *oPE,  ///< @todo: doc
-        double *oPW,  ///< @todo: doc
-        double *oPNE, ///< @todo: doc
-        double *oPNW, ///< @todo: doc
-        double *oPSE, ///< @todo: doc
-        double *oPSW, ///< @todo: doc
-        double *uPC,  ///< @todo: doc
-        double *uPN,  ///< @todo: doc
-        double *uPS,  ///< @todo: doc
-        double *uPE,  ///< @todo: doc
-        double *uPW,  ///< @todo: doc
-        double *uPNE, ///< @todo: doc
-        double *uPNW, ///< @todo: doc
-        double *uPSE, ///< @todo: doc
-        double *uPSW, ///< @todo: doc
-        double *dPC,  ///< @todo: doc
-        double *dPN,  ///< @todo: doc
-        double *dPS,  ///< @todo: doc
-        double *dPE,  ///< @todo: doc
-        double *dPW,  ///< @todo: doc
-        double *dPNE, ///< @todo: doc
-        double *dPNW, ///< @todo: doc
-        double *dPSE, ///< @todo: doc
-        double *dPSW, ///< @todo: doc
-        double *oC,   ///< @todo: doc
-        double *XoC,  ///< @todo: doc
-        double *XoE,  ///< @todo: doc
-        double *XoN,  ///< @todo: doc
-        double *XuC,  ///< @todo: doc
-        double *XoNE, ///< @todo: doc
-        double *XoNW, ///< @todo: doc
-        double *XuE,  ///< @todo: doc
-        double *XuW,  ///< @todo: doc
-        double *XuN,  ///< @todo: doc
-        double *XuS,  ///< @todo: doc
-        double *XuNE, ///< @todo: doc
-        double *XuNW, ///< @todo: doc
-        double *XuSE, ///< @todo: doc
-        double *XuSW  ///< @todo: doc
-        );
-
-
+VEXTERNC void VbuildG_1(int *nxf,     ///< @todo: doc
+                        int *nyf,     ///< @todo: doc
+                        int *nzf,     ///< @todo: doc
+                        int *nx,      ///< @todo: doc
+                        int *ny,      ///< @todo: doc
+                        int *nz,      ///< @todo: doc
+                        double *oPC,  ///< @todo: doc
+                        double *oPN,  ///< @todo: doc
+                        double *oPS,  ///< @todo: doc
+                        double *oPE,  ///< @todo: doc
+                        double *oPW,  ///< @todo: doc
+                        double *oPNE, ///< @todo: doc
+                        double *oPNW, ///< @todo: doc
+                        double *oPSE, ///< @todo: doc
+                        double *oPSW, ///< @todo: doc
+                        double *uPC,  ///< @todo: doc
+                        double *uPN,  ///< @todo: doc
+                        double *uPS,  ///< @todo: doc
+                        double *uPE,  ///< @todo: doc
+                        double *uPW,  ///< @todo: doc
+                        double *uPNE, ///< @todo: doc
+                        double *uPNW, ///< @todo: doc
+                        double *uPSE, ///< @todo: doc
+                        double *uPSW, ///< @todo: doc
+                        double *dPC,  ///< @todo: doc
+                        double *dPN,  ///< @todo: doc
+                        double *dPS,  ///< @todo: doc
+                        double *dPE,  ///< @todo: doc
+                        double *dPW,  ///< @todo: doc
+                        double *dPNE, ///< @todo: doc
+                        double *dPNW, ///< @todo: doc
+                        double *dPSE, ///< @todo: doc
+                        double *dPSW, ///< @todo: doc
+                        double *oC,   ///< @todo: doc
+                        double *XoC,  ///< @todo: doc
+                        double *XoE,  ///< @todo: doc
+                        double *XoN,  ///< @todo: doc
+                        double *XuC,  ///< @todo: doc
+                        double *XoNE, ///< @todo: doc
+                        double *XoNW, ///< @todo: doc
+                        double *XuE,  ///< @todo: doc
+                        double *XuW,  ///< @todo: doc
+                        double *XuN,  ///< @todo: doc
+                        double *XuS,  ///< @todo: doc
+                        double *XuNE, ///< @todo: doc
+                        double *XuNW, ///< @todo: doc
+                        double *XuSE, ///< @todo: doc
+                        double *XuSW  ///< @todo: doc
+);
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
  *           a 7-point fine grid matrix.
@@ -273,60 +269,58 @@ VEXTERNC void VbuildG_1(
  *    dC  := proc(x,y,z) RETURN( uC(x,y,z-1) ): end:
  *
  */
-VEXTERNC void VbuildG_7(
-        int    *nxf,  ///< @todo: doc
-        int    *nyf,  ///< @todo: doc
-        int    *nzf,  ///< @todo: doc
-        int    *nx,   ///< @todo: doc
-        int    *ny,   ///< @todo: doc
-        int    *nz,   ///< @todo: doc
-        double *oPC,  ///< @todo: doc
-        double *oPN,  ///< @todo: doc
-        double *oPS,  ///< @todo: doc
-        double *oPE,  ///< @todo: doc
-        double *oPW,  ///< @todo: doc
-        double *oPNE, ///< @todo: doc
-        double *oPNW, ///< @todo: doc
-        double *oPSE, ///< @todo: doc
-        double *oPSW, ///< @todo: doc
-        double *uPC,  ///< @todo: doc
-        double *uPN,  ///< @todo: doc
-        double *uPS,  ///< @todo: doc
-        double *uPE,  ///< @todo: doc
-        double *uPW,  ///< @todo: doc
-        double *uPNE, ///< @todo: doc
-        double *uPNW, ///< @todo: doc
-        double *uPSE, ///< @todo: doc
-        double *uPSW, ///< @todo: doc
-        double *dPC,  ///< @todo: doc
-        double *dPN,  ///< @todo: doc
-        double *dPS,  ///< @todo: doc
-        double *dPE,  ///< @todo: doc
-        double *dPW,  ///< @todo: doc
-        double *dPNE, ///< @todo: doc
-        double *dPNW, ///< @todo: doc
-        double *dPSE, ///< @todo: doc
-        double *dPSW, ///< @todo: doc
-        double *oC,   ///< @todo: doc
-        double *oE,   ///< @todo: doc
-        double *oN,   ///< @todo: doc
-        double *uC,   ///< @todo: doc
-        double *XoC,  ///< @todo: doc
-        double *XoE,  ///< @todo: doc
-        double *XoN,  ///< @todo: doc
-        double *XuC,  ///< @todo: doc
-        double *XoNE, ///< @todo: doc
-        double *XoNW, ///< @todo: doc
-        double *XuE,  ///< @todo: doc
-        double *XuW,  ///< @todo: doc
-        double *XuN,  ///< @todo: doc
-        double *XuS,  ///< @todo: doc
-        double *XuNE, ///< @todo: doc
-        double *XuNW, ///< @todo: doc
-        double *XuSE, ///< @todo: doc
-        double *XuSW  ///< @todo: doc
-        );
-
+VEXTERNC void VbuildG_7(int *nxf,     ///< @todo: doc
+                        int *nyf,     ///< @todo: doc
+                        int *nzf,     ///< @todo: doc
+                        int *nx,      ///< @todo: doc
+                        int *ny,      ///< @todo: doc
+                        int *nz,      ///< @todo: doc
+                        double *oPC,  ///< @todo: doc
+                        double *oPN,  ///< @todo: doc
+                        double *oPS,  ///< @todo: doc
+                        double *oPE,  ///< @todo: doc
+                        double *oPW,  ///< @todo: doc
+                        double *oPNE, ///< @todo: doc
+                        double *oPNW, ///< @todo: doc
+                        double *oPSE, ///< @todo: doc
+                        double *oPSW, ///< @todo: doc
+                        double *uPC,  ///< @todo: doc
+                        double *uPN,  ///< @todo: doc
+                        double *uPS,  ///< @todo: doc
+                        double *uPE,  ///< @todo: doc
+                        double *uPW,  ///< @todo: doc
+                        double *uPNE, ///< @todo: doc
+                        double *uPNW, ///< @todo: doc
+                        double *uPSE, ///< @todo: doc
+                        double *uPSW, ///< @todo: doc
+                        double *dPC,  ///< @todo: doc
+                        double *dPN,  ///< @todo: doc
+                        double *dPS,  ///< @todo: doc
+                        double *dPE,  ///< @todo: doc
+                        double *dPW,  ///< @todo: doc
+                        double *dPNE, ///< @todo: doc
+                        double *dPNW, ///< @todo: doc
+                        double *dPSE, ///< @todo: doc
+                        double *dPSW, ///< @todo: doc
+                        double *oC,   ///< @todo: doc
+                        double *oE,   ///< @todo: doc
+                        double *oN,   ///< @todo: doc
+                        double *uC,   ///< @todo: doc
+                        double *XoC,  ///< @todo: doc
+                        double *XoE,  ///< @todo: doc
+                        double *XoN,  ///< @todo: doc
+                        double *XuC,  ///< @todo: doc
+                        double *XoNE, ///< @todo: doc
+                        double *XoNW, ///< @todo: doc
+                        double *XuE,  ///< @todo: doc
+                        double *XuW,  ///< @todo: doc
+                        double *XuN,  ///< @todo: doc
+                        double *XuS,  ///< @todo: doc
+                        double *XuNE, ///< @todo: doc
+                        double *XuNW, ///< @todo: doc
+                        double *XuSE, ///< @todo: doc
+                        double *XuSW  ///< @todo: doc
+);
 
 /** @brief   Compute a 27-point galerkin coarse grid matrix from
  *           a 27-point fine grid matrix.
@@ -420,68 +414,67 @@ VEXTERNC void VbuildG_7(
  *    dSW := proc(x,y,z) RETURN( uNE(x-1,y-1,z-1) ): end:
  *    dSE := proc(x,y,z) RETURN( uNW(x+1,y-1,z-1) ): end:
  */
-VEXTERNC void VbuildG_27(
-        int *nxf,     ///< @todo: doc
-        int *nyf,     ///< @todo: doc
-        int *nzf,     ///< @todo: doc
-        int *nx,      ///< @todo: doc
-        int *ny,      ///< @todo: doc
-        int *nz,      ///< @todo: doc
-        double *oPC,  ///< @todo: doc
-        double *oPN,  ///< @todo: doc
-        double *oPS,  ///< @todo: doc
-        double *oPE,  ///< @todo: doc
-        double *oPW,  ///< @todo: doc
-        double *oPNE, ///< @todo: doc
-        double *oPNW, ///< @todo: doc
-        double *oPSE, ///< @todo: doc
-        double *oPSW, ///< @todo: doc
-        double *uPC,  ///< @todo: doc
-        double *uPN,  ///< @todo: doc
-        double *uPS,  ///< @todo: doc
-        double *uPE,  ///< @todo: doc
-        double *uPW,  ///< @todo: doc
-        double *uPNE, ///< @todo: doc
-        double *uPNW, ///< @todo: doc
-        double *uPSE, ///< @todo: doc
-        double *uPSW, ///< @todo: doc
-        double *dPC,  ///< @todo: doc
-        double *dPN,  ///< @todo: doc
-        double *dPS,  ///< @todo: doc
-        double *dPE,  ///< @todo: doc
-        double *dPW,  ///< @todo: doc
-        double *dPNE, ///< @todo: doc
-        double *dPNW, ///< @todo: doc
-        double *dPSE, ///< @todo: doc
-        double *dPSW, ///< @todo: doc
-        double *oC,   ///< @todo: doc
-        double *oE,   ///< @todo: doc
-        double *oN,   ///< @todo: doc
-        double *uC,   ///< @todo: doc
-        double *oNE,  ///< @todo: doc
-        double *oNW,  ///< @todo: doc
-        double *uE,   ///< @todo: doc
-        double *uW,   ///< @todo: doc
-        double *uN,   ///< @todo: doc
-        double *uS,   ///< @todo: doc
-        double *uNE,  ///< @todo: doc
-        double *uNW,  ///< @todo: doc
-        double *uSE,  ///< @todo: doc
-        double *uSW,  ///< @todo: doc
-        double *XoC,  ///< @todo: doc
-        double *XoE,  ///< @todo: doc
-        double *XoN,  ///< @todo: doc
-        double *XuC,  ///< @todo: doc
-        double *XoNE, ///< @todo: doc
-        double *XoNW, ///< @todo: doc
-        double *XuE,  ///< @todo: doc
-        double *XuW,  ///< @todo: doc
-        double *XuN,  ///< @todo: doc
-        double *XuS,  ///< @todo: doc
-        double *XuNE, ///< @todo: doc
-        double *XuNW, ///< @todo: doc
-        double *XuSE, ///< @todo: doc
-        double *XuSW  ///< @todo: doc
-        );
+VEXTERNC void VbuildG_27(int *nxf,     ///< @todo: doc
+                         int *nyf,     ///< @todo: doc
+                         int *nzf,     ///< @todo: doc
+                         int *nx,      ///< @todo: doc
+                         int *ny,      ///< @todo: doc
+                         int *nz,      ///< @todo: doc
+                         double *oPC,  ///< @todo: doc
+                         double *oPN,  ///< @todo: doc
+                         double *oPS,  ///< @todo: doc
+                         double *oPE,  ///< @todo: doc
+                         double *oPW,  ///< @todo: doc
+                         double *oPNE, ///< @todo: doc
+                         double *oPNW, ///< @todo: doc
+                         double *oPSE, ///< @todo: doc
+                         double *oPSW, ///< @todo: doc
+                         double *uPC,  ///< @todo: doc
+                         double *uPN,  ///< @todo: doc
+                         double *uPS,  ///< @todo: doc
+                         double *uPE,  ///< @todo: doc
+                         double *uPW,  ///< @todo: doc
+                         double *uPNE, ///< @todo: doc
+                         double *uPNW, ///< @todo: doc
+                         double *uPSE, ///< @todo: doc
+                         double *uPSW, ///< @todo: doc
+                         double *dPC,  ///< @todo: doc
+                         double *dPN,  ///< @todo: doc
+                         double *dPS,  ///< @todo: doc
+                         double *dPE,  ///< @todo: doc
+                         double *dPW,  ///< @todo: doc
+                         double *dPNE, ///< @todo: doc
+                         double *dPNW, ///< @todo: doc
+                         double *dPSE, ///< @todo: doc
+                         double *dPSW, ///< @todo: doc
+                         double *oC,   ///< @todo: doc
+                         double *oE,   ///< @todo: doc
+                         double *oN,   ///< @todo: doc
+                         double *uC,   ///< @todo: doc
+                         double *oNE,  ///< @todo: doc
+                         double *oNW,  ///< @todo: doc
+                         double *uE,   ///< @todo: doc
+                         double *uW,   ///< @todo: doc
+                         double *uN,   ///< @todo: doc
+                         double *uS,   ///< @todo: doc
+                         double *uNE,  ///< @todo: doc
+                         double *uNW,  ///< @todo: doc
+                         double *uSE,  ///< @todo: doc
+                         double *uSW,  ///< @todo: doc
+                         double *XoC,  ///< @todo: doc
+                         double *XoE,  ///< @todo: doc
+                         double *XoN,  ///< @todo: doc
+                         double *XuC,  ///< @todo: doc
+                         double *XoNE, ///< @todo: doc
+                         double *XoNW, ///< @todo: doc
+                         double *XuE,  ///< @todo: doc
+                         double *XuW,  ///< @todo: doc
+                         double *XuN,  ///< @todo: doc
+                         double *XuS,  ///< @todo: doc
+                         double *XuNE, ///< @todo: doc
+                         double *XuNW, ///< @todo: doc
+                         double *XuSE, ///< @todo: doc
+                         double *XuSW  ///< @todo: doc
+);
 
 #endif // _BUILDGD_H_

@@ -1,5 +1,10 @@
-add_items(
-    SOURCES
+cmake_minimum_required(VERSION 3.10)
+
+
+project(PMGSycl)
+
+add_library( pmgc
+  SHARED
     buildAd.c
     buildBd.c
     buildGd.c
@@ -19,27 +24,3 @@ add_items(
     smoothd.c
     mgfasd.c
 )
-
-add_items(
-    EXTERNAL_HEADERS
-    buildAd.h
-    buildBd.h
-    buildGd.h
-    buildPd.h
-    cgd.h
-    gsd.h
-    matvecd.h
-    mgcsd.h
-    mgdrvd.h
-    mgsubd.h
-    mikpckd.h
-    mlinpckd.h
-    mypdec.h
-    newtond.h
-    newdrvd.h
-    powerd.h
-    smoothd.h
-    mgfasd.h
-)
-
-add_sublibrary(pmgc)

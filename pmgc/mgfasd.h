@@ -13,15 +13,20 @@
  *
  * Additional contributing authors listed in the code documentation.
  *
- * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.  Portions Copyright (c) 2002-2010, Washington University in St. Louis.  Portions Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002, The Regents of the University of California. Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Copyright (c) 2010-2020 Battelle Memorial Institute. Developed at the Pacific
+ * Northwest National Laboratory, operated by Battelle Memorial Institute,
+ * Pacific Northwest Division for the U.S. Department Energy.  Portions
+ * Copyright (c) 2002-2010, Washington University in St. Louis.  Portions
+ * Copyright (c) 2002-2010, Nathan A. Baker.  Portions Copyright (c) 1999-2002,
+ * The Regents of the University of California. Portions Copyright (c) 1995,
+ * Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -47,15 +52,12 @@
  */
 
 #ifndef _MGFASD_H_
-#define	_MGFASD_H_
+#define _MGFASD_H_
 
-#include "apbscfg.h"
+#include "abps_macros.h"
 
-#include "maloc/maloc.h"
-
-#include "generic/vhal.h"
-#include "pmgc/smoothd.h"
-#include "pmgc/mgsubd.h"
+#include "mgsubd.h"
+#include "smoothd.h"
 
 /** @brief   Nested iteration for a nonlinear multilevel method.
  *             Algorithm:  nonlinear multigrid iteration (fas)
@@ -69,43 +71,40 @@
  *
  *  Replaces fmvfas from mgfasd.f
  */
-VEXTERNC void Vfmvfas(
-        int           *nx, ///< @todo: doc
-        int           *ny, ///< @todo: doc
-        int           *nz, ///< @todo: doc
-        double         *x, ///< @todo: doc
-        int           *iz, ///< @todo: doc
-        double        *w0, ///< @todo: doc
-        double        *w1, ///< @todo: doc
-        double        *w2, ///< @todo: doc
-        double        *w3, ///< @todo: doc
-        double        *w4, ///< @todo: doc
-        int        *istop, ///< @todo: doc
-        int        *itmax, ///< @todo: doc
-        int        *iters, ///< @todo: doc
-        int       *ierror, ///< @todo: doc
-        int         *nlev, ///< @todo: doc
-        int       *  ilev, ///< @todo: doc
-        int    *nlev_real, ///< @todo: doc
-        int       *mgsolv, ///< @todo: doc
-        int          *iok, ///< @todo: doc
-        int        *iinfo, ///< @todo: doc
-        double    *epsiln, ///< @todo: doc
-        double    *errtol, ///< @todo: doc
-        double     *omega, ///< @todo: doc
-        int          *nu1, ///< @todo: doc
-        int          *nu2, ///< @todo: doc
-        int       *mgsmoo, ///< @todo: doc
-        int          *ipc, ///< @todo: doc
-        double       *rpc, ///< @todo: doc
-        double        *pc, ///< @todo: doc
-        double        *ac, ///< @todo: doc
-        double        *cc, ///< @todo: doc
-        double        *fc, ///< @todo: doc
-        double       *tru  ///< @todo: doc
+VEXTERNC void Vfmvfas(int *nx,        ///< @todo: doc
+                      int *ny,        ///< @todo: doc
+                      int *nz,        ///< @todo: doc
+                      double *x,      ///< @todo: doc
+                      int *iz,        ///< @todo: doc
+                      double *w0,     ///< @todo: doc
+                      double *w1,     ///< @todo: doc
+                      double *w2,     ///< @todo: doc
+                      double *w3,     ///< @todo: doc
+                      double *w4,     ///< @todo: doc
+                      int *istop,     ///< @todo: doc
+                      int *itmax,     ///< @todo: doc
+                      int *iters,     ///< @todo: doc
+                      int *ierror,    ///< @todo: doc
+                      int *nlev,      ///< @todo: doc
+                      int *ilev,      ///< @todo: doc
+                      int *nlev_real, ///< @todo: doc
+                      int *mgsolv,    ///< @todo: doc
+                      int *iok,       ///< @todo: doc
+                      int *iinfo,     ///< @todo: doc
+                      double *epsiln, ///< @todo: doc
+                      double *errtol, ///< @todo: doc
+                      double *omega,  ///< @todo: doc
+                      int *nu1,       ///< @todo: doc
+                      int *nu2,       ///< @todo: doc
+                      int *mgsmoo,    ///< @todo: doc
+                      int *ipc,       ///< @todo: doc
+                      double *rpc,    ///< @todo: doc
+                      double *pc,     ///< @todo: doc
+                      double *ac,     ///< @todo: doc
+                      double *cc,     ///< @todo: doc
+                      double *fc,     ///< @todo: doc
+                      double *tru     ///< @todo: doc
 );
-
-
 
 /** @brief   Nonlinear multilevel method.
  *  @note    Replaces mvfas from mgfasd.f
@@ -148,41 +147,39 @@ VEXTERNC void Vfmvfas(
  *           of the defect in places, etc.
  *
  */
-VEXTERNC void Vmvfas(
-        int           *nx, ///< @todo: doc
-        int           *ny, ///< @todo: doc
-        int           *nz, ///< @todo: doc
-        double         *x, ///< @todo: doc
-        int           *iz, ///< @todo: doc
-        double        *w0, ///< @todo: doc
-        double        *w1, ///< @todo: doc
-        double        *w2, ///< @todo: doc
-        double        *w3, ///< @todo: doc
-        double        *w4, ///< @todo: doc
-        int        *istop, ///< @todo: doc
-        int        *itmax, ///< @todo: doc
-        int        *iters, ///< @todo: doc
-        int       *ierror, ///< @todo: doc
-        int         *nlev, ///< @todo: doc
-        int         *ilev, ///< @todo: doc
-        int    *nlev_real, ///< @todo: doc
-        int       *mgsolv, ///< @todo: doc
-        int          *iok, ///< @todo: doc
-        int        *iinfo, ///< @todo: doc
-        double    *epsiln, ///< @todo: doc
-        double    *errtol, ///< @todo: doc
-        double     *omega, ///< @todo: doc
-        int          *nu1, ///< @todo: doc
-        int          *nu2, ///< @todo: doc
-        int       *mgsmoo, ///< @todo: doc
-        int          *ipc, ///< @todo: doc
-        double       *rpc, ///< @todo: doc
-        double        *pc, ///< @todo: doc
-        double        *ac, ///< @todo: doc
-        double        *cc, ///< @todo: doc
-        double        *fc, ///< @todo: doc
-        double       *tru  ///< @todo: doc
-        );
+VEXTERNC void Vmvfas(int *nx,        ///< @todo: doc
+                     int *ny,        ///< @todo: doc
+                     int *nz,        ///< @todo: doc
+                     double *x,      ///< @todo: doc
+                     int *iz,        ///< @todo: doc
+                     double *w0,     ///< @todo: doc
+                     double *w1,     ///< @todo: doc
+                     double *w2,     ///< @todo: doc
+                     double *w3,     ///< @todo: doc
+                     double *w4,     ///< @todo: doc
+                     int *istop,     ///< @todo: doc
+                     int *itmax,     ///< @todo: doc
+                     int *iters,     ///< @todo: doc
+                     int *ierror,    ///< @todo: doc
+                     int *nlev,      ///< @todo: doc
+                     int *ilev,      ///< @todo: doc
+                     int *nlev_real, ///< @todo: doc
+                     int *mgsolv,    ///< @todo: doc
+                     int *iok,       ///< @todo: doc
+                     int *iinfo,     ///< @todo: doc
+                     double *epsiln, ///< @todo: doc
+                     double *errtol, ///< @todo: doc
+                     double *omega,  ///< @todo: doc
+                     int *nu1,       ///< @todo: doc
+                     int *nu2,       ///< @todo: doc
+                     int *mgsmoo,    ///< @todo: doc
+                     int *ipc,       ///< @todo: doc
+                     double *rpc,    ///< @todo: doc
+                     double *pc,     ///< @todo: doc
+                     double *ac,     ///< @todo: doc
+                     double *cc,     ///< @todo: doc
+                     double *fc,     ///< @todo: doc
+                     double *tru     ///< @todo: doc
+);
 
-#endif	/* _MGFASD_H_ */
-
+#endif /* _MGFASD_H_ */
