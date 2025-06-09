@@ -61,29 +61,22 @@
 #ifndef _VMATRIX_H_
 #define _VMATRIX_H_
 
-#define MAT2(mat, dx, dy) \
-    int dx_##mat = dx;    \
-    int dy_##mat = dy
+#define MAT2(mat, dx, dy)                                                      \
+  const int dx_##mat = dx;                                                     \
+  const int dy_##mat = dy
 
-#define RAT2(mat, x, y) \
-    &VAT2(mat, x, y)
+#define RAT2(mat, x, y) &VAT2(mat, x, y)
 
-#define VAT2(mat, x, y) \
-    mat[(y - 1) * dx_##mat + (x - 1)]
+#define VAT2(mat, x, y) mat[(y - 1) * dx_##mat + (x - 1)]
 
+#define MAT3(mat, dx, dy, dz)                                                  \
+  const int dx_##mat = dx;                                                     \
+  const int dy_##mat = dy;                                                     \
+  const int dz_##mat = dz
 
+#define RAT3(mat, x, y, z) &VAT3(mat, x, y, z)
 
-#define MAT3(mat, dx, dy, dz) \
-    int dx_##mat = dx;        \
-    int dy_##mat = dy;        \
-    int dz_##mat = dz
-
-#define RAT3(mat, x, y, z) \
-    &VAT3(mat, x, y, z)
-
-#define VAT3(mat, x, y, z) \
-    mat[(z - 1) * dy_##mat * dx_##mat + \
-        (y - 1) * dx_##mat + \
-        (x - 1)]
+#define VAT3(mat, x, y, z)                                                     \
+  mat[(z - 1) * dy_##mat * dx_##mat + (y - 1) * dx_##mat + (x - 1)]
 
 #endif /* _VMATRIX_H_ */
