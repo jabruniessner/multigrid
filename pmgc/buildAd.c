@@ -53,7 +53,11 @@
  */
 
 #include "buildAd.h"
+#include "hipSYCL/sycl/queue.hpp"
 #include "stdio.h"
+#include <sycl/sycl.hpp>
+
+typedef double DataType;
 
 VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
                      int *numdia, int *ipc, double *rpc, double *ac, double *cc,
@@ -92,7 +96,8 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
                         double *fc, double *oE, double *oN, double *uC,
                         double *xf, double *yf, double *zf, double *gxcf,
                         double *gycf, double *gzcf, double *a1cf, double *a2cf,
-                        double *a3cf, double *ccf, double *fcf) {
+                        double *a3cf, double *ccf, double *fcf,
+                        sycl::queue &q) {
 
   int i, j, k; // @todo Document this function
 
@@ -104,29 +109,6 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
    *          of the code plain rather than producing a huge slew of seemingly
    *          homogeneous temporaries named using unclear abbreviations
    */
-
-  int ike, jke, kke;
-
-  int nxm1, nym1, nzm1;
-
-  double hx, hy, hz;
-
-  double hxm1, hym1, hzm1;
-
-  double coef_fc;
-
-  double bc_cond_e;
-  double bc_cond_w;
-  double bc_cond_n;
-  double bc_cond_s;
-  double bc_cond_u;
-  double bc_cond_d;
-  double coef_oE;
-  double coef_oN;
-  double coef_uC;
-  double coef_oEm1;
-  double coef_oNm1;
-  double coef_uCm1;
 
   double diag;
 
@@ -154,9 +136,9 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
   *numdia = 4;
 
   // Define n and determine number of mesh points
-  nxm1 = *nx - 1;
-  nym1 = *ny - 1;
-  nzm1 = *nz - 1;
+  const int nxm1 = *nx - 1;
+  const int nym1 = *ny - 1;
+  const int nzm1 = *nz - 1;
 
   // Determine diag scale factor
   // (would like something close to ones on the main diagonal)
@@ -169,98 +151,94 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
 
   // build the operator
   // fprintf(data, "%s\n", PRINT_FUNC);
-  for (k = 2; k <= *nz - 1; k++) {
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *ny - 2), [=](sycl::id<3> I) {
+    const size_t i = I[0] + 2;
+    const size_t j = I[1] + 2;
+    const size_t k = I[2] + 2;
 
-    hzm1 = VAT(zf, k) - VAT(zf, k - 1);
-    hz = VAT(zf, k + 1) - VAT(zf, k);
+    const DataType hzm1 = VAT(zf, k) - VAT(zf, k - 1);
+    const DataType hz = VAT(zf, k + 1) - VAT(zf, k);
 
-    for (j = 2; j <= *ny - 1; j++) {
+    const DataType hym1 = VAT(yf, j) - VAT(yf, j - 1);
+    const DataType hy = VAT(yf, j + 1) - VAT(yf, j);
 
-      hym1 = VAT(yf, j) - VAT(yf, j - 1);
-      hy = VAT(yf, j + 1) - VAT(yf, j);
+    const DataType hxm1 = VAT(xf, i) - VAT(xf, i - 1);
+    const DataType hx = VAT(xf, i + 1) - VAT(xf, i);
 
-      for (i = 2; i <= *nx - 1; i++) {
+    // Calculate some coefficients
+    /** @note that these and the running OC calculation could
+     *        easily be pushed down into the step by step
+     *        compuation of neighbors.  That would alleviate some
+     *        of the temporary madness
+     */
 
-        hxm1 = VAT(xf, i) - VAT(xf, i - 1);
-        hx = VAT(xf, i + 1) - VAT(xf, i);
+    const DataType coef_oE = diag * (hym1 + hy) * (hzm1 + hz) / (4.0 * hx);
+    const DataType coef_oEm1 = diag * (hym1 + hy) * (hzm1 + hz) / (4.0 * hxm1);
+    const DataType coef_oN = diag * (hxm1 + hx) * (hzm1 + hz) / (4.0 * hy);
+    const DataType coef_oNm1 = diag * (hxm1 + hx) * (hzm1 + hz) / (4.0 * hym1);
+    const DataType coef_uC = diag * (hxm1 + hx) * (hym1 + hy) / (4.0 * hz);
+    const DataType coef_uCm1 = diag * (hxm1 + hx) * (hym1 + hy) / (4.0 * hzm1);
+    const DataType coef_fc =
+        diag * (hxm1 + hx) * (hym1 + hy) * (hzm1 + hz) / 8.0;
 
-        // Calculate some coefficients
-        /** @note that these and the running OC calculation could
-         *        easily be pushed down into the step by step
-         *        compuation of neighbors.  That would alleviate some
-         *        of the temporary madness
-         */
+    // Calculate the coefficient and source function
+    VAT3(fc, i, j, k) = coef_fc * VAT3(fcf, i, j, k);
+    VAT3(cc, i, j, k) = coef_fc * VAT3(ccf, i, j, k);
+    // fprintf(data, "%19.12E\n", VAT3(cc, i, j, k));
 
-        coef_oE = diag * (hym1 + hy) * (hzm1 + hz) / (4.0 * hx);
-        coef_oEm1 = diag * (hym1 + hy) * (hzm1 + hz) / (4.0 * hxm1);
-        coef_oN = diag * (hxm1 + hx) * (hzm1 + hz) / (4.0 * hy);
-        coef_oNm1 = diag * (hxm1 + hx) * (hzm1 + hz) / (4.0 * hym1);
-        coef_uC = diag * (hxm1 + hx) * (hym1 + hy) / (4.0 * hz);
-        coef_uCm1 = diag * (hxm1 + hx) * (hym1 + hy) / (4.0 * hzm1);
-        coef_fc = diag * (hxm1 + hx) * (hym1 + hy) * (hzm1 + hz) / 8.0;
+    // Calculate the diagonal for matvecs and smoothings
 
-        // Calculate the coefficient and source function
-        VAT3(fc, i, j, k) = coef_fc * VAT3(fcf, i, j, k);
-        VAT3(cc, i, j, k) = coef_fc * VAT3(ccf, i, j, k);
-        // fprintf(data, "%19.12E\n", VAT3(cc, i, j, k));
+    VAT3(oC, i, j, k) =
+        coef_oE * VAT3(a1cf, i, j, k) + coef_oEm1 * VAT3(a1cf, i - 1, j, k) +
+        coef_oN * VAT3(a2cf, i, j, k) + coef_oNm1 * VAT3(a2cf, i, j - 1, k) +
+        coef_uC * VAT3(a3cf, i, j, k) + coef_uCm1 * VAT3(a3cf, i, j, k - 1);
 
-        // Calculate the diagonal for matvecs and smoothings
+    // fprintf(data, "%19.12E\n", VAT3(oC, i, j, k));
 
-        VAT3(oC, i, j, k) = coef_oE * VAT3(a1cf, i, j, k) +
-                            coef_oEm1 * VAT3(a1cf, i - 1, j, k) +
-                            coef_oN * VAT3(a2cf, i, j, k) +
-                            coef_oNm1 * VAT3(a2cf, i, j - 1, k) +
-                            coef_uC * VAT3(a3cf, i, j, k) +
-                            coef_uCm1 * VAT3(a3cf, i, j, k - 1);
+    // Calculate the east neighbor
+    int ike = VMIN2(1, VABS(i - nxm1));
+    VAT3(oE, i, j, k) = ike * coef_oE * VAT3(a1cf, i, j, k);
+    // fprintf(data, "%19.12E\n", VAT3(oE, i, j, k));
+    const DataType bc_cond_e =
+        (1 - ike) * coef_oE * VAT3(a1cf, i, j, k) * VAT3(gxcf, j, k, 2);
+    VAT3(fc, i, j, k) += bc_cond_e;
 
-        // fprintf(data, "%19.12E\n", VAT3(oC, i, j, k));
+    // Calculate the north neighbor
+    int jke = VMIN2(1, VABS(j - nym1));
+    VAT3(oN, i, j, k) = jke * coef_oN * VAT3(a2cf, i, j, k);
+    // fprintf(data, "%19.12E\n", VAT3(oN, i, j, k));
+    const DataType bc_cond_n =
+        (1 - jke) * coef_oN * VAT3(a2cf, i, j, k) * VAT3(gycf, i, k, 2);
+    VAT3(fc, i, j, k) += bc_cond_n;
 
-        // Calculate the east neighbor
-        ike = VMIN2(1, VABS(i - nxm1));
-        VAT3(oE, i, j, k) = ike * coef_oE * VAT3(a1cf, i, j, k);
-        // fprintf(data, "%19.12E\n", VAT3(oE, i, j, k));
-        bc_cond_e =
-            (1 - ike) * coef_oE * VAT3(a1cf, i, j, k) * VAT3(gxcf, j, k, 2);
-        VAT3(fc, i, j, k) += bc_cond_e;
+    // Calculate the up neighbor
+    int kke = VMIN2(1, VABS(k - nzm1));
+    VAT3(uC, i, j, k) = kke * coef_uC * VAT3(a3cf, i, j, k);
+    // fprintf(data, "%19.12E\n", VAT3(uC, i, j, k));
+    const DataType bc_cond_u =
+        (1 - kke) * coef_uC * VAT3(a3cf, i, j, k) * VAT3(gzcf, i, j, 2);
+    VAT3(fc, i, j, k) += bc_cond_u;
 
-        // Calculate the north neighbor
-        jke = VMIN2(1, VABS(j - nym1));
-        VAT3(oN, i, j, k) = jke * coef_oN * VAT3(a2cf, i, j, k);
-        // fprintf(data, "%19.12E\n", VAT3(oN, i, j, k));
-        bc_cond_n =
-            (1 - jke) * coef_oN * VAT3(a2cf, i, j, k) * VAT3(gycf, i, k, 2);
-        VAT3(fc, i, j, k) += bc_cond_n;
+    // Calculate the west neighbor (just handle b.c.)
+    ike = VMIN2(1, VABS(i - 2));
+    const DataType bc_cond_w =
+        (1 - ike) * coef_oEm1 * VAT3(a1cf, i - 1, j, k) * VAT3(gxcf, j, k, 1);
+    VAT3(fc, i, j, k) += bc_cond_w;
 
-        // Calculate the up neighbor
-        kke = VMIN2(1, VABS(k - nzm1));
-        VAT3(uC, i, j, k) = kke * coef_uC * VAT3(a3cf, i, j, k);
-        // fprintf(data, "%19.12E\n", VAT3(uC, i, j, k));
-        bc_cond_u =
-            (1 - kke) * coef_uC * VAT3(a3cf, i, j, k) * VAT3(gzcf, i, j, 2);
-        VAT3(fc, i, j, k) += bc_cond_u;
+    // Calculate the south neighbor (just handle b.c.)
+    jke = VMIN2(1, VABS(j - 2));
+    const DataType bc_cond_s =
+        (1 - jke) * coef_oNm1 * VAT3(a2cf, i, j - 1, k) * VAT3(gycf, i, k, 1);
+    VAT3(fc, i, j, k) += bc_cond_s;
 
-        // Calculate the west neighbor (just handle b.c.)
-        ike = VMIN2(1, VABS(i - 2));
-        bc_cond_w = (1 - ike) * coef_oEm1 * VAT3(a1cf, i - 1, j, k) *
-                    VAT3(gxcf, j, k, 1);
-        VAT3(fc, i, j, k) += bc_cond_w;
+    // Calculate the down neighbor (just handle b.c.)
+    kke = VMIN2(1, VABS(k - 2));
+    const DataType bc_cond_d =
+        (1 - kke) * coef_uCm1 * VAT3(a3cf, i, j, k - 1) * VAT3(gzcf, i, j, 1);
+    VAT3(fc, i, j, k) += bc_cond_d;
 
-        // Calculate the south neighbor (just handle b.c.)
-        jke = VMIN2(1, VABS(j - 2));
-        bc_cond_s = (1 - jke) * coef_oNm1 * VAT3(a2cf, i, j - 1, k) *
-                    VAT3(gycf, i, k, 1);
-        VAT3(fc, i, j, k) += bc_cond_s;
-
-        // Calculate the down neighbor (just handle b.c.)
-        kke = VMIN2(1, VABS(k - 2));
-        bc_cond_d = (1 - kke) * coef_uCm1 * VAT3(a3cf, i, j, k - 1) *
-                    VAT3(gzcf, i, j, 1);
-        VAT3(fc, i, j, k) += bc_cond_d;
-
-        // fprintf(data, "%19.12E\n", VAT3(fc, i, j, k));
-      }
-    }
-  }
+    // fprintf(data, "%19.12E\n", VAT3(fc, i, j, k));
+  });
 }
 
 VPUBLIC void VbuildA_fe(int *nx, int *ny, int *nz, int *ipkey, int *numdia,

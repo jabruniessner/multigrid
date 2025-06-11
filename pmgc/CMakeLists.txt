@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_CXX_COMPILER "acpp")
+
 
 project(PMGSycl)
 
-add_library( pmgc
-  SHARED
+set(SOURCES 
     buildAd.c
     buildBd.c
     buildGd.c
@@ -24,3 +25,6 @@ add_library( pmgc
     smoothd.c
     mgfasd.c
 )
+
+set_source_files_properties(${SOURCES} PROPERTIES LANGUAGE CXX)
+add_library(pmgc SHARED ${SOURCES})
