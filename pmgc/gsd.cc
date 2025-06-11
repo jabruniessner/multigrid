@@ -53,7 +53,6 @@
  */
 
 #include "gsd.h"
-#include <sycl/sycl.hpp>
 
 VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
                    double *cc, double *fc, double *x, double *w1, double *w2,
@@ -85,7 +84,7 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                      double *oC, double *cc, double *fc, double *oE, double *oN,
                      double *uC, double *x, double *w1, double *w2, double *r,
                      int *itmax, int *iters, double *errtol, double *omega,
-                     int *iresid, int *iadjoint, sycl::queue &q) {
+                     int *iresid, int *iadjoint) {
 
   int i, j, k, ioff;
 
@@ -103,11 +102,13 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 
   for (*iters = 1; *iters <= *itmax; (*iters)++) {
 
-    // Do the red points ***
-    q.parallel_for(
-        sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> idx) {
-          const int ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-                           (*iadjoint) * (1 - (j + k + 2) % 2);
+// Do the red points ***
+#pragma omp parallel for private(i, j, k, ioff)
+    for (k = 2; k <= *nz - 1; k++) {
+      for (j = 2; j <= *ny - 1; j++) {
+        ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
+               (*iadjoint) * (1 - (j + k + 2) % 2);
+        for (i = 2 + ioff; i <= *nx - 1; i += 2) {
           VAT3(x, i, j, k) =
               (VAT3(fc, i, j, k) + VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
                VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
@@ -116,16 +117,17 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
                VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
               (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-        });
+        }
+      }
+    }
 
 // Do the black points
 #pragma omp parallel for private(i, j, k, ioff)
     for (k = 2; k <= *nz - 1; k++) {
       for (j = 2; j <= *ny - 1; j++) {
+        ioff = (*iadjoint) * ((j + k + 2) % 2) +
+               (1 - *iadjoint) * (1 - (j + k + 2) % 2);
         for (i = 2 + ioff; i <= *nx - 1; i += 2) {
-          const int ioff = (*iadjoint) * ((j + k + 2) % 2) +
-                           (1 - *iadjoint) * (1 - (j + k + 2) % 2);
-
           VAT3(x, i, j, k) =
               (VAT3(fc, i, j, k) + VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
                VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
