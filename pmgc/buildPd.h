@@ -56,6 +56,7 @@
 #define _BUILDPD_H_
 
 #include "abps_macros.h"
+#include <sycl/sycl.hpp>
 
 VEXTERNC void VbuildP(int *nxf,    ///< @todo: doc
                       int *nyf,    ///< @todo: doc
@@ -70,19 +71,20 @@ VEXTERNC void VbuildP(int *nxf,    ///< @todo: doc
                       double *ac,  ///< @todo: doc
                       double *xf,  ///< @todo: doc
                       double *yf,  ///< @todo: doc
-                      double *zf   ///< @todo: doc
-);
+                      double *zf,  ///< @todo: doc
+                      sycl::queue &q);
 
-VEXTERNC void VbuildP_trilin(int *nxf,   ///< @todo: doc
-                             int *nyf,   ///< @todo: doc
-                             int *nzf,   ///< @todo: doc
-                             int *nxc,   ///< @todo: doc
-                             int *nyc,   ///< @todo: doc
-                             int *nzc,   ///< @todo: doc
-                             double *pc, ///< @todo: doc
-                             double *xf, ///< @todo: doc
-                             double *yf, ///< @todo: doc
-                             double *zf  ///< @todo: doc
+VEXTERNC void VbuildP_trilin(int *nxf,      ///< @todo: doc
+                             int *nyf,      ///< @todo: doc
+                             int *nzf,      ///< @todo: doc
+                             int *nxc,      ///< @todo: doc
+                             int *nyc,      ///< @todo: doc
+                             int *nzc,      ///< @todo: doc
+                             double *pc,    ///< @todo: doc
+                             double *xf,    ///< @todo: doc
+                             double *yf,    ///< @todo: doc
+                             double *zf,    ///< @todo: doc
+                             sycl::queue &q ///
 );
 
 VEXTERNC void VbuildPb_trilin(int *nxf,     ///< @todo: doc
@@ -120,7 +122,8 @@ VEXTERNC void VbuildPb_trilin(int *nxf,     ///< @todo: doc
                               double *dPSW, ///< @todo: doc
                               double *xf,   ///< @todo: doc
                               double *yf,   ///< @todo: doc
-                              double *zf    ///< @todo: doc
+                              double *zf,
+                              sycl::queue &q ///< @todo: doc
 );
 
 VEXTERNC void VbuildP_op7(int *nxf,    ///< @todo: doc
@@ -132,7 +135,8 @@ VEXTERNC void VbuildP_op7(int *nxf,    ///< @todo: doc
                           int *ipc,    ///< @todo: doc
                           double *rpc, ///< @todo: doc
                           double *ac,  ///< @todo: doc
-                          double *pc   ///< @todo: doc
+                          double *pc,
+                          sycl::queue &q ///< @todo: doc
 );
 
 VEXTERNC void VbuildPb_op7(int *nxf,     ///< @todo: doc
@@ -173,7 +177,8 @@ VEXTERNC void VbuildPb_op7(int *nxf,     ///< @todo: doc
                            double *dPNE, ///< @todo: doc
                            double *dPNW, ///< @todo: doc
                            double *dPSE, ///< @todo: doc
-                           double *dPSW  ///< @todo: doc
+                           double *dPSW,
+                           sycl::queue &q ///< @todo: doc
 );
 
 VEXTERNC void VbuildP_op27(int *nxf,    ///< @todo: doc
@@ -185,7 +190,8 @@ VEXTERNC void VbuildP_op27(int *nxf,    ///< @todo: doc
                            int *ipc,    ///< @todo: doc
                            double *rpc, ///< @todo: doc
                            double *ac,  ///< @todo: doc
-                           double *pc   ///< @todo: doc
+                           double *pc,
+                           sycl::queue &q ///< @todo: doc
 );
 
 VEXTERNC void VbuildPb_op27(int *nxf,     ///< @todo: doc
@@ -236,7 +242,8 @@ VEXTERNC void VbuildPb_op27(int *nxf,     ///< @todo: doc
                             double *dPNE, ///< @todo: doc
                             double *dPNW, ///< @todo: doc
                             double *dPSE, ///< @todo: doc
-                            double *dPSW  ///< @todo: doc
+                            double *dPSW,
+                            sycl::queue &q ///< @todo: doc
 );
 
 #endif /* _BUILDPD_H_ */

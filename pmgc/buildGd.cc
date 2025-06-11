@@ -53,9 +53,10 @@
  */
 
 #include "buildGd.h"
+#include <sycl/sycl.hpp>
 
 VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *numdia, double *pcFF, double *acFF, double *ac) {
+                     int *numdia, double *pcFF, double *acFF, double *ac, sycl::queue& q) {
 
   MAT2(pcFF, *nxc * *nyc * *nzc, 27);
   MAT2(acFF, *nxf * *nyf * *nzf, 27);
@@ -83,7 +84,7 @@ VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
         RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
         RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
         RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14)
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
 
     );
 
@@ -108,7 +109,7 @@ VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
         RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
         RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
         RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14)
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
 
     );
 
@@ -136,7 +137,7 @@ VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
         RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
         RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
         RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14)
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
 
     );
 
@@ -156,7 +157,7 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
                        double *XoC, double *XoE, double *XoN, double *XuC,
                        double *XoNE, double *XoNW, double *XuE, double *XuW,
                        double *XuN, double *XuS, double *XuNE, double *XuNW,
-                       double *XuSE, double *XuSW) {
+                       double *XuSE, double *XuSW, sycl::queue& q) {
 
   int i, j, k, ii, jj, kk;
   int im1, ip1, jm1, jp1, km1, kp1;
@@ -223,35 +224,36 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
   // fprintf(data, "%s\n", PRINT_FUNC);
 
   // Build the operator
-  for (kk = 2; kk <= *nz - 1; kk++) {
-    k = 2 * kk - 1;
+      q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> I) { 
+        const int ii = I[0] + 2; // Adjust for 1-based indexing
+        const int jj = I[1] + 2; // Adjust for 1-based indexing
+        const int kk = I[2] + 2; // Adjust for 1-based indexing
 
-    for (jj = 2; jj <= *ny - 1; jj++) {
-      j = 2 * jj - 1;
+        const int k = 2 * kk - 1;
+        const int j = 2 * jj - 1;
 
-      for (ii = 2; ii <= *nx - 1; ii++) {
-        i = 2 * ii - 1;
+        const int i = 2 * ii - 1;
 
         // Index computations
-        im1 = i - 1;
-        ip1 = i + 1;
-        jm1 = j - 1;
-        jp1 = j + 1;
-        km1 = k - 1;
-        kp1 = k + 1;
-        iim1 = ii - 1;
-        iip1 = ii + 1;
-        jjm1 = jj - 1;
-        jjp1 = jj + 1;
-        kkm1 = kk - 1;
-        kkp1 = kk + 1;
+        const int im1 = i - 1;
+        const int ip1 = i + 1;
+        const int jm1 = j - 1;
+        const int jp1 = j + 1;
+        const int km1 = k - 1;
+        const int kp1 = k + 1;
+        const int iim1 = ii - 1;
+        const int iip1 = ii + 1;
+        const int jjm1 = jj - 1;
+        const int jjp1 = jj + 1;
+        const int kkm1 = kk - 1;
+        const int kkp1 = kk + 1;
 
         /* *************************************************************
          * oC
          * *************************************************************/
 
         // XoC(ii,jj,kk) =
-        TMP1_XOC =
+        const auto TMP1_XOC =
             VAT3(uPS, ii, jj, kk) * VAT3(uPS, ii, jj, kk) *
                 VAT3(oC, i, jm1, kp1) +
             VAT3(dPSW, ii, jj, kk) * VAT3(dPSW, ii, jj, kk) *
@@ -270,7 +272,7 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
                 VAT3(oC, i, jm1, km1) +
             VAT3(oPS, ii, jj, kk) * VAT3(oPS, ii, jj, kk) * VAT3(oC, i, jm1, k);
 
-        TMP2_XOC =
+        const auto TMP2_XOC =
             VAT3(dPC, ii, jj, kk) * VAT3(dPC, ii, jj, kk) *
                 VAT3(oC, i, j, km1) +
             VAT3(oPC, ii, jj, kk) * VAT3(oPC, ii, jj, kk) * VAT3(oC, i, j, k) +
@@ -288,7 +290,7 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
                 VAT3(oC, im1, jp1, k) +
             VAT3(oPE, ii, jj, kk) * VAT3(oPE, ii, jj, kk) * VAT3(oC, ip1, j, k);
 
-        TMP3_XOC = VAT3(uPE, ii, jj, kk) * VAT3(uPE, ii, jj, kk) *
+        const auto TMP3_XOC = VAT3(uPE, ii, jj, kk) * VAT3(uPE, ii, jj, kk) *
                        VAT3(oC, ip1, j, kp1) +
                    VAT3(dPNE, ii, jj, kk) * VAT3(dPNE, ii, jj, kk) *
                        VAT3(oC, ip1, jp1, km1) +
@@ -512,9 +514,7 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
                                  VAT3(dPNE, iim1, jjm1, kkp1);
 
         // fprintf(data, "%19.12E\n", VAT3(XuSW, ii, jj, kk));
-      }
-    }
-  }
+      });
 }
 
 VPUBLIC void
@@ -527,7 +527,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
           double *dPSW, double *oC, double *oE, double *oN, double *uC,
           double *XoC, double *XoE, double *XoN, double *XuC, double *XoNE,
           double *XoNW, double *XuE, double *XuW, double *XuN, double *XuS,
-          double *XuNE, double *XuNW, double *XuSE, double *XuSW) {
+          double *XuNE, double *XuNW, double *XuSE, double *XuSW, sycl::queue& q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -606,41 +606,40 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
   // fprintf(data, "%s\n", PRINT_FUNC);
 
   // Build the operator ***
-  for (kk = 2; kk <= *nz - 1; kk++) {
-    k = 2 * kk - 1;
-
-    for (jj = 2; jj <= *ny - 1; jj++) {
-      j = 2 * jj - 1;
-
-      for (ii = 2; ii <= *nx - 1; ii++) {
-        i = 2 * ii - 1;
+      q.parallel_for(sycl::range<3>(*nx-2, *ny-2, *nz-2), [=](sycl::id<3> I) {
+        const int ii = I[0] + 2; // Adjust for 1-based indexing
+        const int jj = I[1] + 2; // Adjust for 1-based indexing
+        const int kk = I[2] + 2; // Adjust for 1-based indexing
+        const int k = 2 * kk - 1;
+        const int j = 2 * jj - 1;       
+        const int i = 2 * ii - 1;
 
         // Index computations
-        im1 = i - 1;
-        ip1 = i + 1;
-        im2 = i - 2;
-        ip2 = i + 2;
-        jm1 = j - 1;
-        jp1 = j + 1;
-        jm2 = j - 2;
-        jp2 = j + 2;
-        km1 = k - 1;
-        kp1 = k + 1;
-        km2 = k - 2;
-        kp2 = k + 2;
-        iim1 = ii - 1;
-        iip1 = ii + 1;
-        jjm1 = jj - 1;
-        jjp1 = jj + 1;
-        kkm1 = kk - 1;
-        kkp1 = kk + 1;
+      const int  im1 = i - 1;
+      const int  ip1 = i + 1;
+      const int  im2 = i - 2;
+      const int  ip2 = i + 2;
+      const int  jm1 = j - 1;
+      const int  jp1 = j + 1;
+      const int  jm2 = j - 2;
+      const int  jp2 = j + 2;
+      const int  km1 = k - 1;
+      const int  kp1 = k + 1;
+      const int  km2 = k - 2;
+      const int  kp2 = k + 2;
+      const int  iim1 = ii - 1;
+      const int  iip1 = ii + 1;
+      const int  jjm1 = jj - 1;
+      const int  jjp1 = jj + 1;
+      const int  kkm1 = kk - 1;
+      const int  kkp1 = kk + 1;
 
         /* *************************************************************
          * *** > oC;
          * *************************************************************/
 
         // XoC(ii,jj,kk) =
-        TMP1_XOC = VAT3(dPSW, ii, jj, kk) *
+        const auto TMP1_XOC = VAT3(dPSW, ii, jj, kk) *
                        (VAT3(oC, im1, jm1, km1) * VAT3(dPSW, ii, jj, kk) -
                         VAT3(uC, im1, jm1, km1) * VAT3(oPSW, ii, jj, kk) -
                         VAT3(oN, im1, jm1, km1) * VAT3(dPW, ii, jj, kk) -
@@ -659,7 +658,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oC, ip1, jp1, km1) * VAT3(dPNE, ii, jj, kk) -
                           VAT3(uC, ip1, jp1, km1) * VAT3(oPNE, ii, jj, kk));
 
-        TMP2_XOC = VAT3(dPSE, ii, jj, kk) *
+        const auto TMP2_XOC = VAT3(dPSE, ii, jj, kk) *
                        (-VAT3(oE, i, jm1, km1) * VAT3(dPS, ii, jj, kk) +
                         VAT3(oC, ip1, jm1, km1) * VAT3(dPSE, ii, jj, kk) -
                         VAT3(uC, ip1, jm1, km1) * VAT3(oPSE, ii, jj, kk) -
@@ -680,7 +679,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(uC, ip1, j, k) * VAT3(uPE, ii, jj, kk) -
                           VAT3(oN, ip1, j, k) * VAT3(oPNE, ii, jj, kk));
 
-        TMP3_XOC = +VAT3(dPE, ii, jj, kk) *
+        const auto TMP3_XOC = +VAT3(dPE, ii, jj, kk) *
                        (-VAT3(oE, i, j, km1) * VAT3(dPC, ii, jj, kk) -
                         VAT3(oN, ip1, jm1, km1) * VAT3(dPSE, ii, jj, kk) +
                         VAT3(oC, ip1, j, km1) * VAT3(dPE, ii, jj, kk) -
@@ -699,7 +698,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(uC, ip1, jp1, k) * VAT3(oPNE, ii, jj, kk) +
                           VAT3(oC, ip1, jp1, kp1) * VAT3(uPNE, ii, jj, kk));
 
-        TMP4_XOC = +VAT3(oPS, ii, jj, kk) *
+        const auto TMP4_XOC = +VAT3(oPS, ii, jj, kk) *
                        (-VAT3(oE, im1, jm1, k) * VAT3(oPSW, ii, jj, kk) -
                         VAT3(uC, i, jm1, km1) * VAT3(dPS, ii, jj, kk) +
                         VAT3(oC, i, jm1, k) * VAT3(oPS, ii, jj, kk) -
@@ -721,7 +720,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(uC, ip1, jm1, k) * VAT3(uPSE, ii, jj, kk) -
                           VAT3(oN, ip1, jm1, k) * VAT3(oPE, ii, jj, kk));
 
-        TMP5_XOC = +VAT3(dPN, ii, jj, kk) *
+        const auto TMP5_XOC = +VAT3(dPN, ii, jj, kk) *
                        (-VAT3(oE, im1, jp1, km1) * VAT3(dPNW, ii, jj, kk) -
                         VAT3(oN, i, j, km1) * VAT3(dPC, ii, jj, kk) +
                         VAT3(oC, i, jp1, km1) * VAT3(dPN, ii, jj, kk) -
@@ -745,7 +744,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, i, j, k) * VAT3(oPN, ii, jj, kk) -
                           VAT3(oE, i, j, k) * VAT3(oPE, ii, jj, kk));
 
-        TMP6_XOC = +VAT3(dPC, ii, jj, kk) *
+        const auto TMP6_XOC = +VAT3(dPC, ii, jj, kk) *
                        (-VAT3(oE, im1, j, km1) * VAT3(dPW, ii, jj, kk) -
                         VAT3(oN, i, jm1, km1) * VAT3(dPS, ii, jj, kk) +
                         VAT3(oC, i, j, km1) * VAT3(dPC, ii, jj, kk) -
@@ -766,7 +765,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oC, im1, jp1, kp1) * VAT3(uPNW, ii, jj, kk) -
                           VAT3(oE, im1, jp1, kp1) * VAT3(uPN, ii, jj, kk));
 
-        TMP7_XOC = +VAT3(dPW, ii, jj, kk) *
+        const auto TMP7_XOC = +VAT3(dPW, ii, jj, kk) *
                        (-VAT3(oN, im1, jm1, km1) * VAT3(dPSW, ii, jj, kk) +
                         VAT3(oC, im1, j, km1) * VAT3(dPW, ii, jj, kk) -
                         VAT3(uC, im1, j, km1) * VAT3(oPW, ii, jj, kk) -
@@ -786,7 +785,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, im1, jm1, k) * VAT3(oPW, ii, jj, kk) -
                           VAT3(oE, im1, jm1, k) * VAT3(oPS, ii, jj, kk));
 
-        TMP8_XOC = +VAT3(oPNW, ii, jj, kk) *
+        const auto TMP8_XOC = +VAT3(oPNW, ii, jj, kk) *
                        (-VAT3(oN, im1, j, k) * VAT3(oPW, ii, jj, kk) -
                         VAT3(uC, im1, jp1, km1) * VAT3(dPNW, ii, jj, kk) +
                         VAT3(oC, im1, jp1, k) * VAT3(oPNW, ii, jj, kk) -
@@ -807,7 +806,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, im1, j, k) * VAT3(oPNW, ii, jj, kk) -
                           VAT3(oE, im1, j, k) * VAT3(oPC, ii, jj, kk));
 
-        TMP9_XOC = +VAT3(uPW, ii, jj, kk) *
+        const auto TMP9_XOC = +VAT3(uPW, ii, jj, kk) *
                        (-VAT3(oN, im1, jm1, kp1) * VAT3(uPSW, ii, jj, kk) -
                         VAT3(uC, im1, j, k) * VAT3(oPW, ii, jj, kk) +
                         VAT3(oC, im1, j, kp1) * VAT3(uPW, ii, jj, kk) -
@@ -840,7 +839,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
          * *************************************************************/
 
         // VAT3( XoE, ii,jj,kk) =
-        TMP1_XOE = VAT3(dPS, ii, jj, kk) * VAT3(oE, i, jm1, km1) *
+        const auto TMP1_XOE = VAT3(dPS, ii, jj, kk) * VAT3(oE, i, jm1, km1) *
                        VAT3(dPSW, iip1, jj, kk) +
                    VAT3(oPS, ii, jj, kk) * VAT3(oE, i, jm1, k) *
                        VAT3(oPSW, iip1, jj, kk) +
@@ -865,7 +864,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, ip1, jm1, km1) * VAT3(dPW, iip1, jj, kk) -
                           VAT3(oE, ip1, jm1, km1) * VAT3(dPS, iip1, jj, kk));
 
-        TMP2_XOE = -VAT3(oPSE, ii, jj, kk) *
+        const auto TMP2_XOE = -VAT3(oPSE, ii, jj, kk) *
                        (-VAT3(uC, ip1, jm1, km1) * VAT3(dPSW, iip1, jj, kk) +
                         VAT3(oC, ip1, jm1, k) * VAT3(oPSW, iip1, jj, kk) -
                         VAT3(uC, ip1, jm1, k) * VAT3(uPSW, iip1, jj, kk) -
@@ -885,7 +884,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, ip1, j, km1) * VAT3(dPNW, iip1, jj, kk) -
                           VAT3(oE, ip1, j, km1) * VAT3(dPC, iip1, jj, kk));
 
-        TMP3_XOE = -VAT3(oPE, ii, jj, kk) *
+        const auto TMP3_XOE = -VAT3(oPE, ii, jj, kk) *
                        (-VAT3(oN, ip1, jm1, k) * VAT3(oPSW, iip1, jj, kk) -
                         VAT3(uC, ip1, j, km1) * VAT3(dPW, iip1, jj, kk) +
                         VAT3(oC, ip1, j, k) * VAT3(oPW, iip1, jj, kk) -
@@ -906,7 +905,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(uC, ip1, jp1, km1) * VAT3(oPNW, iip1, jj, kk) -
                           VAT3(oE, ip1, jp1, km1) * VAT3(dPN, iip1, jj, kk));
 
-        TMP4_XOE = -VAT3(oPNE, ii, jj, kk) *
+        const auto TMP4_XOE = -VAT3(oPNE, ii, jj, kk) *
                        (-VAT3(oN, ip1, j, k) * VAT3(oPW, iip1, jj, kk) -
                         VAT3(uC, ip1, jp1, km1) * VAT3(dPNW, iip1, jj, kk) +
                         VAT3(oC, ip1, jp1, k) * VAT3(oPNW, iip1, jj, kk) -
@@ -930,7 +929,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
          * *************************************************************/
 
         // VAT3( XoN, ii,jj,kk) =
-        TMP1_XON = VAT3(dPW, ii, jj, kk) * VAT3(oN, im1, j, km1) *
+        const auto TMP1_XON = VAT3(dPW, ii, jj, kk) * VAT3(oN, im1, j, km1) *
                        VAT3(dPSW, ii, jjp1, kk) +
                    VAT3(oPW, ii, jj, kk) * VAT3(oN, im1, j, k) *
                        VAT3(oPSW, ii, jjp1, kk) +
@@ -950,7 +949,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, im1, jp1, k) * VAT3(oPW, ii, jjp1, kk) -
                           VAT3(oE, im1, jp1, k) * VAT3(oPS, ii, jjp1, kk));
 
-        TMP2_XON = -VAT3(uPNW, ii, jj, kk) *
+        const auto TMP2_XON = -VAT3(uPNW, ii, jj, kk) *
                        (-VAT3(uC, im1, jp1, k) * VAT3(oPSW, ii, jjp1, kk) +
                         VAT3(oC, im1, jp1, kp1) * VAT3(uPSW, ii, jjp1, kk) -
                         VAT3(oN, im1, jp1, kp1) * VAT3(uPW, ii, jjp1, kk) -
@@ -970,7 +969,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, i, jp1, km1) * VAT3(dPC, ii, jjp1, kk) -
                           VAT3(oE, i, jp1, km1) * VAT3(dPSE, ii, jjp1, kk));
 
-        TMP3_XON = -VAT3(oPN, ii, jj, kk) *
+        const auto TMP3_XON = -VAT3(oPN, ii, jj, kk) *
                        (-VAT3(oE, im1, jp1, k) * VAT3(oPSW, ii, jjp1, kk) -
                         VAT3(uC, i, jp1, km1) * VAT3(dPS, ii, jjp1, kk) +
                         VAT3(oC, i, jp1, k) * VAT3(oPS, ii, jjp1, kk) -
@@ -992,7 +991,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                    VAT3(uPE, ii, jj, kk) * VAT3(oN, ip1, j, kp1) *
                        VAT3(uPSE, ii, jjp1, kk);
 
-        TMP4_XON = -VAT3(dPNE, ii, jj, kk) *
+        const auto TMP4_XON = -VAT3(dPNE, ii, jj, kk) *
                        (-VAT3(oE, i, jp1, km1) * VAT3(dPS, ii, jjp1, kk) +
                         VAT3(oC, ip1, jp1, km1) * VAT3(dPSE, ii, jjp1, kk) -
                         VAT3(uC, ip1, jp1, km1) * VAT3(oPSE, ii, jjp1, kk) -
@@ -1020,7 +1019,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
          * *************************************************************/
 
         // VAT3( XuC, ii,jj,kk) =
-        TMP1_XUC = VAT3(oPSW, ii, jj, kk) * VAT3(uC, im1, jm1, k) *
+        const auto TMP1_XUC = VAT3(oPSW, ii, jj, kk) * VAT3(uC, im1, jm1, k) *
                        VAT3(dPSW, ii, jj, kkp1)
 
                    - VAT3(uPSW, ii, jj, kk) *
@@ -1042,7 +1041,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                    + VAT3(oPNW, ii, jj, kk) * VAT3(uC, im1, jp1, k) *
                          VAT3(dPNW, ii, jj, kkp1);
 
-        TMP2_XUC = -VAT3(uPNW, ii, jj, kk) *
+        const auto TMP2_XUC = -VAT3(uPNW, ii, jj, kk) *
                        (-VAT3(oN, im1, j, kp1) * VAT3(dPW, ii, jj, kkp1) +
                         VAT3(oC, im1, jp1, kp1) * VAT3(dPNW, ii, jj, kkp1) -
                         VAT3(uC, im1, jp1, kp1) * VAT3(oPNW, ii, jj, kkp1) -
@@ -1069,7 +1068,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(oN, i, j, kp1) * VAT3(dPN, ii, jj, kkp1) -
                           VAT3(oE, i, j, kp1) * VAT3(dPE, ii, jj, kkp1));
 
-        TMP3_XUC = +VAT3(oPN, ii, jj, kk) * VAT3(uC, i, jp1, k) *
+        const auto TMP3_XUC = +VAT3(oPN, ii, jj, kk) * VAT3(uC, i, jp1, k) *
                        VAT3(dPN, ii, jj, kkp1)
 
                    - VAT3(uPN, ii, jj, kk) *
@@ -1088,7 +1087,7 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                           VAT3(uC, ip1, jm1, kp1) * VAT3(oPSE, ii, jj, kkp1) -
                           VAT3(oN, ip1, jm1, kp1) * VAT3(dPE, ii, jj, kkp1));
 
-        TMP4_XUC = +VAT3(oPE, ii, jj, kk) * VAT3(uC, ip1, j, k) *
+        const auto TMP4_XUC = +VAT3(oPE, ii, jj, kk) * VAT3(uC, ip1, j, k) *
                        VAT3(dPE, ii, jj, kkp1)
 
                    - VAT3(uPE, ii, jj, kk) *
@@ -1438,9 +1437,9 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
                 VAT3(dPNE, iim1, jjm1, kkp1);
 
         // fprintf(data, "%19.12E\n", VAT3(XuSW, ii, jj, kk));
-      }
-    }
-  }
+      });
+    
+  
 }
 
 VPUBLIC void
@@ -1455,7 +1454,7 @@ VbuildG_27(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
            double *uS, double *uNE, double *uNW, double *uSE, double *uSW,
            double *XoC, double *XoE, double *XoN, double *XuC, double *XoNE,
            double *XoNW, double *XuE, double *XuW, double *XuN, double *XuS,
-           double *XuNE, double *XuNW, double *XuSE, double *XuSW) {
+           double *XuNE, double *XuNW, double *XuSE, double *XuSW, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;

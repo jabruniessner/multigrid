@@ -6,24 +6,24 @@ set(CMAKE_CXX_COMPILER "acpp")
 project(PMGSycl)
 
 set(SOURCES 
-    buildAd.c
-    buildBd.c
-    buildGd.c
-    buildPd.c
-    cgd.c
-    gsd.c
-    matvecd.c
-    mgcsd.c
-    mgdrvd.c
-    mgsubd.c
-    mikpckd.c
-    mlinpckd.c
-    mypdec.c
-    newtond.c
-    newdrvd.c
-    powerd.c
-    smoothd.c
-    mgfasd.c
+    buildAd.cc
+    buildBd.cc
+    buildGd.cc
+    buildPd.cc
+    cgd.cc
+    gsd.cc
+    matvecd.cc
+    mgcsd.cc
+    mgdrvd.cc
+    #mgsubd.cc
+    mikpckd.cc
+    mlinpckd.cc
+    mypdec.cc
+    newtond.cc
+    newdrvd.cc
+    powerd.cc
+    smoothd.cc
+    mgfasd.cc
 )
 
 set_source_files_properties(${SOURCES} PROPERTIES LANGUAGE CXX)

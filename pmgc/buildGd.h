@@ -55,6 +55,7 @@
 #define _BUILDGD_H_
 
 #include "abps_macros.h"
+#include <sycl/sycl.hpp>
 
 VEXTERNC void VbuildG(int *nxf,     ///< @todo: doc
                       int *nyf,     ///< @todo: doc
@@ -65,7 +66,8 @@ VEXTERNC void VbuildG(int *nxf,     ///< @todo: doc
                       int *numdia,  ///< @todo: doc
                       double *pcFF, ///< @todo: doc
                       double *acFF, ///< @todo: doc
-                      double *ac    ///< @todo: doc
+                      double *ac,
+                      sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
@@ -187,7 +189,8 @@ VEXTERNC void VbuildG_1(int *nxf,     ///< @todo: doc
                         double *XuNE, ///< @todo: doc
                         double *XuNW, ///< @todo: doc
                         double *XuSE, ///< @todo: doc
-                        double *XuSW  ///< @todo: doc
+                        double *XuSW,
+                        sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
@@ -319,7 +322,8 @@ VEXTERNC void VbuildG_7(int *nxf,     ///< @todo: doc
                         double *XuNE, ///< @todo: doc
                         double *XuNW, ///< @todo: doc
                         double *XuSE, ///< @todo: doc
-                        double *XuSW  ///< @todo: doc
+                        double *XuSW,
+                        sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Compute a 27-point galerkin coarse grid matrix from
@@ -474,7 +478,8 @@ VEXTERNC void VbuildG_27(int *nxf,     ///< @todo: doc
                          double *XuNE, ///< @todo: doc
                          double *XuNW, ///< @todo: doc
                          double *XuSE, ///< @todo: doc
-                         double *XuSW  ///< @todo: doc
+                         double *XuSW,
+                         sycl::queue &q ///< @todo: doc
 );
 
 #endif // _BUILDGD_H_
