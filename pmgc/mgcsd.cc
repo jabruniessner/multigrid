@@ -183,7 +183,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
               RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
               RAT(x, VAT2(iz, 1, lev)), w1, w2, w3, &itmax_s, &iters_s,
-              &errtol_s, omega, &iresid, &iadjoint, &mgsmoo_s);
+              &errtol_s, omega, &iresid, &iadjoint, &mgsmoo_s, q);
 
       // Check for trouble on the coarse grid
       assert(iters_s <= itmax_s); //"Exceeded maximum iterations: iters_s=%d,
@@ -202,10 +202,10 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       lda = *RAT(ipc, (VAT2(iz, 5, lpv) - 1) + 3);
 
       // Call dpbsl to solve
-      Vxcopy_small(&nxf, &nyf, &nzf, RAT(fc, VAT2(iz, 1, lev)), w1);
+      Vxcopy_small(&nxf, &nyf, &nzf, RAT(fc, VAT2(iz, 1, lev)), w1, q);
       Vdpbsl(RAT(ac, VAT2(iz, 7, lpv)), &lda, &n, &m, w1);
-      Vxcopy_large(&nxf, &nyf, &nzf, w1, RAT(x, VAT2(iz, 1, lev)));
-      VfboundPMG00(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)));
+      Vxcopy_large(&nxf, &nyf, &nzf, w1, RAT(x, VAT2(iz, 1, lev)), q);
+      VfboundPMG00(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)), q);
 
     } else {
       printf("Invalid coarse solver requested: %d", *mgsolv);
@@ -224,7 +224,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, q);
 
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
       }
 
       else if (*istop == 1) {
@@ -233,49 +233,49 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, q);
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
       }
 
       else if (*istop == 2) {
 
         alpha = -1.0;
 
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
         Vxcopy(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)),
-               RAT(tru, VAT2(iz, 1, lev)));
+               RAT(tru, VAT2(iz, 1, lev)), q);
       }
 
       else if (*istop == 3) {
 
         alpha = -1.0;
 
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1, q);
       }
 
       else if (*istop == 4) {
 
         alpha = -1.0;
 
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1, q);
       }
 
       else if (*istop == 5) {
 
         alpha = -1.0;
 
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
 
         Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
-        rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
+        rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2, q));
       }
 
       else {
@@ -310,9 +310,9 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
             RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
             RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
             RAT(x, VAT2(iz, 1, lev)), w2, w3, w1, &nuuu, &iters_s, &errtol_s,
-            omega, &iresid, &iadjoint, mgsmoo);
+            omega, &iresid, &iadjoint, mgsmoo, q);
 
-    Vxcopy(&nxf, &nyf, &nzf, w1, RAT(w0, VAT2(iz, 1, lev)));
+    Vxcopy(&nxf, &nyf, &nzf, w1, RAT(w0, VAT2(iz, 1, lev)), q);
 
     /* *********************************************************************
      * begin cycling down to coarse grid
@@ -341,7 +341,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
         // nu1 pre-smoothings on this level (with residual)
         // (w1 has residual...)
-        Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)));
+        Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)), q);
         iresid = 1;
         iadjoint = 0;
         iters_s = 0;
@@ -351,7 +351,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(w0, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w2, w3, w1, &nuuu, &iters_s,
-                &errtol_s, omega, &iresid, &iadjoint, mgsmoo);
+                &errtol_s, omega, &iresid, &iadjoint, mgsmoo, q);
       }
       // End of cycling down to coarse grid loop
     }
@@ -374,12 +374,12 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       iters_s = 0;
       errtol_s = *epsiln;
       mgsmoo_s = 4;
-      Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)));
+      Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)), q);
       Vsmooth(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
               RAT(cc, VAT2(iz, 1, lev)), RAT(w0, VAT2(iz, 1, lev)),
               RAT(x, VAT2(iz, 1, lev)), w1, w2, w3, &itmax_s, &iters_s,
-              &errtol_s, omega, &iresid, &iadjoint, &mgsmoo_s);
+              &errtol_s, omega, &iresid, &iadjoint, &mgsmoo_s, q);
 
       // Check for trouble on the coarse grid
       VWARN_MSG2(iters_s <= itmax_s,
@@ -398,10 +398,10 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       lda = VAT(ipc, (VAT2(iz, 5, lpv) - 1) + 3);
 
       // Call dpbsl to solve
-      Vxcopy_small(&nxf, &nyf, &nzf, RAT(w0, VAT2(iz, 1, lev)), w1);
+      Vxcopy_small(&nxf, &nyf, &nzf, RAT(w0, VAT2(iz, 1, lev)), w1, q);
       Vdpbsl(RAT(ac, VAT2(iz, 7, lpv)), &lda, &n, &m, w1);
-      Vxcopy_large(&nxf, &nyf, &nzf, w1, RAT(x, VAT2(iz, 1, lev)));
-      VfboundPMG00(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)));
+      Vxcopy_large(&nxf, &nyf, &nzf, w1, RAT(x, VAT2(iz, 1, lev)), q);
+      VfboundPMG00(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)), q);
 
     } else {
       VABORT_MSG1("Invalid coarse solver requested: %d", *mgsolv);
@@ -434,9 +434,9 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
               q);
 
       xnum = Vxdot(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev + 1)),
-                   RAT(w0, VAT2(iz, 1, lev + 1)));
+                   RAT(w0, VAT2(iz, 1, lev + 1)), q);
 
-      xden = Vxdot(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev + 1)), w2);
+      xden = Vxdot(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev + 1)), w2, q);
       xdamp = xnum / xden;
 
       // New grid size
@@ -446,7 +446,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       // perform the coarse grid correction
       // xdamp = 1.0d0
-      Vxaxpy(&nxf, &nyf, &nzf, &xdamp, w1, RAT(x, VAT2(iz, 1, lev)));
+      Vxaxpy(&nxf, &nyf, &nzf, &xdamp, w1, RAT(x, VAT2(iz, 1, lev)), q);
 
       // nu2 post-smoothings for correction (no residual)
       iresid = 0;
@@ -459,13 +459,13 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, w2, w3, &nuuu, &iters_s,
-                &errtol_s, omega, &iresid, &iadjoint, mgsmoo);
+                &errtol_s, omega, &iresid, &iadjoint, mgsmoo, q);
       } else {
         Vsmooth(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(w0, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, w2, w3, &nuuu, &iters_s,
-                &errtol_s, omega, &iresid, &iadjoint, mgsmoo);
+                &errtol_s, omega, &iresid, &iadjoint, mgsmoo, q);
       }
     }
 
@@ -484,38 +484,38 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, q);
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
       } else if (*istop == 1) {
         Vmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
                 RAT(x, VAT2(iz, 1, lev)), w1, q);
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
       } else if (*istop == 2) {
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1, q);
         Vxcopy(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)),
-               RAT(tru, VAT2(iz, 1, lev)));
+               RAT(tru, VAT2(iz, 1, lev)), q);
       } else if (*istop == 3) {
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1, q);
       } else if (*istop == 4) {
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(&nxf, &nyf, &nzf, w1, q);
       } else if (*istop == 5) {
-        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
+        Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
         Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
-        rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
+        rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2, q));
       } else {
         VABORT_MSG1("Bad istop value: %d", *istop);
       }
