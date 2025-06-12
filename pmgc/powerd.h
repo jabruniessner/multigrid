@@ -95,7 +95,8 @@ VEXTERNC void Vpower(int *nx,              ///< @todo  Document
                      double *tol,          ///< @todo  Document
                      int *itmax,           ///< @todo  Document
                      int *iters,           ///< @todo  Document
-                     int *iinfo            ///< @todo  Document
+                     int *iinfo,
+                     sycl::queue &q ///< @todo  Document
 );
 
 /** @brief  Standard inverse power method for minimum eigenvalue estimation
@@ -147,7 +148,8 @@ VEXTERNC void Vipower(int *nx,              ///< @todo  Document
                       double *pc,           ///< @todo  Document
                       double *ac,           ///< @todo  Document
                       double *cc,           ///< @todo  Document
-                      double *tru           ///< @todo  Document
+                      double *tru,
+                      sycl::queue &q ///< @todo  Document
 );
 
 VEXTERNC void Vmpower(int *nx,        ///< @todo  Document
@@ -182,7 +184,8 @@ VEXTERNC void Vmpower(int *nx,        ///< @todo  Document
                       double *ac,     ///< @todo  Document
                       double *cc,     ///< @todo  Document
                       double *fc,     ///< @todo  Document
-                      double *tru     ///< @todo  Document
+                      double *tru,
+                      sycl::queue &q ///< @todo  Document
 );
 
 #endif /* _POWERD_H_ */

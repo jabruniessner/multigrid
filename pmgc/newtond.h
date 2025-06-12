@@ -102,7 +102,8 @@ VPUBLIC void Vfnewton(int *nx,        ///< @todo: Doc
                       double *ac,     ///< @todo: Doc
                       double *cc,     ///< @todo: Doc
                       double *fc,     ///< @todo: Doc
-                      double *tru     ///< @todo: Doc
+                      double *tru,
+                      sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Inexact-newton-multilevel method.
@@ -145,7 +146,8 @@ VEXTERNC void Vnewton(int *nx,        ///< @todo: Doc
                       double *ac,     ///< @todo: Doc
                       double *cc,     ///< @todo: Doc
                       double *fc,     ///< @todo: Doc
-                      double *tru     ///< @todo: Doc
+                      double *tru,
+                      sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Form the jacobian system.
@@ -166,7 +168,8 @@ VEXTERNC void Vgetjac(int *nx,        ///< @todo: Doc
                       double *cprime, ///< @todo: Doc
                       double *rhs,    ///< @todo: Doc
                       double *cc,     ///< @todo: Doc
-                      double *pc      ///< @todo: Doc
+                      double *pc,
+                      sycl::queue &q ///< @todo: Doc
 );
 
 #endif /* _NEWTOND_H_ */

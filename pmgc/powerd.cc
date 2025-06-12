@@ -58,7 +58,7 @@ VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
                     double *rpc, double *ac, double *cc, double *w1, double *w2,
                     double *w3, double *w4, double *eigmax,
                     double *eigmax_model, double *tol, int *itmax, int *iters,
-                    int *iinfo) {
+                    int *iinfo, sycl::queue &q) {
 
   int lev, level;
   double denom, fac, rho, oldrho, error, relerr;
@@ -82,17 +82,17 @@ VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
 
   Vaxrand(nx, ny, nz, w1);
 
-  Vazeros(nx, ny, nz, w2);
-  Vazeros(nx, ny, nz, w3);
-  Vazeros(nx, ny, nz, w4);
+  Vazeros(nx, ny, nz, w2, q);
+  Vazeros(nx, ny, nz, w3, q);
+  Vazeros(nx, ny, nz, w4, q);
 
   // Compute raleigh quotient with the seed vector
-  denom = Vxnrm2(nx, ny, nz, w1);
+  denom = Vxnrm2(nx, ny, nz, w1, q);
   fac = 1.0 / denom;
-  Vxscal(nx, ny, nz, &fac, w1);
+  Vxscal(nx, ny, nz, &fac, w1, q);
   Vmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
-          RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)), w1, w2);
-  oldrho = Vxdot(nx, ny, nz, w1, w2);
+          RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
+  oldrho = Vxdot(nx, ny, nz, w1, w2, q);
 
   // I/O
   if (oldrho == 0.0) {
@@ -110,30 +110,30 @@ VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
       // Apply the matrix A
       Vmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-              RAT(cc, VAT2(iz, 1, lev)), w1, w2);
+              RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
 
-      Vxcopy(nx, ny, nz, w2, w1);
+      Vxcopy(nx, ny, nz, w2, w1, q);
 
       // Normalize the new vector
-      denom = Vxnrm2(nx, ny, nz, w1);
+      denom = Vxnrm2(nx, ny, nz, w1, q);
       fac = 1.0 / denom;
-      Vxscal(nx, ny, nz, &fac, w1);
+      Vxscal(nx, ny, nz, &fac, w1, q);
 
       // Compute the new raleigh quotient
       Vmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-              RAT(cc, VAT2(iz, 1, lev)), w1, w2);
-      rho = Vxdot(nx, ny, nz, w1, w2);
+              RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
+      rho = Vxdot(nx, ny, nz, w1, w2, q);
 
       // Stopping test ***
       // w2=A*x, w1=x, stop = 2-norm(A*x-lamda*x)
 
-      Vxcopy(nx, ny, nz, w1, w3);
-      Vxcopy(nx, ny, nz, w2, w4);
-      Vxscal(nx, ny, nz, &rho, w3);
+      Vxcopy(nx, ny, nz, w1, w3, q);
+      Vxcopy(nx, ny, nz, w2, w4, q);
+      Vxscal(nx, ny, nz, &rho, w3, q);
       alpha = -1.0;
-      Vxaxpy(nx, ny, nz, &alpha, w3, w4);
-      error = Vxnrm2(nx, ny, nz, w4);
+      Vxaxpy(nx, ny, nz, &alpha, w3, w4, q);
+      error = Vxnrm2(nx, ny, nz, w4, q);
       relerr = VABS(rho - oldrho) / VABS(rho);
 
       // I/O
@@ -166,7 +166,7 @@ VPUBLIC void Vipower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
                      double *epsiln, double *errtol, double *omega, int *nu1,
                      int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *tru) {
+                     double *ac, double *cc, double *tru, sycl::queue &q) {
 
   int level, lev;
   double denom, fac, rho, oldrho;
@@ -190,19 +190,19 @@ VPUBLIC void Vipower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
 
   // Seed vector: random to contain all components
   Vaxrand(nx, ny, nz, w1);
-  Vazeros(nx, ny, nz, w2);
-  Vazeros(nx, ny, nz, w3);
-  Vazeros(nx, ny, nz, w4);
-  Vazeros(nx, ny, nz, RAT(w0, VAT2(iz, 1, lev)));
-  Vazeros(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)));
+  Vazeros(nx, ny, nz, w2, q);
+  Vazeros(nx, ny, nz, w3, q);
+  Vazeros(nx, ny, nz, w4, q);
+  Vazeros(nx, ny, nz, RAT(w0, VAT2(iz, 1, lev)), q);
+  Vazeros(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), q);
 
   // Compute raleigh quotient with the seed vector ***
-  denom = Vxnrm2(nx, ny, nz, w1);
+  denom = Vxnrm2(nx, ny, nz, w1, q);
   fac = 1.0 / denom;
-  Vxscal(nx, ny, nz, &fac, w1);
+  Vxscal(nx, ny, nz, &fac, w1, q);
   Vmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
-          RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)), w1, w2);
-  oldrho = Vxdot(nx, ny, nz, w1, w2);
+          RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
+  oldrho = Vxdot(nx, ny, nz, w1, w2, q);
 
   // I/O
   if (oldrho == 0.0) {
@@ -230,32 +230,32 @@ VPUBLIC void Vipower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
       nu2_s = 1;
       errtol_s = *epsiln;
 
-      Vxcopy(nx, ny, nz, w1, RAT(w0, VAT2(iz, 1, lev)));
+      Vxcopy(nx, ny, nz, w1, RAT(w0, VAT2(iz, 1, lev)), q);
       Vmvcs(nx, ny, nz, u, iz, w1, w2, w3, w4, &istop_s, &itmax_s, &iters_s,
             &ierror_s, nlev, ilev, nlev_real, mgsolv, &iok_s, &iinfo_s, epsiln,
             &errtol_s, omega, &nu1_s, &nu2_s, &mgsmoo_s, ipc, rpc, pc, ac, cc,
-            w0, tru);
-      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w1);
+            w0, tru, q);
+      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w1, q);
 
       // Normalize the new vector
-      denom = Vxnrm2(nx, ny, nz, w1);
+      denom = Vxnrm2(nx, ny, nz, w1, q);
       fac = 1.0 / denom;
-      Vxscal(nx, ny, nz, &fac, w1);
+      Vxscal(nx, ny, nz, &fac, w1, q);
 
       // Compute the new raleigh quotient
       Vmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-              RAT(cc, VAT2(iz, 1, lev)), w1, w2);
-      rho = Vxdot(nx, ny, nz, w1, w2);
+              RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
+      rho = Vxdot(nx, ny, nz, w1, w2, q);
 
       // Stopping test
       // w2=A*x, w1=x, stop = 2-norm(A*x-lamda*x) ***
-      Vxcopy(nx, ny, nz, w1, w3);
-      Vxcopy(nx, ny, nz, w2, w4);
-      Vxscal(nx, ny, nz, &rho, w3);
+      Vxcopy(nx, ny, nz, w1, w3, q);
+      Vxcopy(nx, ny, nz, w2, w4, q);
+      Vxscal(nx, ny, nz, &rho, w3, q);
       alpha = -1.0;
-      Vxaxpy(nx, ny, nz, &alpha, w3, w4);
-      error = Vxnrm2(nx, ny, nz, w4);
+      Vxaxpy(nx, ny, nz, &alpha, w3, w4, q);
+      error = Vxnrm2(nx, ny, nz, w4, q);
       relerr = VABS(rho - oldrho) / VABS(rho);
 
       // I/O
@@ -289,7 +289,7 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
                       int *iok, int *iinfo, double *epsiln, double *errtol,
                       double *omega, int *nu1, int *nu2, int *mgsmoo, int *ipc,
                       double *rpc, double *pc, double *ac, double *cc,
-                      double *fc, double *tru) {
+                      double *fc, double *tru, sycl::queue &q) {
 
   // Local variables
   int lev, level;
@@ -306,21 +306,21 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
 
   // Seed vector: random to contain all components
   Vaxrand(nx, ny, nz, w1);
-  Vazeros(nx, ny, nz, w2);
-  Vazeros(nx, ny, nz, w3);
-  Vazeros(nx, ny, nz, w4);
-  Vazeros(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)));
+  Vazeros(nx, ny, nz, w2, q);
+  Vazeros(nx, ny, nz, w3, q);
+  Vazeros(nx, ny, nz, w4, q);
+  Vazeros(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), q);
 
   // NOTE: we destroy "fc" on this level due to lack of vectors... ***
-  Vazeros(nx, ny, nz, RAT(fc, VAT2(iz, 1, lev)));
+  Vazeros(nx, ny, nz, RAT(fc, VAT2(iz, 1, lev)), q);
 
   // Normalize the seed vector
-  denom = Vxnrm2(nx, ny, nz, w1);
+  denom = Vxnrm2(nx, ny, nz, w1, q);
   fac = 1.0 / denom;
-  Vxscal(nx, ny, nz, &fac, w1);
+  Vxscal(nx, ny, nz, &fac, w1, q);
 
   // Compute raleigh quotient with the seed vector
-  Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)));
+  Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)), q);
   itmax_s = 1;
   iters_s = 0;
   ierror_s = 0;
@@ -329,8 +329,8 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
   istop_s = 1;
   Vmvcs(nx, ny, nz, u, iz, w0, w2, w3, w4, &istop_s, &itmax_s, &iters_s,
         &ierror_s, nlev, ilev, nlev_real, mgsolv, &iok_s, &iinfo_s, epsiln,
-        errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru);
-  oldrho = Vxdot(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)));
+        errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
+  oldrho = Vxdot(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)), q);
 
   // I/O
   if (oldrho == 0.0) {
@@ -347,7 +347,7 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
       (*iters)++;
 
       // Apply the matrix M
-      Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)));
+      Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)), q);
       itmax_s = 1;
       iters_s = 0;
       ierror_s = 0;
@@ -356,16 +356,16 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
       istop_s = 1;
       Vmvcs(nx, ny, nz, u, iz, w1, w2, w3, w4, &istop_s, &itmax_s, &iters_s,
             &ierror_s, nlev, ilev, nlev_real, mgsolv, &iok_s, &iinfo_s, epsiln,
-            errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru);
-      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w1);
+            errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
+      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w1, q);
 
       // Normalize the new vector
-      denom = Vxnrm2(nx, ny, nz, w1);
+      denom = Vxnrm2(nx, ny, nz, w1, q);
       fac = 1.0 / denom;
-      Vxscal(nx, ny, nz, &fac, w1);
+      Vxscal(nx, ny, nz, &fac, w1, q);
 
       // Compute the new raleigh quotient
-      Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)));
+      Vxcopy(nx, ny, nz, w1, RAT(u, VAT2(iz, 1, lev)), q);
       itmax_s = 1;
       iters_s = 0;
       ierror_s = 0;
@@ -374,18 +374,18 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
       istop_s = 1;
       Vmvcs(nx, ny, nz, u, iz, w0, w2, w3, w4, &istop_s, &itmax_s, &iters_s,
             &ierror_s, nlev, ilev, nlev_real, mgsolv, &iok_s, &iinfo_s, epsiln,
-            errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru);
-      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w2);
-      rho = Vxdot(nx, ny, nz, w1, w2);
+            errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
+      Vxcopy(nx, ny, nz, RAT(u, VAT2(iz, 1, lev)), w2, q);
+      rho = Vxdot(nx, ny, nz, w1, w2, q);
 
       // Stopping test
       // w2=A*x, w1=x, stop = 2-norm(A*x-lamda*x)
       alpha = -1.0;
-      Vxcopy(nx, ny, nz, w1, w3);
-      Vxcopy(nx, ny, nz, w2, w4);
-      Vxscal(nx, ny, nz, &rho, w3);
-      Vxaxpy(nx, ny, nz, &alpha, w3, w4);
-      error = Vxnrm2(nx, ny, nz, w4);
+      Vxcopy(nx, ny, nz, w1, w3, q);
+      Vxcopy(nx, ny, nz, w2, w4, q);
+      Vxscal(nx, ny, nz, &rho, w3, q);
+      Vxaxpy(nx, ny, nz, &alpha, w3, w4, q);
+      error = Vxnrm2(nx, ny, nz, w4, q);
       relerr = VABS(rho - oldrho) / VABS(rho);
 
       // I/O

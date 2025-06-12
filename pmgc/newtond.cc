@@ -62,7 +62,8 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                       double *epsiln, double *errtol, double *omega, int *nu1,
                       int *nu2, int *mgsmoo, double *cprime, double *rhs,
                       double *xtmp, int *ipc, double *rpc, double *pc,
-                      double *ac, double *cc, double *fc, double *tru) {
+                      double *ac, double *cc, double *fc, double *tru,
+                      sycl::queue &q) {
 
   int level, itmxd, nlevd, iterd, iokd;
   int nxf, nyf, nzf;
@@ -109,8 +110,8 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
     // Interpolate to next finer grid (use correct bc's)
     VinterpPMG(&nxc, &nyc, &nzc, &nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, level)),
-               RAT(x, VAT2(iz, 1, level - 1)),
-               RAT(pc, VAT2(iz, 11, level - 1)));
+               RAT(x, VAT2(iz, 1, level - 1)), RAT(pc, VAT2(iz, 11, level - 1)),
+               q);
 
     /*
     Commented out fortran code.  May need to implement later
@@ -131,7 +132,7 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
   Vnewton(nx, ny, nz, x, iz, w0, w1, w2, w3, istop, itmax, iters, ierror, nlev,
           &level, nlev_real, mgsolv, iok, iinfo, epsiln, errtol, omega, nu1,
-          nu2, mgsmoo, cprime, rhs, xtmp, ipc, rpc, pc, ac, cc, fc, tru);
+          nu2, mgsmoo, cprime, rhs, xtmp, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
 VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
@@ -141,7 +142,8 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                      double *epsiln, double *errtol, double *omega, int *nu1,
                      int *nu2, int *mgsmoo, double *cprime, double *rhs,
                      double *xtmp, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *fc, double *tru) {
+                     double *ac, double *cc, double *fc, double *tru,
+                     sycl::queue &q) {
 
   int level, lev;
   int itmax_s, iters_s, ierror_s, iok_s, iinfo_s, istop_s;
@@ -190,23 +192,23 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     // this is analogous to the linear case where one can
     // simply take norm of rhs for a zero initial guess
 
-    Vazeros(nx, ny, nz, w1);
+    Vazeros(nx, ny, nz, w1, q);
 
     Vnmresid(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
              RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)),
-             RAT(fc, VAT2(iz, 1, lev)), w1, w2, w3);
-    rsden = Vxnrm1(nx, ny, nz, w2);
+             RAT(fc, VAT2(iz, 1, lev)), w1, w2, w3, q);
+    rsden = Vxnrm1(nx, ny, nz, w2, q);
   } else if (*istop == 2) {
     rsden = VSQRT(*nx * *ny * *nz);
   } else if (*istop == 3) {
-    rsden = Vxnrm2(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)));
+    rsden = Vxnrm2(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), q);
   } else if (*istop == 4) {
-    rsden = Vxnrm2(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)));
+    rsden = Vxnrm2(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), q);
   } else if (*istop == 5) {
     Vnmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
              RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)),
-             RAT(tru, VAT2(iz, 1, lev)), w1, w2);
-    rsden = VSQRT(Vxdot(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1));
+             RAT(tru, VAT2(iz, 1, lev)), w1, w2, q);
+    rsden = VSQRT(Vxdot(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1, q));
   } else {
     printf("Bad istop value: %d\n", *istop);
   }
@@ -230,8 +232,8 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
   Vnmresid(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
            RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)),
-           RAT(fc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)), w0, w2);
-  xnorm_old = Vxnrm1(nx, ny, nz, w0);
+           RAT(fc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)), w0, w2, q);
+  xnorm_old = Vxnrm1(nx, ny, nz, w0, q);
   if (*iok != 0) {
     xnorm_den = rsden;
   } else {
@@ -254,7 +256,8 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
     // Save iterate if stop test will use it on next iter
     if (*istop == 2) {
-      Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)));
+      Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)),
+             q);
     }
 
     // Compute the current jacobian system and rhs
@@ -276,7 +279,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     printf("Using errtol_s: %f", errtol_s);
 
     // Do a linear multigrid solve of the newton equations
-    Vazeros(nx, ny, nz, RAT(xtmp, VAT2(iz, 1, lev)));
+    Vazeros(nx, ny, nz, RAT(xtmp, VAT2(iz, 1, lev)), q);
 
     itmax_s = 1000;
     istop_s = 0;
@@ -299,7 +302,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     Vmvcs(nx, ny, nz, xtmp, iz, w0, w1, w2, w3, &istop_s, &itmax_s, &iters_s,
           &ierror_s, nlev, ilev, nlev_real, mgsolv, &iok_s, &iinfo_s, epsiln,
           &errtol_s, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cprime, rhs,
-          tru);
+          tru, q);
 
     /**************************************************************
      *** note: rhs and cprime are now available as temp vectors ***
@@ -309,15 +312,15 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     if (idamp == 1) {
 
       // Try the correction
-      Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), w1);
+      Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), w1, q);
       damp = 1.0;
-      Vxaxpy(nx, ny, nz, &damp, RAT(xtmp, VAT2(iz, 1, lev)), w1);
+      Vxaxpy(nx, ny, nz, &damp, RAT(xtmp, VAT2(iz, 1, lev)), w1, q);
 
       Vnmresid(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)), w1, w0,
-               RAT(rhs, VAT2(iz, 1, lev)));
-      xnorm_new = Vxnrm1(nx, ny, nz, w0);
+               RAT(rhs, VAT2(iz, 1, lev)), q);
+      xnorm_new = Vxnrm1(nx, ny, nz, w0, q);
 
       // Damping is still enabled -- doit
       damp = 1.0;
@@ -337,28 +340,28 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         }
 
         // Keep old soln and residual around, and its norm
-        Vxcopy(nx, ny, nz, w1, w2);
-        Vxcopy(nx, ny, nz, w0, w3);
+        Vxcopy(nx, ny, nz, w1, w2, q);
+        Vxcopy(nx, ny, nz, w0, w3, q);
         xnorm_med = xnorm_new;
 
         // New damped correction, residual, and its norm
-        Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), w1);
+        Vxcopy(nx, ny, nz, RAT(x, VAT2(iz, 1, lev)), w1, q);
         damp = damp / 2.0;
-        Vxaxpy(nx, ny, nz, &damp, RAT(xtmp, VAT2(iz, 1, lev)), w1);
+        Vxaxpy(nx, ny, nz, &damp, RAT(xtmp, VAT2(iz, 1, lev)), w1, q);
 
         Vnmresid(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)), w1, w0,
-                 RAT(rhs, VAT2(iz, 1, lev)));
-        xnorm_new = Vxnrm1(nx, ny, nz, w0);
+                 RAT(rhs, VAT2(iz, 1, lev)), q);
+        xnorm_new = Vxnrm1(nx, ny, nz, w0, q);
 
         // Next iter...
         iter_d = iter_d + 1;
         printf("Attempting damping, relres = %f", xnorm_new / xnorm_den);
       }
 
-      Vxcopy(nx, ny, nz, w2, RAT(x, VAT2(iz, 1, lev)));
-      Vxcopy(nx, ny, nz, w3, w0);
+      Vxcopy(nx, ny, nz, w2, RAT(x, VAT2(iz, 1, lev)), q);
+      Vxcopy(nx, ny, nz, w3, w0, q);
       xnorm_new = xnorm_med;
       xnorm_old = xnorm_new;
 
@@ -375,14 +378,14 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       damp = 1.0;
 
       Vxaxpy(nx, ny, nz, &damp, RAT(xtmp, VAT2(iz, 1, lev)),
-             RAT(x, VAT2(iz, 1, lev)));
+             RAT(x, VAT2(iz, 1, lev)), q);
 
       Vnmresid(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-               RAT(x, VAT2(iz, 1, lev)), w0, RAT(rhs, VAT2(iz, 1, lev)));
+               RAT(x, VAT2(iz, 1, lev)), w0, RAT(rhs, VAT2(iz, 1, lev)), q);
 
-      xnorm_new = Vxnrm1(nx, ny, nz, w0);
+      xnorm_new = Vxnrm1(nx, ny, nz, w0, q);
       xnorm_old = xnorm_new;
     }
 
@@ -396,28 +399,28 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       } else if (*istop == 1) {
         rsnrm = xnorm_new;
       } else if (*istop == 2) {
-        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm1(nx, ny, nz, w1);
+        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm1(nx, ny, nz, w1, q);
       } else if (*istop == 3) {
-        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(nx, ny, nz, w1);
+        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(nx, ny, nz, w1, q);
       } else if (*istop == 4) {
-        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
-        rsnrm = Vxnrm2(nx, ny, nz, w1);
+        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
+        rsnrm = Vxnrm2(nx, ny, nz, w1, q);
       } else if (*istop == 5) {
-        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1);
+        Vxcopy(nx, ny, nz, RAT(tru, VAT2(iz, 1, lev)), w1, q);
         alpha = -1.0;
-        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
+        Vxaxpy(nx, ny, nz, &alpha, RAT(x, VAT2(iz, 1, lev)), w1, q);
         Vnmatvec(nx, ny, nz, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3);
-        rsnrm = VSQRT(Vxdot(nx, ny, nz, w1, w2));
+                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3, q);
+        rsnrm = VSQRT(Vxdot(nx, ny, nz, w1, w2, q));
       } else {
         printf("Bad istop value: %d", *istop);
         exit(-1);
@@ -461,7 +464,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     iters_p = 0;
     iinfo_p = *iinfo;
 
-    Vazeros(nx, ny, nz, xtmp);
+    Vazeros(nx, ny, nz, xtmp, q);
 
     Vipower(nx, ny, nz, xtmp, iz, w0, w1, w2, w3, rhs, &rho_min, &rho_min_mod,
             &errtol_p, &itmax_p, &iters_p, nlev, ilev, nlev_real, mgsolv,
@@ -482,7 +485,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
 VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
                      int *lev, int *ipkey, double *x, double *r, double *cprime,
-                     double *rhs, double *cc, double *pc) {
+                     double *rhs, double *cc, double *pc, sycl::queue &q) {
 
   int nxx, nyy, nzz;
   int nxold, nyold, nzold;
@@ -496,7 +499,7 @@ VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
   nzz = *nz;
 
   // Form the rhs of the newton system -- just current residual
-  Vxcopy(nx, ny, nz, r, RAT(rhs, VAT2(iz, 1, *lev)));
+  Vxcopy(nx, ny, nz, r, RAT(rhs, VAT2(iz, 1, *lev)), q);
 
   // Get nonlinear part of the jacobian operator
   Vdc_vec(RAT(cc, VAT2(iz, 1, *lev)), RAT(x, VAT2(iz, 1, *lev)),
@@ -514,11 +517,12 @@ VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
     // Make the coarse grid rhs functions
     Vrestrc(&nxold, &nyold, &nzold, &nxx, &nyy, &nzz,
             RAT(rhs, VAT2(iz, 1, level - 1)), RAT(rhs, VAT2(iz, 1, level)),
-            RAT(pc, VAT2(iz, 11, level - 1)));
+            RAT(pc, VAT2(iz, 11, level - 1)), q);
 
     // Make the coarse grid helmholtz terms
     Vrestrc(&nxold, &nyold, &nzold, &nxx, &nyy, &nzz,
             RAT(cprime, VAT2(iz, 1, level - 1)),
-            RAT(cprime, VAT2(iz, 1, level)), RAT(pc, VAT2(iz, 11, level - 1)));
+            RAT(cprime, VAT2(iz, 1, level)), RAT(pc, VAT2(iz, 11, level - 1)),
+            q);
   }
 }

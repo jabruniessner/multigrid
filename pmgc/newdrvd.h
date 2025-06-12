@@ -84,7 +84,8 @@ VEXTERNC void Vnewdriv(int *iparm,    ///< @todo:  Doc
                        double *a3cf,  ///< @todo:  Doc
                        double *ccf,   ///< @todo:  Doc
                        double *fcf,   ///< @todo:  Doc
-                       double *tcf    ///< @todo:  Doc
+                       double *tcf,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Solves using Newton's Method
@@ -149,7 +150,8 @@ VEXTERNC void Vnewdriv2(int *iparm,    ///< @todo:  Doc
                         double *a3cf,  ///< @todo:  Doc
                         double *ccf,   ///< @todo:  Doc
                         double *fcf,   ///< @todo:  Doc
-                        double *tcf    ///< @todo:  Doc
+                        double *tcf,
+                        sycl::queue &q ///< @todo:  Doc
 );
 
 #endif /* _NEWDRVD_H_ */

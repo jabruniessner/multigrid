@@ -241,7 +241,7 @@ VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, double *x,
   if (ibound == 0) {
 
     // Dero dirichlet
-    VfboundPMG00(nx, ny, nz, x);
+    VfboundPMG00(nx, ny, nz, x, q);
 
   } else {
 
