@@ -343,7 +343,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
 
       Vpower(&nxf, &nyf, &nzf, iz, &level, ipc, rpc, ac, cc, a1cf, a2cf, a3cf,
              ccf, &rho_max, &rho_max_mod, &errtol_p, &itmax_p, &iters_p,
-             &iinfo_p);
+             &iinfo_p, q);
 
       if (iinfo > 1) {
         printf("Power iters   = %d", iters_p);
@@ -365,7 +365,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       Vipower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_min,
               &rho_min_mod, &errtol_p, &itmax_p, &iters_p, &nlevd, &level,
               &nlev_real, &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal,
-              &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, tcf);
+              &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, tcf, q);
 
       if (iinfo > 1) {
         printf("Ipower iters   = %d", iters_p);
@@ -396,7 +396,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       Vmpower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_p,
               &errtol_p, &itmax_p, &iters_p, &nlevd, &level, &nlev_real,
               &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal, &nu1, &nu2,
-              &mgsmoo, ipc, rpc, pc, ac, cc, fc, tcf);
+              &mgsmoo, ipc, rpc, pc, ac, cc, fc, tcf, q);
 
       if (iinfo > 1) {
         printf("Mpower iters  = %d", iters_p);

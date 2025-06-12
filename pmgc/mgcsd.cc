@@ -131,18 +131,18 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     if (*istop == 0) {
       rsden = 1.0;
     } else if (*istop == 1) {
-      rsden = Vxnrm1(&nxf, &nyf, &nzf, RAT(fc, VAT2(iz, 1, lev)));
+      rsden = Vxnrm1(&nxf, &nyf, &nzf, RAT(fc, VAT2(iz, 1, lev)), q);
     } else if (*istop == 2) {
       rsden = VSQRT(nxf * nyf * nzf);
     } else if (*istop == 3) {
-      rsden = Vxnrm2(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)));
+      rsden = Vxnrm2(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), q);
     } else if (*istop == 4) {
-      rsden = Vxnrm2(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)));
+      rsden = Vxnrm2(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), q);
     } else if (*istop == 5) {
       Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
               RAT(cc, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)), w1, q);
-      rsden = VSQRT(Vxdot(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1));
+      rsden = VSQRT(Vxdot(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1, q));
     } else {
       printf("Bad istop value: %d", *istop);
       exit(-1);
@@ -177,7 +177,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       errtol_s = *epsiln;
       mgsmoo_s = 4;
 
-      Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)));
+      Vazeros(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev)), q);
 
       Vsmooth(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),

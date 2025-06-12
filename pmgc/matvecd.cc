@@ -729,7 +729,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   MAT3(dPSW, *nxc, *nyc, *nzc);
 
   // Verify correctness of the input boundary points
-  VfboundPMG00(nxf, nyf, nzf, xin);
+  VfboundPMG00(nxf, nyf, nzf, xin, q);
 
   dimfac = VPOW(2.0, idimenshun);
 
@@ -780,7 +780,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
       });
 
   // Verify correctness of the output boundary points
-  VfboundPMG00(nxc, nyc, nzc, xout);
+  VfboundPMG00(nxc, nyc, nzc, xout, q);
 }
 
 VPUBLIC void VinterpPMG(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
@@ -851,7 +851,7 @@ VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
    * *********************************************************************/
 
   // Verify correctness of the input boundary points ***
-  VfboundPMG00(nxc, nyc, nzc, xin);
+  VfboundPMG00(nxc, nyc, nzc, xin, q);
 
   // Do it
 
@@ -947,7 +947,7 @@ VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
       });
 
   // Verify correctness of the output boundary points ***
-  VfboundPMG00(nxf, nyf, nzf, xout);
+  VfboundPMG00(nxf, nyf, nzf, xout, q);
 }
 
 VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
@@ -957,7 +957,7 @@ VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
   MAT3(xout, *nxc, *nyc, *nzc);
 
   // Verify correctness of the input boundary points
-  VfboundPMG00(nxf, nyf, nzf, xin);
+  VfboundPMG00(nxf, nyf, nzf, xin, q);
 
   // Do it
   q.parallel_for(sycl::range<3>(*nxc - 2, *nyc - 2, *nzc - 2),
@@ -974,5 +974,5 @@ VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
                  });
 
   // Verify correctness of the output boundary points
-  VfboundPMG00(nxc, nyc, nzc, xout);
+  VfboundPMG00(nxc, nyc, nzc, xout, q);
 }

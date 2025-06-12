@@ -279,12 +279,12 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
     Vnewton(nx, ny, nz, u, iz, ccf, fcf, w1, w2, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegan, &nu1, &nu2, &mgsmoo, a1cf, a2cf, a3cf, ipc, rpc,
-            pc, ac, cc, fc, tcf);
+            pc, ac, cc, fc, tcf, q);
   } else if (mgkey == 1) {
     Vfnewton(nx, ny, nz, u, iz, ccf, fcf, w1, w2, &istop, &itmax, &iters,
              &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
              &errtol, &omegan, &nu1, &nu2, &mgsmoo, a1cf, a2cf, a3cf, ipc, rpc,
-             pc, ac, cc, fc, tcf);
+             pc, ac, cc, fc, tcf, q);
   } else {
     printf("Bad mgkey given: %d", mgkey);
     exit(-1);

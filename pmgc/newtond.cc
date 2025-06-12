@@ -102,7 +102,7 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     Vnewton(&nxc, &nyc, &nzc, x, iz, w0, w1, w2, w3, &istpd, &itmxd, &iterd,
             ierror, &nlevd, &level, nlev_real, mgsolv, &iokd, iinfo, epsiln,
             &errd, omega, nu1, nu2, mgsmoo, cprime, rhs, xtmp, ipc, rpc, pc, ac,
-            cc, fc, tru);
+            cc, fc, tru, q);
 
     // Find new grid size ***
     numlev = 1;
@@ -262,8 +262,8 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
     // Compute the current jacobian system and rhs
     ipkey = VAT(ipc, 10);
-    Vgetjac(nx, ny, nz, nlev_real, iz, ilev, &ipkey, x, w0, cprime, rhs, cc,
-            pc);
+    Vgetjac(nx, ny, nz, nlev_real, iz, ilev, &ipkey, x, w0, cprime, rhs, cc, pc,
+            q);
 
     // Determine number of correct digits in current residual
     // Algorithm 5.3 in the thesis, test version (1')
@@ -451,7 +451,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     iinfo_p = *iinfo;
 
     Vpower(nx, ny, nz, iz, ilev, ipc, rpc, ac, cprime, w0, w1, w2, w3, &rho_max,
-           &rho_max_mod, &errtol_p, &itmax_p, &iters_p, &iinfo_p);
+           &rho_max_mod, &errtol_p, &itmax_p, &iters_p, &iinfo_p, q);
 
     printf("%% Vnewton: power iters   = %d\n", iters_p);
     printf("%% Vnewton: power eigmax  = %.0f\n", rho_max);
@@ -469,7 +469,7 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     Vipower(nx, ny, nz, xtmp, iz, w0, w1, w2, w3, rhs, &rho_min, &rho_min_mod,
             &errtol_p, &itmax_p, &iters_p, nlev, ilev, nlev_real, mgsolv,
             &iok_p, &iinfo_p, epsiln, errtol, omega, nu1, nu2, mgsmoo, ipc, rpc,
-            pc, ac, cprime, tru);
+            pc, ac, cprime, tru, q);
 
     printf("%% Vnewton: ipower iters   = %d\n", iters_p);
     printf("%% Vnewton: ipower eigmin  = %.0f\n", rho_min);

@@ -56,6 +56,7 @@
 #define _CGD_H_
 
 #include "abps_macros.h"
+#include <sycl/sycl.hpp>
 
 #include "matvecd.h"
 #include "mikpckd.h"
@@ -77,7 +78,8 @@ VEXTERNC void Vcghs(int *nx,        ///< @todo  Document
                     double *errtol, ///< @todo  Document
                     double *omega,  ///< @todo  Document
                     int *iresid,    ///< @todo  Document
-                    int *iadjoint   ///< @todo  Document
+                    int *iadjoint,
+                    sycl::queue &q ///< @todo  Document
 );
 
 #endif /* _CGD_H_ */

@@ -83,7 +83,8 @@ VEXTERNC void Vsmooth(int *nx,        ///< @todo: Doc
                       double *omega,  ///< @todo: Doc
                       int *iresid,    ///< @todo: Doc
                       int *iadjoint,  ///< @todo: Doc
-                      int *meth       ///< @todo: Doc
+                      int *meth,
+                      sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   call the appropriate non-linear smoothing routine.

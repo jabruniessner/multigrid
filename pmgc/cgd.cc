@@ -15,19 +15,19 @@
  * Additional contributing authors listed in the code documentation.
  *
  * Copyright (c) 2010-2020 Battelle Memorial Institute.
- * Developed at the Pacific Northwest National Laboratory, operated by Battelle Memorial Institute, Pacific Northwest Division for the U.S. Department Energy.
- * Portions Copyright (c) 2002-2010, Washington University in St. Louis.
+ * Developed at the Pacific Northwest National Laboratory, operated by Battelle
+ * Memorial Institute, Pacific Northwest Division for the U.S. Department
+ * Energy. Portions Copyright (c) 2002-2010, Washington University in St. Louis.
  * Portions Copyright (c) 2002-2020, Nathan A. Baker.
- * Portions Copyright (c) 1999-2002, The Regents of the University of California.
- * Portions Copyright (c) 1995, Michael Holst.
- * All rights reserved.
+ * Portions Copyright (c) 1999-2002, The Regents of the University of
+ * California. Portions Copyright (c) 1995, Michael Holst. All rights reserved.
  *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * -  Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
+ * -  Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
  * - Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
@@ -53,71 +53,69 @@
  */
 
 #include "cgd.h"
+#include "hipSYCL/sycl/queue.hpp"
 
-VPUBLIC void Vcghs(int *nx, int *ny, int *nz,
-        int *ipc, double *rpc,
-        double *ac, double *cc, double *fc,
-        double *x, double *p, double *ap, double *r,
-        int *itmax, int *iters,
-        double *errtol, double *omega,
-        int *iresid, int *iadjoint) {
+VPUBLIC void Vcghs(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
+                   double *cc, double *fc, double *x, double *p, double *ap,
+                   double *r, int *itmax, int *iters, double *errtol,
+                   double *omega, int *iresid, int *iadjoint, sycl::queue &q) {
 
-    double rsnrm, pAp, denom;
-    double rhok1, rhok2, alpha, beta;
+  double rsnrm, pAp, denom;
+  double rhok1, rhok2, alpha, beta;
 
-    // Setup for the looping
-    *iters = 0;
+  // Setup for the looping
+  *iters = 0;
 
-    if (*iters >= *itmax && *iresid == 0)
-        return;
+  if (*iters >= *itmax && *iresid == 0)
+    return;
 
-    Vmresid(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r);
-    denom = Vxnrm2(nx, ny, nz, r);
+  Vmresid(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, q);
+  denom = Vxnrm2(nx, ny, nz, r, q);
 
-    if (denom == 0.0)
-        return;
+  if (denom == 0.0)
+    return;
+
+  if (*iters >= *itmax)
+    return;
+
+  while (1) {
+
+    // Compute/check the current stopping test
+    rhok2 = Vxdot(nx, ny, nz, r, r, q);
+    rsnrm = VSQRT(rhok2);
+
+    if (rsnrm / denom <= *errtol)
+      break;
 
     if (*iters >= *itmax)
-        return;
+      break;
 
-    while(1) {
-
-        // Compute/check the current stopping test
-       rhok2 = Vxdot(nx, ny, nz, r, r);
-       rsnrm = VSQRT(rhok2);
-
-       if (rsnrm / denom <= *errtol)
-           break;
-
-       if (*iters >= *itmax)
-           break;
-
-       // Form new direction vector from old one and residual
-       if (*iters == 0) {
-          Vxcopy(nx, ny, nz, r, p);
-       } else {
-          beta = rhok2 / rhok1;
-          alpha = 1.0 / beta;
-          Vxaxpy(nx, ny, nz, &alpha, r, p);
-          Vxscal(nx, ny, nz, &beta, p);
-       }
-
-       // Linear case: alpha which minimizes energy norm of error
-       Vmatvec(nx, ny, nz, ipc, rpc, ac, cc, p, ap);
-       pAp = Vxdot(nx, ny, nz, p, ap);
-       alpha = rhok2 / pAp;
-
-       // Save rhok2 for next iteration
-       rhok1 = rhok2;
-
-       // Update solution in direction p of length alpha
-       Vxaxpy(nx, ny, nz, &alpha, p, x);
-
-       // Update residual
-       alpha = -alpha;
-       Vxaxpy(nx, ny, nz, &alpha, ap, r);
-
-       // some bookkeeping
-       (*iters)++;
+    // Form new direction vector from old one and residual
+    if (*iters == 0) {
+      Vxcopy(nx, ny, nz, r, p, q);
+    } else {
+      beta = rhok2 / rhok1;
+      alpha = 1.0 / beta;
+      Vxaxpy(nx, ny, nz, &alpha, r, p, q);
+      Vxscal(nx, ny, nz, &beta, p, q);
     }
+
+    // Linear case: alpha which minimizes energy norm of error
+    Vmatvec(nx, ny, nz, ipc, rpc, ac, cc, p, ap, q);
+    pAp = Vxdot(nx, ny, nz, p, ap, q);
+    alpha = rhok2 / pAp;
+
+    // Save rhok2 for next iteration
+    rhok1 = rhok2;
+
+    // Update solution in direction p of length alpha
+    Vxaxpy(nx, ny, nz, &alpha, p, x, q);
+
+    // Update residual
+    alpha = -alpha;
+    Vxaxpy(nx, ny, nz, &alpha, ap, r, q);
+
+    // some bookkeeping
+    (*iters)++;
+  }
 }
