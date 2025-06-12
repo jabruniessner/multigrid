@@ -60,7 +60,8 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
                     double *epsiln, double *errtol, double *omega, int *nu1,
                     int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                    double *ac, double *cc, double *fc, double *tru) {
+                    double *ac, double *cc, double *fc, double *tru,
+                    sycl::queue &q) {
 
   int level;       // @todo: doc
   int lev;         // @todo: doc
@@ -140,7 +141,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     } else if (*istop == 5) {
       Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-              RAT(cc, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)), w1);
+              RAT(cc, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)), w1, q);
       rsden = VSQRT(Vxdot(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1));
     } else {
       printf("Bad istop value: %d", *istop);
@@ -221,7 +222,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                RAT(x, VAT2(iz, 1, lev)), w1);
+                RAT(x, VAT2(iz, 1, lev)), w1, q);
 
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       }
@@ -231,7 +232,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                RAT(x, VAT2(iz, 1, lev)), w1);
+                RAT(x, VAT2(iz, 1, lev)), w1, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       }
 
@@ -273,7 +274,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
         Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-                RAT(cc, VAT2(iz, 1, lev)), w1, w2);
+                RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
       }
 
@@ -328,7 +329,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       // Restrict residual to coarser grid ***
       Vrestrc(&nxf, &nyf, &nzf, &nxc, &nyc, &nzc, w1, RAT(w0, VAT2(iz, 1, lev)),
-              RAT(pc, VAT2(iz, 11, lev - 1)));
+              RAT(pc, VAT2(iz, 11, lev - 1)), q);
 
       /// New grid size
       nxf = nxc;
@@ -421,14 +422,16 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       // Interpolate to next finer grid
       VinterpPMG(&nxf, &nyf, &nzf, &nxc, &nyc, &nzc,
-                 RAT(x, VAT2(iz, 1, lev + 1)), w1, RAT(pc, VAT2(iz, 11, lev)));
+                 RAT(x, VAT2(iz, 1, lev + 1)), w1, RAT(pc, VAT2(iz, 11, lev)),
+                 q);
 
       /* Compute the hackbusch/reusken damping parameter
        * which is equivalent to the standard linear cg steplength
        */
       Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev + 1)),
               RAT(rpc, VAT2(iz, 6, lev + 1)), RAT(ac, VAT2(iz, 7, lev + 1)),
-              RAT(cc, VAT2(iz, 1, lev + 1)), RAT(x, VAT2(iz, 1, lev + 1)), w2);
+              RAT(cc, VAT2(iz, 1, lev + 1)), RAT(x, VAT2(iz, 1, lev + 1)), w2,
+              q);
 
       xnum = Vxdot(&nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, lev + 1)),
                    RAT(w0, VAT2(iz, 1, lev + 1)));
@@ -480,13 +483,13 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                RAT(x, VAT2(iz, 1, lev)), w1);
+                RAT(x, VAT2(iz, 1, lev)), w1, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 1) {
         Vmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                 RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                RAT(x, VAT2(iz, 1, lev)), w1);
+                RAT(x, VAT2(iz, 1, lev)), w1, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 2) {
         Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
@@ -511,7 +514,7 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
         Vmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                 RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-                RAT(cc, VAT2(iz, 1, lev)), w1, w2);
+                RAT(cc, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
       } else {
         VABORT_MSG1("Bad istop value: %d", *istop);

@@ -63,7 +63,8 @@ VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
                      int *numdia, int *ipc, double *rpc, double *ac, double *cc,
                      double *fc, double *xf, double *yf, double *zf,
                      double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                     double *a2cf, double *a3cf, double *ccf, double *fcf) {
+                     double *a2cf, double *a3cf, double *ccf, double *fcf,
+                     sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 14);
 
@@ -71,7 +72,7 @@ VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
 
     VbuildA_fv(nx, ny, nz, ipkey, numdia, ipc, rpc, RAT2(ac, 1, 1), cc, fc,
                RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), xf, yf, zf, gxcf,
-               gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf);
+               gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, q);
 
   } else if (*mgdisc == 1) {
 

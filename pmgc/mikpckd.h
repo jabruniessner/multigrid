@@ -56,6 +56,7 @@
 #define MIKPCKD_H_
 
 #include "abps_macros.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Copy operation for a grid function with boundary values.
  *           Quite simply copies one 3d matrix to another

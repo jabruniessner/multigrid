@@ -59,7 +59,7 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
                      double *u, double *xf, double *yf, double *zf,
                      double *gxcf, double *gycf, double *gzcf, double *a1cf,
                      double *a2cf, double *a3cf, double *ccf, double *fcf,
-                     double *tcf) {
+                     double *tcf, sycl::queue &q) {
 
   // The following variables will be returned from mgsz
   int nxc = 0;
@@ -164,7 +164,7 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
 
   // Call the multigrid driver
   Vmgdriv2(iparm, rparm, &nx, &ny, &nz, u, iz, ipc, rpc, pc, ac, cc, fc, xf, yf,
-           zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+           zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 }
 
 VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
@@ -172,7 +172,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
                       double *ac, double *cc, double *fc, double *xf,
                       double *yf, double *zf, double *gxcf, double *gycf,
                       double *gzcf, double *a1cf, double *a2cf, double *a3cf,
-                      double *ccf, double *fcf, double *tcf) {
+                      double *ccf, double *fcf, double *tcf, sycl::queue &q) {
 
   // @todo Document this function
 
@@ -448,14 +448,14 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
-            tcf);
+            tcf, q);
 
     } else if (mgkey == 1) {
 
       Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
-            tcf);
+            tcf, q);
 
     } else {
       printf("Bad mgkey given: %d", mgkey);

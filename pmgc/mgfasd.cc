@@ -60,7 +60,8 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
                      double *epsiln, double *errtol, double *omega, int *nu1,
                      int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *fc, double *tru) {
+                     double *ac, double *cc, double *fc, double *tru,
+                     sycl::queue &q) {
 
   // Other Declarations
   int level, itmxd, nlevd, iterd, iokd;
@@ -104,7 +105,7 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
     Vmvfas(&nxc, &nyc, &nzc, x, iz, w0, w1, w2, w3, w4, &istpd, &itmxd, &iterd,
            ierror, &nlevd, &level, nlev_real, mgsolv, &iokd, &iinfod, epsiln,
-           errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru);
+           errtol, omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
 
     // Find new grid size
     numlev = 1;
@@ -112,8 +113,8 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
     // Interpolate to next finer grid
     VinterpPMG(&nxc, &nyc, &nzc, &nxf, &nyf, &nzf, RAT(x, VAT2(iz, 1, level)),
-               RAT(x, VAT2(iz, 1, level - 1)),
-               RAT(pc, VAT2(iz, 11, level - 1)));
+               RAT(x, VAT2(iz, 1, level - 1)), RAT(pc, VAT2(iz, 11, level - 1)),
+               q);
 
     // New grid size
     nxc = nxf;
@@ -126,7 +127,7 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
   Vmvfas(&nxf, &nyf, &nzf, x, iz, w0, w1, w2, w3, w4, istop, itmax, iters,
          ierror, nlev, &level, nlev_real, mgsolv, iok, iinfo, epsiln, errtol,
-         omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru);
+         omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
 VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
@@ -135,7 +136,8 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
                     double *epsiln, double *errtol, double *omega, int *nu1,
                     int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                    double *ac, double *cc, double *fc, double *tru) {
+                    double *ac, double *cc, double *fc, double *tru,
+                    sycl::queue &q) {
 
   // Other declarations
   int level, lev;
@@ -200,8 +202,8 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       Vnmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-               RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)), w1, w2,
-               w3);
+               RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)), w1, w2, w3,
+               q);
 
       rsden = Vxnrm1(&nxf, &nyf, &nzf, w2);
 
@@ -214,7 +216,8 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     } else if (*istop == 5) {
       Vnmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-               RAT(cc, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)), w1, w2);
+               RAT(cc, VAT2(iz, 1, lev)), RAT(tru, VAT2(iz, 1, lev)), w1, w2,
+               q);
       rsden = VSQRT(Vxdot(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1));
     } else {
       printf("Vmvfas: bad istop value: %d\n", *istop);
@@ -258,13 +261,13 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vnmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                 RAT(x, VAT2(iz, 1, lev)), w1, w2);
+                 RAT(x, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 1) {
         Vnmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                 RAT(x, VAT2(iz, 1, lev)), w1, w2);
+                 RAT(x, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 2) {
         Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
@@ -289,7 +292,7 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
         Vnmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3);
+                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3, q);
         rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
       } else {
         printf("Vmvcs: bad istop value: %d\n", *istop);
@@ -339,11 +342,11 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       // Restrict residual to coarser grid
       Vrestrc(&nxf, &nyf, &nzf, &nxc, &nyc, &nzc, w1, RAT(w0, VAT2(iz, 1, lev)),
-              RAT(pc, VAT2(iz, 11, lev - 1)));
+              RAT(pc, VAT2(iz, 11, lev - 1)), q);
 
       // Restrict (extract) solution to coarser grid
       Vextrac(&nxf, &nyf, &nzf, &nxc, &nyc, &nzc, RAT(x, VAT2(iz, 1, lev - 1)),
-              RAT(w4, VAT2(iz, 1, lev)));
+              RAT(w4, VAT2(iz, 1, lev)), q);
 
       // New grid size
       nxf = nxc;
@@ -354,7 +357,7 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
       Vnmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                RAT(cc, VAT2(iz, 1, lev)), RAT(w4, VAT2(iz, 1, lev)),
-               RAT(fc, VAT2(iz, 1, lev)), w3);
+               RAT(fc, VAT2(iz, 1, lev)), w3, q);
 
       // Build coarse grid right hand side
       alpha = 1.0;
@@ -430,7 +433,8 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
 
       // Interpolate to next finer grid
       VinterpPMG(&nxf, &nyf, &nzf, &nxc, &nyc, &nzc,
-                 RAT(x, VAT2(iz, 1, lev + 1)), w1, RAT(pc, VAT2(iz, 11, lev)));
+                 RAT(x, VAT2(iz, 1, lev + 1)), w1, RAT(pc, VAT2(iz, 11, lev)),
+                 q);
 
       // New grid size
       nxf = nxc;
@@ -467,13 +471,13 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vnmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                 RAT(x, VAT2(iz, 1, lev)), w1, w2);
+                 RAT(x, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 1) {
         Vnmresid(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(cc, VAT2(iz, 1, lev)), RAT(fc, VAT2(iz, 1, lev)),
-                 RAT(x, VAT2(iz, 1, lev)), w1, w2);
+                 RAT(x, VAT2(iz, 1, lev)), w1, w2, q);
         rsnrm = Vxnrm1(&nxf, &nyf, &nzf, w1);
       } else if (*istop == 2) {
         Vxcopy(&nxf, &nyf, &nzf, RAT(tru, VAT2(iz, 1, lev)), w1);
@@ -498,7 +502,7 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
         Vxaxpy(&nxf, &nyf, &nzf, &alpha, RAT(x, VAT2(iz, 1, lev)), w1);
         Vnmatvec(&nxf, &nyf, &nzf, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
-                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3);
+                 RAT(cc, VAT2(iz, 1, lev)), w1, w2, w3, q);
         rsnrm = VSQRT(Vxdot(&nxf, &nyf, &nzf, w1, w2));
       } else {
         printf("Bad istop value: %d\n", *istop);

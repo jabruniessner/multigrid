@@ -65,6 +65,7 @@
 #include "mgfasd.h"
 #include "mgsubd.h"
 #include "powerd.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Multilevel solver driver
  *  @ingroup PMGC
@@ -88,7 +89,8 @@ VEXTERNC void Vmgdriv(int *iparm,    ///< @todo: Doc
                       double *a3cf,  ///< @todo: Doc
                       double *ccf,   ///< @todo: Doc
                       double *fcf,   ///< @todo: Doc
-                      double *tcf    ///< @todo: Doc
+                      double *tcf,
+                      sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Solves the pde using the multi-grid method
@@ -151,7 +153,8 @@ VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
                        double *a3cf,  ///< @todo: Doc
                        double *ccf,   ///< @todo: Doc
                        double *fcf,   ///< @todo: Doc
-                       double *tcf    ///< @todo: Doc
+                       double *tcf,
+                       sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   This routine computes the required sizes of the real and integer
