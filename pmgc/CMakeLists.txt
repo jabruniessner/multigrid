@@ -15,7 +15,7 @@ set(SOURCES
     matvecd.cc
     mgcsd.cc
     mgdrvd.cc
-    #mgsubd.cc
+    mgsubd.cc
     mikpckd.cc
     mlinpckd.cc
     mypdec.cc
