@@ -55,8 +55,8 @@
 #define _GSD_H_
 
 #include "abps_macros.h"
-
 #include "matvecd.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Call the fast diagonal iterative method.
  *  @ingroup PMGC
@@ -81,7 +81,8 @@ VEXTERNC void Vgsrb(int *nx,        ///< @todo:  Doc
                     double *errtol, ///< @todo:  Doc
                     double *omega,  ///< @todo:  Doc
                     int *iresid,    ///< @todo:  Doc
-                    int *iadjoint   ///< @todo:  Doc
+                    int *iadjoint,
+                    sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vgsrb7x(int *nx,        ///< @todo:  Doc
@@ -104,7 +105,8 @@ VEXTERNC void Vgsrb7x(int *nx,        ///< @todo:  Doc
                       double *errtol, ///< @todo:  Doc
                       double *omega,  ///< @todo:  Doc
                       int *iresid,    ///< @todo:  Doc
-                      int *iadjoint   ///< @todo:  Doc
+                      int *iadjoint,
+                      sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vgsrb27x(int *nx,        ///< @todo:  Doc
@@ -137,7 +139,8 @@ VEXTERNC void Vgsrb27x(int *nx,        ///< @todo:  Doc
                        double *errtol, ///< @todo:  Doc
                        double *omega,  ///< @todo:  Doc
                        int *iresid,    ///< @todo:  Doc
-                       int *iadjoint   ///< @todo:  Doc
+                       int *iadjoint,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 #endif /* _GSD_H_ */

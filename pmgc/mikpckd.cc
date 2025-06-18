@@ -53,8 +53,12 @@
  */
 
 #include "mikpckd.h"
+#include "abps_macros.h"
+#include "hipSYCL/sycl/queue.hpp"
+#include "hipSYCL/sycl/usm.hpp"
 
-VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, double *x, double *y) {
+VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, double *x, double *y,
+                    sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
   MAT3(y, *nx, *ny, *nz);
@@ -62,15 +66,16 @@ VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, double *x, double *y) {
   // The indices used to traverse the matrices
   int i, j, k;
 
-/// @todo:  Once the refactor begins, this will need to be unrolled
-#pragma omp parallel for private(i, j, k)
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        VAT3(y, i, j, k) = VAT3(x, i, j, k);
+  /// @todo:  Once the refactor begins, this will need to be unrolle
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 [=](sycl::id<3> idx) {
+                   VAT3(y, idx[0] + 2, idx[1] + 2, idx[2] + 2) =
+                       VAT3(x, idx[0] + 2, idx[1] + 2, idx[2] + 2);
+                 });
 }
 
-VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, double *x, double *y) {
+VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, double *x, double *y,
+                          sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
   MAT3(y, *nx - 2, *ny - 2, *nz - 2);
@@ -78,13 +83,15 @@ VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, double *x, double *y) {
   // The indices used to traverse the matrices
   int i, j, k;
 
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        VAT3(y, i - 1, j - 1, k - 1) = VAT3(x, i, j, k);
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 [=](sycl::id<3> idx) {
+                   VAT3(y, idx[0] + 1, idx[1] + 1, idx[2] + 1) =
+                       VAT3(x, idx[0] + 2, idx[1] + 2, idx[2] + 2);
+                 });
 }
 
-VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, double *x, double *y) {
+VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, double *x, double *y,
+                          sycl::queue &q) {
 
   /** @note This function is exactly equivalent to calling xcopy_small with
    *        the matrix arguments reversed.
@@ -97,14 +104,15 @@ VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, double *x, double *y) {
   // The indices used to traverse the matrices
   int i, j, k;
 
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        VAT3(y, i, j, k) = VAT3(x, i - 1, j - 1, k - 1);
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 [=](sycl::id<3> idx) {
+                   VAT3(y, idx[0] + 2, idx[1] + 2, idx[2] + 2) =
+                       VAT3(x, idx[0] + 1, idx[1] + 1, idx[2] + 1);
+                 });
 }
 
 VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, double *alpha, double *x,
-                    double *y) {
+                    double *y, sycl::queue &q) {
 
   // Create the wrappers
   MAT3(x, *nx, *ny, *nz);
@@ -114,31 +122,41 @@ VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, double *alpha, double *x,
   int i, j, k;
 
   /// @todo parallel optimization
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        VAT3(y, i, j, k) += *alpha * VAT3(x, i, j, k);
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 1),
+                 [=](sycl::id<3> idx) {
+                   VAT3(y, idx[0], idx[1], idx[2]) +=
+                       *alpha * VAT3(x, idx[0], idx[1], idx[2]);
+                 });
 }
 
-VPUBLIC double Vxnrm1(int *nx, int *ny, int *nz, double *x) {
+VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
 
-  double xnrm1 = 0.0; ///< Accumulates the calculated normal value
+  DataType xnrm1 = 0.0; ///< Accumulates the calculated normal value
 
   MAT3(x, *nx, *ny, *nz);
 
   // The indices used to traverse the matrices
   int i, j, k;
 
+  DataType *xnrm1_device = sycl::malloc_device<DataType>(1, q);
+  q.memset(xnrm1_device, 0, sizeof(DataType));
+
   /// @todo parallel optimization
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        xnrm1 += VABS(VAT3(x, i, j, k));
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 sycl::reduction(xnrm1_device, sycl::plus<>()),
+                 [=](sycl::id<3> I, auto &xnrm1) {
+                   const int i = I[0] + 2;
+                   const int j = I[1] + 2;
+                   const int k = I[2] + 2;
+                   xnrm1 += VABS(VAT3(x, i, j, k));
+                 });
+
+  q.memcpy(&xnrm1, xnrm1_device, sizeof(DataType)).wait();
 
   return xnrm1;
 }
 
-VPUBLIC double Vxnrm2(int *nx, int *ny, int *nz, double *x) {
+VPUBLIC double Vxnrm2(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
 
   double xnrm2 = 0.0; ///< Accumulates the calculated normal value
 
@@ -148,49 +166,70 @@ VPUBLIC double Vxnrm2(int *nx, int *ny, int *nz, double *x) {
   int i, j, k;
 
   /// @todo parallel optimization
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        xnrm2 += VAT3(x, i, j, k) * VAT3(x, i, j, k);
+
+  DataType *xnrm2_device = sycl::malloc_device<DataType>(1, q);
+  q.memset(xnrm2_device, 0, sizeof(DataType));
+
+  /// @todo parallel optimization
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 sycl::reduction(xnrm2_device, sycl::plus<>()),
+                 [=](sycl::id<3> I, auto &xnrm2) {
+                   const int i = I[0] + 2;
+                   const int j = I[1] + 2;
+                   const int k = I[2] + 2;
+
+                   xnrm2 += VAT3(x, i, j, k) * VAT3(x, i, j, k);
+                 });
+
+  q.memcpy(&xnrm2, xnrm2_device, sizeof(DataType)).wait();
 
   return VSQRT(xnrm2);
 }
 
-VPUBLIC double Vxdot(int *nx, int *ny, int *nz, double *x, double *y) {
+VPUBLIC DataType Vxdot(int *nx, int *ny, int *nz, double *x, double *y,
+                       sycl::queue &q) {
 
   int i, j, k;
 
   // Initialize
-  double xdot = 0.0;
+  DataType xdot = 0.0;
 
   MAT3(x, *nx, *ny, *nz);
   MAT3(y, *nx, *ny, *nz);
 
   // Do it
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        xdot += VAT3(x, i, j, k) * VAT3(y, i, j, k);
+
+  DataType *xdot_device = sycl::malloc_device<DataType>(1, q);
+  q.memset(xdot_device, 0, sizeof(DataType));
+
+  /// @todo parallel optimization
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2),
+                 sycl::reduction(xdot_device, sycl::plus<>()),
+                 [=](sycl::id<3> I, auto &xdot) {
+                   const int i = I[0] + 2;
+                   const int j = I[1] + 2;
+                   const int k = I[2] + 2;
+
+                   xdot += VAT3(x, i, j, k) * VAT3(x, i, j, k);
+                 });
+
+  q.memcpy(&xdot, xdot_device, sizeof(DataType)).wait();
 
   return xdot;
 }
 
-VPUBLIC void Vazeros(int *nx, int *ny, int *nz, double *x) {
+VPUBLIC void Vazeros(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
 
   int i, n;
   int nproc = 1;
 
   n = *nx * *ny * *nz;
 
-#pragma omp parallel for private(i)
-  for (i = 1; i <= n; i++)
-    VAT(x, i) = 0.0;
+  q.memset(&VAT(x, 1), 0, sizeof(DataType) * n).wait();
 }
 
 VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, double *x,
-                        double *gxc, double *gyc, double *gzc) {
-
-  int i, j, k;
+                        double *gxc, double *gyc, double *gzc, sycl::queue &q) {
 
   // Create and bind the wrappers for the source data
   MAT3(x, *nx, *ny, *nz);
@@ -202,67 +241,70 @@ VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, double *x,
   if (ibound == 0) {
 
     // Dero dirichlet
-    VfboundPMG00(nx, ny, nz, x);
+    VfboundPMG00(nx, ny, nz, x, q);
 
   } else {
 
     // Nonzero dirichlet
 
     // The (i=1) and (i=nx) boundaries
-    for (k = 1; k <= *nz; k++) {
-      for (j = 1; j <= *ny; j++) {
-        VAT3(x, 1, j, k) = VAT3(gxc, j, k, 1);
-        VAT3(x, *nx, j, k) = VAT3(gxc, j, k, 2);
-      }
-    }
+
+    q.parallel_for(sycl::range<2>(*ny, *nz), [=](sycl::id<2> I) {
+      const int j = I[0] + 1;
+      const int k = I[1] + 1;
+
+      VAT3(x, 1, j, k) = VAT3(gxc, j, k, 1);
+      VAT3(x, *nx, j, k) = VAT3(gxc, j, k, 2);
+    });
 
     // The (j=1) and (j=ny) boundaries
-    for (k = 1; k <= *nz; k++) {
-      for (i = 1; i <= *nx; i++) {
-        VAT3(x, i, 1, k) = VAT3(gyc, i, k, 1);
-        VAT3(x, i, *ny, k) = VAT3(gyc, i, k, 2);
-      }
-    }
+
+    q.parallel_for(sycl::range<2>(*nx, *nz), [=](sycl::id<2> I) {
+      const int i = I[0] + 1;
+      const int k = I[1] + 1;
+      VAT3(x, i, 1, k) = VAT3(gyc, i, k, 1);
+      VAT3(x, i, *ny, k) = VAT3(gyc, i, k, 2);
+    });
 
     // The (k=1) and (k=nz) boundaries
-    for (j = 1; j <= *ny; j++) {
-      for (i = 1; i <= *nx; i++) {
-        VAT3(x, i, j, 1) = VAT3(gzc, i, j, 1);
-        VAT3(x, i, j, *nz) = VAT3(gzc, i, j, 2);
-      }
-    }
+    q.parallel_for(sycl::range<2>(*nx, *ny), [=](sycl::id<2> I) {
+      const int i = I[0] + 1;
+      const int j = I[0] + 1;
+      VAT3(x, i, j, 1) = VAT3(gzc, i, j, 1);
+      VAT3(x, i, j, *nz) = VAT3(gzc, i, j, 2);
+    });
   }
 }
 
-VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, double *x) {
-
-  int i, j, k;
+VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, double *x,
+                          sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
 
   // The (i=1) and (i=nx) boundaries
-  for (k = 1; k <= *nz; k++) {
-    for (j = 1; j <= *ny; j++) {
-      VAT3(x, 1, j, k) = 0.0;
-      VAT3(x, *nx, j, k) = 0.0;
-    }
-  }
+  q.parallel_for(sycl::range<2>(*ny, *nz), [=](sycl::id<2> I) {
+    const int j = I[0] + 1;
+    const int k = I[1] + 1;
+    VAT3(x, 1, j, k) = 0.0;
+    VAT3(x, *nx, j, k) = 0.0;
+  });
 
   // The (j=1) and (j=ny) boundaries
-  for (k = 1; k <= *nz; k++) {
-    for (i = 1; i <= *nx; i++) {
-      VAT3(x, i, 1, k) = 0.0;
-      VAT3(x, i, *ny, k) = 0.0;
-    }
-  }
+  q.parallel_for(sycl::range<2>(*nx, *nz), [=](sycl::id<2> I) {
+    const int i = I[0] + 1;
+    const int k = I[0] + 1;
+    VAT3(x, i, 1, k) = 0.0;
+    VAT3(x, i, *ny, k) = 0.0;
+  });
 
   // The (k=1) and (k=nz) boundaries
-  for (j = 1; j <= *ny; j++) {
-    for (i = 1; i <= *nx; i++) {
-      VAT3(x, i, j, 1) = 0.0;
-      VAT3(x, i, j, *nz) = 0.0;
-    }
-  }
+
+  q.parallel_for(sycl::range<2>(*nx, *ny), [=](sycl::id<2> I) {
+    const int i = I[0] + 1;
+    const int j = I[1] + 1;
+    VAT3(x, i, j, 1) = 0.0;
+    VAT3(x, i, j, *nz) = 0.0;
+  });
 }
 
 VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, double *x) {
@@ -290,16 +332,17 @@ VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, double *x) {
     VAT(x, i) = (double)(VRAND);
 }
 
-VPUBLIC void Vxscal(int *nx, int *ny, int *nz, double *fac, double *x) {
-
-  int i, j, k;
+VPUBLIC void Vxscal(int *nx, int *ny, int *nz, double *fac, double *x,
+                    sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
 
-  for (k = 2; k <= *nz - 1; k++)
-    for (j = 2; j <= *ny - 1; j++)
-      for (i = 2; i <= *nx - 1; i++)
-        VAT3(x, i, j, k) *= *fac;
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+    const int i = I[0] + 2;
+    const int j = I[1] + 2;
+    const int k = I[2] + 2;
+    VAT3(x, i, j, k) *= *fac;
+  });
 }
 
 VPUBLIC void Vprtmatd(int *nx, int *ny, int *nz, int *ipc, double *rpc,

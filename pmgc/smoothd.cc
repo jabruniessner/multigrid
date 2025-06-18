@@ -58,7 +58,7 @@ VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                       double *ac, double *cc, double *fc, double *x, double *w1,
                       double *w2, double *r, int *itmax, int *iters,
                       double *errtol, double *omega, int *iresid, int *iadjoint,
-                      int *meth) {
+                      int *meth, sycl::queue &q) {
 
   // Do in one step
   if (*meth == 0) {
@@ -67,7 +67,7 @@ VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
     // wjac(nx,ny,nz,ipc,rpc,ac,cc,fc,x,w1,w2,r,itmax,iters,errtol,omega,iresid,iadjoint);
   } else if (*meth == 1) {
     Vgsrb(nx, ny, nz, ipc, rpc, ac, cc, fc, x, w1, w2, r, itmax, iters, errtol,
-          omega, iresid, iadjoint);
+          omega, iresid, iadjoint, q);
   } else if (*meth == 2) {
     printf("sor not yet translated\n");
     exit(-1);
@@ -78,7 +78,7 @@ VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
     // rich(nx,ny,nz,ipc,rpc,ac,cc,fc,x,w1,w2,r,itmax,iters,errtol,omega,iresid,iadjoint);
   } else if (*meth == 4) {
     Vcghs(nx, ny, nz, ipc, rpc, ac, cc, fc, x, w1, w2, r, itmax, iters, errtol,
-          omega, iresid, iadjoint);
+          omega, iresid, iadjoint, q);
   } else {
     printf("Bad smoothing routine specified = %d", *meth);
     exit(-1);

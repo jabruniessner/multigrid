@@ -59,7 +59,7 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
                      double *u, double *xf, double *yf, double *zf,
                      double *gxcf, double *gycf, double *gzcf, double *a1cf,
                      double *a2cf, double *a3cf, double *ccf, double *fcf,
-                     double *tcf) {
+                     double *tcf, sycl::queue &q) {
 
   // The following variables will be returned from mgsz
   int nxc = 0;
@@ -164,7 +164,7 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
 
   // Call the multigrid driver
   Vmgdriv2(iparm, rparm, &nx, &ny, &nz, u, iz, ipc, rpc, pc, ac, cc, fc, xf, yf,
-           zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+           zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 }
 
 VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
@@ -172,7 +172,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
                       double *ac, double *cc, double *fc, double *xf,
                       double *yf, double *zf, double *gxcf, double *gycf,
                       double *gzcf, double *a1cf, double *a2cf, double *a3cf,
-                      double *ccf, double *fcf, double *tcf) {
+                      double *ccf, double *fcf, double *tcf, sycl::queue &q) {
 
   // @todo Document this function
 
@@ -273,7 +273,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   ido = 0;
   Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
             &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
-            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 
   // Stop the timer
   // Vnm_tstop(30, "Vmgdrv2: fine problem setup");
@@ -285,7 +285,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   ido = 1;
   Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
             &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
-            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 
   // Stop the timer
   // Vnm_tstop(30, "Vmgdrv2: coarse problem setup");
@@ -343,7 +343,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
 
       Vpower(&nxf, &nyf, &nzf, iz, &level, ipc, rpc, ac, cc, a1cf, a2cf, a3cf,
              ccf, &rho_max, &rho_max_mod, &errtol_p, &itmax_p, &iters_p,
-             &iinfo_p);
+             &iinfo_p, q);
 
       if (iinfo > 1) {
         printf("Power iters   = %d", iters_p);
@@ -360,12 +360,12 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       iinfo_p = iinfo;
       errtol_p = 1.0e-4;
 
-      Vazeros(&nxf, &nyf, &nzf, u);
+      Vazeros(&nxf, &nyf, &nzf, u, q);
 
       Vipower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_min,
               &rho_min_mod, &errtol_p, &itmax_p, &iters_p, &nlevd, &level,
               &nlev_real, &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal,
-              &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, tcf);
+              &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, tcf, q);
 
       if (iinfo > 1) {
         printf("Ipower iters   = %d", iters_p);
@@ -390,13 +390,13 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       iinfo_p = iinfo;
       errtol_p = epsiln;
 
-      Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
+      Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)), q);
 
       WARN_UNTESTED;
       Vmpower(&nxf, &nyf, &nzf, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &rho_p,
               &errtol_p, &itmax_p, &iters_p, &nlevd, &level, &nlev_real,
               &mgsolv, &iok_p, &iinfo_p, &epsiln, &errtol, &omegal, &nu1, &nu2,
-              &mgsmoo, ipc, rpc, pc, ac, cc, fc, tcf);
+              &mgsmoo, ipc, rpc, pc, ac, cc, fc, tcf, q);
 
       if (iinfo > 1) {
         printf("Mpower iters  = %d", iters_p);
@@ -406,13 +406,13 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
 
     // Reinitialize the solution function
 
-    Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)));
+    Vazeros(&nxf, &nyf, &nzf, RAT(u, VAT2(iz, 1, level)), q);
 
     // Next grid
   }
 
   // Reinitialize the solution function
-  Vazeros(nx, ny, nz, u);
+  Vazeros(nx, ny, nz, u, q);
 
   /*******************************************************************
    *** this overwrites the rhs array provided by pde specification ***
@@ -425,14 +425,14 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
     }
 
     WARN_UNTESTED;
-    Vbuildalg(nx, ny, nz, &mode, &nlev, iz, ipc, rpc, ac, cc, ccf, tcf, fc,
-              fcf);
+    Vbuildalg(nx, ny, nz, &mode, &nlev, iz, ipc, rpc, ac, cc, ccf, tcf, fc, fcf,
+              q);
   }
 
   /*******************************************************************/
 
   // Impose zero dirichlet boundary conditions (now in source fcn)
-  VfboundPMG00(nx, ny, nz, u);
+  VfboundPMG00(nx, ny, nz, u, q);
 
   // Start the timer
   // Vnm_tstart(30, "Vmgdrv2: solve");
@@ -448,14 +448,14 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
-            tcf);
+            tcf, q);
 
     } else if (mgkey == 1) {
 
       Vmvcs(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegal, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac, cc, fc,
-            tcf);
+            tcf, q);
 
     } else {
       printf("Bad mgkey given: %d", mgkey);
@@ -474,14 +474,14 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
       Vmvfas(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &istop, &itmax,
              &iters, &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo,
              &epsiln, &errtol, &omegan, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac,
-             cc, fc, tcf);
+             cc, fc, tcf, q);
 
     } else if (mgkey == 1) {
 
       Vfmvfas(nx, ny, nz, u, iz, a1cf, a2cf, a3cf, ccf, fcf, &istop, &itmax,
               &iters, &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo,
               &epsiln, &errtol, &omegan, &nu1, &nu2, &mgsmoo, ipc, rpc, pc, ac,
-              cc, fc, tcf);
+              cc, fc, tcf, q);
 
     } else {
       printf("Bad mgkey given: %d", mgkey);
@@ -495,7 +495,7 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   // Restore boundary conditions
   ibound = 1;
 
-  VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf);
+  VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf, q);
 }
 
 VPUBLIC void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv, int *nx, int *ny,

@@ -660,7 +660,7 @@ typedef enum eVdata_Format Vdata_Format;
 #else
 #define VCHANNELEDMESSAGE0(channel, msg)                                       \
   do {                                                                         \
-    Vnm_print(channel, "%s: %s\n", __FUNCTION__, msg);                         \
+    /*Vnm_print(channel, "%s: %s\n", __FUNCTION__, msg); */                    \
   } while (0)
 
 #define VCHANNELEDMESSAGE1(channel, msg, arg0)                                 \
@@ -843,10 +843,9 @@ typedef enum eVdata_Format Vdata_Format;
     if ((cnd) == 0) {                                                          \
       char buff[1000];                                                         \
       snprintf(buff, 1000, msg, arg0, arg1);                                   \
-      Vnm_print(2,                                                             \
-                "[%s()]: WARNING:\n"                                           \
-                "    %s\n\n",                                                  \
-                __FUNCTION__, buff);                                           \
+      printf("[%s()]: WARNING:\n"                                              \
+             "    %s\n\n",                                                     \
+             __FUNCTION__, buff);                                              \
     }                                                                          \
   } while (0)
 #endif
@@ -897,10 +896,9 @@ typedef enum eVdata_Format Vdata_Format;
   do {                                                                         \
     char buff[1000];                                                           \
     snprintf(buff, 1000, msg, arg);                                            \
-    Vnm_print(2,                                                               \
-              "[%s()]: ABORTING:\n"                                            \
-              "    %s\n\n",                                                    \
-              __FUNCTION__, buff);                                             \
+    printf("[%s()]: ABORTING:\n"                                               \
+           "    %s\n\n",                                                       \
+           __FUNCTION__, buff);                                                \
     abort();                                                                   \
   } while (0)
 

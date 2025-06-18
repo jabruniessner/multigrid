@@ -59,6 +59,8 @@
 #include "mikpckd.h"
 #include "mypdec.h"
 
+#include <sycl/sycl.hpp>
+
 /** @brief   Break the matrix data-structure into diagonals and
  *           then call the matrix-vector routine.
  *  @ingroup PMGC
@@ -74,7 +76,8 @@ VEXTERNC void Vmatvec(int *nx,     ///< @todo:  Doc
                       double *ac,  ///< @todo:  Doc
                       double *cc,  ///< @todo:  Doc
                       double *x,   ///< @todo:  Doc
-                      double *y    ///< @todo:  Doc
+                      double *y,
+                      sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmatvec7(int *nx,     ///< @todo:  Doc
@@ -85,7 +88,8 @@ VEXTERNC void Vmatvec7(int *nx,     ///< @todo:  Doc
                        double *ac,  ///< @todo:  Doc
                        double *cc,  ///< @todo:  Doc
                        double *x,   ///< @todo:  Doc
-                       double *y    ///< @todo:  Doc
+                       double *y,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmatvec7_1s(int *nx,     ///< @todo:  Doc
@@ -99,7 +103,8 @@ VEXTERNC void Vmatvec7_1s(int *nx,     ///< @todo:  Doc
                           double *oN,  ///< @todo:  Doc
                           double *uC,  ///< @todo:  Doc
                           double *x,   ///< @todo:  Doc
-                          double *y    ///< @todo:  Doc
+                          double *y,
+                          sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmatvec27(int *nx,     ///< @todo:  Doc
@@ -110,7 +115,8 @@ VEXTERNC void Vmatvec27(int *nx,     ///< @todo:  Doc
                         double *ac,  ///< @todo:  Doc
                         double *cc,  ///< @todo:  Doc
                         double *x,   ///< @todo:  Doc
-                        double *y    ///< @todo:  Doc
+                        double *y,
+                        sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmatvec27_1s(int *nx,     ///< @todo:  Doc
@@ -134,7 +140,8 @@ VEXTERNC void Vmatvec27_1s(int *nx,     ///< @todo:  Doc
                            double *uSE, ///< @todo:  Doc
                            double *uSW, ///< @todo:  Doc
                            double *x,   ///< @todo:  Doc
-                           double *y    ///< @todo:  Doc
+                           double *y,
+                           sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Break the matrix data-structure into diagonals and
@@ -153,7 +160,8 @@ VEXTERNC void Vnmatvec(int *nx,     ///< @todo  Document
                        double *cc,  ///< @todo  Document
                        double *x,   ///< @todo  Document
                        double *y,   ///< @todo  Document
-                       double *w1   ///< @todo  Document
+                       double *w1,
+                       sycl::queue &q ///< @todo  Document
 );
 
 VEXTERNC void Vnmatvec7(int *nx,     ///< @todo  Document
@@ -165,7 +173,8 @@ VEXTERNC void Vnmatvec7(int *nx,     ///< @todo  Document
                         double *cc,  ///< @todo  Document
                         double *x,   ///< @todo  Document
                         double *y,   ///< @todo  Document
-                        double *w1   ///< @todo  Document
+                        double *w1,
+                        sycl::queue &q ///< @todo  Document
 );
 
 VEXTERNC void Vnmatvecd7_1s(int *nx,     ///< @todo  Document
@@ -180,7 +189,8 @@ VEXTERNC void Vnmatvecd7_1s(int *nx,     ///< @todo  Document
                             double *uC,  ///< @todo  Document
                             double *x,   ///< @todo  Document
                             double *y,   ///< @todo  Document
-                            double *w1   ///< @todo  Document
+                            double *w1,
+                            sycl::queue &q ///< @todo  Document
 );
 
 VEXTERNC void Vnmatvec27(int *nx,     ///< @todo  Document
@@ -192,7 +202,8 @@ VEXTERNC void Vnmatvec27(int *nx,     ///< @todo  Document
                          double *cc,  ///< @todo  Document
                          double *x,   ///< @todo  Document
                          double *y,   ///< @todo  Document
-                         double *w1   ///< @todo  Document
+                         double *w1,
+                         sycl::queue &q ///< @todo  Document
 );
 
 VEXTERNC void Vnmatvecd27_1s(int *nx,     ///< @todo  Document
@@ -217,7 +228,8 @@ VEXTERNC void Vnmatvecd27_1s(int *nx,     ///< @todo  Document
                              double *uSW, ///< @todo  Document
                              double *x,   ///< @todo  Document
                              double *y,   ///< @todo  Document
-                             double *w1   ///< @todo  Document
+                             double *w1,
+                             sycl::queue &q ///< @todo  Document
 );
 
 /** @brief   Break the matrix data-structure into diagonals and
@@ -236,7 +248,8 @@ VEXTERNC void Vmresid(int *nx,     ///< @todo:  Doc
                       double *cc,  ///< @todo:  Doc
                       double *fc,  ///< @todo:  Doc
                       double *x,   ///< @todo:  Doc
-                      double *r    ///< @todo:  Doc
+                      double *r,
+                      sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmresid7(int *nx,     ///< @todo:  Doc
@@ -248,7 +261,8 @@ VEXTERNC void Vmresid7(int *nx,     ///< @todo:  Doc
                        double *cc,  ///< @todo:  Doc
                        double *fc,  ///< @todo:  Doc
                        double *x,   ///< @todo:  Doc
-                       double *r    ///< @todo:  Doc
+                       double *r,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmresid7_1s(int *nx,     ///< @todo:  Doc
@@ -263,7 +277,8 @@ VEXTERNC void Vmresid7_1s(int *nx,     ///< @todo:  Doc
                           double *oN,  ///< @todo:  Doc
                           double *uC,  ///< @todo:  Doc
                           double *x,   ///< @todo:  Doc
-                          double *r    ///< @todo:  Doc
+                          double *r,
+                          sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmresid27(int *nx,     ///< @todo:  Doc
@@ -275,7 +290,8 @@ VEXTERNC void Vmresid27(int *nx,     ///< @todo:  Doc
                         double *cc,  ///< @todo:  Doc
                         double *fc,  ///< @todo:  Doc
                         double *x,   ///< @todo:  Doc
-                        double *r    ///< @todo:  Doc
+                        double *r,
+                        sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vmresid27_1s(int *nx,     ///< @todo:  Doc
@@ -300,7 +316,8 @@ VEXTERNC void Vmresid27_1s(int *nx,     ///< @todo:  Doc
                            double *uSE, ///< @todo:  Doc
                            double *uSW, ///< @todo:  Doc
                            double *x,   ///< @todo:  Doc
-                           double *r    ///< @todo:  Doc
+                           double *r,
+                           sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Break the matrix data-structure into diagonals and
@@ -320,7 +337,8 @@ VEXTERNC void Vnmresid(int *nx,     ///< @todo:  Doc
                        double *fc,  ///< @todo:  Doc
                        double *x,   ///< @todo:  Doc
                        double *r,   ///< @todo:  Doc
-                       double *w1   ///< @todo:  Doc
+                       double *w1,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vnmresid7(int *nx,     ///< @todo:  Doc
@@ -333,7 +351,8 @@ VEXTERNC void Vnmresid7(int *nx,     ///< @todo:  Doc
                         double *fc,  ///< @todo:  Doc
                         double *x,   ///< @todo:  Doc
                         double *r,   ///< @todo:  Doc
-                        double *w1   ///< @todo:  Doc
+                        double *w1,
+                        sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vnmresid7_1s(int *nx,     ///< @todo:  Doc
@@ -349,7 +368,8 @@ VEXTERNC void Vnmresid7_1s(int *nx,     ///< @todo:  Doc
                            double *uC,  ///< @todo:  Doc
                            double *x,   ///< @todo:  Doc
                            double *r,   ///< @todo:  Doc
-                           double *w1   ///< @todo:  Doc
+                           double *w1,
+                           sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vnmresid27(int *nx,     ///< @todo:  Doc
@@ -362,7 +382,8 @@ VEXTERNC void Vnmresid27(int *nx,     ///< @todo:  Doc
                          double *fc,  ///< @todo:  Doc
                          double *x,   ///< @todo:  Doc
                          double *r,   ///< @todo:  Doc
-                         double *w1   ///< @todo:  Doc
+                         double *w1,
+                         sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vnmresid27_1s(int *nx,     ///< @todo:  Doc
@@ -388,7 +409,8 @@ VEXTERNC void Vnmresid27_1s(int *nx,     ///< @todo:  Doc
                             double *uSW, ///< @todo:  Doc
                             double *x,   ///< @todo:  Doc
                             double *r,   ///< @todo:  Doc
-                            double *w1   ///< @todo:  Doc
+                            double *w1,
+                            sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Apply the restriction operator
@@ -405,7 +427,8 @@ VEXTERNC void Vrestrc(int *nxf,     ///< @todo:  Doc
                       int *nzc,     ///< @todo:  Doc
                       double *xin,  ///< @todo:  Doc
                       double *xout, ///< @todo:  Doc
-                      double *pc    ///< @todo:  Doc
+                      double *pc,
+                      sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void Vrestrc2(int *nxf,     ///< @todo:  Doc
@@ -442,7 +465,8 @@ VEXTERNC void Vrestrc2(int *nxf,     ///< @todo:  Doc
                        double *dPNE, ///< @todo:  Doc
                        double *dPNW, ///< @todo:  Doc
                        double *dPSE, ///< @todo:  Doc
-                       double *dPSW  ///< @todo:  Doc
+                       double *dPSW,
+                       sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Apply the prolongation operator
@@ -459,7 +483,8 @@ VEXTERNC void VinterpPMG(int *nxc,     ///< @todo:  Doc
                          int *nzf,     ///< @todo:  Doc
                          double *xin,  ///< @todo:  Doc
                          double *xout, ///< @todo:  Doc
-                         double *pc    ///< @todo:  Doc
+                         double *pc,
+                         sycl::queue &q ///< @todo:  Doc
 );
 
 VEXTERNC void VinterpPMG2(int *nxc,     ///< @todo:  Doc
@@ -496,7 +521,8 @@ VEXTERNC void VinterpPMG2(int *nxc,     ///< @todo:  Doc
                           double *dPNE, ///< @todo:  Doc
                           double *dPNW, ///< @todo:  Doc
                           double *dPSE, ///< @todo:  Doc
-                          double *dPSW  ///< @todo:  Doc
+                          double *dPSW,
+                          sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Simple injection of a fine grid function into coarse grid.
@@ -512,7 +538,8 @@ VEXTERNC void Vextrac(int *nxf,    ///< @todo:  Doc
                       int *ny,     ///< @todo:  Doc
                       int *nzc,    ///< @todo:  Doc
                       double *xin, ///< @todo:  Doc
-                      double *xout ///< @todo:  Doc
+                      double *xout,
+                      sycl::queue &q ///< @todo:  Doc
 );
 
 #endif /* _MATVECD_H_ */

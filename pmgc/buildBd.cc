@@ -53,6 +53,7 @@
  */
 
 #include "buildBd.h"
+#include <sycl/sycl.hpp>
 
 VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
                         double *rpc, double *ac, int *ipcB, double *rpcB,
@@ -111,7 +112,7 @@ VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
 VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                            double *oC, double *oE, double *oN, double *uC,
                            int *ipcB, double *rpcB, double *acB, int *n, int *m,
-                           int *lda) {
+                           int *lda, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -135,38 +136,39 @@ VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 
-  for (k = 2; k <= *nz - 1; k++) {
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+    // jj++;
 
-    for (j = 2; j <= *ny - 1; j++) {
+    int i = I[0] + 2; // Adjust for 1-based indexing
+    int j = I[1] + 2; // Adjust for 1-based indexing
+    int k = I[2] + 2; // Adjust for 1-based indexing
 
-      for (i = 2; i <= *nx - 1; i++) {
-        jj++;
+    const int jj =
+        (k - 2) * (*nx - 2) * (*ny - 2) + (j - 2) * (*nx - 2) + (i - 2) + 1;
 
-        // Diagonal term
-        ii = jj;
-        kk = ii - jj + *m + 1;
+    // Diagonal term
+    int ii = jj;
+    int kk = ii - jj + *m + 1;
 
-        VAT2(acB, kk, jj) = VAT3(oC, i, j, k);
+    VAT2(acB, kk, jj) = VAT3(oC, i, j, k);
 
-        // East neighbor
-        ii = jj - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oE, i - 1, j, k);
+    // East neighbor
+    ii = jj - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oE, i - 1, j, k);
 
-        // North neighbor
-        ii = jj - (*nx - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oN, i, j - 1, k);
+    // North neighbor
+    ii = jj - (*nx - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oN, i, j - 1, k);
 
-        // Up neighbor ***
-        ii = jj - (*nx - 2) * (*ny - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uC, i, j, k - 1);
+    // Up neighbor ***
+    ii = jj - (*nx - 2) * (*ny - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uC, i, j, k - 1);
 
-        // fprintf(data, "%19.12E\n", VAT2(acB, kk, jj));
-      }
-    }
-  }
+    // fprintf(data, "%19.12E\n", VAT2(acB, kk, jj));
+  });
 }
 
 VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
@@ -174,7 +176,8 @@ VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                             double *oNE, double *oNW, double *uE, double *uW,
                             double *uN, double *uS, double *uNE, double *uNW,
                             double *uSE, double *uSW, int *ipcB, double *rpcB,
-                            double *acB, int *n, int *m, int *lda) {
+                            double *acB, int *n, int *m, int *lda,
+                            sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -209,85 +212,84 @@ VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 
-  for (k = 2; k <= *nz - 1; k++) {
+  q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+    int i = I[0] + 2; // Adjust for 1-based indexing
+    int j = I[1] + 2; // Adjust for 1-based indexing
+    int k = I[2] + 2; // Adjust for 1-based indexing
 
-    for (j = 2; j <= *ny - 1; j++) {
+    const int jj =
+        (k - 2) * (*nx - 2) * (*ny - 2) + (j - 2) * (*nx - 2) + (i - 2) + 1;
 
-      for (i = 2; i <= *nx - 1; i++) {
-        jj++;
+    // Diagonal term
+    int ii = jj;
+    int kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = VAT3(oC, i, j, k);
 
-        // Diagonal term
-        ii = jj;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = VAT3(oC, i, j, k);
+    // East neighbor
+    ii = jj - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oE, i - 1, j, k);
 
-        // East neighbor
-        ii = jj - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oE, i - 1, j, k);
+    // North neighbor
+    ii = jj - (*nx - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oN, i, j - 1, k);
 
-        // North neighbor
-        ii = jj - (*nx - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oN, i, j - 1, k);
+    // North-east neighbor
+    ii = jj - (*nx - 2) + 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oNE, i, j - 1, k);
 
-        // North-east neighbor
-        ii = jj - (*nx - 2) + 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oNE, i, j - 1, k);
+    // North-west neighbor
+    ii = jj - (*nx - 2) - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(oNW, i, j - 1, k);
 
-        // North-west neighbor
-        ii = jj - (*nx - 2) - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(oNW, i, j - 1, k);
+    // Up neighbor
+    ii = jj - (*nx - 2) * (*ny - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uC, i, j, k - 1);
 
-        // Up neighbor
-        ii = jj - (*nx - 2) * (*ny - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uC, i, j, k - 1);
+    // Up-east neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) + 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uE, i, j, k - 1);
 
-        // Up-east neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) + 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uE, i, j, k - 1);
+    // Up-west neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uW, i, j, k - 1);
 
-        // Up-west neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uW, i, j, k - 1);
+    // Up-north neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uN, i, j, k - 1);
 
-        // Up-north neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uN, i, j, k - 1);
+    // Up-south neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2);
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uS, i, j, k - 1);
 
-        // Up-south neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2);
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uS, i, j, k - 1);
+    // Up-north-east neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2) + 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uNE, i, j, k - 1);
 
-        // Up-north-east neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2) + 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uNE, i, j, k - 1);
+    // Up-north-west neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2) - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uNW, i, j, k - 1);
 
-        // Up-north-west neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) + (*nx - 2) - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uNW, i, j, k - 1);
+    // Up-south-east neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2) + 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uSE, i, j, k - 1);
 
-        // Up-south-east neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2) + 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uSE, i, j, k - 1);
+    // Up-south-west neighbor
+    ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2) - 1;
+    kk = ii - jj + *m + 1;
+    VAT2(acB, kk, jj) = -VAT3(uSW, i, j, k - 1);
 
-        // Up-south-west neighbor
-        ii = jj - (*nx - 2) * (*ny - 2) - (*nx - 2) - 1;
-        kk = ii - jj + *m + 1;
-        VAT2(acB, kk, jj) = -VAT3(uSW, i, j, k - 1);
-
-        // fprintf(data, "%19.12E\n", VAT2(acB, kk, jj));
-      }
-    }
-  }
+    // fprintf(data, "%19.12E\n", VAT2(acB, kk, jj));
+  });
 }

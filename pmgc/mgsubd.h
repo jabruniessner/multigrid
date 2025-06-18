@@ -62,6 +62,7 @@
 #include "buildGd.h"
 #include "buildPd.h"
 #include "matvecd.h"
+#include <sycl/sycl.hpp>
 
 #define HARMO2(a, b) (2.0 * (a) * (b) / ((a) + (b)))
 #define HARMO4(a, b, c, d)                                                     \
@@ -113,7 +114,8 @@ VEXTERNC void Vbuildops(int *nx,      ///< @todo: doc
                         double *a3cf, ///< @todo: doc
                         double *ccf,  ///< @todo: doc
                         double *fcf,  ///< @todo: doc
-                        double *tcf   ///< @todo: doc
+                        double *tcf,
+                        sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Build the nexted operator framework in the array iz
@@ -168,7 +170,8 @@ VEXTERNC void Vbuildgaler0(int *nxf,      ///< @todo: doc
                            double *rpc,   ///< @todo: doc
                            double *ac,    ///< @todo: doc
                            double *cc,    ///< @todo: doc
-                           double *fc     ///< @todo: doc
+                           double *fc,
+                           sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Coarsen a grid
@@ -358,7 +361,8 @@ VEXTERNC void Vbuildalg(int *nx,     ///< @todo  Document
                         double *fc,  ///< @todo  Document
                         double *x,   ///< @todo  Document
                         double *y,   ///< @todo  Document
-                        double *tmp  ///< @todo  Document
+                        double *tmp,
+                        sycl::queue &q ///< @todo  Document
 );
 
 #endif // _MGSUBD_H_

@@ -64,7 +64,8 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                        double *pc, double *ac, double *cc, double *fc,
                        double *xf, double *yf, double *zf, double *gxcf,
                        double *gycf, double *gzcf, double *a1cf, double *a2cf,
-                       double *a3cf, double *ccf, double *fcf, double *tcf) {
+                       double *a3cf, double *ccf, double *fcf, double *tcf,
+                       sycl::queue &q) {
 
   // @todo Document this function
   int lev = 0;
@@ -105,7 +106,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
             RAT(gxcf, VAT2(iz, 2, lev)), RAT(gycf, VAT2(iz, 3, lev)),
             RAT(gzcf, VAT2(iz, 4, lev)), RAT(a1cf, VAT2(iz, 1, lev)),
             RAT(a2cf, VAT2(iz, 1, lev)), RAT(a3cf, VAT2(iz, 1, lev)),
-            RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)));
+            RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)), q);
 
     printf("Operator stencil (lev, numdia) = (%d, %d)", lev, numdia);
 
@@ -136,7 +137,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                 RAT(ipc, VAT2(iz, 5, lev - 1)), RAT(rpc, VAT2(iz, 6, lev - 1)),
                 RAT(pc, VAT2(iz, 11, lev - 1)), RAT(ac, VAT2(iz, 7, lev - 1)),
                 RAT(xf, VAT2(iz, 8, lev - 1)), RAT(yf, VAT2(iz, 9, lev - 1)),
-                RAT(zf, VAT2(iz, 10, lev - 1)));
+                RAT(zf, VAT2(iz, 10, lev - 1)), q);
 
         // Differential operator this level with standard disc.
         if (*mgcoar == 0) {
@@ -168,7 +169,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                   RAT(gxcf, VAT2(iz, 2, lev)), RAT(gycf, VAT2(iz, 3, lev)),
                   RAT(gzcf, VAT2(iz, 4, lev)), RAT(a1cf, VAT2(iz, 1, lev)),
                   RAT(a2cf, VAT2(iz, 1, lev)), RAT(a3cf, VAT2(iz, 1, lev)),
-                  RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)));
+                  RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)), q);
         }
 
         // Differential operator this level with harmonic disc.
@@ -201,7 +202,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                   RAT(gxcf, VAT2(iz, 2, lev)), RAT(gycf, VAT2(iz, 3, lev)),
                   RAT(gzcf, VAT2(iz, 4, lev)), RAT(a1cf, VAT2(iz, 1, lev)),
                   RAT(a2cf, VAT2(iz, 1, lev)), RAT(a3cf, VAT2(iz, 1, lev)),
-                  RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)));
+                  RAT(ccf, VAT2(iz, 1, lev)), RAT(fcf, VAT2(iz, 1, lev)), q);
         }
 
         // Differential operator with galerkin formulation ***
@@ -218,10 +219,11 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
               RAT(cc, VAT2(iz, 1, lev - 1)), RAT(fc, VAT2(iz, 1, lev - 1)),
               RAT(ipc, VAT2(iz, 5, lev)), RAT(rpc, VAT2(iz, 6, lev)),
               RAT(ac, VAT2(iz, 7, lev)), RAT(cc, VAT2(iz, 1, lev)),
-              RAT(fc, VAT2(iz, 1, lev)));
+              RAT(fc, VAT2(iz, 1, lev)), q);
 
           Vextrac(&nxold, &nyold, &nzold, &nxx, &nyy, &nzz,
-                  RAT(tcf, VAT2(iz, 1, lev - 1)), RAT(tcf, VAT2(iz, 1, lev)));
+                  RAT(tcf, VAT2(iz, 1, lev - 1)), RAT(tcf, VAT2(iz, 1, lev)),
+                  q);
         } else {
           printf("Bad mgcoar value given: %d", *mgcoar);
           exit(-1);
@@ -346,13 +348,13 @@ VPUBLIC void Vbuildgaler0(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
                           int *nzc, int *ipkey, int *numdia, double *pcFF,
                           int *ipcFF, double *rpcFF, double *acFF, double *ccFF,
                           double *fcFF, int *ipc, double *rpc, double *ac,
-                          double *cc, double *fc) {
+                          double *cc, double *fc, sycl::queue &q) {
 
   int numdia_loc;
 
   // Call the algebraic galerkin routine
   numdia_loc = VAT(ipcFF, 11);
-  VbuildG(nxf, nyf, nzf, nxc, nyc, nzc, &numdia_loc, pcFF, acFF, ac);
+  VbuildG(nxf, nyf, nzf, nxc, nyc, nzc, &numdia_loc, pcFF, acFF, ac, q);
 
   // Note how many nonzeros in this new discretization stencil
   VAT(ipc, 11) = 27;
@@ -362,9 +364,9 @@ VPUBLIC void Vbuildgaler0(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   VAT(ipc, 10) = *ipkey;
 
   // Restrict the helmholtz term and source function
-  Vrestrc(nxf, nyf, nzf, nxc, nyc, nzc, ccFF, cc, pcFF);
+  Vrestrc(nxf, nyf, nzf, nxc, nyc, nzc, ccFF, cc, pcFF, q);
 
-  Vrestrc(nxf, nyf, nzf, nxc, nyc, nzc, fcFF, fc, pcFF);
+  Vrestrc(nxf, nyf, nzf, nxc, nyc, nzc, fcFF, fc, pcFF, q);
 }
 
 VPUBLIC void Vmkcors(int *numlev, int *nxold, int *nyold, int *nzold,
@@ -883,7 +885,8 @@ VPUBLIC void Vbuildharm0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
 
 VPUBLIC void Vbuildalg(int *nx, int *ny, int *nz, int *mode, int *nlev, int *iz,
                        int *ipc, double *rpc, double *ac, double *cc,
-                       double *fc, double *x, double *y, double *tmp) {
+                       double *fc, double *x, double *y, double *tmp,
+                       sycl::queue &q) {
 
   int nxx, nyy, nzz;
   int nxold, nyold, nzold;
@@ -902,12 +905,12 @@ VPUBLIC void Vbuildalg(int *nx, int *ny, int *nz, int *mode, int *nlev, int *iz,
     Vnmatvec(&nxx, &nyy, &nzz, RAT(ipc, VAT2(iz, 5, lev)),
              RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
              RAT(cc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)),
-             RAT(y, VAT2(iz, 1, lev)), tmp);
+             RAT(y, VAT2(iz, 1, lev)), tmp, q);
   } else {
     Vmatvec(&nxx, &nyy, &nzz, RAT(ipc, VAT2(iz, 5, lev)),
             RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
             RAT(cc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)),
-            RAT(y, VAT2(iz, 1, lev)));
+            RAT(y, VAT2(iz, 1, lev)), q);
   }
 
   // Build the (nlev-1) level rhs function
@@ -924,12 +927,12 @@ VPUBLIC void Vbuildalg(int *nx, int *ny, int *nz, int *mode, int *nlev, int *iz,
       Vnmatvec(&nxx, &nyy, &nzz, RAT(ipc, VAT2(iz, 5, lev)),
                RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                RAT(cc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)),
-               RAT(y, VAT2(iz, 1, lev)), tmp);
+               RAT(y, VAT2(iz, 1, lev)), tmp, q);
     } else {
       Vmatvec(&nxx, &nyy, &nzz, RAT(ipc, VAT2(iz, 5, lev)),
               RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
               RAT(cc, VAT2(iz, 1, lev)), RAT(x, VAT2(iz, 1, lev)),
-              RAT(y, VAT2(iz, 1, lev)));
+              RAT(y, VAT2(iz, 1, lev)), q);
     }
   }
 }

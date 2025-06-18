@@ -56,6 +56,7 @@
 #define MIKPCKD_H_
 
 #include "abps_macros.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Copy operation for a grid function with boundary values.
  *           Quite simply copies one 3d matrix to another
@@ -69,7 +70,8 @@ Vxcopy(int *nx,   ///< The size of the x dimension of the 3d matrix
        int *ny,   ///< The size of the y dimension of the 3d matrix
        int *nz,   ///< The size of the z dimension of the 3d matrix
        double *x, ///< The source matrix from which to copy data
-       double *y  ///< The destination matrix to receive copied data
+       double *y,
+       sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   Copy operation for a grid function with boundary values.
@@ -84,8 +86,8 @@ Vxcopy_small(int *nx,   ///< The size of the x dimension of the 3d matrix
              int *ny,   ///< The size of the y dimension of the 3d matrix
              int *nz,   ///< The size of the z dimension of the 3d matrix
              double *x, ///< The source matrix from which to copy data
-             double *y  ///< The destination matrix to receive copied data
-);
+             double *y, ///< The destination matrix to receive copied data
+             sycl::queue &q);
 
 /** @brief   Copy operation for a grid function with boundary values.
  *           Quite simply copies one 3d matrix to another
@@ -99,7 +101,8 @@ Vxcopy_large(int *nx,   ///< The size of the x dimension of the 3d matrix
              int *ny,   ///< The size of the y dimension of the 3d matrix
              int *nz,   ///< The size of the z dimension of the 3d matrix
              double *x, ///< The source matrix from which to copy data
-             double *y  ///< The destination matrix to receive copied data
+             double *y,
+             sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   saxpy operation for a grid function with boundary values.
@@ -114,7 +117,8 @@ Vxaxpy(int *nx,       ///< The size of the x dimension of the 3d matrix
        int *nz,       ///< The size of the z dimension of the 3d matrix
        double *alpha, ///< @todo: Doc
        double *x,     ///< The source matrix from which to copy data
-       double *y      ///< The destination matrix to receive copied data
+       double *y,
+       sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   Norm operation for a grid function with boundary values.
@@ -124,10 +128,11 @@ Vxaxpy(int *nx,       ///< The size of the x dimension of the 3d matrix
  *  @note    Replaces xnrm1 from mikpckd.f
  */
 VEXTERNC double
-Vxnrm1(int *nx,  ///< The size of the x dimension of the 3d matrix
-       int *ny,  ///< The size of the y dimension of the 3d matrix
-       int *nz,  ///< The size of the z dimension of the 3d matrix
-       double *x ///< The matrix to normalize
+Vxnrm1(int *nx, ///< The size of the x dimension of the 3d matrix
+       int *ny, ///< The size of the y dimension of the 3d matrix
+       int *nz, ///< The size of the z dimension of the 3d matrix
+       double *x,
+       sycl::queue &q ///< The matrix to normalize
 );
 
 /** @brief   Norm operation for a grid function with boundary values.
@@ -137,10 +142,11 @@ Vxnrm1(int *nx,  ///< The size of the x dimension of the 3d matrix
  *  @note    Replaces xnrm2 from mikpckd.f
  */
 VEXTERNC double
-Vxnrm2(int *nx,  ///< The size of the x dimension of the 3d matrix
-       int *ny,  ///< The size of the y dimension of the 3d matrix
-       int *nz,  ///< The size of the z dimension of the 3d matrix
-       double *x ///< The matrix to normalize
+Vxnrm2(int *nx, ///< The size of the x dimension of the 3d matrix
+       int *ny, ///< The size of the y dimension of the 3d matrix
+       int *nz, ///< The size of the z dimension of the 3d matrix
+       double *x,
+       sycl::queue &q ///< The matrix to normalize
 );
 
 /** @brief   Inner product operation for a grid function with boundary values.
@@ -153,7 +159,8 @@ VEXTERNC double Vxdot(int *nx, ///< The size of the x dimension of the 3d matrix
                       int *ny, ///< The size of the y dimension of the 3d matrix
                       int *nz, ///< The size of the z dimension of the 3d matrix
                       double *x, ///< The first vector
-                      double *y  ///< The second vector
+                      double *y,
+                      sycl::queue &q ///< The second vector
 );
 
 /** @brief   Zero out operation for a grid function, including boundary values.
@@ -165,7 +172,8 @@ VEXTERNC double Vxdot(int *nx, ///< The size of the x dimension of the 3d matrix
 VEXTERNC void Vazeros(int *nx, ///< The size of the x dimension of the 3d matrix
                       int *ny, ///< The size of the x dimension of the 3d matrix
                       int *nz, ///< The size of the x dimension of the 3d matrix
-                      double *x ///< The matrix to zero out
+                      double *x,
+                      sycl::queue &q ///< The matrix to zero out
 );
 
 /** @brief   Initialize a grid function to have a certain boundary value,
@@ -181,7 +189,8 @@ VEXTERNC void VfboundPMG(int *ibound, ///< @todo: Doc
                          double *x,   ///< @todo: Doc
                          double *gxc, ///< @todo: Doc
                          double *gyc, ///< @todo: Doc
-                         double *gzc  ///< @todo: Doc
+                         double *gzc,
+                         sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Initialize a grid function to have a zero boundary value
@@ -191,10 +200,11 @@ VEXTERNC void VfboundPMG(int *ibound, ///< @todo: Doc
  *  @note    Replaces fboundPMG00 from mikpckd.f
  */
 VEXTERNC void
-VfboundPMG00(int *nx,  ///< The size of the x dimension of the 3d matrix
-             int *ny,  ///< The size of the y dimension of the 3d matrix
-             int *nz,  ///< The size of the z dimension of the 3d matrix
-             double *x ///< The 3d matrix to initialize
+VfboundPMG00(int *nx, ///< The size of the x dimension of the 3d matrix
+             int *ny, ///< The size of the y dimension of the 3d matrix
+             int *nz, ///< The size of the z dimension of the 3d matrix
+             double *x,
+             sycl::queue &q ///< The 3d matrix to initialize
 );
 
 /** @brief   Fill grid function with random values, including boundary values.
@@ -219,7 +229,8 @@ VEXTERNC void Vxscal(int *nx, ///< The size of the x dimension of the 3d matrix
                      int *ny, ///< The size of the y dimension of the 3d matrix
                      int *nz, ///< The size of the z dimension of the 3d matrix
                      double *fac, ///< The scaling factor
-                     double *x    ///< The 3d matrix to scale
+                     double *x,
+                     sycl::queue &q ///< The 3d matrix to scale
 );
 
 /** @brief

@@ -57,7 +57,7 @@
 VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
                    double *cc, double *fc, double *x, double *w1, double *w2,
                    double *r, int *itmax, int *iters, double *errtol,
-                   double *omega, int *iresid, int *iadjoint) {
+                   double *omega, int *iresid, int *iadjoint, sycl::queue &q) {
 
   int numdia; /// @todo: doc
 
@@ -68,13 +68,13 @@ VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
   if (numdia == 7) {
     Vgsrb7x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
             RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, w1, w2, r, itmax, iters, errtol,
-            omega, iresid, iadjoint);
+            omega, iresid, iadjoint, q);
   } else if (numdia == 27) {
     Vgsrb27x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
              RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
              RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
              RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14),
-             x, w1, w2, r, itmax, iters, errtol, omega, iresid, iadjoint);
+             x, w1, w2, r, itmax, iters, errtol, omega, iresid, iadjoint, q);
   } else {
     printf("GSRB: invalid stencil type given...\n");
   }
@@ -84,9 +84,7 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                      double *oC, double *cc, double *fc, double *oE, double *oN,
                      double *uC, double *x, double *w1, double *w2, double *r,
                      int *itmax, int *iters, double *errtol, double *omega,
-                     int *iresid, int *iadjoint) {
-
-  int i, j, k, ioff;
+                     int *iresid, int *iadjoint, sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);
@@ -102,47 +100,53 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 
   for (*iters = 1; *iters <= *itmax; (*iters)++) {
 
-// Do the red points ***
-#pragma omp parallel for private(i, j, k, ioff)
-    for (k = 2; k <= *nz - 1; k++) {
-      for (j = 2; j <= *ny - 1; j++) {
-        ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-               (*iadjoint) * (1 - (j + k + 2) % 2);
-        for (i = 2 + ioff; i <= *nx - 1; i += 2) {
-          VAT3(x, i, j, k) =
-              (VAT3(fc, i, j, k) + VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-               VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-               VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-               VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-               VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-               VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
-              (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-        }
-      }
-    }
+    // Do the red points ***
+    q.parallel_for(sycl::range<3>((*nx - 2) / 2 + (*nx) % 2, *ny - 2, *nz - 2),
+                   [=](sycl::id<3> I) {
+                     const int i = 2 * I[0] + 2;
+                     const int j = I[1] + 2;
+                     const int k = I[2] + 2;
 
-// Do the black points
-#pragma omp parallel for private(i, j, k, ioff)
-    for (k = 2; k <= *nz - 1; k++) {
-      for (j = 2; j <= *ny - 1; j++) {
-        ioff = (*iadjoint) * ((j + k + 2) % 2) +
-               (1 - *iadjoint) * (1 - (j + k + 2) % 2);
-        for (i = 2 + ioff; i <= *nx - 1; i += 2) {
-          VAT3(x, i, j, k) =
-              (VAT3(fc, i, j, k) + VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-               VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-               VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-               VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-               VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-               VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
-              (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-        }
-      }
-    }
+                     const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
+                                       (*iadjoint) * (1 - (j + k + 2) % 2);
+
+                     if (i >= ioff + 2)
+                       VAT3(x, i, j, k) =
+                           (VAT3(fc, i, j, k) +
+                            VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                            VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                            VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                            VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                            VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                            VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
+                           (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+                   });
+
+    // Do the black points
+
+    q.parallel_for(sycl::range<3>((*nx - 2) / 2 + (*nx) % 2, *ny - 2, *nz - 2),
+                   [=](sycl::id<3> I) {
+                     const int i = 2 * I[0] + 2;
+                     const int j = I[1] + 2;
+                     const int k = I[2] + 2;
+
+                     const auto ioff = (*iadjoint) * ((j + k + 2) % 2) +
+                                       (1 - *iadjoint) * (1 - (j + k + 2) % 2);
+
+                     VAT3(x, i, j, k) =
+                         (VAT3(fc, i, j, k) +
+                          VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                          VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                          VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                          VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                          VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                          VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
+                         (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+                   });
   }
 
   if (*iresid == 1)
-    Vmresid7_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, x, r);
+    Vmresid7_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, x, r, q);
 }
 
 VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
@@ -152,7 +156,7 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                       double *uNE, double *uNW, double *uSE, double *uSW,
                       double *x, double *w1, double *w2, double *r, int *itmax,
                       int *iters, double *errtol, double *omega, int *iresid,
-                      int *iadjoint) {
+                      int *iadjoint, sycl::queue &q) {
 
   int i, j, k;
   int i1, j1, k1;
@@ -208,7 +212,8 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 
   for (*iters = 1; *iters <= *itmax; (*iters)++) {
 
-    // #pragma omp parallel for private(i, j, k, ioff, tmpO, tmpU, tmpD)
+    // #pragma omp parallel for private(i, j, k, ioff, tmpO, tmpU, tmpD)   //Why
+    // was this commented out?
     for (k = 2; k <= *nz - 1; k++) {
 
       for (j = 2; j <= *ny - 1; j++) {
@@ -302,5 +307,5 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   // If specified, return the new residual as well
   if (*iresid == 1)
     Vmresid27_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, oNE, oNW, uE, uW,
-                 uN, uS, uNE, uNW, uSE, uSW, x, r);
+                 uN, uS, uNE, uNW, uSE, uSW, x, r, q);
 }

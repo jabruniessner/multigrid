@@ -58,6 +58,7 @@
 
 #include "mgsubd.h"
 #include "smoothd.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Nested iteration for a nonlinear multilevel method.
  *             Algorithm:  nonlinear multigrid iteration (fas)
@@ -103,7 +104,8 @@ VEXTERNC void Vfmvfas(int *nx,        ///< @todo: doc
                       double *ac,     ///< @todo: doc
                       double *cc,     ///< @todo: doc
                       double *fc,     ///< @todo: doc
-                      double *tru     ///< @todo: doc
+                      double *tru,
+                      sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Nonlinear multilevel method.
@@ -179,7 +181,8 @@ VEXTERNC void Vmvfas(int *nx,        ///< @todo: doc
                      double *ac,     ///< @todo: doc
                      double *cc,     ///< @todo: doc
                      double *fc,     ///< @todo: doc
-                     double *tru     ///< @todo: doc
+                     double *tru,
+                     sycl::queue &q ///< @todo: doc
 );
 
 #endif /* _MGFASD_H_ */

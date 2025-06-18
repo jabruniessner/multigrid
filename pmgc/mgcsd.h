@@ -58,11 +58,13 @@
 #include "abps_macros.h"
 
 #include "gsd.h"
+#include "hipSYCL/sycl/queue.hpp"
 #include "matvecd.h"
 #include "mgsubd.h"
 #include "mikpckd.h"
 #include "mlinpckd.h"
 #include "smoothd.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Screaming linear multilevel method.
  *
@@ -135,7 +137,8 @@ VEXTERNC void Vmvcs(int *nx,        ///< @todo: doc
                     double *ac,     ///< @todo: doc
                     double *cc,     ///< @todo: doc
                     double *fc,     ///< @todo: doc
-                    double *tru     ///< @todo: doc
+                    double *tru,
+                    sycl::queue &q ///< @todo: doc
 );
 
 #endif /* _MGCSD_H_ */

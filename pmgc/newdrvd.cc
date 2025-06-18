@@ -59,7 +59,7 @@ VEXTERNC void Vnewdriv(int *iparm, double *rparm, int *iwork, double *rwork,
                        double *u, double *xf, double *yf, double *zf,
                        double *gxcf, double *gycf, double *gzcf, double *a1cf,
                        double *a2cf, double *a3cf, double *ccf, double *fcf,
-                       double *tcf) {
+                       double *tcf, sycl::queue &q) {
 
   int nxc;    /// @todo: Doc
   int nyc;    /// @todo: Doc
@@ -148,7 +148,7 @@ VEXTERNC void Vnewdriv(int *iparm, double *rparm, int *iwork, double *rwork,
             RAT(rwork, k_w2), RAT(iwork, k_ipc), RAT(rwork, k_rpc),
             RAT(rwork, k_pc), RAT(rwork, k_ac), RAT(rwork, k_cc),
             RAT(rwork, k_fc), xf, yf, zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf,
-            ccf, fcf, tcf);
+            ccf, fcf, tcf, q);
 }
 
 VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
@@ -157,7 +157,7 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
                        double *fc, double *xf, double *yf, double *zf,
                        double *gxcf, double *gycf, double *gzcf, double *a1cf,
                        double *a2cf, double *a3cf, double *ccf, double *fcf,
-                       double *tcf) {
+                       double *tcf, sycl::queue &q) {
 
   int mgkey;      /// @todo:  Doc
   int nlev;       /// @todo:  Doc
@@ -233,7 +233,7 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   ido = 0;
   Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
             &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
-            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 
   // Stop the timer
   // Vnm_tstop(30, "Vnewdrv2: fine problem setup");
@@ -245,7 +245,7 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   ido = 1;
   Vbuildops(nx, ny, nz, &nlev, &ipkey, &iinfo, &ido, iz, &mgprol, &mgcoar,
             &mgsolv, &mgdisc, ipc, rpc, pc, ac, cc, fc, xf, yf, zf, gxcf, gycf,
-            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf);
+            gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 
   // Stop the timer
   // Vnm_tstop(30, "Vnewdrv2: coarse problem setup");
@@ -258,15 +258,15 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
 
   if (istop == 4 || istop == 5) {
     WARN_UNTESTED;
-    Vbuildalg(nx, ny, nz, &mode, &nlev, iz, ipc, rpc, ac, cc, ccf, tcf, fc,
-              fcf);
+    Vbuildalg(nx, ny, nz, &mode, &nlev, iz, ipc, rpc, ac, cc, ccf, tcf, fc, fcf,
+              q);
   }
 
   // Determine machine epsilon
   // epsiln = Vnm_epsmac();
 
   // Impose zero dirichlet boundary conditions (now in source fcn)
-  VfboundPMG00(nx, ny, nz, u);
+  VfboundPMG00(nx, ny, nz, u, q);
 
   // Start the timer
   // Vnm_tstart(30, "Vnewdrv2: solve");
@@ -279,12 +279,12 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
     Vnewton(nx, ny, nz, u, iz, ccf, fcf, w1, w2, &istop, &itmax, &iters,
             &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
             &errtol, &omegan, &nu1, &nu2, &mgsmoo, a1cf, a2cf, a3cf, ipc, rpc,
-            pc, ac, cc, fc, tcf);
+            pc, ac, cc, fc, tcf, q);
   } else if (mgkey == 1) {
     Vfnewton(nx, ny, nz, u, iz, ccf, fcf, w1, w2, &istop, &itmax, &iters,
              &ierror, &nlev, &ilev, &nlev_real, &mgsolv, &iok, &iinfo, &epsiln,
              &errtol, &omegan, &nu1, &nu2, &mgsmoo, a1cf, a2cf, a3cf, ipc, rpc,
-             pc, ac, cc, fc, tcf);
+             pc, ac, cc, fc, tcf, q);
   } else {
     printf("Bad mgkey given: %d", mgkey);
     exit(-1);
@@ -295,5 +295,5 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
 
   // Restore boundary conditions
   ibound = 1;
-  VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf);
+  VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf, q);
 }

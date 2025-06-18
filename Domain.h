@@ -218,8 +218,7 @@ template <Dimension Dim, Length... strides_all, std::size_t... dims>
 int domain_compute_norm_squared(DataType &result,
                                 Domain<Dim, strides_all...> &a,
                                 std::index_sequence<dims...>) {
-  DataType *result_device =
-      sycl::malloc_device<DataType>(sizeof(DataType), a.q);
+  DataType *result_device = sycl::malloc_device<DataType>(1, a.q);
 
   a.q.memset(result_device, 0, sizeof(DataType));
 
