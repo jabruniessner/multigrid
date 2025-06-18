@@ -57,7 +57,7 @@
 
 VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
                         double *rpc, double *ac, int *ipcB, double *rpcB,
-                        double *acB) {
+                        double *acB, sycl::queue &q) {
 
   int numdia;
   int n, m;
@@ -74,8 +74,8 @@ VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
     lda = m + 1;
 
     Vbuildband1_7(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), RAT2(ac, 1, 2),
-                  RAT2(ac, 1, 3), RAT2(ac, 1, 4), ipcB, rpcB, acB, &n, &m,
-                  &lda);
+                  RAT2(ac, 1, 3), RAT2(ac, 1, 4), ipcB, rpcB, acB, &n, &m, &lda,
+                  q);
 
   } else if (numdia == 27) {
 
@@ -88,7 +88,7 @@ VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
                    RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
                    RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11),
                    RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14), ipcB,
-                   rpcB, acB, &n, &m, &lda);
+                   rpcB, acB, &n, &m, &lda, q);
   } else {
     printf("Vbuildband: invalid stencil type given...\n");
   }

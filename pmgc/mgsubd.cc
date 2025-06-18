@@ -250,7 +250,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
       Vbuildband(&key, &nxx, &nyy, &nzz, RAT(ipc, VAT2(iz, 5, lev)),
                  RAT(rpc, VAT2(iz, 6, lev)), RAT(ac, VAT2(iz, 7, lev)),
                  RAT(ipc, VAT2(iz, 5, lev + 1)), RAT(rpc, VAT2(iz, 6, lev + 1)),
-                 RAT(ac, VAT2(iz, 7, lev + 1)));
+                 RAT(ac, VAT2(iz, 7, lev + 1)), q);
 
       if (key == 1) {
         printf("Changing your mgsolv to iterative\n");

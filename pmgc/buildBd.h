@@ -59,6 +59,7 @@
 #include "abps_macros.h"
 
 #include "mlinpckd.h"
+#include <sycl/sycl.hpp>
 
 /** @brief   Build and factor a banded matrix given a matrix in diagonal form.
  *  @ingroup PMGC
@@ -74,7 +75,8 @@ VEXTERNC void Vbuildband(int *key,     ///< @todo:  Doc
                          double *ac,   ///< @todo:  Doc
                          int *ipcB,    ///< @todo:  Doc
                          double *rpcB, ///< @todo:  Doc
-                         double *acB   ///< @todo:  Doc
+                         double *acB,
+                         sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Build the operator in banded form given the 7-diagonal form.
@@ -96,7 +98,8 @@ VEXTERNC void Vbuildband1_7(int *nx,      ///< @todo:  Doc
                             double *acB,  ///< @todo:  Doc
                             int *n,       ///< @todo:  Doc
                             int *m,       ///< @todo:  Doc
-                            int *lda      ///< @todo:  Doc
+                            int *lda,
+                            sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Build the operator in banded form given the 27-diagonal form.
@@ -128,7 +131,8 @@ VEXTERNC void Vbuildband1_27(int *nx,      ///< @todo:  Doc
                              double *acB,  ///< @todo:  Doc
                              int *n,       ///< @todo:  Doc
                              int *m,       ///< @todo:  Doc
-                             int *lda      ///< @todo:  Doc
+                             int *lda,
+                             sycl::queue &q ///< @todo:  Doc
 );
 
 #endif /* _BUILDBD_H_ */
