@@ -299,8 +299,8 @@ int main(int argc, char *argv[]) {
     auto &init_guess = sol.get_domain();
 
     cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
-                                       sol.template get_domain<nlev>(),
-                                       values_op, offsets_op);
+                                       sol.template get_domain<1>(), values_op,
+                                       offsets_op);
 
     // Jacobi_Smoother_PBE j_smoother(rhs_domain);
     //
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
     std::index_sequence<1> num_iters{};
-    std::index_sequence<2> smoothing_steps;
+    std::index_sequence<5> smoothing_steps;
 
     auto *a = &sol;
     auto *b = &lhs_domain1;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
                                sol.template get_domain<nlev>(),
                                lhs_domain2.template get_domain<nlev>(),
                                kappa_.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
+                               epsilonx_map.template get_domain<nlev>(),
                                epsilony_map.template get_domain<nlev>(),
                                epsilonz_map.template get_domain<nlev>(),
                                kappa_2, grid_step, epsilon_r, delta_epsilon);
@@ -333,10 +333,10 @@ int main(int argc, char *argv[]) {
       std::cout << "The residual after " << i << " iterations is " << residual
                 << std::endl;
 
-      //  std::index_sequence<30> iter_nums{};
-      //  j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
-      //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-      //             grid_step, epsilon_r, delta_epsilon, omega);
+      std::index_sequence<30> iter_nums{};
+      // j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
+      //            epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+      //            grid_step, epsilon_r, delta_epsilon, omega);
 
       // std::swap(a, b);
 
