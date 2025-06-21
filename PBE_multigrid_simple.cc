@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
     //                             sol.template get_domain<nlev>(),
     //                             lhs_domain2.template get_domain<nlev>(),
     //                             kappa_.template get_domain<nlev>(),
-    //                             epsilony_map.template get_domain<nlev>(),
+    //                             epsilonx_map.template get_domain<nlev>(),
     //                             epsilony_map.template get_domain<nlev>(),
     //                             epsilonz_map.template get_domain<nlev>(),
     //                             kappa_2, grid_step, epsilon_r,
