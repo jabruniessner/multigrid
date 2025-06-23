@@ -334,16 +334,16 @@ int main(int argc, char *argv[]) {
                 << std::endl;
 
       std::index_sequence<30> iter_nums{};
-      // j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
-      //            epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-      //            grid_step, epsilon_r, delta_epsilon, omega);
-
-      // std::swap(a, b);
+      //  j_smoother(Integer<nlev>{}, iter_nums, *a, *b, rhs_domain, kappa_,
+      //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+      //             grid_step, epsilon_r, delta_epsilon, omega);
 
       v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
                         epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
                         epsilon_r, delta_epsilon, omega, num_iters, coarser,
                         smoothing_steps, smoothing_steps);
+
+      std::swap(a, b);
     }
 
     // cg_solver::CG_solver_PBE(

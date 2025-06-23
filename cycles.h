@@ -253,7 +253,8 @@ struct Jacobi_Smoother_PBE {
                 epsilon_r +
                 epsilon_maps[j](I3[0], I3[1], I3[2]) * delta_epsilon;
             const DataType epsilon_upper =
-                epsilon_r + epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
+                epsilon_r +
+                epsilon_maps[j](I2[0], I2[1], I2[2]) * delta_epsilon;
 
             diag_inverse_denominator += epsilon_lower + epsilon_upper;
           }
@@ -364,36 +365,33 @@ struct Gauss_Seidel_PBE {
         epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
 
     const DataType h = grid_step;
-    const DataType diag_inverse_helper = 1; // (h * h);
+    const DataType diag_inverse_helper = (h * h);
 
     if constexpr (num_iters == 0) {
       return;
     } else {
       for (int i = 0; i < num_iters; i++) {
         std::array<Dimension, Dim> strides_array =
-            std::to_array(src_domain.strides);
-
-        //  std::cout << std::endl;
-        //  std::cout << std::endl;
-
-        //  std::cout << "Before " << i << " iterations " << std::endl;
-        //  std::cout << "<<==================================>>" << std::endl;
-
-        //  src_domain.print_domain();
+            std::to_array(dest_domain.strides);
 
         auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
         for (int color = 0; color < 2; color++)
-          src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+          dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
             I[0] += src_domain.padding_width;
             I[1] += src_domain.padding_width;
             I[2] += src_domain.padding_width;
 
             if ((I[0] + I[1] + I[2]) % 2 == color) {
 
+              auto &intermediate = color == 0 ? src_domain : dest_domain;
+              DataType Off_diagonal_contribution = convolution::PBE_GS_kernel(
+                  intermediate, epsilon_maps, epsilon_r, delta_epsilon, I);
+
               DataType diag_inverse_denominator =
                   kappa_domain(I[0], I[1], I[2]) * h * h * kappa_2 * epsilon_r;
 
+              // We first need to compute the right diagonal value
               for (int j = 0; j < Dim; j++) {
                 sycl::id<Dim> I2{I}, I3{I};
                 I2[j] += 1;
@@ -409,44 +407,18 @@ struct Gauss_Seidel_PBE {
                 diag_inverse_denominator += epsilon_lower + epsilon_upper;
               }
 
-              volatile DataType val = src_domain(I[0], I[1], I[2]);
-
-#define GET_EPSILON(eps, x, y, z) (epsilon_r + eps(x, y, z) * delta_epsilon)
-
-              dest_domain(I[0], I[1], I[2]) = src_domain(I[0], I[1], I[2]) =
-                  (rhs_domain(I[0], I[1], I[2]) * h * h +
-                   GET_EPSILON(epsilon_y_domain, I[0], I[1], I[2]) *
-                       src_domain(I[0], I[1] + 1, I[2]) +
-                   GET_EPSILON(epsilon_y_domain, I[0], I[1] - 1, I[2]) *
-                       src_domain(I[0], I[1] - 1, I[2]) +
-                   GET_EPSILON(epsilon_x_domain, I[0], I[1], I[2]) *
-                       src_domain(I[0] + 1, I[1], I[2]) +
-                   GET_EPSILON(epsilon_x_domain, I[0] - 1, I[1], I[2]) *
-                       src_domain(I[0] - 1, I[1], I[2]) +
-                   GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2] - 1) *
-                       src_domain(I[0], I[1], I[2] - 1) +
-                   GET_EPSILON(epsilon_z_domain, I[0], I[1], I[2]) *
-                       src_domain(I[0], I[1], I[2] + 1)) /
-                  (diag_inverse_denominator);
-
-              val = src_domain(I[0], I[1], I[2]);
-
-              volatile int dummy = 0;
+              dest_domain(I[0], I[1], I[2]) =
+                  (1 - omega) * src_domain(I[0], I[1], I[2]) +
+                  (omega) / diag_inverse_denominator *
+                      (rhs_domain(I[0], I[1], I[2]) * h * h +
+                       Off_diagonal_contribution);
             }
           });
 
-        //  std::cout << std::endl;
-        //  std::cout << std::endl;
-
-        //  std::cout << "After " << i << " iterations " << std::endl;
-        //  std::cout << "<<==================================>>" << std::endl;
-
-        //  src_domain.print_domain();
-
-        // std::swap(dest_domain.values_buff, src_domain.values_buff);
+        std::swap(dest_domain.values_buff, src_domain.values_buff);
       }
 
-      // std::swap(dest_domain.values_buff, src_domain.values_buff);
+      std::swap(dest_domain.values_buff, src_domain.values_buff);
     }
   }
 
