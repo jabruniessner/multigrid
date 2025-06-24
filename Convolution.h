@@ -186,7 +186,6 @@ template <int direction, typename DataType, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
 inline DataType directional_GS(const Domain<Dim, strides_all...> &src,
                                const Domain<Dim, strides_all...> &epsilon_map,
-                               const DataType grid_step,
                                const DataType epsilon_r,
                                const DataType delta_epsilon, sycl::id<Dim_2> I,
                                std::index_sequence<dims...>) {
@@ -198,32 +197,29 @@ inline DataType directional_GS(const Domain<Dim, strides_all...> &src,
       (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
   const DataType epsilon_upper =
       (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
-  const DataType result = (epsilon_upper * (src(I2[dims]...)) +
-                           epsilon_lower * (src(I3[dims]...))) /
-                          (grid_step * grid_step);
+  const DataType result =
+      (epsilon_upper * (src(I2[dims]...)) + epsilon_lower * (src(I3[dims]...)));
 
   return result;
 }
 
 template <int direction, typename DataType, Dimension Dim,
           Length... strides_all, int Dim_2>
-inline DataType
-directional_GS(const Domain<Dim, strides_all...> &src,
-               const Domain<Dim, strides_all...> &epsilon_map,
-               const DataType grid_step, const DataType epsilon_r,
-               const DataType delta_epsilon, sycl::id<Dim_2> I) {
-  return directional_GS<direction>(src, epsilon_map, grid_step, epsilon_r,
-                                   delta_epsilon, I,
-                                   std::make_index_sequence<Dim>{});
+inline DataType directional_GS(const Domain<Dim, strides_all...> &src,
+                               const Domain<Dim, strides_all...> &epsilon_map,
+                               const DataType epsilon_r,
+                               const DataType delta_epsilon,
+                               sycl::id<Dim_2> I) {
+  return directional_GS<direction>(src, epsilon_map, epsilon_r, delta_epsilon,
+                                   I, std::make_index_sequence<Dim>{});
 }
 
 template <typename DataType, Dimension Dim, Length... strides_all, int Dim_2,
           std::size_t... dims>
 DataType
+
 PBE_GS_kernel(const Domain<Dim, strides_all...> &src,
-              const Domain<Dim, strides_all...> &kappa_map,
               const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
-              const DataType &kappa_2, const DataType grid_step,
               const DataType epsilon_r, const DataType delta_epsilon,
               sycl::id<Dim_2> I, std::index_sequence<dims...>) {
 
@@ -233,23 +229,20 @@ PBE_GS_kernel(const Domain<Dim, strides_all...> &src,
 
   DataType result = 0;
 
-  ((result += directional_GS<dims>(src, epsilon_maps[dims], grid_step,
-                                   epsilon_r, delta_epsilon, I)),
+  ((result +=
+    directional_GS<dims>(src, epsilon_maps[dims], epsilon_r, delta_epsilon, I)),
    ...);
-  return -result;
+  return result;
 }
 
 template <typename DataType, Dimension Dim, Length... strides_all, int Dim2>
 DataType
 PBE_GS_kernel(const Domain<Dim, strides_all...> &src,
-              const Domain<Dim, strides_all...> &kappa_map,
               const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
-              const DataType &kappa_2, const DataType grid_step,
               const DataType epsilon_r, const DataType delta_epsilon,
               sycl::id<Dim2> I) {
 
-  return PBE_GS_kernel(src, kappa_map, epsilon_maps, kappa_2, grid_step,
-                       epsilon_r, delta_epsilon, I,
+  return PBE_GS_kernel(src, epsilon_maps, epsilon_r, delta_epsilon, I,
                        std::make_index_sequence<Dim>{});
 
   // return 0;

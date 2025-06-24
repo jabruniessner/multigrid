@@ -82,12 +82,13 @@ int main(int argc, char *argv[]) {
 
   using OffsetType = std::array<int, Dim>;
 
-  if (argc < 3) {
-    std::cout
-        << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
-        << std::endl;
-    return 0;
-  }
+  //  if (argc < 3) {
+  //    std::cout
+  //        << "Usage: ./this_program in_file out_file x_min y_min z_min
+  //        num_iters"
+  //        << std::endl;
+  //    return 0;
+  //  }
   // int num_iters = std::stoi(argv[3]);
 
 #ifdef DEBUGMODE
@@ -99,30 +100,30 @@ int main(int argc, char *argv[]) {
   sycl::queue q{selector,
                 sycl::property_list{sycl::property::queue::in_order{}}};
 
-  std::string filename_in{argv[1]};
-  std::string filename_out{argv[2]};
+  // std::string filename_in{argv[1]};
+  // std::string filename_out{argv[2]};
   std::list<Atom<DataType>> atom_list;
-  read_pqr_file(filename_in, atom_list);
+  // read_pqr_file(filename_in, atom_list);
 
   const auto num_atoms = atom_list.size();
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(num_atoms);
 
-  auto x_min = std::stod(argv[3]);
-  auto y_min = std::stod(argv[4]);
-  auto z_min = std::stod(argv[5]);
-  int iter_num = std::stof(argv[6]);
+  //  auto x_min = std::stod(argv[3]);
+  //  auto y_min = std::stod(argv[4]);
+  //  auto z_min = std::stod(argv[5]);
+  int iter_num = std::stof(argv[1]);
 
   // std::printf("The threshold is %f\n", thresh);
 
-  for (auto &atom : atom_list) {
-    atom.Position[0] -= x_min;
-    atom.Position[1] -= y_min;
-    atom.Position[2] -= z_min;
-    // atom.radius += ionradius;
-    atoms_vector.push_back(atom);
-  }
+  //  for (auto &atom : atom_list) {
+  //    atom.Position[0] -= x_min;
+  //    atom.Position[1] -= y_min;
+  //    atom.Position[2] -= z_min;
+  //    // atom.radius += ionradius;
+  //    atoms_vector.push_back(atom);
+  //  }
 
   Atom<DataType> *atoms_device =
       sycl::malloc_device<Atom<DataType>>(atom_list.size(), q);
@@ -322,29 +323,26 @@ int main(int argc, char *argv[]) {
     std::index_sequence<1> num_iters{};
     std::index_sequence<2> smoothing_steps;
 
-    //  for (int i = 0; i < iter_num; i++) {
+    for (int i = 0; i < iter_num; i++) {
 
-    //    DataType const residual =
-    //        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-    //                             sol.template get_domain<nlev>(),
-    //                             lhs_domain2.template get_domain<nlev>(),
-    //                             kappa_.template get_domain<nlev>(),
-    //                             epsilonx_map.template get_domain<nlev>(),
-    //                             epsilony_map.template get_domain<nlev>(),
-    //                             epsilonz_map.template get_domain<nlev>(),
-    //                             kappa_2, grid_step, epsilon_r,
-    //                             delta_epsilon);
+      DataType const residual =
+          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+                               sol.template get_domain<nlev>(),
+                               lhs_domain2.template get_domain<nlev>(),
+                               kappa_.template get_domain<nlev>(),
+                               epsilonx_map.template get_domain<nlev>(),
+                               epsilony_map.template get_domain<nlev>(),
+                               epsilonz_map.template get_domain<nlev>(),
+                               kappa_2, grid_step, epsilon_r, delta_epsilon);
 
-    //    std::cout << "The residual after " << i << " iterations is " <<
-    //    residual
-    //              << std::endl;
+      std::cout << "The residual after " << i << " iterations is " << residual
+                << std::endl;
 
-    //    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-    //                      epsilony_map, epsilonz_map, kappa_, kappa_2,
-    //                      grid_step, epsilon_r, delta_epsilon, omega,
-    //                      num_iters, coarser, smoothing_steps,
-    //                      smoothing_steps);
-    //  }
+      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
+                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
+                        smoothing_steps, smoothing_steps);
+    }
 
     // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
     // grid_step,
@@ -362,11 +360,12 @@ int main(int argc, char *argv[]) {
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-    std::index_sequence<3> iter_nums{};
-    for (int i = 0; i < iter_num; i++)
-      j_smoother(Integer<1>{}, iter_nums, sol, sol, rhs_domain, kappa_,
-                 epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-                 epsilon_r, delta_epsilon, omega);
+    //  std::index_sequence<20> iter_nums{};
+    //  // for (int i = 0; i < iter_num; i++)
+    //  j_smoother(Integer<1>{}, iter_nums, lhs_domain1, sol, rhs_domain,
+    //  kappa_,
+    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+    //             epsilon_r, delta_epsilon, omega);
 
     // sol.get_domain().print_domain();
     //   //
