@@ -56,7 +56,7 @@
 #include <sycl/sycl.hpp>
 
 VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *numdia, double *pcFF, double *acFF, double *ac, sycl::queue& q) {
+                     int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, sycl::queue& q) {
 
   MAT2(pcFF, *nxc * *nyc * *nzc, 27);
   MAT2(acFF, *nxf * *nyf * *nzf, 27);
@@ -147,24 +147,24 @@ VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
 }
 
 VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
-                       double *oPC, double *oPN, double *oPS, double *oPE,
-                       double *oPW, double *oPNE, double *oPNW, double *oPSE,
-                       double *oPSW, double *uPC, double *uPN, double *uPS,
-                       double *uPE, double *uPW, double *uPNE, double *uPNW,
-                       double *uPSE, double *uPSW, double *dPC, double *dPN,
-                       double *dPS, double *dPE, double *dPW, double *dPNE,
-                       double *dPNW, double *dPSE, double *dPSW, double *oC,
-                       double *XoC, double *XoE, double *XoN, double *XuC,
-                       double *XoNE, double *XoNW, double *XuE, double *XuW,
-                       double *XuN, double *XuS, double *XuNE, double *XuNW,
-                       double *XuSE, double *XuSW, sycl::queue& q) {
+                       DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
+                       DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
+                       DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
+                       DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+                       DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN,
+                       DataType *dPS, DataType *dPE, DataType *dPW, DataType *dPNE,
+                       DataType *dPNW, DataType *dPSE, DataType *dPSW, DataType *oC,
+                       DataType *XoC, DataType *XoE, DataType *XoN, DataType *XuC,
+                       DataType *XoNE, DataType *XoNW, DataType *XuE, DataType *XuW,
+                       DataType *XuN, DataType *XuS, DataType *XuNE, DataType *XuNW,
+                       DataType *XuSE, DataType *XuSW, sycl::queue& q) {
 
   int i, j, k, ii, jj, kk;
   int im1, ip1, jm1, jp1, km1, kp1;
   int iim1, iip1, jjm1, jjp1, kkm1, kkp1;
   int nxm1, nym1, nzm1;
 
-  double TMP1_XOC, TMP2_XOC, TMP3_XOC;
+  DataType TMP1_XOC, TMP2_XOC, TMP3_XOC;
 
   MAT3(oC, *nxf, *nyf, *nzf);
 
@@ -518,16 +518,16 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
 }
 
 VPUBLIC void
-VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
-          double *oPN, double *oPS, double *oPE, double *oPW, double *oPNE,
-          double *oPNW, double *oPSE, double *oPSW, double *uPC, double *uPN,
-          double *uPS, double *uPE, double *uPW, double *uPNE, double *uPNW,
-          double *uPSE, double *uPSW, double *dPC, double *dPN, double *dPS,
-          double *dPE, double *dPW, double *dPNE, double *dPNW, double *dPSE,
-          double *dPSW, double *oC, double *oE, double *oN, double *uC,
-          double *XoC, double *XoE, double *XoN, double *XuC, double *XoNE,
-          double *XoNW, double *XuE, double *XuW, double *XuN, double *XuS,
-          double *XuNE, double *XuNW, double *XuSE, double *XuSW, sycl::queue& q) {
+VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
+          DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
+          DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
+          DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+          DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+          DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW, DataType *dPSE,
+          DataType *dPSW, DataType *oC, DataType *oE, DataType *oN, DataType *uC,
+          DataType *XoC, DataType *XoE, DataType *XoN, DataType *XuC, DataType *XoNE,
+          DataType *XoNW, DataType *XuE, DataType *XuW, DataType *XuN, DataType *XuS,
+          DataType *XuNE, DataType *XuNW, DataType *XuSE, DataType *XuSW, sycl::queue& q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -539,12 +539,12 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
   int kkm1, kkp1;
   int nxm1, nym1, nzm1;
 
-  double TMP1_XOC, TMP2_XOC, TMP3_XOC, TMP4_XOC;
-  double TMP5_XOC, TMP6_XOC, TMP7_XOC, TMP8_XOC;
-  double TMP9_XOC;
-  double TMP1_XOE, TMP2_XOE, TMP3_XOE, TMP4_XOE;
-  double TMP1_XON, TMP2_XON, TMP3_XON, TMP4_XON;
-  double TMP1_XUC, TMP2_XUC, TMP3_XUC, TMP4_XUC;
+  DataType TMP1_XOC, TMP2_XOC, TMP3_XOC, TMP4_XOC;
+  DataType TMP5_XOC, TMP6_XOC, TMP7_XOC, TMP8_XOC;
+  DataType TMP9_XOC;
+  DataType TMP1_XOE, TMP2_XOE, TMP3_XOE, TMP4_XOE;
+  DataType TMP1_XON, TMP2_XON, TMP3_XON, TMP4_XON;
+  DataType TMP1_XUC, TMP2_XUC, TMP3_XUC, TMP4_XUC;
 
   MAT3(oC, *nxf, *nyf, *nzf);
   MAT3(oE, *nxf, *nyf, *nzf);
@@ -1443,18 +1443,18 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
 }
 
 VPUBLIC void
-VbuildG_27(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, double *oPC,
-           double *oPN, double *oPS, double *oPE, double *oPW, double *oPNE,
-           double *oPNW, double *oPSE, double *oPSW, double *uPC, double *uPN,
-           double *uPS, double *uPE, double *uPW, double *uPNE, double *uPNW,
-           double *uPSE, double *uPSW, double *dPC, double *dPN, double *dPS,
-           double *dPE, double *dPW, double *dPNE, double *dPNW, double *dPSE,
-           double *dPSW, double *oC, double *oE, double *oN, double *uC,
-           double *oNE, double *oNW, double *uE, double *uW, double *uN,
-           double *uS, double *uNE, double *uNW, double *uSE, double *uSW,
-           double *XoC, double *XoE, double *XoN, double *XuC, double *XoNE,
-           double *XoNW, double *XuE, double *XuW, double *XuN, double *XuS,
-           double *XuNE, double *XuNW, double *XuSE, double *XuSW, sycl::queue &q) {
+VbuildG_27(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
+           DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
+           DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
+           DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+           DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+           DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW, DataType *dPSE,
+           DataType *dPSW, DataType *oC, DataType *oE, DataType *oN, DataType *uC,
+           DataType *oNE, DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+           DataType *uS, DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
+           DataType *XoC, DataType *XoE, DataType *XoN, DataType *XuC, DataType *XoNE,
+           DataType *XoNW, DataType *XuE, DataType *XuW, DataType *XuN, DataType *XuS,
+           DataType *XuNE, DataType *XuNW, DataType *XuSE, DataType *XuSW, sycl::queue &q) {
 
 
   MAT3(oC, *nxf, *nyf, *nzf);

@@ -68,24 +68,26 @@
  *
  *  @note    Replaces newdriv from newdrvd.f
  */
-VEXTERNC void Vnewdriv(int *iparm,    ///< @todo:  Doc
-                       double *rparm, ///< @todo:  Doc
-                       int *iwork,    ///< @todo:  Doc
-                       double *rwork, ///< @todo:  Doc
-                       double *u,     ///< @todo:  Doc
-                       double *xf,    ///< @todo:  Doc
-                       double *yf,    ///< @todo:  Doc
-                       double *zf,    ///< @todo:  Doc
-                       double *gxcf,  ///< @todo:  Doc
-                       double *gycf,  ///< @todo:  Doc
-                       double *gzcf,  ///< @todo:  Doc
-                       double *a1cf,  ///< @todo:  Doc
-                       double *a2cf,  ///< @todo:  Doc
-                       double *a3cf,  ///< @todo:  Doc
-                       double *ccf,   ///< @todo:  Doc
-                       double *fcf,   ///< @todo:  Doc
-                       double *tcf,
-                       sycl::queue &q ///< @todo:  Doc
+
+template <typename DataType>
+void Vnewdriv(int *iparm,      ///< @todo:  Doc
+              DataType *rparm, ///< @todo:  Doc
+              int *iwork,      ///< @todo:  Doc
+              DataType *rwork, ///< @todo:  Doc
+              DataType *u,     ///< @todo:  Doc
+              DataType *xf,    ///< @todo:  Doc
+              DataType *yf,    ///< @todo:  Doc
+              DataType *zf,    ///< @todo:  Doc
+              DataType *gxcf,  ///< @todo:  Doc
+              DataType *gycf,  ///< @todo:  Doc
+              DataType *gzcf,  ///< @todo:  Doc
+              DataType *a1cf,  ///< @todo:  Doc
+              DataType *a2cf,  ///< @todo:  Doc
+              DataType *a3cf,  ///< @todo:  Doc
+              DataType *ccf,   ///< @todo:  Doc
+              DataType *fcf,   ///< @todo:  Doc
+              DataType *tcf,
+              sycl::queue &q ///< @todo:  Doc
 );
 
 /** @brief   Solves using Newton's Method
@@ -124,34 +126,35 @@ VEXTERNC void Vnewdriv(int *iparm,    ///< @todo:  Doc
  *
  *  @note    Replaces newdriv2 from newdrvd.f
  */
-VEXTERNC void Vnewdriv2(int *iparm,    ///< @todo:  Doc
-                        double *rparm, ///< @todo:  Doc
-                        int *nx,       ///< @todo:  Doc
-                        int *ny,       ///< @todo:  Doc
-                        int *nz,       ///< @todo:  Doc
-                        double *u,     ///< @todo:  Doc
-                        int *iz,       ///< @todo:  Doc
-                        double *w1,    ///< @todo:  Doc
-                        double *w2,    ///< @todo:  Doc
-                        int *ipc,      ///< @todo:  Doc
-                        double *rpc,   ///< @todo:  Doc
-                        double *pc,    ///< @todo:  Doc
-                        double *ac,    ///< @todo:  Doc
-                        double *cc,    ///< @todo:  Doc
-                        double *fc,    ///< @todo:  Doc
-                        double *xf,    ///< @todo:  Doc
-                        double *yf,    ///< @todo:  Doc
-                        double *zf,    ///< @todo:  Doc
-                        double *gxcf,  ///< @todo:  Doc
-                        double *gycf,  ///< @todo:  Doc
-                        double *gzcf,  ///< @todo:  Doc
-                        double *a1cf,  ///< @todo:  Doc
-                        double *a2cf,  ///< @todo:  Doc
-                        double *a3cf,  ///< @todo:  Doc
-                        double *ccf,   ///< @todo:  Doc
-                        double *fcf,   ///< @todo:  Doc
-                        double *tcf,
-                        sycl::queue &q ///< @todo:  Doc
+template <typename DataType>
+void Vnewdriv2(int *iparm,      ///< @todo:  Doc
+               DataType *rparm, ///< @todo:  Doc
+               int *nx,         ///< @todo:  Doc
+               int *ny,         ///< @todo:  Doc
+               int *nz,         ///< @todo:  Doc
+               DataType *u,     ///< @todo:  Doc
+               int *iz,         ///< @todo:  Doc
+               DataType *w1,    ///< @todo:  Doc
+               DataType *w2,    ///< @todo:  Doc
+               int *ipc,        ///< @todo:  Doc
+               DataType *rpc,   ///< @todo:  Doc
+               DataType *pc,    ///< @todo:  Doc
+               DataType *ac,    ///< @todo:  Doc
+               DataType *cc,    ///< @todo:  Doc
+               DataType *fc,    ///< @todo:  Doc
+               DataType *xf,    ///< @todo:  Doc
+               DataType *yf,    ///< @todo:  Doc
+               DataType *zf,    ///< @todo:  Doc
+               DataType *gxcf,  ///< @todo:  Doc
+               DataType *gycf,  ///< @todo:  Doc
+               DataType *gzcf,  ///< @todo:  Doc
+               DataType *a1cf,  ///< @todo:  Doc
+               DataType *a2cf,  ///< @todo:  Doc
+               DataType *a3cf,  ///< @todo:  Doc
+               DataType *ccf,   ///< @todo:  Doc
+               DataType *fcf,   ///< @todo:  Doc
+               DataType *tcf,
+               sycl::queue &q ///< @todo:  Doc
 );
 
 #endif /* _NEWDRVD_H_ */

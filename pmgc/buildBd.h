@@ -65,16 +65,18 @@
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  *  @note    Replaces buildband from buildBd.f
  */
-VEXTERNC void Vbuildband(int *key,     ///< @todo:  Doc
-                         int *nx,      ///< @todo:  Doc
-                         int *ny,      ///< @todo:  Doc
-                         int *nz,      ///< @todo:  Doc
-                         int *ipc,     ///< @todo:  Doc
-                         double *rpc,  ///< @todo:  Doc
-                         double *ac,   ///< @todo:  Doc
-                         int *ipcB,    ///< @todo:  Doc
-                         double *rpcB, ///< @todo:  Doc
-                         double *acB   ///< @todo:  Doc
+
+template <typename DataType>
+void Vbuildband(int *key,       ///< @todo:  Doc
+                int *nx,        ///< @todo:  Doc
+                int *ny,        ///< @todo:  Doc
+                int *nz,        ///< @todo:  Doc
+                int *ipc,       ///< @todo:  Doc
+                DataType *rpc,  ///< @todo:  Doc
+                DataType *ac,   ///< @todo:  Doc
+                int *ipcB,      ///< @todo:  Doc
+                DataType *rpcB, ///< @todo:  Doc
+                DataType *acB   ///< @todo:  Doc
 );
 
 /** @brief   Build the operator in banded form given the 7-diagonal form.
@@ -82,21 +84,23 @@ VEXTERNC void Vbuildband(int *key,     ///< @todo:  Doc
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  *  @note    Replaces buildband1_7 from buildBd.f
  */
-VEXTERNC void Vbuildband1_7(int *nx,      ///< @todo:  Doc
-                            int *ny,      ///< @todo:  Doc
-                            int *nz,      ///< @todo:  Doc
-                            int *ipc,     ///< @todo:  Doc
-                            double *rpc,  ///< @todo:  Doc
-                            double *oC,   ///< @todo:  Doc
-                            double *oE,   ///< @todo:  Doc
-                            double *oN,   ///< @todo:  Doc
-                            double *uC,   ///< @todo:  Doc
-                            int *ipcB,    ///< @todo:  Doc
-                            double *rpcB, ///< @todo:  Doc
-                            double *acB,  ///< @todo:  Doc
-                            int *n,       ///< @todo:  Doc
-                            int *m,       ///< @todo:  Doc
-                            int *lda      ///< @todo:  Doc
+
+template <typename DataType>
+void Vbuildband1_7(int *nx,        ///< @todo:  Doc
+                   int *ny,        ///< @todo:  Doc
+                   int *nz,        ///< @todo:  Doc
+                   int *ipc,       ///< @todo:  Doc
+                   DataType *rpc,  ///< @todo:  Doc
+                   DataType *oC,   ///< @todo:  Doc
+                   DataType *oE,   ///< @todo:  Doc
+                   DataType *oN,   ///< @todo:  Doc
+                   DataType *uC,   ///< @todo:  Doc
+                   int *ipcB,      ///< @todo:  Doc
+                   DataType *rpcB, ///< @todo:  Doc
+                   DataType *acB,  ///< @todo:  Doc
+                   int *n,         ///< @todo:  Doc
+                   int *m,         ///< @todo:  Doc
+                   int *lda        ///< @todo:  Doc
 );
 
 /** @brief   Build the operator in banded form given the 27-diagonal form.
@@ -104,31 +108,33 @@ VEXTERNC void Vbuildband1_7(int *nx,      ///< @todo:  Doc
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  *  @note    Replaces buildband1_7 from buildBd.f
  */
-VEXTERNC void Vbuildband1_27(int *nx,      ///< @todo:  Doc
-                             int *ny,      ///< @todo:  Doc
-                             int *nz,      ///< @todo:  Doc
-                             int *ipc,     ///< @todo:  Doc
-                             double *rpc,  ///< @todo:  Doc
-                             double *oC,   ///< @todo:  Doc
-                             double *oE,   ///< @todo:  Doc
-                             double *oN,   ///< @todo:  Doc
-                             double *uC,   ///< @todo:  Doc
-                             double *oNE,  ///< @todo:  Doc
-                             double *oNW,  ///< @todo:  Doc
-                             double *uE,   ///< @todo:  Doc
-                             double *uW,   ///< @todo:  Doc
-                             double *uN,   ///< @todo:  Doc
-                             double *uS,   ///< @todo:  Doc
-                             double *uNE,  ///< @todo:  Doc
-                             double *uNW,  ///< @todo:  Doc
-                             double *uSE,  ///< @todo:  Doc
-                             double *uSW,  ///< @todo:  Doc
-                             int *ipcB,    ///< @todo:  Doc
-                             double *rpcB, ///< @todo:  Doc
-                             double *acB,  ///< @todo:  Doc
-                             int *n,       ///< @todo:  Doc
-                             int *m,       ///< @todo:  Doc
-                             int *lda      ///< @todo:  Doc
+
+template <typename DataType>
+void Vbuildband1_27(int *nx,        ///< @todo:  Doc
+                    int *ny,        ///< @todo:  Doc
+                    int *nz,        ///< @todo:  Doc
+                    int *ipc,       ///< @todo:  Doc
+                    DataType *rpc,  ///< @todo:  Doc
+                    DataType *oC,   ///< @todo:  Doc
+                    DataType *oE,   ///< @todo:  Doc
+                    DataType *oN,   ///< @todo:  Doc
+                    DataType *uC,   ///< @todo:  Doc
+                    DataType *oNE,  ///< @todo:  Doc
+                    DataType *oNW,  ///< @todo:  Doc
+                    DataType *uE,   ///< @todo:  Doc
+                    DataType *uW,   ///< @todo:  Doc
+                    DataType *uN,   ///< @todo:  Doc
+                    DataType *uS,   ///< @todo:  Doc
+                    DataType *uNE,  ///< @todo:  Doc
+                    DataType *uNW,  ///< @todo:  Doc
+                    DataType *uSE,  ///< @todo:  Doc
+                    DataType *uSW,  ///< @todo:  Doc
+                    int *ipcB,      ///< @todo:  Doc
+                    DataType *rpcB, ///< @todo:  Doc
+                    DataType *acB,  ///< @todo:  Doc
+                    int *n,         ///< @todo:  Doc
+                    int *m,         ///< @todo:  Doc
+                    int *lda        ///< @todo:  Doc
 );
 
 #endif /* _BUILDBD_H_ */

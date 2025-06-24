@@ -55,11 +55,11 @@
 #include "newdrvd.h"
 #include <assert.h>
 
-VEXTERNC void Vnewdriv(int *iparm, double *rparm, int *iwork, double *rwork,
-                       double *u, double *xf, double *yf, double *zf,
-                       double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                       double *a2cf, double *a3cf, double *ccf, double *fcf,
-                       double *tcf, sycl::queue &q) {
+VEXTERNC void Vnewdriv(int *iparm, DataType *rparm, int *iwork, DataType *rwork,
+                       DataType *u, DataType *xf, DataType *yf, DataType *zf,
+                       DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
+                       DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
+                       DataType *tcf, sycl::queue &q) {
 
   int nxc;    /// @todo: Doc
   int nyc;    /// @todo: Doc
@@ -151,13 +151,13 @@ VEXTERNC void Vnewdriv(int *iparm, double *rparm, int *iwork, double *rwork,
             ccf, fcf, tcf, q);
 }
 
-VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
-                       double *u, int *iz, double *w1, double *w2, int *ipc,
-                       double *rpc, double *pc, double *ac, double *cc,
-                       double *fc, double *xf, double *yf, double *zf,
-                       double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                       double *a2cf, double *a3cf, double *ccf, double *fcf,
-                       double *tcf, sycl::queue &q) {
+VPUBLIC void Vnewdriv2(int *iparm, DataType *rparm, int *nx, int *ny, int *nz,
+                       DataType *u, int *iz, DataType *w1, DataType *w2, int *ipc,
+                       DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+                       DataType *fc, DataType *xf, DataType *yf, DataType *zf,
+                       DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
+                       DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
+                       DataType *tcf, sycl::queue &q) {
 
   int mgkey;      /// @todo:  Doc
   int nlev;       /// @todo:  Doc
@@ -180,25 +180,25 @@ VPUBLIC void Vnewdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   int mgdisc;     /// @todo:  Doc
   int mgsmoo;     /// @todo:  Doc
   int mode;       /// @todo:  Doc
-  double epsiln;  /// @todo:  Doc
-  double epsmac;  /// @todo:  Doc
-  double errtol;  /// @todo:  Doc
-  double omegal;  /// @todo:  Doc
-  double omegan;  /// @todo:  Doc
-  double bf;      /// @todo:  Doc
-  double oh;      /// @todo:  Doc
-  double tsetupf; /// @todo:  Doc
-  double tsetupc; /// @todo:  Doc
-  double tsolve;  /// @todo:  Doc
+  DataType epsiln;  /// @todo:  Doc
+  DataType epsmac;  /// @todo:  Doc
+  DataType errtol;  /// @todo:  Doc
+  DataType omegal;  /// @todo:  Doc
+  DataType omegan;  /// @todo:  Doc
+  DataType bf;      /// @todo:  Doc
+  DataType oh;      /// @todo:  Doc
+  DataType tsetupf; /// @todo:  Doc
+  DataType tsetupc; /// @todo:  Doc
+  DataType tsolve;  /// @todo:  Doc
 
   // Utility variables
   int numlev;
 
   int iok_t;
   int iters_t;
-  double rsnrm_t;
-  double rsden_t;
-  double orsnrm_t;
+  DataType rsnrm_t;
+  DataType rsden_t;
+  DataType orsnrm_t;
 
   int i;
 

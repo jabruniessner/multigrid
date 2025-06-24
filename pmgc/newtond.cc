@@ -55,14 +55,14 @@
 
 #include "newtond.h"
 
-VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
-                      double *w1, double *w2, double *w3, int *istop,
+VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+                      DataType *w1, DataType *w2, DataType *w3, int *istop,
                       int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
                       int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                      double *epsiln, double *errtol, double *omega, int *nu1,
-                      int *nu2, int *mgsmoo, double *cprime, double *rhs,
-                      double *xtmp, int *ipc, double *rpc, double *pc,
-                      double *ac, double *cc, double *fc, double *tru,
+                      DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                      int *nu2, int *mgsmoo, DataType *cprime, DataType *rhs,
+                      DataType *xtmp, int *ipc, DataType *rpc, DataType *pc,
+                      DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                       sycl::queue &q) {
 
   int level, itmxd, nlevd, iterd, iokd;
@@ -70,7 +70,7 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
   int nxc, nyc, nzc;
   int istpd;
   int numlev;
-  double errd;
+  DataType errd;
 
   MAT2(iz, 50, 1);
 
@@ -135,28 +135,28 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
           nu2, mgsmoo, cprime, rhs, xtmp, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
-VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
-                     double *w1, double *w2, double *w3, int *istop, int *itmax,
+VPUBLIC void Vnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+                     DataType *w1, DataType *w2, DataType *w3, int *istop, int *itmax,
                      int *iters, int *ierror, int *nlev, int *ilev,
                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     double *epsiln, double *errtol, double *omega, int *nu1,
-                     int *nu2, int *mgsmoo, double *cprime, double *rhs,
-                     double *xtmp, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *fc, double *tru,
+                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                     int *nu2, int *mgsmoo, DataType *cprime, DataType *rhs,
+                     DataType *xtmp, int *ipc, DataType *rpc, DataType *pc,
+                     DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                      sycl::queue &q) {
 
   int level, lev;
   int itmax_s, iters_s, ierror_s, iok_s, iinfo_s, istop_s;
-  double errtol_s, ord, bigc;
-  double rsden, rsnrm, orsnrm;
+  DataType errtol_s, ord, bigc;
+  DataType rsden, rsnrm, orsnrm;
 
-  double xnorm_old, xnorm_new, damp, xnorm_med, xnorm_den;
-  double rho_max, rho_min, rho_max_mod, rho_min_mod, errtol_p;
+  DataType xnorm_old, xnorm_new, damp, xnorm_med, xnorm_den;
+  DataType rho_max, rho_min, rho_max_mod, rho_min_mod, errtol_p;
   int iter_d, itmax_d, mode, idamp, ipkey;
   int itmax_p, iters_p, iok_p, iinfo_p;
 
   // Utility and temproary parameters
-  double alpha;
+  DataType alpha;
 
   MAT2(iz, 50, 1);
 
@@ -476,16 +476,16 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
     printf("%% Vnewton: ipower (MODEL) = %.0f\n", rho_min_mod);
 
     // Condition number estimate
-    printf("%% Vnewton: condition number  = %f\n", (double)rho_max / rho_min);
+    printf("%% Vnewton: condition number  = %f\n", (DataType)rho_max / rho_min);
     printf("%% Vnewton: condition (MODEL) = %f\n",
-           (double)rho_max_mod / rho_min_mod);
+           (DataType)rho_max_mod / rho_min_mod);
     printf("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n");
   }
 }
 
 VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
-                     int *lev, int *ipkey, double *x, double *r, double *cprime,
-                     double *rhs, double *cc, double *pc, sycl::queue &q) {
+                     int *lev, int *ipkey, DataType *x, DataType *r, DataType *cprime,
+                     DataType *rhs, DataType *cc, DataType *pc, sycl::queue &q) {
 
   int nxx, nyy, nzz;
   int nxold, nyold, nzold;

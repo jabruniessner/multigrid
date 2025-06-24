@@ -54,9 +54,9 @@
 
 #include "mlinpckd.h"
 
-VPUBLIC void Vdpbsl(double *abd, int *lda, int *n, int *m, double *b) {
+VPUBLIC void Vdpbsl(DataType *abd, int *lda, int *n, int *m, DataType *b) {
 
-    double t;
+    DataType t;
     int k, kb, la, lb, lm;
 
     MAT2(abd, *lda, 1);
@@ -82,9 +82,9 @@ VPUBLIC void Vdpbsl(double *abd, int *lda, int *n, int *m, double *b) {
     }
 }
 
-VPUBLIC void Vdaxpy(int n, double da,
-        double *dx, int incx,
-        double *dy, int incy) {
+VPUBLIC void Vdaxpy(int n, DataType da,
+        DataType *dx, int incx,
+        DataType *dy, int incy) {
 
     int i, ix, iy, m, mp1;
 
@@ -135,12 +135,12 @@ VPUBLIC void Vdaxpy(int n, double da,
 }
 
 
-VPUBLIC double Vddot(int n, double *dx, int incx, double *dy, int incy) {
+VPUBLIC DataType Vddot(int n, DataType *dx, int incx, DataType *dy, int incy) {
 
-    double dtemp;
+    DataType dtemp;
     int i, ix, iy, m, mp1;
 
-    double ddot = 0.0;
+    DataType ddot = 0.0;
     dtemp = 0.0;
 
     if (n <= 0)
@@ -191,9 +191,9 @@ VPUBLIC double Vddot(int n, double *dx, int incx, double *dy, int incy) {
 
 
 
-VPUBLIC void Vdpbfa(double *abd, int *lda, int *n, int *m, int *info) {
+VPUBLIC void Vdpbfa(DataType *abd, int *lda, int *n, int *m, int *info) {
 
-    double t, s;
+    DataType t, s;
     int ik, j, jk, k, mu;
 
     MAT2(abd, *lda, 1);

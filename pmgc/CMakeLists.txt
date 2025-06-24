@@ -27,4 +27,9 @@ set(SOURCES
 )
 
 set_source_files_properties(${SOURCES} PROPERTIES LANGUAGE CXX)
-add_library(pmgc SHARED ${SOURCES})
+add_library(pmgc_double STATIC ${SOURCES})
+target_compile_definitions(pmgc_double PRIVATE USE_DOUBLE)
+add_library(pmgc_single STATIC ${SOURCES})
+
+add_library(pmgc SHARED combined.cpp)
+target_link_libraries(pmgc PRIVATE pmgc_single pmgc_double)

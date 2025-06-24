@@ -55,11 +55,12 @@
 #include "mgdrvd.h"
 #include "vhal.h"
 
-VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
-                     double *u, double *xf, double *yf, double *zf,
-                     double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                     double *a2cf, double *a3cf, double *ccf, double *fcf,
-                     double *tcf, sycl::queue &q) {
+VPUBLIC void Vmgdriv(int *iparm, DataType *rparm, int *iwork, DataType *rwork,
+                     DataType *u, DataType *xf, DataType *yf, DataType *zf,
+                     DataType *gxcf, DataType *gycf, DataType *gzcf,
+                     DataType *a1cf, DataType *a2cf, DataType *a3cf,
+                     DataType *ccf, DataType *fcf, DataType *tcf,
+                     sycl::queue &q) {
 
   // The following variables will be returned from mgsz
   int nxc = 0;
@@ -98,11 +99,11 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
   // Utility pointers to help in passing values
   int *iz = VNULL;
   int *ipc = VNULL;
-  double *rpc = VNULL;
-  double *pc = VNULL;
-  double *ac = VNULL;
-  double *cc = VNULL;
-  double *fc = VNULL;
+  DataType *rpc = VNULL;
+  DataType *pc = VNULL;
+  DataType *ac = VNULL;
+  DataType *cc = VNULL;
+  DataType *fc = VNULL;
 
   // Decode some parameters
   nrwk = VAT(iparm, 1);
@@ -167,12 +168,13 @@ VPUBLIC void Vmgdriv(int *iparm, double *rparm, int *iwork, double *rwork,
            zf, gxcf, gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, tcf, q);
 }
 
-VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
-                      double *u, int *iz, int *ipc, double *rpc, double *pc,
-                      double *ac, double *cc, double *fc, double *xf,
-                      double *yf, double *zf, double *gxcf, double *gycf,
-                      double *gzcf, double *a1cf, double *a2cf, double *a3cf,
-                      double *ccf, double *fcf, double *tcf, sycl::queue &q) {
+VPUBLIC void Vmgdriv2(int *iparm, DataType *rparm, int *nx, int *ny, int *nz,
+                      DataType *u, int *iz, int *ipc, DataType *rpc,
+                      DataType *pc, DataType *ac, DataType *cc, DataType *fc,
+                      DataType *xf, DataType *yf, DataType *zf, DataType *gxcf,
+                      DataType *gycf, DataType *gzcf, DataType *a1cf,
+                      DataType *a2cf, DataType *a3cf, DataType *ccf,
+                      DataType *fcf, DataType *tcf, sycl::queue &q) {
 
   // @todo Document this function
 
@@ -199,16 +201,16 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   int iperf = 0;
   int mode = 0;
 
-  double epsiln = 0.0;
-  double epsmac = 0.0;
-  double errtol = 0.0;
-  double omegal = 0.0;
-  double omegan = 0.0;
-  double bf = 0.0;
-  double oh = 0.0;
-  double tsetupf = 0.0;
-  double tsetupc = 0.0;
-  double tsolve = 0.0;
+  DataType epsiln = 0.0;
+  DataType epsmac = 0.0;
+  DataType errtol = 0.0;
+  DataType omegal = 0.0;
+  DataType omegan = 0.0;
+  DataType bf = 0.0;
+  DataType oh = 0.0;
+  DataType tsetupf = 0.0;
+  DataType tsetupc = 0.0;
+  DataType tsolve = 0.0;
 
   // More miscellaneous variables
   int itmax_p = 0;
@@ -216,12 +218,12 @@ VPUBLIC void Vmgdriv2(int *iparm, double *rparm, int *nx, int *ny, int *nz,
   int iok_p = 0;
   int iinfo_p = 0;
 
-  double errtol_p = 0.0;
-  double rho_p = 0.0;
-  double rho_min = 0.0;
-  double rho_max = 0.0;
-  double rho_min_mod = 0.0;
-  double rho_max_mod = 0.0;
+  DataType errtol_p = 0.0;
+  DataType rho_p = 0.0;
+  DataType rho_min = 0.0;
+  DataType rho_max = 0.0;
+  DataType rho_min_mod = 0.0;
+  DataType rho_max_mod = 0.0;
 
   int nxf = 0;
   int nyf = 0;

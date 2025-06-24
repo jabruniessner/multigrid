@@ -77,26 +77,28 @@ c*                      - 2*dcos((nz-2)*pi/(nz-1))
  *  @note    Vpower is yet untested as a call stack including it hasn't been
 found
  */
-VEXTERNC void Vpower(int *nx,              ///< @todo  Document
-                     int *ny,              ///< @todo  Document
-                     int *nz,              ///< @todo  Document
-                     int *iz,              ///< @todo  Document
-                     int *ilev,            ///< @todo  Document
-                     int *ipc,             ///< @todo  Document
-                     double *rpc,          ///< @todo  Document
-                     double *ac,           ///< @todo  Document
-                     double *cc,           ///< @todo  Document
-                     double *w1,           ///< @todo  Document
-                     double *w2,           ///< @todo  Document
-                     double *w3,           ///< @todo  Document
-                     double *w4,           ///< @todo  Document
-                     double *eigmax,       ///< @todo  Document
-                     double *eigmax_model, ///< @todo  Document
-                     double *tol,          ///< @todo  Document
-                     int *itmax,           ///< @todo  Document
-                     int *iters,           ///< @todo  Document
-                     int *iinfo,
-                     sycl::queue &q ///< @todo  Document
+
+template <typename DataType>
+void Vpower(int *nx,                ///< @todo  Document
+            int *ny,                ///< @todo  Document
+            int *nz,                ///< @todo  Document
+            int *iz,                ///< @todo  Document
+            int *ilev,              ///< @todo  Document
+            int *ipc,               ///< @todo  Document
+            DataType *rpc,          ///< @todo  Document
+            DataType *ac,           ///< @todo  Document
+            DataType *cc,           ///< @todo  Document
+            DataType *w1,           ///< @todo  Document
+            DataType *w2,           ///< @todo  Document
+            DataType *w3,           ///< @todo  Document
+            DataType *w4,           ///< @todo  Document
+            DataType *eigmax,       ///< @todo  Document
+            DataType *eigmax_model, ///< @todo  Document
+            DataType *tol,          ///< @todo  Document
+            int *itmax,             ///< @todo  Document
+            int *iters,             ///< @todo  Document
+            int *iinfo,
+            sycl::queue &q ///< @todo  Document
 );
 
 /** @brief  Standard inverse power method for minimum eigenvalue estimation
@@ -116,76 +118,79 @@ VEXTERNC void Vpower(int *nx,              ///< @todo  Document
  *
  *  @note    Replaces ipower from powerd.f
  */
-VEXTERNC void Vipower(int *nx,              ///< @todo  Document
-                      int *ny,              ///< @todo  Document
-                      int *nz,              ///< @todo  Document
-                      double *u,            ///< @todo  Document
-                      int *iz,              ///< @todo  Document
-                      double *w0,           ///< @todo  Document
-                      double *w1,           ///< @todo  Document
-                      double *w2,           ///< @todo  Document
-                      double *w3,           ///< @todo  Document
-                      double *w4,           ///< @todo  Document
-                      double *eigmin,       ///< @todo  Document
-                      double *eigmin_model, ///< @todo  Document
-                      double *tol,          ///< @todo  Document
-                      int *itmax,           ///< @todo  Document
-                      int *iters,           ///< @todo  Document
-                      int *nlev,            ///< @todo  Document
-                      int *ilev,            ///< @todo  Document
-                      int *nlev_real,       ///< @todo  Document
-                      int *mgsolv,          ///< @todo  Document
-                      int *iok,             ///< @todo  Document
-                      int *iinfo,           ///< @todo  Document
-                      double *epsiln,       ///< @todo  Document
-                      double *errtol,       ///< @todo  Document
-                      double *omega,        ///< @todo  Document
-                      int *nu1,             ///< @todo  Document
-                      int *nu2,             ///< @todo  Document
-                      int *mgsmoo,          ///< @todo  Document
-                      int *ipc,             ///< @todo  Document
-                      double *rpc,          ///< @todo  Document
-                      double *pc,           ///< @todo  Document
-                      double *ac,           ///< @todo  Document
-                      double *cc,           ///< @todo  Document
-                      double *tru,
-                      sycl::queue &q ///< @todo  Document
+
+template <typename DataType>
+void Vipower(int *nx,                ///< @todo  Document
+             int *ny,                ///< @todo  Document
+             int *nz,                ///< @todo  Document
+             DataType *u,            ///< @todo  Document
+             int *iz,                ///< @todo  Document
+             DataType *w0,           ///< @todo  Document
+             DataType *w1,           ///< @todo  Document
+             DataType *w2,           ///< @todo  Document
+             DataType *w3,           ///< @todo  Document
+             DataType *w4,           ///< @todo  Document
+             DataType *eigmin,       ///< @todo  Document
+             DataType *eigmin_model, ///< @todo  Document
+             DataType *tol,          ///< @todo  Document
+             int *itmax,             ///< @todo  Document
+             int *iters,             ///< @todo  Document
+             int *nlev,              ///< @todo  Document
+             int *ilev,              ///< @todo  Document
+             int *nlev_real,         ///< @todo  Document
+             int *mgsolv,            ///< @todo  Document
+             int *iok,               ///< @todo  Document
+             int *iinfo,             ///< @todo  Document
+             DataType *epsiln,       ///< @todo  Document
+             DataType *errtol,       ///< @todo  Document
+             DataType *omega,        ///< @todo  Document
+             int *nu1,               ///< @todo  Document
+             int *nu2,               ///< @todo  Document
+             int *mgsmoo,            ///< @todo  Document
+             int *ipc,               ///< @todo  Document
+             DataType *rpc,          ///< @todo  Document
+             DataType *pc,           ///< @todo  Document
+             DataType *ac,           ///< @todo  Document
+             DataType *cc,           ///< @todo  Document
+             DataType *tru,
+             sycl::queue &q ///< @todo  Document
 );
 
-VEXTERNC void Vmpower(int *nx,        ///< @todo  Document
-                      int *ny,        ///< @todo  Document
-                      int *nz,        ///< @todo  Document
-                      double *u,      ///< @todo  Document
-                      int *iz,        ///< @todo  Document
-                      double *w0,     ///< @todo  Document
-                      double *w1,     ///< @todo  Document
-                      double *w2,     ///< @todo  Document
-                      double *w3,     ///< @todo  Document
-                      double *w4,     ///< @todo  Document
-                      double *eigmax, ///< @todo  Document
-                      double *tol,    ///< @todo  Document
-                      int *itmax,     ///< @todo  Document
-                      int *iters,     ///< @todo  Document
-                      int *nlev,      ///< @todo  Document
-                      int *ilev,      ///< @todo  Document
-                      int *nlev_real, ///< @todo  Document
-                      int *mgsolv,    ///< @todo  Document
-                      int *iok,       ///< @todo  Document
-                      int *iinfo,     ///< @todo  Document
-                      double *epsiln, ///< @todo  Document
-                      double *errtol, ///< @todo  Document
-                      double *omega,  ///< @todo  Document
-                      int *nu1,       ///< @todo  Document
-                      int *nu2,       ///< @todo  Document
-                      int *mgsmoo,    ///< @todo  Document
-                      int *ipc,       ///< @todo  Document
-                      double *rpc,    ///< @todo  Document
-                      double *pc,     ///< @todo  Document
-                      double *ac,     ///< @todo  Document
-                      double *cc,     ///< @todo  Document
-                      double *fc,     ///< @todo  Document
-                      double *tru,
-                      sycl::queue &q ///< @todo  Document
+template <typename DataType>
+void Vmpower(int *nx,          ///< @todo  Document
+             int *ny,          ///< @todo  Document
+             int *nz,          ///< @todo  Document
+             DataType *u,      ///< @todo  Document
+             int *iz,          ///< @todo  Document
+             DataType *w0,     ///< @todo  Document
+             DataType *w1,     ///< @todo  Document
+             DataType *w2,     ///< @todo  Document
+             DataType *w3,     ///< @todo  Document
+             DataType *w4,     ///< @todo  Document
+             DataType *eigmax, ///< @todo  Document
+             DataType *tol,    ///< @todo  Document
+             int *itmax,       ///< @todo  Document
+             int *iters,       ///< @todo  Document
+             int *nlev,        ///< @todo  Document
+             int *ilev,        ///< @todo  Document
+             int *nlev_real,   ///< @todo  Document
+             int *mgsolv,      ///< @todo  Document
+             int *iok,         ///< @todo  Document
+             int *iinfo,       ///< @todo  Document
+             DataType *epsiln, ///< @todo  Document
+             DataType *errtol, ///< @todo  Document
+             DataType *omega,  ///< @todo  Document
+             int *nu1,         ///< @todo  Document
+             int *nu2,         ///< @todo  Document
+             int *mgsmoo,      ///< @todo  Document
+             int *ipc,         ///< @todo  Document
+             DataType *rpc,    ///< @todo  Document
+             DataType *pc,     ///< @todo  Document
+             DataType *ac,     ///< @todo  Document
+             DataType *cc,     ///< @todo  Document
+             DataType *fc,     ///< @todo  Document
+             DataType *tru,
+             sycl::queue &q ///< @todo  Document
 );
 
 #endif /* _POWERD_H_ */

@@ -67,10 +67,10 @@
 #define SINH_MAX 85.0
 
 /// @todo  Remove dependencies on global variables
-extern double v1, v2, v3, conc1, conc2, conc3, vol, relSize;
+extern DataType v1, v2, v3, conc1, conc2, conc3, vol, relSize;
 extern int nion;
-extern double charge[MAXIONS];
-extern double sconc[MAXIONS];
+extern DataType charge[MAXIONS];
+extern DataType sconc[MAXIONS];
 
 #define Na 6.022045000e-04
 
@@ -81,13 +81,15 @@ extern double sconc[MAXIONS];
  *
  *  @note    Replaces mypdefinitlpbe from mypde.f
  */
-VEXTERNC void Vmypdefinitlpbe(
-    int *tnion,      ///< The number if ionic species
-    double *tcharge, ///< The charge in electrons
-    double *tsconc   /**< Prefactor for conterion Bolzmann distribution
-                      *   terms.  Basically a scaled concentration
-                      *     -(ion concentration/bulkIonicStrength)/2
-                      */
+
+template <typename DataType>
+void Vmypdefinitlpbe(
+    int *tnion,        ///< The number if ionic species
+    DataType *tcharge, ///< The charge in electrons
+    DataType *tsconc   /**< Prefactor for conterion Bolzmann distribution
+                        *   terms.  Basically a scaled concentration
+                        *     -(ion concentration/bulkIonicStrength)/2
+                        */
 );
 
 /** @brief   Set up the ionic species to be used in later calculations.  This
@@ -97,13 +99,14 @@ VEXTERNC void Vmypdefinitlpbe(
  *
  *  @note    Replaces mypdefinitnpbe from mypde.f
  */
-VEXTERNC void Vmypdefinitnpbe(
-    int *tnion,      ///< The number if ionic species
-    double *tcharge, ///< The charge in electrons
-    double *tsconc   /**< Prefactor for conterion Bolzmann distribution
-                      *   terms.  Basically a scaled concentration
-                      *     -(ion concentration/bulkIonicStrength)/2
-                      */
+template <typename DataType>
+void Vmypdefinitnpbe(
+    int *tnion,        ///< The number if ionic species
+    DataType *tcharge, ///< The charge in electrons
+    DataType *tsconc   /**< Prefactor for conterion Bolzmann distribution
+                        *   terms.  Basically a scaled concentration
+                        *     -(ion concentration/bulkIonicStrength)/2
+                        */
 );
 
 /** @brief   Set up the ionic species to be used in later calculations.  This
@@ -113,15 +116,17 @@ VEXTERNC void Vmypdefinitnpbe(
  *
  *  @note    Replaces mypdefinitsmpbe from mypde.f
  */
-VEXTERNC void Vmypdefinitsmpbe(
-    int *tnion,       ///< The number if ionic species
-    double *tcharge,  ///< The charge in electrons
-    double *tsconc,   /**< Prefactor for conterion Bolzmann distribution
-                       *   terms.  Basically a scaled concentration
-                       *     -(ion concentration/bulkIonicStrength)/2
-                       */
-    double *smvolume, ///< @todo: Doc
-    double *smsize    ///< @todo: Doc
+
+template <typename DataType>
+void Vmypdefinitsmpbe(
+    int *tnion,         ///< The number if ionic species
+    DataType *tcharge,  ///< The charge in electrons
+    DataType *tsconc,   /**< Prefactor for conterion Bolzmann distribution
+                         *   terms.  Basically a scaled concentration
+                         *     -(ion concentration/bulkIonicStrength)/2
+                         */
+    DataType *smvolume, ///< @todo: Doc
+    DataType *smsize    ///< @todo: Doc
 );
 
 /** @brief   Define the nonlinearity (vector version)
@@ -130,13 +135,15 @@ VEXTERNC void Vmypdefinitsmpbe(
  *
  *  @note    Replaces c_vec from mypde.f
  */
-VEXTERNC void Vc_vec(double *coef, ///< @todo: Doc
-                     double *uin,  ///< @todo: Doc
-                     double *uout, ///< @todo: Doc
-                     int *nx,      ///< @todo: Doc
-                     int *ny,      ///< @todo: Doc
-                     int *nz,      ///< @todo: Doc
-                     int *ipkey    ///< @todo: Doc
+
+template <typename DataType>
+void Vc_vec(DataType *coef, ///< @todo: Doc
+            DataType *uin,  ///< @todo: Doc
+            DataType *uout, ///< @todo: Doc
+            int *nx,        ///< @todo: Doc
+            int *ny,        ///< @todo: Doc
+            int *nz,        ///< @todo: Doc
+            int *ipkey      ///< @todo: Doc
 );
 
 /** @brief   Define the derivative of the nonlinearity (vector version)
@@ -145,46 +152,35 @@ VEXTERNC void Vc_vec(double *coef, ///< @todo: Doc
  *
  *  @note    Replaces dc_vec from mypde.f
  */
-VEXTERNC void Vdc_vec(double *coef, ///< @todo: Doc
-                      double *uin,  ///< @todo: Doc
-                      double *uout, ///< @todo: Doc
-                      int *nx,      ///< @todo: Doc
-                      int *ny,      ///< @todo: Doc
-                      int *nz,      ///< @todo: Doc
-                      int *ipkey    ///< @todo: Doc
+
+template <typename DataType>
+void Vdc_vec(DataType *coef, ///< @todo: Doc
+             DataType *uin,  ///< @todo: Doc
+             DataType *uout, ///< @todo: Doc
+             int *nx,        ///< @todo: Doc
+             int *ny,        ///< @todo: Doc
+             int *nz,        ///< @todo: Doc
+             int *ipkey      ///< @todo: Doc
 );
 
-VEXTERNC void Vdc_vecpmg(double *coef, ///< @todo: Doc
-                         double *uin,  ///< @todo: Doc
-                         double *uout, ///< @todo: Doc
-                         int *nx,      ///< @todo: Doc
-                         int *ny,      ///< @todo: Doc
-                         int *nz,      ///< @todo: Doc
-                         int *ipkey    ///< @todo: Doc
+template <typename DataType>
+void Vdc_vecpmg(DataType *coef, ///< @todo: Doc
+                DataType *uin,  ///< @todo: Doc
+                DataType *uout, ///< @todo: Doc
+                int *nx,        ///< @todo: Doc
+                int *ny,        ///< @todo: Doc
+                int *nz,        ///< @todo: Doc
+                int *ipkey      ///< @todo: Doc
 );
 
-VEXTERNC void Vdc_vecsmpbe(double *coef, ///< @todo: Doc
-                           double *uin,  ///< @todo: Doc
-                           double *uout, ///< @todo: Doc
-                           int *nx,      ///< @todo: Doc
-                           int *ny,      ///< @todo: Doc
-                           int *nz,      ///< @todo: Doc
-                           int *ipkey    ///< @todo: Doc
-);
-
-/** @brief   Define the nonlinearity (vector version)
- *  @ingroup PMGC
- *  @author  Tucker Beck [C Translation], Michael Holst [Original]
- *
- *  @note    Replaces c_vecpmg from mypde.f
- */
-VEXTERNC void Vc_vecpmg(double *coef, ///< @todo: Doc
-                        double *uin,  ///< @todo: Doc
-                        double *uout, ///< @todo: Doc
-                        int *nx,      ///< @todo: Doc
-                        int *ny,      ///< @todo: Doc
-                        int *nz,      ///< @todo: Doc
-                        int *ipkey    ///< @todo: Doc
+template <typename DataType>
+void Vdc_vecsmpbe(DataType *coef, ///< @todo: Doc
+                  DataType *uin,  ///< @todo: Doc
+                  DataType *uout, ///< @todo: Doc
+                  int *nx,        ///< @todo: Doc
+                  int *ny,        ///< @todo: Doc
+                  int *nz,        ///< @todo: Doc
+                  int *ipkey      ///< @todo: Doc
 );
 
 /** @brief   Define the nonlinearity (vector version)
@@ -193,13 +189,31 @@ VEXTERNC void Vc_vecpmg(double *coef, ///< @todo: Doc
  *
  *  @note    Replaces c_vecpmg from mypde.f
  */
-VEXTERNC void Vc_vecsmpbe(double *coef, ///< @todo: Doc
-                          double *uin,  ///< @todo: Doc
-                          double *uout, ///< @todo: Doc
-                          int *nx,      ///< @todo: Doc
-                          int *ny,      ///< @todo: Doc
-                          int *nz,      ///< @todo: Doc
-                          int *ipkey    ///< @todo: Doc
+
+template <typename DataType>
+void Vc_vecpmg(DataType *coef, ///< @todo: Doc
+               DataType *uin,  ///< @todo: Doc
+               DataType *uout, ///< @todo: Doc
+               int *nx,        ///< @todo: Doc
+               int *ny,        ///< @todo: Doc
+               int *nz,        ///< @todo: Doc
+               int *ipkey      ///< @todo: Doc
+);
+
+/** @brief   Define the nonlinearity (vector version)
+ *  @ingroup PMGC
+ *  @author  Tucker Beck [C Translation], Michael Holst [Original]
+ *
+ *  @note    Replaces c_vecpmg from mypde.f
+ */
+template <typename DataType>
+void Vc_vecsmpbe(DataType *coef, ///< @todo: Doc
+                 DataType *uin,  ///< @todo: Doc
+                 DataType *uout, ///< @todo: Doc
+                 int *nx,        ///< @todo: Doc
+                 int *ny,        ///< @todo: Doc
+                 int *nz,        ///< @todo: Doc
+                 int *ipkey      ///< @todo: Doc
 );
 
 #endif /* _MYPDE_H_ */

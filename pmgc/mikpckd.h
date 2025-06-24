@@ -65,13 +65,14 @@
  *
  *  @note    Replaces xcopy from mikpckd.f
  */
-VEXTERNC void
-Vxcopy(int *nx,   ///< The size of the x dimension of the 3d matrix
-       int *ny,   ///< The size of the y dimension of the 3d matrix
-       int *nz,   ///< The size of the z dimension of the 3d matrix
-       double *x, ///< The source matrix from which to copy data
-       double *y,
-       sycl::queue &q ///< The destination matrix to receive copied data
+
+template <typename DataType>
+void Vxcopy(int *nx,     ///< The size of the x dimension of the 3d matrix
+            int *ny,     ///< The size of the y dimension of the 3d matrix
+            int *nz,     ///< The size of the z dimension of the 3d matrix
+            DataType *x, ///< The source matrix from which to copy data
+            DataType *y,
+            sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   Copy operation for a grid function with boundary values.
@@ -81,13 +82,15 @@ Vxcopy(int *nx,   ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xcopy_small from mikpckd.f
  */
-VEXTERNC void
-Vxcopy_small(int *nx,   ///< The size of the x dimension of the 3d matrix
-             int *ny,   ///< The size of the y dimension of the 3d matrix
-             int *nz,   ///< The size of the z dimension of the 3d matrix
-             double *x, ///< The source matrix from which to copy data
-             double *y, ///< The destination matrix to receive copied data
-             sycl::queue &q);
+
+template <typename DataType>
+void Vxcopy_small(
+    int *nx,     ///< The size of the x dimension of the 3d matrix
+    int *ny,     ///< The size of the y dimension of the 3d matrix
+    int *nz,     ///< The size of the z dimension of the 3d matrix
+    DataType *x, ///< The source matrix from which to copy data
+    DataType *y, ///< The destination matrix to receive copied data
+    sycl::queue &q);
 
 /** @brief   Copy operation for a grid function with boundary values.
  *           Quite simply copies one 3d matrix to another
@@ -96,13 +99,14 @@ Vxcopy_small(int *nx,   ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xcopy_large from mikpckd.f
  */
-VEXTERNC void
-Vxcopy_large(int *nx,   ///< The size of the x dimension of the 3d matrix
-             int *ny,   ///< The size of the y dimension of the 3d matrix
-             int *nz,   ///< The size of the z dimension of the 3d matrix
-             double *x, ///< The source matrix from which to copy data
-             double *y,
-             sycl::queue &q ///< The destination matrix to receive copied data
+template <typename DataType>
+void Vxcopy_large(
+    int *nx,     ///< The size of the x dimension of the 3d matrix
+    int *ny,     ///< The size of the y dimension of the 3d matrix
+    int *nz,     ///< The size of the z dimension of the 3d matrix
+    DataType *x, ///< The source matrix from which to copy data
+    DataType *y,
+    sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   saxpy operation for a grid function with boundary values.
@@ -111,14 +115,15 @@ Vxcopy_large(int *nx,   ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xaxpy from mikpckd.f
  */
-VEXTERNC void
-Vxaxpy(int *nx,       ///< The size of the x dimension of the 3d matrix
-       int *ny,       ///< The size of the y dimension of the 3d matrix
-       int *nz,       ///< The size of the z dimension of the 3d matrix
-       double *alpha, ///< @todo: Doc
-       double *x,     ///< The source matrix from which to copy data
-       double *y,
-       sycl::queue &q ///< The destination matrix to receive copied data
+
+template <typename DataType>
+void Vxaxpy(int *nx,         ///< The size of the x dimension of the 3d matrix
+            int *ny,         ///< The size of the y dimension of the 3d matrix
+            int *nz,         ///< The size of the z dimension of the 3d matrix
+            DataType *alpha, ///< @todo: Doc
+            DataType *x,     ///< The source matrix from which to copy data
+            DataType *y,
+            sycl::queue &q ///< The destination matrix to receive copied data
 );
 
 /** @brief   Norm operation for a grid function with boundary values.
@@ -127,12 +132,12 @@ Vxaxpy(int *nx,       ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xnrm1 from mikpckd.f
  */
-VEXTERNC double
-Vxnrm1(int *nx, ///< The size of the x dimension of the 3d matrix
-       int *ny, ///< The size of the y dimension of the 3d matrix
-       int *nz, ///< The size of the z dimension of the 3d matrix
-       double *x,
-       sycl::queue &q ///< The matrix to normalize
+template <typename DataType>
+DataType Vxnrm1(int *nx, ///< The size of the x dimension of the 3d matrix
+                int *ny, ///< The size of the y dimension of the 3d matrix
+                int *nz, ///< The size of the z dimension of the 3d matrix
+                DataType *x,
+                sycl::queue &q ///< The matrix to normalize
 );
 
 /** @brief   Norm operation for a grid function with boundary values.
@@ -141,12 +146,13 @@ Vxnrm1(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xnrm2 from mikpckd.f
  */
-VEXTERNC double
-Vxnrm2(int *nx, ///< The size of the x dimension of the 3d matrix
-       int *ny, ///< The size of the y dimension of the 3d matrix
-       int *nz, ///< The size of the z dimension of the 3d matrix
-       double *x,
-       sycl::queue &q ///< The matrix to normalize
+
+template <typename DataType>
+DataType Vxnrm2(int *nx, ///< The size of the x dimension of the 3d matrix
+                int *ny, ///< The size of the y dimension of the 3d matrix
+                int *nz, ///< The size of the z dimension of the 3d matrix
+                DataType *x,
+                sycl::queue &q ///< The matrix to normalize
 );
 
 /** @brief   Inner product operation for a grid function with boundary values.
@@ -155,12 +161,14 @@ Vxnrm2(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xdot from mikpckd.f
  */
-VEXTERNC double Vxdot(int *nx, ///< The size of the x dimension of the 3d matrix
-                      int *ny, ///< The size of the y dimension of the 3d matrix
-                      int *nz, ///< The size of the z dimension of the 3d matrix
-                      double *x, ///< The first vector
-                      double *y,
-                      sycl::queue &q ///< The second vector
+
+template <typename DataType>
+DataType Vxdot(int *nx,     ///< The size of the x dimension of the 3d matrix
+               int *ny,     ///< The size of the y dimension of the 3d matrix
+               int *nz,     ///< The size of the z dimension of the 3d matrix
+               DataType *x, ///< The first vector
+               DataType *y,
+               sycl::queue &q ///< The second vector
 );
 
 /** @brief   Zero out operation for a grid function, including boundary values.
@@ -169,11 +177,13 @@ VEXTERNC double Vxdot(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces azeros from mikpckd.f
  */
-VEXTERNC void Vazeros(int *nx, ///< The size of the x dimension of the 3d matrix
-                      int *ny, ///< The size of the x dimension of the 3d matrix
-                      int *nz, ///< The size of the x dimension of the 3d matrix
-                      double *x,
-                      sycl::queue &q ///< The matrix to zero out
+
+template <typename DataType>
+void Vazeros(int *nx, ///< The size of the x dimension of the 3d matrix
+             int *ny, ///< The size of the x dimension of the 3d matrix
+             int *nz, ///< The size of the x dimension of the 3d matrix
+             DataType *x,
+             sycl::queue &q ///< The matrix to zero out
 );
 
 /** @brief   Initialize a grid function to have a certain boundary value,
@@ -182,15 +192,17 @@ VEXTERNC void Vazeros(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces fboundPMG from mikpckd.f
  */
-VEXTERNC void VfboundPMG(int *ibound, ///< @todo: Doc
-                         int *nx,     ///< @todo: Doc
-                         int *ny,     ///< @todo: Doc
-                         int *nz,     ///< @todo: Doc
-                         double *x,   ///< @todo: Doc
-                         double *gxc, ///< @todo: Doc
-                         double *gyc, ///< @todo: Doc
-                         double *gzc,
-                         sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void VfboundPMG(int *ibound,   ///< @todo: Doc
+                int *nx,       ///< @todo: Doc
+                int *ny,       ///< @todo: Doc
+                int *nz,       ///< @todo: Doc
+                DataType *x,   ///< @todo: Doc
+                DataType *gxc, ///< @todo: Doc
+                DataType *gyc, ///< @todo: Doc
+                DataType *gzc,
+                sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Initialize a grid function to have a zero boundary value
@@ -199,12 +211,13 @@ VEXTERNC void VfboundPMG(int *ibound, ///< @todo: Doc
  *
  *  @note    Replaces fboundPMG00 from mikpckd.f
  */
-VEXTERNC void
-VfboundPMG00(int *nx, ///< The size of the x dimension of the 3d matrix
-             int *ny, ///< The size of the y dimension of the 3d matrix
-             int *nz, ///< The size of the z dimension of the 3d matrix
-             double *x,
-             sycl::queue &q ///< The 3d matrix to initialize
+
+template <typename DataType>
+void VfboundPMG00(int *nx, ///< The size of the x dimension of the 3d matrix
+                  int *ny, ///< The size of the y dimension of the 3d matrix
+                  int *nz, ///< The size of the z dimension of the 3d matrix
+                  DataType *x,
+                  sycl::queue &q ///< The 3d matrix to initialize
 );
 
 /** @brief   Fill grid function with random values, including boundary values.
@@ -213,10 +226,12 @@ VfboundPMG00(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces axrand from mikpckd.f
  */
-VEXTERNC void Vaxrand(int *nx, ///< The size of the x dimension of the 3d matrix
-                      int *ny, ///< The size of the y dimension of the 3d matrix
-                      int *nz, ///< The size of the z dimension of the 3d matrix
-                      double *x ///< The 3d matrix to fill
+
+template <typename DataType>
+void Vaxrand(int *nx,    ///< The size of the x dimension of the 3d matrix
+             int *ny,    ///< The size of the y dimension of the 3d matrix
+             int *nz,    ///< The size of the z dimension of the 3d matrix
+             DataType *x ///< The 3d matrix to fill
 );
 
 /** @brief   Scale operation for a grid function with boundary values.
@@ -225,12 +240,14 @@ VEXTERNC void Vaxrand(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces xscal from mikpckd.f
  */
-VEXTERNC void Vxscal(int *nx, ///< The size of the x dimension of the 3d matrix
-                     int *ny, ///< The size of the y dimension of the 3d matrix
-                     int *nz, ///< The size of the z dimension of the 3d matrix
-                     double *fac, ///< The scaling factor
-                     double *x,
-                     sycl::queue &q ///< The 3d matrix to scale
+
+template <typename DataType>
+void Vxscal(int *nx,       ///< The size of the x dimension of the 3d matrix
+            int *ny,       ///< The size of the y dimension of the 3d matrix
+            int *nz,       ///< The size of the z dimension of the 3d matrix
+            DataType *fac, ///< The scaling factor
+            DataType *x,
+            sycl::queue &q ///< The 3d matrix to scale
 );
 
 /** @brief
@@ -239,65 +256,65 @@ VEXTERNC void Vxscal(int *nx, ///< The size of the x dimension of the 3d matrix
  *
  *  @note    Replaces prtmatd from mikpckd.f
  */
-VEXTERNC void
-Vprtmatd(int *nx,     ///< The size of the x dimension of the 3d matrix
-         int *ny,     ///< The size of the y dimension of the 3d matrix
-         int *nz,     ///< The size of the z dimension of the 3d matrix
-         int *ipc,    ///< Integer parameters
-         double *rpc, ///< Double parameters
-         double *ac   ///< @todo  Document
+template <typename DataType>
+void Vprtmatd(int *nx,       ///< The size of the x dimension of the 3d matrix
+              int *ny,       ///< The size of the y dimension of the 3d matrix
+              int *nz,       ///< The size of the z dimension of the 3d matrix
+              int *ipc,      ///< Integer parameters
+              DataType *rpc, ///< Double parameters
+              DataType *ac   ///< @todo  Document
 );
 
-VEXTERNC void
-Vprtmatd7(int *nx,     ///< The size of the x dimension of the 3d matrix
-          int *ny,     ///< The size of the y dimension of the 3d matrix
-          int *nz,     ///< The size of the z dimension of the 3d matrix
-          int *ipc,    ///< Integer parameters
-          double *rpc, ///< Double parameters
-          double *oC,  ///< @todo  Document
-          double *oE,  ///< @todo  Document
-          double *oN,  ///< @todo  Document
-          double *uC   ///< @todo  Document
+template <typename DataType>
+void Vprtmatd7(int *nx,       ///< The size of the x dimension of the 3d matrix
+               int *ny,       ///< The size of the y dimension of the 3d matrix
+               int *nz,       ///< The size of the z dimension of the 3d matrix
+               int *ipc,      ///< Integer parameters
+               DataType *rpc, ///< Double parameters
+               DataType *oC,  ///< @todo  Document
+               DataType *oE,  ///< @todo  Document
+               DataType *oN,  ///< @todo  Document
+               DataType *uC   ///< @todo  Document
 );
 
-VEXTERNC void
-Vprtmatd27(int *nx,     ///< The size of the x dimension of the 3d matrix
-           int *ny,     ///< The size of the y dimension of the 3d matrix
-           int *nz,     ///< The size of the z dimension of the 3d matrix
-           int *ipc,    ///< Integer parameters
-           double *rpc, ///< Double parameters
-           double *oC,  ///< @todo  Document
-           double *oE,  ///< @todo  Document
-           double *oN,  ///< @todo  Document
-           double *uC,  ///< @todo  Document
-           double *oNE, ///< @todo  Document
-           double *oNW, ///< @todo  Document
-           double *uE,  ///< @todo  Document
-           double *uW,  ///< @todo  Document
-           double *uN,  ///< @todo  Document
-           double *uS,  ///< @todo  Document
-           double *uNE, ///< @todo  Document
-           double *uNW, ///< @todo  Document
-           double *uSE, ///< @todo  Document
-           double *uSW  ///< @todo  Document
+template <typename DataType>
+void Vprtmatd27(int *nx,       ///< The size of the x dimension of the 3d matrix
+                int *ny,       ///< The size of the y dimension of the 3d matrix
+                int *nz,       ///< The size of the z dimension of the 3d matrix
+                int *ipc,      ///< Integer parameters
+                DataType *rpc, ///< Double parameters
+                DataType *oC,  ///< @todo  Document
+                DataType *oE,  ///< @todo  Document
+                DataType *oN,  ///< @todo  Document
+                DataType *uC,  ///< @todo  Document
+                DataType *oNE, ///< @todo  Document
+                DataType *oNW, ///< @todo  Document
+                DataType *uE,  ///< @todo  Document
+                DataType *uW,  ///< @todo  Document
+                DataType *uN,  ///< @todo  Document
+                DataType *uS,  ///< @todo  Document
+                DataType *uNE, ///< @todo  Document
+                DataType *uNW, ///< @todo  Document
+                DataType *uSE, ///< @todo  Document
+                DataType *uSW  ///< @todo  Document
 );
 
-VEXTERNC void
-Vlinesearch(int *nx,       ///< The size of the x dimension of the 3d matrix
-            int *ny,       ///< The size of the y dimension of the 3d matrix
-            int *nz,       ///< The size of the z dimension of the 3d matrix
-            double *alpha, ///< @todo  Document
-            int *ipc,      ///< Integer parameters
-            double *rpc,   ///< Double parameters
-            double *ac,    ///< @todo  Document
-            double *cc,    ///< @todo  Document
-            double *fc,    ///< @todo  Document
-            double *p,     ///< @todo  Document
-            double *x,     ///< @todo  Document
-            double *r,     ///< @todo  Document
-            double *ap,    ///< @todo  Document
-            double *zk,    ///< @todo  Document
-            double *zkp1   ///< @todo  Document
+template <typename DataType>
+void Vlinesearch(int *nx, ///< The size of the x dimension of the 3d matrix
+                 int *ny, ///< The size of the y dimension of the 3d matrix
+                 int *nz, ///< The size of the z dimension of the 3d matrix
+                 DataType *alpha, ///< @todo  Document
+                 int *ipc,        ///< Integer parameters
+                 DataType *rpc,   ///< Double parameters
+                 DataType *ac,    ///< @todo  Document
+                 DataType *cc,    ///< @todo  Document
+                 DataType *fc,    ///< @todo  Document
+                 DataType *p,     ///< @todo  Document
+                 DataType *x,     ///< @todo  Document
+                 DataType *r,     ///< @todo  Document
+                 DataType *ap,    ///< @todo  Document
+                 DataType *zk,    ///< @todo  Document
+                 DataType *zkp1   ///< @todo  Document
 );
 
 #endif /* MIKPCKD_H_ */

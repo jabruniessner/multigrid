@@ -57,17 +57,18 @@
 #include "abps_macros.h"
 #include <sycl/sycl.hpp>
 
-VEXTERNC void VbuildG(int *nxf,     ///< @todo: doc
-                      int *nyf,     ///< @todo: doc
-                      int *nzf,     ///< @todo: doc
-                      int *nxc,     ///< @todo: doc
-                      int *nyc,     ///< @todo: doc
-                      int *nzc,     ///< @todo: doc
-                      int *numdia,  ///< @todo: doc
-                      double *pcFF, ///< @todo: doc
-                      double *acFF, ///< @todo: doc
-                      double *ac,
-                      sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildG(int *nxf,       ///< @todo: doc
+             int *nyf,       ///< @todo: doc
+             int *nzf,       ///< @todo: doc
+             int *nxc,       ///< @todo: doc
+             int *nyc,       ///< @todo: doc
+             int *nzc,       ///< @todo: doc
+             int *numdia,    ///< @todo: doc
+             DataType *pcFF, ///< @todo: doc
+             DataType *acFF, ///< @todo: doc
+             DataType *ac,
+             sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
@@ -142,55 +143,57 @@ VEXTERNC void VbuildG(int *nxf,     ///< @todo: doc
  *      ])
  *    ]):
  */
-VEXTERNC void VbuildG_1(int *nxf,     ///< @todo: doc
-                        int *nyf,     ///< @todo: doc
-                        int *nzf,     ///< @todo: doc
-                        int *nx,      ///< @todo: doc
-                        int *ny,      ///< @todo: doc
-                        int *nz,      ///< @todo: doc
-                        double *oPC,  ///< @todo: doc
-                        double *oPN,  ///< @todo: doc
-                        double *oPS,  ///< @todo: doc
-                        double *oPE,  ///< @todo: doc
-                        double *oPW,  ///< @todo: doc
-                        double *oPNE, ///< @todo: doc
-                        double *oPNW, ///< @todo: doc
-                        double *oPSE, ///< @todo: doc
-                        double *oPSW, ///< @todo: doc
-                        double *uPC,  ///< @todo: doc
-                        double *uPN,  ///< @todo: doc
-                        double *uPS,  ///< @todo: doc
-                        double *uPE,  ///< @todo: doc
-                        double *uPW,  ///< @todo: doc
-                        double *uPNE, ///< @todo: doc
-                        double *uPNW, ///< @todo: doc
-                        double *uPSE, ///< @todo: doc
-                        double *uPSW, ///< @todo: doc
-                        double *dPC,  ///< @todo: doc
-                        double *dPN,  ///< @todo: doc
-                        double *dPS,  ///< @todo: doc
-                        double *dPE,  ///< @todo: doc
-                        double *dPW,  ///< @todo: doc
-                        double *dPNE, ///< @todo: doc
-                        double *dPNW, ///< @todo: doc
-                        double *dPSE, ///< @todo: doc
-                        double *dPSW, ///< @todo: doc
-                        double *oC,   ///< @todo: doc
-                        double *XoC,  ///< @todo: doc
-                        double *XoE,  ///< @todo: doc
-                        double *XoN,  ///< @todo: doc
-                        double *XuC,  ///< @todo: doc
-                        double *XoNE, ///< @todo: doc
-                        double *XoNW, ///< @todo: doc
-                        double *XuE,  ///< @todo: doc
-                        double *XuW,  ///< @todo: doc
-                        double *XuN,  ///< @todo: doc
-                        double *XuS,  ///< @todo: doc
-                        double *XuNE, ///< @todo: doc
-                        double *XuNW, ///< @todo: doc
-                        double *XuSE, ///< @todo: doc
-                        double *XuSW,
-                        sycl::queue &q ///< @todo: doc
+
+template <typename DataType>
+void VbuildG_1(int *nxf,       ///< @todo: doc
+               int *nyf,       ///< @todo: doc
+               int *nzf,       ///< @todo: doc
+               int *nx,        ///< @todo: doc
+               int *ny,        ///< @todo: doc
+               int *nz,        ///< @todo: doc
+               DataType *oPC,  ///< @todo: doc
+               DataType *oPN,  ///< @todo: doc
+               DataType *oPS,  ///< @todo: doc
+               DataType *oPE,  ///< @todo: doc
+               DataType *oPW,  ///< @todo: doc
+               DataType *oPNE, ///< @todo: doc
+               DataType *oPNW, ///< @todo: doc
+               DataType *oPSE, ///< @todo: doc
+               DataType *oPSW, ///< @todo: doc
+               DataType *uPC,  ///< @todo: doc
+               DataType *uPN,  ///< @todo: doc
+               DataType *uPS,  ///< @todo: doc
+               DataType *uPE,  ///< @todo: doc
+               DataType *uPW,  ///< @todo: doc
+               DataType *uPNE, ///< @todo: doc
+               DataType *uPNW, ///< @todo: doc
+               DataType *uPSE, ///< @todo: doc
+               DataType *uPSW, ///< @todo: doc
+               DataType *dPC,  ///< @todo: doc
+               DataType *dPN,  ///< @todo: doc
+               DataType *dPS,  ///< @todo: doc
+               DataType *dPE,  ///< @todo: doc
+               DataType *dPW,  ///< @todo: doc
+               DataType *dPNE, ///< @todo: doc
+               DataType *dPNW, ///< @todo: doc
+               DataType *dPSE, ///< @todo: doc
+               DataType *dPSW, ///< @todo: doc
+               DataType *oC,   ///< @todo: doc
+               DataType *XoC,  ///< @todo: doc
+               DataType *XoE,  ///< @todo: doc
+               DataType *XoN,  ///< @todo: doc
+               DataType *XuC,  ///< @todo: doc
+               DataType *XoNE, ///< @todo: doc
+               DataType *XoNW, ///< @todo: doc
+               DataType *XuE,  ///< @todo: doc
+               DataType *XuW,  ///< @todo: doc
+               DataType *XuN,  ///< @todo: doc
+               DataType *XuS,  ///< @todo: doc
+               DataType *XuNE, ///< @todo: doc
+               DataType *XuNW, ///< @todo: doc
+               DataType *XuSE, ///< @todo: doc
+               DataType *XuSW,
+               sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Computes a 27-point galerkin coarse grid matrix from
@@ -272,58 +275,60 @@ VEXTERNC void VbuildG_1(int *nxf,     ///< @todo: doc
  *    dC  := proc(x,y,z) RETURN( uC(x,y,z-1) ): end:
  *
  */
-VEXTERNC void VbuildG_7(int *nxf,     ///< @todo: doc
-                        int *nyf,     ///< @todo: doc
-                        int *nzf,     ///< @todo: doc
-                        int *nx,      ///< @todo: doc
-                        int *ny,      ///< @todo: doc
-                        int *nz,      ///< @todo: doc
-                        double *oPC,  ///< @todo: doc
-                        double *oPN,  ///< @todo: doc
-                        double *oPS,  ///< @todo: doc
-                        double *oPE,  ///< @todo: doc
-                        double *oPW,  ///< @todo: doc
-                        double *oPNE, ///< @todo: doc
-                        double *oPNW, ///< @todo: doc
-                        double *oPSE, ///< @todo: doc
-                        double *oPSW, ///< @todo: doc
-                        double *uPC,  ///< @todo: doc
-                        double *uPN,  ///< @todo: doc
-                        double *uPS,  ///< @todo: doc
-                        double *uPE,  ///< @todo: doc
-                        double *uPW,  ///< @todo: doc
-                        double *uPNE, ///< @todo: doc
-                        double *uPNW, ///< @todo: doc
-                        double *uPSE, ///< @todo: doc
-                        double *uPSW, ///< @todo: doc
-                        double *dPC,  ///< @todo: doc
-                        double *dPN,  ///< @todo: doc
-                        double *dPS,  ///< @todo: doc
-                        double *dPE,  ///< @todo: doc
-                        double *dPW,  ///< @todo: doc
-                        double *dPNE, ///< @todo: doc
-                        double *dPNW, ///< @todo: doc
-                        double *dPSE, ///< @todo: doc
-                        double *dPSW, ///< @todo: doc
-                        double *oC,   ///< @todo: doc
-                        double *oE,   ///< @todo: doc
-                        double *oN,   ///< @todo: doc
-                        double *uC,   ///< @todo: doc
-                        double *XoC,  ///< @todo: doc
-                        double *XoE,  ///< @todo: doc
-                        double *XoN,  ///< @todo: doc
-                        double *XuC,  ///< @todo: doc
-                        double *XoNE, ///< @todo: doc
-                        double *XoNW, ///< @todo: doc
-                        double *XuE,  ///< @todo: doc
-                        double *XuW,  ///< @todo: doc
-                        double *XuN,  ///< @todo: doc
-                        double *XuS,  ///< @todo: doc
-                        double *XuNE, ///< @todo: doc
-                        double *XuNW, ///< @todo: doc
-                        double *XuSE, ///< @todo: doc
-                        double *XuSW,
-                        sycl::queue &q ///< @todo: doc
+
+template <typename DataType>
+void VbuildG_7(int *nxf,       ///< @todo: doc
+               int *nyf,       ///< @todo: doc
+               int *nzf,       ///< @todo: doc
+               int *nx,        ///< @todo: doc
+               int *ny,        ///< @todo: doc
+               int *nz,        ///< @todo: doc
+               DataType *oPC,  ///< @todo: doc
+               DataType *oPN,  ///< @todo: doc
+               DataType *oPS,  ///< @todo: doc
+               DataType *oPE,  ///< @todo: doc
+               DataType *oPW,  ///< @todo: doc
+               DataType *oPNE, ///< @todo: doc
+               DataType *oPNW, ///< @todo: doc
+               DataType *oPSE, ///< @todo: doc
+               DataType *oPSW, ///< @todo: doc
+               DataType *uPC,  ///< @todo: doc
+               DataType *uPN,  ///< @todo: doc
+               DataType *uPS,  ///< @todo: doc
+               DataType *uPE,  ///< @todo: doc
+               DataType *uPW,  ///< @todo: doc
+               DataType *uPNE, ///< @todo: doc
+               DataType *uPNW, ///< @todo: doc
+               DataType *uPSE, ///< @todo: doc
+               DataType *uPSW, ///< @todo: doc
+               DataType *dPC,  ///< @todo: doc
+               DataType *dPN,  ///< @todo: doc
+               DataType *dPS,  ///< @todo: doc
+               DataType *dPE,  ///< @todo: doc
+               DataType *dPW,  ///< @todo: doc
+               DataType *dPNE, ///< @todo: doc
+               DataType *dPNW, ///< @todo: doc
+               DataType *dPSE, ///< @todo: doc
+               DataType *dPSW, ///< @todo: doc
+               DataType *oC,   ///< @todo: doc
+               DataType *oE,   ///< @todo: doc
+               DataType *oN,   ///< @todo: doc
+               DataType *uC,   ///< @todo: doc
+               DataType *XoC,  ///< @todo: doc
+               DataType *XoE,  ///< @todo: doc
+               DataType *XoN,  ///< @todo: doc
+               DataType *XuC,  ///< @todo: doc
+               DataType *XoNE, ///< @todo: doc
+               DataType *XoNW, ///< @todo: doc
+               DataType *XuE,  ///< @todo: doc
+               DataType *XuW,  ///< @todo: doc
+               DataType *XuN,  ///< @todo: doc
+               DataType *XuS,  ///< @todo: doc
+               DataType *XuNE, ///< @todo: doc
+               DataType *XuNW, ///< @todo: doc
+               DataType *XuSE, ///< @todo: doc
+               DataType *XuSW,
+               sycl::queue &q ///< @todo: doc
 );
 
 /** @brief   Compute a 27-point galerkin coarse grid matrix from
@@ -418,68 +423,70 @@ VEXTERNC void VbuildG_7(int *nxf,     ///< @todo: doc
  *    dSW := proc(x,y,z) RETURN( uNE(x-1,y-1,z-1) ): end:
  *    dSE := proc(x,y,z) RETURN( uNW(x+1,y-1,z-1) ): end:
  */
-VEXTERNC void VbuildG_27(int *nxf,     ///< @todo: doc
-                         int *nyf,     ///< @todo: doc
-                         int *nzf,     ///< @todo: doc
-                         int *nx,      ///< @todo: doc
-                         int *ny,      ///< @todo: doc
-                         int *nz,      ///< @todo: doc
-                         double *oPC,  ///< @todo: doc
-                         double *oPN,  ///< @todo: doc
-                         double *oPS,  ///< @todo: doc
-                         double *oPE,  ///< @todo: doc
-                         double *oPW,  ///< @todo: doc
-                         double *oPNE, ///< @todo: doc
-                         double *oPNW, ///< @todo: doc
-                         double *oPSE, ///< @todo: doc
-                         double *oPSW, ///< @todo: doc
-                         double *uPC,  ///< @todo: doc
-                         double *uPN,  ///< @todo: doc
-                         double *uPS,  ///< @todo: doc
-                         double *uPE,  ///< @todo: doc
-                         double *uPW,  ///< @todo: doc
-                         double *uPNE, ///< @todo: doc
-                         double *uPNW, ///< @todo: doc
-                         double *uPSE, ///< @todo: doc
-                         double *uPSW, ///< @todo: doc
-                         double *dPC,  ///< @todo: doc
-                         double *dPN,  ///< @todo: doc
-                         double *dPS,  ///< @todo: doc
-                         double *dPE,  ///< @todo: doc
-                         double *dPW,  ///< @todo: doc
-                         double *dPNE, ///< @todo: doc
-                         double *dPNW, ///< @todo: doc
-                         double *dPSE, ///< @todo: doc
-                         double *dPSW, ///< @todo: doc
-                         double *oC,   ///< @todo: doc
-                         double *oE,   ///< @todo: doc
-                         double *oN,   ///< @todo: doc
-                         double *uC,   ///< @todo: doc
-                         double *oNE,  ///< @todo: doc
-                         double *oNW,  ///< @todo: doc
-                         double *uE,   ///< @todo: doc
-                         double *uW,   ///< @todo: doc
-                         double *uN,   ///< @todo: doc
-                         double *uS,   ///< @todo: doc
-                         double *uNE,  ///< @todo: doc
-                         double *uNW,  ///< @todo: doc
-                         double *uSE,  ///< @todo: doc
-                         double *uSW,  ///< @todo: doc
-                         double *XoC,  ///< @todo: doc
-                         double *XoE,  ///< @todo: doc
-                         double *XoN,  ///< @todo: doc
-                         double *XuC,  ///< @todo: doc
-                         double *XoNE, ///< @todo: doc
-                         double *XoNW, ///< @todo: doc
-                         double *XuE,  ///< @todo: doc
-                         double *XuW,  ///< @todo: doc
-                         double *XuN,  ///< @todo: doc
-                         double *XuS,  ///< @todo: doc
-                         double *XuNE, ///< @todo: doc
-                         double *XuNW, ///< @todo: doc
-                         double *XuSE, ///< @todo: doc
-                         double *XuSW,
-                         sycl::queue &q ///< @todo: doc
+
+template <typename DataType>
+void VbuildG_27(int *nxf,       ///< @todo: doc
+                int *nyf,       ///< @todo: doc
+                int *nzf,       ///< @todo: doc
+                int *nx,        ///< @todo: doc
+                int *ny,        ///< @todo: doc
+                int *nz,        ///< @todo: doc
+                DataType *oPC,  ///< @todo: doc
+                DataType *oPN,  ///< @todo: doc
+                DataType *oPS,  ///< @todo: doc
+                DataType *oPE,  ///< @todo: doc
+                DataType *oPW,  ///< @todo: doc
+                DataType *oPNE, ///< @todo: doc
+                DataType *oPNW, ///< @todo: doc
+                DataType *oPSE, ///< @todo: doc
+                DataType *oPSW, ///< @todo: doc
+                DataType *uPC,  ///< @todo: doc
+                DataType *uPN,  ///< @todo: doc
+                DataType *uPS,  ///< @todo: doc
+                DataType *uPE,  ///< @todo: doc
+                DataType *uPW,  ///< @todo: doc
+                DataType *uPNE, ///< @todo: doc
+                DataType *uPNW, ///< @todo: doc
+                DataType *uPSE, ///< @todo: doc
+                DataType *uPSW, ///< @todo: doc
+                DataType *dPC,  ///< @todo: doc
+                DataType *dPN,  ///< @todo: doc
+                DataType *dPS,  ///< @todo: doc
+                DataType *dPE,  ///< @todo: doc
+                DataType *dPW,  ///< @todo: doc
+                DataType *dPNE, ///< @todo: doc
+                DataType *dPNW, ///< @todo: doc
+                DataType *dPSE, ///< @todo: doc
+                DataType *dPSW, ///< @todo: doc
+                DataType *oC,   ///< @todo: doc
+                DataType *oE,   ///< @todo: doc
+                DataType *oN,   ///< @todo: doc
+                DataType *uC,   ///< @todo: doc
+                DataType *oNE,  ///< @todo: doc
+                DataType *oNW,  ///< @todo: doc
+                DataType *uE,   ///< @todo: doc
+                DataType *uW,   ///< @todo: doc
+                DataType *uN,   ///< @todo: doc
+                DataType *uS,   ///< @todo: doc
+                DataType *uNE,  ///< @todo: doc
+                DataType *uNW,  ///< @todo: doc
+                DataType *uSE,  ///< @todo: doc
+                DataType *uSW,  ///< @todo: doc
+                DataType *XoC,  ///< @todo: doc
+                DataType *XoE,  ///< @todo: doc
+                DataType *XoN,  ///< @todo: doc
+                DataType *XuC,  ///< @todo: doc
+                DataType *XoNE, ///< @todo: doc
+                DataType *XoNW, ///< @todo: doc
+                DataType *XuE,  ///< @todo: doc
+                DataType *XuW,  ///< @todo: doc
+                DataType *XuN,  ///< @todo: doc
+                DataType *XuS,  ///< @todo: doc
+                DataType *XuNE, ///< @todo: doc
+                DataType *XuNW, ///< @todo: doc
+                DataType *XuSE, ///< @todo: doc
+                DataType *XuSW,
+                sycl::queue &q ///< @todo: doc
 );
 
 #endif // _BUILDGD_H_

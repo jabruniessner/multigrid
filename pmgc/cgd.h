@@ -61,25 +61,26 @@
 #include "matvecd.h"
 #include "mikpckd.h"
 
-VEXTERNC void Vcghs(int *nx,        ///< @todo  Document
-                    int *ny,        ///< @todo  Document
-                    int *nz,        ///< @todo  Document
-                    int *ipc,       ///< @todo  Document
-                    double *rpc,    ///< @todo  Document
-                    double *ac,     ///< @todo  Document
-                    double *cc,     ///< @todo  Document
-                    double *fc,     ///< @todo  Document
-                    double *x,      ///< @todo  Document
-                    double *p,      ///< @todo  Document
-                    double *ap,     ///< @todo  Document
-                    double *r,      ///< @todo  Document
-                    int *itmax,     ///< @todo  Document
-                    int *iters,     ///< @todo  Document
-                    double *errtol, ///< @todo  Document
-                    double *omega,  ///< @todo  Document
-                    int *iresid,    ///< @todo  Document
-                    int *iadjoint,
-                    sycl::queue &q ///< @todo  Document
+template <typename DataType>
+void Vcghs(int *nx,          ///< @todo  Document
+           int *ny,          ///< @todo  Document
+           int *nz,          ///< @todo  Document
+           int *ipc,         ///< @todo  Document
+           DataType *rpc,    ///< @todo  Document
+           DataType *ac,     ///< @todo  Document
+           DataType *cc,     ///< @todo  Document
+           DataType *fc,     ///< @todo  Document
+           DataType *x,      ///< @todo  Document
+           DataType *p,      ///< @todo  Document
+           DataType *ap,     ///< @todo  Document
+           DataType *r,      ///< @todo  Document
+           int *itmax,       ///< @todo  Document
+           int *iters,       ///< @todo  Document
+           DataType *errtol, ///< @todo  Document
+           DataType *omega,  ///< @todo  Document
+           int *iresid,      ///< @todo  Document
+           int *iadjoint,
+           sycl::queue &q ///< @todo  Document
 );
 
 #endif /* _CGD_H_ */

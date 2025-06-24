@@ -56,8 +56,8 @@
 
 #include "abps_macros.h"
 
-/** @brief   Solves the double precision symmetric positive definite band system
- *           A*X = B using the factors computed by dpbco or dpbfa
+/** @brief   Solves the DataType precision symmetric positive definite band
+ * system A*X = B using the factors computed by dpbco or dpbfa
  *  @ingroup  PMGC
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  *  @note    A division by zero will occur if the input factor contains
@@ -66,28 +66,34 @@
  *           not occur if the subroutines are called correctly and info == 0
  *  @note    Replaces dpbsl from mgsubd.f
  */
-VEXTERNC void
-Vdpbsl(double *abd, ///< The output from dpbco or dpbfa
-       int *lda,    ///< The leading dimension of the array abd
-       int *n,      ///< The order of the matrix a
-       int *m,      ///< The number of diagonals above the main diagonal
-       double *b    ///< The right hand side vector
+
+template <typename DataType>
+void Vdpbsl(DataType *abd, ///< The output from dpbco or dpbfa
+            int *lda,      ///< The leading dimension of the array abd
+            int *n,        ///< The order of the matrix a
+            int *m,        ///< The number of diagonals above the main diagonal
+            DataType *b    ///< The right hand side vector
 );
 
 /** Translation of LINPACK daxpy subroutine
  * *     jack dongarra, linpack, 3/11/78.
  * */
-VEXTERNC void Vdaxpy(int n, double da, double *dx, int incx, double *dy,
-                     int incy);
+
+template <typename DataType>
+void Vdaxpy(int n, DataType da, DataType *dx, int incx, DataType *dy, int incy);
 
 /** Translation of LINPACK ddot subroutine
  * *     jack dongarra, linpack, 3/11/78.
  * */
-VEXTERNC double Vddot(int n, double *dx, int incx, double *dy, int incy);
+
+template <typename DataType>
+DataType Vddot(int n, DataType *dx, int incx, DataType *dy, int incy);
 
 /** Translation of LINPACK dpbfa subroutine
  * *     jack dongarra, linpack, 3/11/78.
  * */
-VEXTERNC void Vdpbfa(double *abd, int *lda, int *n, int *m, int *info);
+
+template <typename DataType>
+void Vdpbfa(DataType *abd, int *lda, int *n, int *m, int *info);
 
 #endif /* MLINPCKD_H_ */

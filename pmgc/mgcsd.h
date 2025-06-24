@@ -106,39 +106,41 @@
  *
  *  @note    Replaces mvcs from mgcsd.f
  */
-VEXTERNC void Vmvcs(int *nx,        ///< @todo: doc
-                    int *ny,        ///< @todo: doc
-                    int *nz,        ///< @todo: doc
-                    double *x,      ///< @todo: doc
-                    int *iz,        ///< @todo: doc
-                    double *w0,     ///< @todo: doc
-                    double *w1,     ///< @todo: doc
-                    double *w2,     ///< @todo: doc
-                    double *w3,     ///< @todo: doc
-                    int *istop,     ///< @todo: doc
-                    int *itmax,     ///< @todo: doc
-                    int *iters,     ///< @todo: doc
-                    int *ierror,    ///< @todo: doc
-                    int *nlev,      ///< @todo: doc
-                    int *ilev,      ///< @todo: doc
-                    int *nlev_real, ///< @todo: doc
-                    int *mgsolv,    ///< @todo: doc
-                    int *iok,       ///< @todo: doc
-                    int *iinfo,     ///< @todo: doc
-                    double *epsiln, ///< @todo: doc
-                    double *errtol, ///< @todo: doc
-                    double *omega,  ///< @todo: doc
-                    int *nu1,       ///< @todo: doc
-                    int *nu2,       ///< @todo: doc
-                    int *mgsmoo,    ///< @todo: doc
-                    int *ipc,       ///< @todo: doc
-                    double *rpc,    ///< @todo: doc
-                    double *pc,     ///< @todo: doc
-                    double *ac,     ///< @todo: doc
-                    double *cc,     ///< @todo: doc
-                    double *fc,     ///< @todo: doc
-                    double *tru,
-                    sycl::queue &q ///< @todo: doc
+
+template <typename DataType>
+void Vmvcs(int *nx,          ///< @todo: doc
+           int *ny,          ///< @todo: doc
+           int *nz,          ///< @todo: doc
+           DataType *x,      ///< @todo: doc
+           int *iz,          ///< @todo: doc
+           DataType *w0,     ///< @todo: doc
+           DataType *w1,     ///< @todo: doc
+           DataType *w2,     ///< @todo: doc
+           DataType *w3,     ///< @todo: doc
+           int *istop,       ///< @todo: doc
+           int *itmax,       ///< @todo: doc
+           int *iters,       ///< @todo: doc
+           int *ierror,      ///< @todo: doc
+           int *nlev,        ///< @todo: doc
+           int *ilev,        ///< @todo: doc
+           int *nlev_real,   ///< @todo: doc
+           int *mgsolv,      ///< @todo: doc
+           int *iok,         ///< @todo: doc
+           int *iinfo,       ///< @todo: doc
+           DataType *epsiln, ///< @todo: doc
+           DataType *errtol, ///< @todo: doc
+           DataType *omega,  ///< @todo: doc
+           int *nu1,         ///< @todo: doc
+           int *nu2,         ///< @todo: doc
+           int *mgsmoo,      ///< @todo: doc
+           int *ipc,         ///< @todo: doc
+           DataType *rpc,    ///< @todo: doc
+           DataType *pc,     ///< @todo: doc
+           DataType *ac,     ///< @todo: doc
+           DataType *cc,     ///< @todo: doc
+           DataType *fc,     ///< @todo: doc
+           DataType *tru,
+           sycl::queue &q ///< @todo: doc
 );
 
 #endif /* _MGCSD_H_ */

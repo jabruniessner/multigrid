@@ -54,10 +54,10 @@
 
 #include "gsd.h"
 
-VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
-                   double *cc, double *fc, double *x, double *w1, double *w2,
-                   double *r, int *itmax, int *iters, double *errtol,
-                   double *omega, int *iresid, int *iadjoint, sycl::queue &q) {
+VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
+                   DataType *cc, DataType *fc, DataType *x, DataType *w1, DataType *w2,
+                   DataType *r, int *itmax, int *iters, DataType *errtol,
+                   DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
 
   int numdia; /// @todo: doc
 
@@ -80,10 +80,10 @@ VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
   }
 }
 
-VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                     double *oC, double *cc, double *fc, double *oE, double *oN,
-                     double *uC, double *x, double *w1, double *w2, double *r,
-                     int *itmax, int *iters, double *errtol, double *omega,
+VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                     DataType *oC, DataType *cc, DataType *fc, DataType *oE, DataType *oN,
+                     DataType *uC, DataType *x, DataType *w1, DataType *w2, DataType *r,
+                     int *itmax, int *iters, DataType *errtol, DataType *omega,
                      int *iresid, int *iadjoint, sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
@@ -149,13 +149,13 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
     Vmresid7_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, x, r, q);
 }
 
-VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *oC, double *cc, double *fc, double *oE,
-                      double *oN, double *uC, double *oNE, double *oNW,
-                      double *uE, double *uW, double *uN, double *uS,
-                      double *uNE, double *uNW, double *uSE, double *uSW,
-                      double *x, double *w1, double *w2, double *r, int *itmax,
-                      int *iters, double *errtol, double *omega, int *iresid,
+VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                      DataType *oN, DataType *uC, DataType *oNE, DataType *oNW,
+                      DataType *uE, DataType *uW, DataType *uN, DataType *uS,
+                      DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
+                      DataType *x, DataType *w1, DataType *w2, DataType *r, int *itmax,
+                      int *iters, DataType *errtol, DataType *omega, int *iresid,
                       int *iadjoint, sycl::queue &q) {
 
   int i, j, k;
@@ -164,7 +164,7 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   int ioff;
   int istep;
 
-  double tmpO, tmpU, tmpD;
+  DataType tmpO, tmpU, tmpD;
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);

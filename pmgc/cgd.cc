@@ -55,13 +55,13 @@
 #include "cgd.h"
 #include "hipSYCL/sycl/queue.hpp"
 
-VPUBLIC void Vcghs(int *nx, int *ny, int *nz, int *ipc, double *rpc, double *ac,
-                   double *cc, double *fc, double *x, double *p, double *ap,
-                   double *r, int *itmax, int *iters, double *errtol,
-                   double *omega, int *iresid, int *iadjoint, sycl::queue &q) {
+VPUBLIC void Vcghs(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
+                   DataType *cc, DataType *fc, DataType *x, DataType *p, DataType *ap,
+                   DataType *r, int *itmax, int *iters, DataType *errtol,
+                   DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
 
-  double rsnrm, pAp, denom;
-  double rhok1, rhok2, alpha, beta;
+  DataType rsnrm, pAp, denom;
+  DataType rhok1, rhok2, alpha, beta;
 
   // Setup for the looping
   *iters = 0;

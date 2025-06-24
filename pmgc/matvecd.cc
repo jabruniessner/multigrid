@@ -55,8 +55,8 @@
 #include "matvecd.h"
 #include "hipSYCL/sycl/queue.hpp"
 
-VPUBLIC void Vmatvec(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                     double *ac, double *cc, double *x, double *y,
+VPUBLIC void Vmatvec(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                     DataType *ac, DataType *cc, DataType *x, DataType *y,
                      sycl::queue &q) {
 
   int numdia;
@@ -73,8 +73,8 @@ VPUBLIC void Vmatvec(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VPUBLIC void Vmatvec7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *ac, double *cc, double *x, double *y,
+VPUBLIC void Vmatvec7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *ac, DataType *cc, DataType *x, DataType *y,
                       sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
@@ -83,9 +83,9 @@ VPUBLIC void Vmatvec7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
               RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, q);
 }
 
-VEXTERNC void Vmatvec7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                          double *oC, double *cc, double *oE, double *oN,
-                          double *uC, double *x, double *y, sycl::queue &q) {
+VEXTERNC void Vmatvec7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                          DataType *uC, DataType *x, DataType *y, sycl::queue &q) {
 
   MAT3(oE, *nx, *ny, *nz);
   MAT3(oN, *nx, *ny, *nz);
@@ -112,8 +112,8 @@ VEXTERNC void Vmatvec7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vmatvec27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *x, double *y,
+VPUBLIC void Vmatvec27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *x, DataType *y,
                        sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
@@ -125,16 +125,16 @@ VPUBLIC void Vmatvec27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                RAT2(ac, 1, 14), x, y, q);
 }
 
-VPUBLIC void Vmatvec27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                          double *oC, double *cc, double *oE, double *oN,
-                          double *uC, double *oNE, double *oNW, double *uE,
-                          double *uW, double *uN, double *uS, double *uNE,
-                          double *uNW, double *uSE, double *uSW, double *x,
-                          double *y, sycl::queue &q) {
+VPUBLIC void Vmatvec27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                          DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
+                          DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
+                          DataType *uNW, DataType *uSE, DataType *uSW, DataType *x,
+                          DataType *y, sycl::queue &q) {
 
   int i, j, k;
 
-  double tmpO, tmpU, tmpD;
+  DataType tmpO, tmpU, tmpD;
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(x, *nx, *ny, *nz);
@@ -198,8 +198,8 @@ VPUBLIC void Vmatvec27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VEXTERNC void Vnmatvec(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *x, double *y, double *w1,
+VEXTERNC void Vnmatvec(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *x, DataType *y, DataType *w1,
                        sycl::queue &q) {
 
   int numdia;
@@ -216,8 +216,8 @@ VEXTERNC void Vnmatvec(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VPUBLIC void Vnmatvec7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *x, double *y, double *w1,
+VPUBLIC void Vnmatvec7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *x, DataType *y, DataType *w1,
                        sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
@@ -228,9 +228,9 @@ VPUBLIC void Vnmatvec7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                 RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, w1, q);
 }
 
-VPUBLIC void Vnmatvecd7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                           double *oC, double *cc, double *oE, double *oN,
-                           double *uC, double *x, double *y, double *w1,
+VPUBLIC void Vnmatvecd7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                           DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                           DataType *uC, DataType *x, DataType *y, DataType *w1,
                            sycl::queue &q) {
 
   int i, j, k;
@@ -266,9 +266,9 @@ VPUBLIC void Vnmatvecd7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vnmatvec27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                        double *ac, double *cc, double *x, double *y,
-                        double *w1, sycl::queue &q) {
+VPUBLIC void Vnmatvec27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *x, DataType *y,
+                        DataType *w1, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
@@ -282,17 +282,17 @@ VPUBLIC void Vnmatvec27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                  RAT2(ac, 1, 13), RAT2(ac, 1, 14), x, y, w1, q);
 }
 
-VPUBLIC void Vnmatvecd27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                            double *oC, double *cc, double *oE, double *oN,
-                            double *uC, double *oNE, double *oNW, double *uE,
-                            double *uW, double *uN, double *uS, double *uNE,
-                            double *uNW, double *uSE, double *uSW, double *x,
-                            double *y, double *w1, sycl::queue &q) {
+VPUBLIC void Vnmatvecd27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                            DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                            DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
+                            DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
+                            DataType *uNW, DataType *uSE, DataType *uSW, DataType *x,
+                            DataType *y, DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
 
-  double tmpO, tmpU, tmpD;
+  DataType tmpO, tmpU, tmpD;
 
   MAT3(oE, *nx, *ny, *nz);
   MAT3(oN, *nx, *ny, *nz);
@@ -361,8 +361,8 @@ VPUBLIC void Vnmatvecd27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vmresid(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                     double *ac, double *cc, double *fc, double *x, double *r,
+VPUBLIC void Vmresid(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                     DataType *ac, DataType *cc, DataType *fc, DataType *x, DataType *r,
                      sycl::queue &q) {
 
   int numdia;
@@ -378,8 +378,8 @@ VPUBLIC void Vmresid(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VPUBLIC void Vmresid7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *ac, double *cc, double *fc, double *x, double *r,
+VPUBLIC void Vmresid7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *ac, DataType *cc, DataType *fc, DataType *x, DataType *r,
                       sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
@@ -389,9 +389,9 @@ VPUBLIC void Vmresid7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
               RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, q);
 }
 
-VPUBLIC void Vmresid7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                         double *oC, double *cc, double *fc, double *oE,
-                         double *oN, double *uC, double *x, double *r,
+VPUBLIC void Vmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                         DataType *oN, DataType *uC, DataType *x, DataType *r,
                          sycl::queue &q) {
 
   MAT3(oE, *nx, *ny, *nz);
@@ -420,8 +420,8 @@ VPUBLIC void Vmresid7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vmresid27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *fc, double *x, double *r,
+VPUBLIC void Vmresid27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *fc, DataType *x, DataType *r,
                        sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
@@ -434,12 +434,12 @@ VPUBLIC void Vmresid27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                RAT2(ac, 1, 14), x, r, q);
 }
 
-VPUBLIC void Vmresid27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                          double *oC, double *cc, double *fc, double *oE,
-                          double *oN, double *uC, double *oNE, double *oNW,
-                          double *uE, double *uW, double *uN, double *uS,
-                          double *uNE, double *uNW, double *uSE, double *uSW,
-                          double *x, double *r, sycl::queue &q) {
+VPUBLIC void Vmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                          DataType *oN, DataType *uC, DataType *oNE, DataType *oNW,
+                          DataType *uE, DataType *uW, DataType *uN, DataType *uS,
+                          DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
+                          DataType *x, DataType *r, sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);
@@ -503,9 +503,9 @@ VPUBLIC void Vmresid27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vnmresid(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *ac, double *cc, double *fc, double *x, double *r,
-                      double *w1, sycl::queue &q) {
+VPUBLIC void Vnmresid(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *ac, DataType *cc, DataType *fc, DataType *x, DataType *r,
+                      DataType *w1, sycl::queue &q) {
 
   int numdia;
 
@@ -520,9 +520,9 @@ VPUBLIC void Vnmresid(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VPUBLIC void Vnmresid7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *fc, double *x, double *r,
-                       double *w1, sycl::queue &q) {
+VPUBLIC void Vnmresid7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *fc, DataType *x, DataType *r,
+                       DataType *w1, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
@@ -531,10 +531,10 @@ VPUBLIC void Vnmresid7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, w1, q);
 }
 
-VPUBLIC void Vnmresid7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                          double *oC, double *cc, double *fc, double *oE,
-                          double *oN, double *uC, double *x, double *r,
-                          double *w1, sycl::queue &q) {
+VPUBLIC void Vnmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                          DataType *oN, DataType *uC, DataType *x, DataType *r,
+                          DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
@@ -570,9 +570,9 @@ VPUBLIC void Vnmresid7_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   });
 }
 
-VPUBLIC void Vnmresid27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                        double *ac, double *cc, double *fc, double *x,
-                        double *r, double *w1, sycl::queue &q) {
+VPUBLIC void Vnmresid27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                        DataType *r, DataType *w1, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
@@ -584,16 +584,16 @@ VPUBLIC void Vnmresid27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
                 RAT2(ac, 1, 14), x, r, w1, q);
 }
 
-VPUBLIC void Vnmresid27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                           double *oC, double *cc, double *fc, double *oE,
-                           double *oN, double *uC, double *oNE, double *oNW,
-                           double *uE, double *uW, double *uN, double *uS,
-                           double *uNE, double *uNW, double *uSE, double *uSW,
-                           double *x, double *r, double *w1, sycl::queue &q) {
+VPUBLIC void Vnmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                           DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                           DataType *oN, DataType *uC, DataType *oNE, DataType *oNW,
+                           DataType *uE, DataType *uW, DataType *uN, DataType *uS,
+                           DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
+                           DataType *x, DataType *r, DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
-  double tmpO, tmpU, tmpD;
+  DataType tmpO, tmpU, tmpD;
 
   MAT3(oC, *nx, *ny, *nz);
   MAT3(cc, *nx, *ny, *nz);
@@ -661,7 +661,7 @@ VPUBLIC void Vnmresid27_1s(int *nx, int *ny, int *nz, int *ipc, double *rpc,
 }
 
 VPUBLIC void Vrestrc(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     double *xin, double *xout, double *pc, sycl::queue &q) {
+                     DataType *xin, DataType *xout, DataType *pc, sycl::queue &q) {
 
   MAT2(pc, *nxc * *nyc * *nzc, 1);
 
@@ -676,21 +676,21 @@ VPUBLIC void Vrestrc(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
 }
 
 VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                       int *nzc, double *xin, double *xout, double *oPC,
-                       double *oPN, double *oPS, double *oPE, double *oPW,
-                       double *oPNE, double *oPNW, double *oPSE, double *oPSW,
-                       double *uPC, double *uPN, double *uPS, double *uPE,
-                       double *uPW, double *uPNE, double *uPNW, double *uPSE,
-                       double *uPSW, double *dPC, double *dPN, double *dPS,
-                       double *dPE, double *dPW, double *dPNE, double *dPNW,
-                       double *dPSE, double *dPSW, sycl::queue &q) {
+                       int *nzc, DataType *xin, DataType *xout, DataType *oPC,
+                       DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
+                       DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
+                       DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
+                       DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
+                       DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+                       DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
+                       DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
   int idimenshun = 3;
 
-  double tmpO, tmpU, tmpD;
-  double dimfac;
+  DataType tmpO, tmpU, tmpD;
+  DataType dimfac;
 
   MAT3(xin, *nxf, *nyf, *nzf);
   MAT3(xout, *nxc, *nyc, *nzc);
@@ -784,7 +784,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
 }
 
 VPUBLIC void VinterpPMG(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
-                        int *nzf, double *xin, double *xout, double *pc,
+                        int *nzf, DataType *xin, DataType *xout, DataType *pc,
                         sycl::queue &q) {
 
   MAT2(pc, *nxc * *nyc * *nzc, 1);
@@ -801,14 +801,14 @@ VPUBLIC void VinterpPMG(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
 }
 
 VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
-                         int *nzf, double *xin, double *xout, double *oPC,
-                         double *oPN, double *oPS, double *oPE, double *oPW,
-                         double *oPNE, double *oPNW, double *oPSE, double *oPSW,
-                         double *uPC, double *uPN, double *uPS, double *uPE,
-                         double *uPW, double *uPNE, double *uPNW, double *uPSE,
-                         double *uPSW, double *dPC, double *dPN, double *dPS,
-                         double *dPE, double *dPW, double *dPNE, double *dPNW,
-                         double *dPSE, double *dPSW, sycl::queue &q) {
+                         int *nzf, DataType *xin, DataType *xout, DataType *oPC,
+                         DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
+                         DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
+                         DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
+                         DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
+                         DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+                         DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
+                         DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
   MAT3(xin, *nxc, *nyc, *nzc);
   MAT3(xout, *nxf, *nyf, *nzf);
@@ -951,7 +951,7 @@ VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
 }
 
 VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     double *xin, double *xout, sycl::queue &q) {
+                     DataType *xin, DataType *xout, sycl::queue &q) {
 
   MAT3(xin, *nxf, *nyf, *nzf);
   MAT3(xout, *nxc, *nyc, *nzc);

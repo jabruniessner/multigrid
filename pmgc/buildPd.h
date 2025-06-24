@@ -58,192 +58,199 @@
 #include "abps_macros.h"
 #include <sycl/sycl.hpp>
 
-VEXTERNC void VbuildP(int *nxf,    ///< @todo: doc
-                      int *nyf,    ///< @todo: doc
-                      int *nzf,    ///< @todo: doc
-                      int *nxc,    ///< @todo: doc
-                      int *nyc,    ///< @todo: doc
-                      int *nzc,    ///< @todo: doc
-                      int *mgprol, ///< @todo: doc
-                      int *ipc,    ///< @todo: doc
-                      double *rpc, ///< @todo: doc
-                      double *pc,  ///< @todo: doc
-                      double *ac,  ///< @todo: doc
-                      double *xf,  ///< @todo: doc
-                      double *yf,  ///< @todo: doc
-                      double *zf,  ///< @todo: doc
-                      sycl::queue &q);
+template <typename DataType>
+void VbuildP(int *nxf,      ///< @todo: doc
+             int *nyf,      ///< @todo: doc
+             int *nzf,      ///< @todo: doc
+             int *nxc,      ///< @todo: doc
+             int *nyc,      ///< @todo: doc
+             int *nzc,      ///< @todo: doc
+             int *mgprol,   ///< @todo: doc
+             int *ipc,      ///< @todo: doc
+             DataType *rpc, ///< @todo: doc
+             DataType *pc,  ///< @todo: doc
+             DataType *ac,  ///< @todo: doc
+             DataType *xf,  ///< @todo: doc
+             DataType *yf,  ///< @todo: doc
+             DataType *zf,  ///< @todo: doc
+             sycl::queue &q);
 
-VEXTERNC void VbuildP_trilin(int *nxf,      ///< @todo: doc
-                             int *nyf,      ///< @todo: doc
-                             int *nzf,      ///< @todo: doc
-                             int *nxc,      ///< @todo: doc
-                             int *nyc,      ///< @todo: doc
-                             int *nzc,      ///< @todo: doc
-                             double *pc,    ///< @todo: doc
-                             double *xf,    ///< @todo: doc
-                             double *yf,    ///< @todo: doc
-                             double *zf,    ///< @todo: doc
-                             sycl::queue &q ///
+template <typename DataType>
+void VbuildP_trilin(int *nxf,      ///< @todo: doc
+                    int *nyf,      ///< @todo: doc
+                    int *nzf,      ///< @todo: doc
+                    int *nxc,      ///< @todo: doc
+                    int *nyc,      ///< @todo: doc
+                    int *nzc,      ///< @todo: doc
+                    DataType *pc,  ///< @todo: doc
+                    DataType *xf,  ///< @todo: doc
+                    DataType *yf,  ///< @todo: doc
+                    DataType *zf,  ///< @todo: doc
+                    sycl::queue &q ///
 );
 
-VEXTERNC void VbuildPb_trilin(int *nxf,     ///< @todo: doc
-                              int *nyf,     ///< @todo: doc
-                              int *nzf,     ///< @todo: doc
-                              int *nxc,     ///< @todo: doc
-                              int *nyc,     ///< @todo: doc
-                              int *nzc,     ///< @todo: doc
-                              double *oPC,  ///< @todo: doc
-                              double *oPN,  ///< @todo: doc
-                              double *oPS,  ///< @todo: doc
-                              double *oPE,  ///< @todo: doc
-                              double *oPW,  ///< @todo: doc
-                              double *oPNE, ///< @todo: doc
-                              double *oPNW, ///< @todo: doc
-                              double *oPSE, ///< @todo: doc
-                              double *oPSW, ///< @todo: doc
-                              double *uPC,  ///< @todo: doc
-                              double *uPN,  ///< @todo: doc
-                              double *uPS,  ///< @todo: doc
-                              double *uPE,  ///< @todo: doc
-                              double *uPW,  ///< @todo: doc
-                              double *uPNE, ///< @todo: doc
-                              double *uPNW, ///< @todo: doc
-                              double *uPSE, ///< @todo: doc
-                              double *uPSW, ///< @todo: doc
-                              double *dPC,  ///< @todo: doc
-                              double *dPN,  ///< @todo: doc
-                              double *dPS,  ///< @todo: doc
-                              double *dPE,  ///< @todo: doc
-                              double *dPW,  ///< @todo: doc
-                              double *dPNE, ///< @todo: doc
-                              double *dPNW, ///< @todo: doc
-                              double *dPSE, ///< @todo: doc
-                              double *dPSW, ///< @todo: doc
-                              double *xf,   ///< @todo: doc
-                              double *yf,   ///< @todo: doc
-                              double *zf,
-                              sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildPb_trilin(int *nxf,       ///< @todo: doc
+                     int *nyf,       ///< @todo: doc
+                     int *nzf,       ///< @todo: doc
+                     int *nxc,       ///< @todo: doc
+                     int *nyc,       ///< @todo: doc
+                     int *nzc,       ///< @todo: doc
+                     DataType *oPC,  ///< @todo: doc
+                     DataType *oPN,  ///< @todo: doc
+                     DataType *oPS,  ///< @todo: doc
+                     DataType *oPE,  ///< @todo: doc
+                     DataType *oPW,  ///< @todo: doc
+                     DataType *oPNE, ///< @todo: doc
+                     DataType *oPNW, ///< @todo: doc
+                     DataType *oPSE, ///< @todo: doc
+                     DataType *oPSW, ///< @todo: doc
+                     DataType *uPC,  ///< @todo: doc
+                     DataType *uPN,  ///< @todo: doc
+                     DataType *uPS,  ///< @todo: doc
+                     DataType *uPE,  ///< @todo: doc
+                     DataType *uPW,  ///< @todo: doc
+                     DataType *uPNE, ///< @todo: doc
+                     DataType *uPNW, ///< @todo: doc
+                     DataType *uPSE, ///< @todo: doc
+                     DataType *uPSW, ///< @todo: doc
+                     DataType *dPC,  ///< @todo: doc
+                     DataType *dPN,  ///< @todo: doc
+                     DataType *dPS,  ///< @todo: doc
+                     DataType *dPE,  ///< @todo: doc
+                     DataType *dPW,  ///< @todo: doc
+                     DataType *dPNE, ///< @todo: doc
+                     DataType *dPNW, ///< @todo: doc
+                     DataType *dPSE, ///< @todo: doc
+                     DataType *dPSW, ///< @todo: doc
+                     DataType *xf,   ///< @todo: doc
+                     DataType *yf,   ///< @todo: doc
+                     DataType *zf,
+                     sycl::queue &q ///< @todo: doc
 );
 
-VEXTERNC void VbuildP_op7(int *nxf,    ///< @todo: doc
-                          int *nyf,    ///< @todo: doc
-                          int *nzf,    ///< @todo: doc
-                          int *nxc,    ///< @todo: doc
-                          int *nyc,    ///< @todo: doc
-                          int *nzc,    ///< @todo: doc
-                          int *ipc,    ///< @todo: doc
-                          double *rpc, ///< @todo: doc
-                          double *ac,  ///< @todo: doc
-                          double *pc,
-                          sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildP_op7(int *nxf,      ///< @todo: doc
+                 int *nyf,      ///< @todo: doc
+                 int *nzf,      ///< @todo: doc
+                 int *nxc,      ///< @todo: doc
+                 int *nyc,      ///< @todo: doc
+                 int *nzc,      ///< @todo: doc
+                 int *ipc,      ///< @todo: doc
+                 DataType *rpc, ///< @todo: doc
+                 DataType *ac,  ///< @todo: doc
+                 DataType *pc,
+                 sycl::queue &q ///< @todo: doc
 );
 
-VEXTERNC void VbuildPb_op7(int *nxf,     ///< @todo: doc
-                           int *nyf,     ///< @todo: doc
-                           int *nzf,     ///< @todo: doc
-                           int *nxc,     ///< @todo: doc
-                           int *nyc,     ///< @todo: doc
-                           int *nzc,     ///< @todo: doc
-                           int *ipc,     ///< @todo: doc
-                           double *rpc,  ///< @todo: doc
-                           double *oC,   ///< @todo: doc
-                           double *oE,   ///< @todo: doc
-                           double *oN,   ///< @todo: doc
-                           double *uC,   ///< @todo: doc
-                           double *oPC,  ///< @todo: doc
-                           double *oPN,  ///< @todo: doc
-                           double *oPS,  ///< @todo: doc
-                           double *oPE,  ///< @todo: doc
-                           double *oPW,  ///< @todo: doc
-                           double *oPNE, ///< @todo: doc
-                           double *oPNW, ///< @todo: doc
-                           double *oPSE, ///< @todo: doc
-                           double *oPSW, ///< @todo: doc
-                           double *uPC,  ///< @todo: doc
-                           double *uPN,  ///< @todo: doc
-                           double *uPS,  ///< @todo: doc
-                           double *uPE,  ///< @todo: doc
-                           double *uPW,  ///< @todo: doc
-                           double *uPNE, ///< @todo: doc
-                           double *uPNW, ///< @todo: doc
-                           double *uPSE, ///< @todo: doc
-                           double *uPSW, ///< @todo: doc
-                           double *dPC,  ///< @todo: doc
-                           double *dPN,  ///< @todo: doc
-                           double *dPS,  ///< @todo: doc
-                           double *dPE,  ///< @todo: doc
-                           double *dPW,  ///< @todo: doc
-                           double *dPNE, ///< @todo: doc
-                           double *dPNW, ///< @todo: doc
-                           double *dPSE, ///< @todo: doc
-                           double *dPSW,
-                           sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildPb_op7(int *nxf,       ///< @todo: doc
+                  int *nyf,       ///< @todo: doc
+                  int *nzf,       ///< @todo: doc
+                  int *nxc,       ///< @todo: doc
+                  int *nyc,       ///< @todo: doc
+                  int *nzc,       ///< @todo: doc
+                  int *ipc,       ///< @todo: doc
+                  DataType *rpc,  ///< @todo: doc
+                  DataType *oC,   ///< @todo: doc
+                  DataType *oE,   ///< @todo: doc
+                  DataType *oN,   ///< @todo: doc
+                  DataType *uC,   ///< @todo: doc
+                  DataType *oPC,  ///< @todo: doc
+                  DataType *oPN,  ///< @todo: doc
+                  DataType *oPS,  ///< @todo: doc
+                  DataType *oPE,  ///< @todo: doc
+                  DataType *oPW,  ///< @todo: doc
+                  DataType *oPNE, ///< @todo: doc
+                  DataType *oPNW, ///< @todo: doc
+                  DataType *oPSE, ///< @todo: doc
+                  DataType *oPSW, ///< @todo: doc
+                  DataType *uPC,  ///< @todo: doc
+                  DataType *uPN,  ///< @todo: doc
+                  DataType *uPS,  ///< @todo: doc
+                  DataType *uPE,  ///< @todo: doc
+                  DataType *uPW,  ///< @todo: doc
+                  DataType *uPNE, ///< @todo: doc
+                  DataType *uPNW, ///< @todo: doc
+                  DataType *uPSE, ///< @todo: doc
+                  DataType *uPSW, ///< @todo: doc
+                  DataType *dPC,  ///< @todo: doc
+                  DataType *dPN,  ///< @todo: doc
+                  DataType *dPS,  ///< @todo: doc
+                  DataType *dPE,  ///< @todo: doc
+                  DataType *dPW,  ///< @todo: doc
+                  DataType *dPNE, ///< @todo: doc
+                  DataType *dPNW, ///< @todo: doc
+                  DataType *dPSE, ///< @todo: doc
+                  DataType *dPSW,
+                  sycl::queue &q ///< @todo: doc
 );
 
-VEXTERNC void VbuildP_op27(int *nxf,    ///< @todo: doc
-                           int *nyf,    ///< @todo: doc
-                           int *nzf,    ///< @todo: doc
-                           int *nxc,    ///< @todo: doc
-                           int *nyc,    ///< @todo: doc
-                           int *nzc,    ///< @todo: doc
-                           int *ipc,    ///< @todo: doc
-                           double *rpc, ///< @todo: doc
-                           double *ac,  ///< @todo: doc
-                           double *pc,
-                           sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildP_op27(int *nxf,      ///< @todo: doc
+                  int *nyf,      ///< @todo: doc
+                  int *nzf,      ///< @todo: doc
+                  int *nxc,      ///< @todo: doc
+                  int *nyc,      ///< @todo: doc
+                  int *nzc,      ///< @todo: doc
+                  int *ipc,      ///< @todo: doc
+                  DataType *rpc, ///< @todo: doc
+                  DataType *ac,  ///< @todo: doc
+                  DataType *pc,
+                  sycl::queue &q ///< @todo: doc
 );
 
-VEXTERNC void VbuildPb_op27(int *nxf,     ///< @todo: doc
-                            int *nyf,     ///< @todo: doc
-                            int *nzf,     ///< @todo: doc
-                            int *nxc,     ///< @todo: doc
-                            int *nyc,     ///< @todo: doc
-                            int *nzc,     ///< @todo: doc
-                            int *ipc,     ///< @todo: doc
-                            double *rpc,  ///< @todo: doc
-                            double *oC,   ///< @todo: doc
-                            double *oE,   ///< @todo: doc
-                            double *oN,   ///< @todo: doc
-                            double *uC,   ///< @todo: doc
-                            double *oNE,  ///< @todo: doc
-                            double *oNW,  ///< @todo: doc
-                            double *uE,   ///< @todo: doc
-                            double *uW,   ///< @todo: doc
-                            double *uN,   ///< @todo: doc
-                            double *uS,   ///< @todo: doc
-                            double *uNE,  ///< @todo: doc
-                            double *uNW,  ///< @todo: doc
-                            double *uSE,  ///< @todo: doc
-                            double *uSW,  ///< @todo: doc
-                            double *oPC,  ///< @todo: doc
-                            double *oPN,  ///< @todo: doc
-                            double *oPS,  ///< @todo: doc
-                            double *oPE,  ///< @todo: doc
-                            double *oPW,  ///< @todo: doc
-                            double *oPNE, ///< @todo: doc
-                            double *oPNW, ///< @todo: doc
-                            double *oPSE, ///< @todo: doc
-                            double *oPSW, ///< @todo: doc
-                            double *uPC,  ///< @todo: doc
-                            double *uPN,  ///< @todo: doc
-                            double *uPS,  ///< @todo: doc
-                            double *uPE,  ///< @todo: doc
-                            double *uPW,  ///< @todo: doc
-                            double *uPNE, ///< @todo: doc
-                            double *uPNW, ///< @todo: doc
-                            double *uPSE, ///< @todo: doc
-                            double *uPSW, ///< @todo: doc
-                            double *dPC,  ///< @todo: doc
-                            double *dPN,  ///< @todo: doc
-                            double *dPS,  ///< @todo: doc
-                            double *dPE,  ///< @todo: doc
-                            double *dPW,  ///< @todo: doc
-                            double *dPNE, ///< @todo: doc
-                            double *dPNW, ///< @todo: doc
-                            double *dPSE, ///< @todo: doc
-                            double *dPSW,
-                            sycl::queue &q ///< @todo: doc
+template <typename DataType>
+void VbuildPb_op27(int *nxf,       ///< @todo: doc
+                   int *nyf,       ///< @todo: doc
+                   int *nzf,       ///< @todo: doc
+                   int *nxc,       ///< @todo: doc
+                   int *nyc,       ///< @todo: doc
+                   int *nzc,       ///< @todo: doc
+                   int *ipc,       ///< @todo: doc
+                   DataType *rpc,  ///< @todo: doc
+                   DataType *oC,   ///< @todo: doc
+                   DataType *oE,   ///< @todo: doc
+                   DataType *oN,   ///< @todo: doc
+                   DataType *uC,   ///< @todo: doc
+                   DataType *oNE,  ///< @todo: doc
+                   DataType *oNW,  ///< @todo: doc
+                   DataType *uE,   ///< @todo: doc
+                   DataType *uW,   ///< @todo: doc
+                   DataType *uN,   ///< @todo: doc
+                   DataType *uS,   ///< @todo: doc
+                   DataType *uNE,  ///< @todo: doc
+                   DataType *uNW,  ///< @todo: doc
+                   DataType *uSE,  ///< @todo: doc
+                   DataType *uSW,  ///< @todo: doc
+                   DataType *oPC,  ///< @todo: doc
+                   DataType *oPN,  ///< @todo: doc
+                   DataType *oPS,  ///< @todo: doc
+                   DataType *oPE,  ///< @todo: doc
+                   DataType *oPW,  ///< @todo: doc
+                   DataType *oPNE, ///< @todo: doc
+                   DataType *oPNW, ///< @todo: doc
+                   DataType *oPSE, ///< @todo: doc
+                   DataType *oPSW, ///< @todo: doc
+                   DataType *uPC,  ///< @todo: doc
+                   DataType *uPN,  ///< @todo: doc
+                   DataType *uPS,  ///< @todo: doc
+                   DataType *uPE,  ///< @todo: doc
+                   DataType *uPW,  ///< @todo: doc
+                   DataType *uPNE, ///< @todo: doc
+                   DataType *uPNW, ///< @todo: doc
+                   DataType *uPSE, ///< @todo: doc
+                   DataType *uPSW, ///< @todo: doc
+                   DataType *dPC,  ///< @todo: doc
+                   DataType *dPN,  ///< @todo: doc
+                   DataType *dPS,  ///< @todo: doc
+                   DataType *dPE,  ///< @todo: doc
+                   DataType *dPW,  ///< @todo: doc
+                   DataType *dPNE, ///< @todo: doc
+                   DataType *dPNW, ///< @todo: doc
+                   DataType *dPSE, ///< @todo: doc
+                   DataType *dPSW,
+                   sycl::queue &q ///< @todo: doc
 );
 
 #endif /* _BUILDPD_H_ */

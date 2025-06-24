@@ -57,6 +57,7 @@
 // #include "apbscfg.h"
 
 #include "abps_macros.h"
+#include "precision.h"
 #include <sycl/sycl.hpp>
 
 /** @brief   Break the matrix data-structure into diagonals and then call the
@@ -64,28 +65,30 @@
  *  @ingroup PMGC
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA(int *nx,                    /**< @todo:Doc */
-                      int *ny,                    /**< @todo:Doc */
-                      int *nz,                    /**< @todo:Doc */
-                      int *ipkey,                 /**< @todo:Doc */
-                      int *mgdisc,                /**< @todo:Doc */
-                      int *numdia,                /**< @todo:Doc */
-                      int *ipc,                   /**< @todo:Doc */
-                      double *rpc,                /**< @todo:Doc */
-                      double *ac,                 /**< @todo:Doc */
-                      double *cc,                 /**< @todo:Doc */
-                      double *fc,                 /**< @todo:Doc */
-                      double *xf,                 /**< @todo:Doc */
-                      double *yf,                 /**< @todo:Doc */
-                      double *zf,                 /**< @todo:Doc */
-                      double *gxcf,               /**< @todo:Doc */
-                      double *gycf,               /**< @todo:Doc */
-                      double *gzcf,               /**< @todo:Doc */
-                      double *a1cf,               /**< @todo:Doc */
-                      double *a2cf,               /**< @todo:Doc */
-                      double *a3cf,               /**< @todo:Doc */
-                      double *ccf,                /**< @todo:Doc */
-                      double *fcf, sycl::queue &q /**< @todo:Doc */
+
+template <typename DataType>
+void VbuildA(int *nx,                      /**< @todo:Doc */
+             int *ny,                      /**< @todo:Doc */
+             int *nz,                      /**< @todo:Doc */
+             int *ipkey,                   /**< @todo:Doc */
+             int *mgdisc,                  /**< @todo:Doc */
+             int *numdia,                  /**< @todo:Doc */
+             int *ipc,                     /**< @todo:Doc */
+             DataType *rpc,                /**< @todo:Doc */
+             DataType *ac,                 /**< @todo:Doc */
+             DataType *cc,                 /**< @todo:Doc */
+             DataType *fc,                 /**< @todo:Doc */
+             DataType *xf,                 /**< @todo:Doc */
+             DataType *yf,                 /**< @todo:Doc */
+             DataType *zf,                 /**< @todo:Doc */
+             DataType *gxcf,               /**< @todo:Doc */
+             DataType *gycf,               /**< @todo:Doc */
+             DataType *gzcf,               /**< @todo:Doc */
+             DataType *a1cf,               /**< @todo:Doc */
+             DataType *a2cf,               /**< @todo:Doc */
+             DataType *a3cf,               /**< @todo:Doc */
+             DataType *ccf,                /**< @todo:Doc */
+             DataType *fcf, sycl::queue &q /**< @todo:Doc */
 );
 
 /** @brief
@@ -158,30 +161,32 @@ VEXTERNC void VbuildA(int *nx,                    /**< @todo:Doc */
  *            b(index2) = b(index2) - (1-ike)*coef*bnd_data
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA_fv(int *nx,                    /**< @todo:Doc */
-                         int *ny,                    /**< @todo:Doc */
-                         int *nz,                    /**< @todo:Doc */
-                         int *ipkey,                 /**< @todo:Doc */
-                         int *numdia,                /**< @todo:Doc */
-                         int *ipc,                   /**< @todo:Doc */
-                         double *rpc,                /**< @todo:Doc */
-                         double *oC,                 /**< @todo:Doc */
-                         double *cc,                 /**< @todo:Doc */
-                         double *fc,                 /**< @todo:Doc */
-                         double *oE,                 /**< @todo:Doc */
-                         double *oN,                 /**< @todo:Doc */
-                         double *uC,                 /**< @todo:Doc */
-                         double *xf,                 /**< @todo:Doc */
-                         double *yf,                 /**< @todo:Doc */
-                         double *zf,                 /**< @todo:Doc */
-                         double *gxcf,               /**< @todo:Doc */
-                         double *gycf,               /**< @todo:Doc */
-                         double *gzcf,               /**< @todo:Doc */
-                         double *a1cf,               /**< @todo:Doc */
-                         double *a2cf,               /**< @todo:Doc */
-                         double *a3cf,               /**< @todo:Doc */
-                         double *ccf,                /**< @todo:Doc */
-                         double *fcf, sycl::queue &q /**< @todo:Doc */
+
+template <typename DataType>
+void VbuildA_fv(int *nx,                      /**< @todo:Doc */
+                int *ny,                      /**< @todo:Doc */
+                int *nz,                      /**< @todo:Doc */
+                int *ipkey,                   /**< @todo:Doc */
+                int *numdia,                  /**< @todo:Doc */
+                int *ipc,                     /**< @todo:Doc */
+                DataType *rpc,                /**< @todo:Doc */
+                DataType *oC,                 /**< @todo:Doc */
+                DataType *cc,                 /**< @todo:Doc */
+                DataType *fc,                 /**< @todo:Doc */
+                DataType *oE,                 /**< @todo:Doc */
+                DataType *oN,                 /**< @todo:Doc */
+                DataType *uC,                 /**< @todo:Doc */
+                DataType *xf,                 /**< @todo:Doc */
+                DataType *yf,                 /**< @todo:Doc */
+                DataType *zf,                 /**< @todo:Doc */
+                DataType *gxcf,               /**< @todo:Doc */
+                DataType *gycf,               /**< @todo:Doc */
+                DataType *gzcf,               /**< @todo:Doc */
+                DataType *a1cf,               /**< @todo:Doc */
+                DataType *a2cf,               /**< @todo:Doc */
+                DataType *a3cf,               /**< @todo:Doc */
+                DataType *ccf,                /**< @todo:Doc */
+                DataType *fcf, sycl::queue &q /**< @todo:Doc */
 );
 
 /** @brief  Finite element method discretization
@@ -261,40 +266,42 @@ VEXTERNC void VbuildA_fv(int *nx,                    /**< @todo:Doc */
  *  @todo    Update brief description
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
-VEXTERNC void VbuildA_fe(int *nx,      /**< @todo:Doc */
-                         int *ny,      /**< @todo:Doc */
-                         int *nz,      /**< @todo:Doc */
-                         int *ipkey,   /**< @todo:Doc */
-                         int *numdia,  /**< @todo:Doc */
-                         int *ipc,     /**< @todo:Doc */
-                         double *rpc,  /**< @todo:Doc */
-                         double *oC,   /**< @todo:Doc */
-                         double *cc,   /**< @todo:Doc */
-                         double *fc,   /**< @todo:Doc */
-                         double *oE,   /**< @todo:Doc */
-                         double *oN,   /**< @todo:Doc */
-                         double *uC,   /**< @todo:Doc */
-                         double *oNE,  /**< @todo:Doc */
-                         double *oNW,  /**< @todo:Doc */
-                         double *uE,   /**< @todo:Doc */
-                         double *uW,   /**< @todo:Doc */
-                         double *uN,   /**< @todo:Doc */
-                         double *uS,   /**< @todo:Doc */
-                         double *uNE,  /**< @todo:Doc */
-                         double *uNW,  /**< @todo:Doc */
-                         double *uSE,  /**< @todo:Doc */
-                         double *uSW,  /**< @todo:Doc */
-                         double *xf,   /**< @todo:Doc */
-                         double *yf,   /**< @todo:Doc */
-                         double *zf,   /**< @todo:Doc */
-                         double *gxcf, /**< @todo:Doc */
-                         double *gycf, /**< @todo:Doc */
-                         double *gzcf, /**< @todo:Doc */
-                         double *a1cf, /**< @todo:Doc */
-                         double *a2cf, /**< @todo:Doc */
-                         double *a3cf, /**< @todo:Doc */
-                         double *ccf,  /**< @todo:Doc */
-                         double *fcf   /**< @todo:Doc */
+
+template <typename DataType>
+void VbuildA_fe(int *nx,        /**< @todo:Doc */
+                int *ny,        /**< @todo:Doc */
+                int *nz,        /**< @todo:Doc */
+                int *ipkey,     /**< @todo:Doc */
+                int *numdia,    /**< @todo:Doc */
+                int *ipc,       /**< @todo:Doc */
+                DataType *rpc,  /**< @todo:Doc */
+                DataType *oC,   /**< @todo:Doc */
+                DataType *cc,   /**< @todo:Doc */
+                DataType *fc,   /**< @todo:Doc */
+                DataType *oE,   /**< @todo:Doc */
+                DataType *oN,   /**< @todo:Doc */
+                DataType *uC,   /**< @todo:Doc */
+                DataType *oNE,  /**< @todo:Doc */
+                DataType *oNW,  /**< @todo:Doc */
+                DataType *uE,   /**< @todo:Doc */
+                DataType *uW,   /**< @todo:Doc */
+                DataType *uN,   /**< @todo:Doc */
+                DataType *uS,   /**< @todo:Doc */
+                DataType *uNE,  /**< @todo:Doc */
+                DataType *uNW,  /**< @todo:Doc */
+                DataType *uSE,  /**< @todo:Doc */
+                DataType *uSW,  /**< @todo:Doc */
+                DataType *xf,   /**< @todo:Doc */
+                DataType *yf,   /**< @todo:Doc */
+                DataType *zf,   /**< @todo:Doc */
+                DataType *gxcf, /**< @todo:Doc */
+                DataType *gycf, /**< @todo:Doc */
+                DataType *gzcf, /**< @todo:Doc */
+                DataType *a1cf, /**< @todo:Doc */
+                DataType *a2cf, /**< @todo:Doc */
+                DataType *a3cf, /**< @todo:Doc */
+                DataType *ccf,  /**< @todo:Doc */
+                DataType *fcf   /**< @todo:Doc */
 );
 
 #endif /* _VBUILDA_H_ */

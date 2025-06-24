@@ -54,35 +54,19 @@
 
 #include "mypdec.h"
 
-double v1;
-double v2;
-double v3;
-double conc1;
-double conc2;
-double conc3;
-double vol;
-double relSize;
+DataType v1;
+DataType v2;
+DataType v3;
+DataType conc1;
+DataType conc2;
+DataType conc3;
+DataType vol;
+DataType relSize;
 int nion;
-double charge[MAXIONS];
-double sconc[MAXIONS];
+DataType charge[MAXIONS];
+DataType sconc[MAXIONS];
 
-VPUBLIC void Vmypdefinitlpbe(int *tnion, double *tcharge, double *tsconc) {
-
-  int i;
-
-  nion = *tnion;
-  if (nion > MAXIONS) {
-    printf("Vmypde: Warning: Ignoring extra ion species\n");
-    nion = MAXIONS;
-  }
-
-  for (i = 1; i <= nion; i++) {
-    VAT(charge, i) = VAT(tcharge, i);
-    VAT(sconc, i) = VAT(tsconc, i);
-  }
-}
-
-VPUBLIC void Vmypdefinitnpbe(int *tnion, double *tcharge, double *tsconc) {
+VPUBLIC void Vmypdefinitlpbe(int *tnion, DataType *tcharge, DataType *tsconc) {
 
   int i;
 
@@ -98,8 +82,24 @@ VPUBLIC void Vmypdefinitnpbe(int *tnion, double *tcharge, double *tsconc) {
   }
 }
 
-VPUBLIC void Vmypdefinitsmpbe(int *tnion, double *tcharge, double *tsconc,
-                              double *smvolume, double *smsize) {
+VPUBLIC void Vmypdefinitnpbe(int *tnion, DataType *tcharge, DataType *tsconc) {
+
+  int i;
+
+  nion = *tnion;
+  if (nion > MAXIONS) {
+    printf("Vmypde: Warning: Ignoring extra ion species\n");
+    nion = MAXIONS;
+  }
+
+  for (i = 1; i <= nion; i++) {
+    VAT(charge, i) = VAT(tcharge, i);
+    VAT(sconc, i) = VAT(tsconc, i);
+  }
+}
+
+VPUBLIC void Vmypdefinitsmpbe(int *tnion, DataType *tcharge, DataType *tsconc,
+                              DataType *smvolume, DataType *smsize) {
 
   int i;
 
@@ -125,7 +125,7 @@ VPUBLIC void Vmypdefinitsmpbe(int *tnion, double *tcharge, double *tsconc,
   relSize = *smsize;
 }
 
-VPUBLIC void Vc_vec(double *coef, double *uin, double *uout, int *nx, int *ny,
+VPUBLIC void Vc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx, int *ny,
                     int *nz, int *ipkey) {
 
   if (*ipkey == -2) {
@@ -135,15 +135,15 @@ VPUBLIC void Vc_vec(double *coef, double *uin, double *uout, int *nx, int *ny,
   }
 }
 
-VPUBLIC void Vc_vecpmg(double *coef, double *uin, double *uout, int *nx,
+VPUBLIC void Vc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
                        int *ny, int *nz, int *ipkey) {
 
-  double zcf2; /// @todo  Document this function!
-  double zu2;
-  double am_zero;
-  double am_neg;
-  double am_pos;
-  double argument;
+  DataType zcf2; /// @todo  Document this function!
+  DataType zu2;
+  DataType am_zero;
+  DataType am_neg;
+  DataType am_pos;
+  DataType argument;
   int ichopped;
   int ichopped_neg;
   int ichopped_pos;
@@ -212,13 +212,13 @@ VPUBLIC void Vc_vecpmg(double *coef, double *uin, double *uout, int *nx,
   }
 }
 
-VPUBLIC void Vc_vecsmpbe(double *coef, double *uin, double *uout, int *nx,
+VPUBLIC void Vc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
                          int *ny, int *nz, int *ipkey) {
 
   int ideg;
-  double zcf2, zu2;
-  double am_zero, am_neg, am_pos;
-  double argument, poly, fact;
+  DataType zcf2, zu2;
+  DataType am_zero, am_neg, am_pos;
+  DataType argument, poly, fact;
 
   int ichopped, ichopped_neg, ichopped_pos;
   int iion;
@@ -227,11 +227,11 @@ VPUBLIC void Vc_vecsmpbe(double *coef, double *uin, double *uout, int *nx,
   int nproc = 1;
 
   // Added by DG SMPBE variables and common blocks
-  double fracOccA, fracOccB, fracOccC, phi, ionStr;
-  double z1, z2, z3, ca, cb, cc, a, k;
-  double a1_neg, a1_pos, a2_neg, a2_pos;
-  double a3_neg, a3_pos, a1, a2, a3;
-  double f, g, gpark, alpha;
+  DataType fracOccA, fracOccB, fracOccC, phi, ionStr;
+  DataType z1, z2, z3, ca, cb, cc, a, k;
+  DataType a1_neg, a1_pos, a2_neg, a2_pos;
+  DataType a3_neg, a3_pos, a1, a2, a3;
+  DataType f, g, gpark, alpha;
 
   WARN_UNTESTED;
 
@@ -334,7 +334,7 @@ VPUBLIC void Vc_vecsmpbe(double *coef, double *uin, double *uout, int *nx,
     printf("Vc_vecsmpbe: trapped exp overflows: %d\n", ichopped);
 }
 
-VPUBLIC void Vdc_vec(double *coef, double *uin, double *uout, int *nx, int *ny,
+VPUBLIC void Vdc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx, int *ny,
                      int *nz, int *ipkey) {
 
   int i;
@@ -347,13 +347,13 @@ VPUBLIC void Vdc_vec(double *coef, double *uin, double *uout, int *nx, int *ny,
   }
 }
 
-VPUBLIC void Vdc_vecpmg(double *coef, double *uin, double *uout, int *nx,
+VPUBLIC void Vdc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
                         int *ny, int *nz, int *ipkey) {
 
   int ideg, iion;
-  double zcf2, zu2;
-  double am_zero, am_neg, am_pos;
-  double argument, poly, fact;
+  DataType zcf2, zu2;
+  DataType am_zero, am_neg, am_pos;
+  DataType argument, poly, fact;
 
   int ichopped, ichopped_neg, ichopped_pos;
   int n, i;
@@ -414,13 +414,13 @@ VPUBLIC void Vdc_vecpmg(double *coef, double *uin, double *uout, int *nx,
   }
 }
 
-VPUBLIC void Vdc_vecsmpbe(double *coef, double *uin, double *uout, int *nx,
+VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
                           int *ny, int *nz, int *ipkey) {
 
   int ideg, iion;
-  double zcf2, zu2;
-  double am_zero, am_neg, am_pos;
-  double argument, poly, fact;
+  DataType zcf2, zu2;
+  DataType am_zero, am_neg, am_pos;
+  DataType argument, poly, fact;
   int ichopped, ichopped_neg, ichopped_pos;
 
   int n, i, ii;
@@ -429,11 +429,11 @@ VPUBLIC void Vdc_vecsmpbe(double *coef, double *uin, double *uout, int *nx,
   int nproc = 1;
 
   // Added by DG SMPBE variables and common blocks
-  double fracOccA, fracOccB, fracOccC, phi, ionStr;
-  double z1, z2, z3, ca, cb, cc, a, k;
-  double a1_neg, a1_pos, a2_neg, a2_pos;
-  double a3_neg, a3_pos, a1, a2, a3;
-  double f, g, fprime, gprime, gpark, alpha;
+  DataType fracOccA, fracOccB, fracOccC, phi, ionStr;
+  DataType z1, z2, z3, ca, cb, cc, a, k;
+  DataType a1_neg, a1_pos, a2_neg, a2_pos;
+  DataType a3_neg, a3_pos, a1, a2, a3;
+  DataType f, g, fprime, gprime, gpark, alpha;
 
   WARN_UNTESTED;
 

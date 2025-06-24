@@ -65,26 +65,28 @@
  *
  *  @note    Replaces smooth from smoothd.f
  */
-VEXTERNC void Vsmooth(int *nx,        ///< @todo: Doc
-                      int *ny,        ///< @todo: Doc
-                      int *nz,        ///< @todo: Doc
-                      int *ipc,       ///< @todo: Doc
-                      double *rpc,    ///< @todo: Doc
-                      double *ac,     ///< @todo: Doc
-                      double *cc,     ///< @todo: Doc
-                      double *fc,     ///< @todo: Doc
-                      double *x,      ///< @todo: Doc
-                      double *w1,     ///< @todo: Doc
-                      double *w2,     ///< @todo: Doc
-                      double *r,      ///< @todo: Doc
-                      int *itmax,     ///< @todo: Doc
-                      int *iters,     ///< @todo: Doc
-                      double *errtol, ///< @todo: Doc
-                      double *omega,  ///< @todo: Doc
-                      int *iresid,    ///< @todo: Doc
-                      int *iadjoint,  ///< @todo: Doc
-                      int *meth,
-                      sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vsmooth(int *nx,          ///< @todo: Doc
+             int *ny,          ///< @todo: Doc
+             int *nz,          ///< @todo: Doc
+             int *ipc,         ///< @todo: Doc
+             DataType *rpc,    ///< @todo: Doc
+             DataType *ac,     ///< @todo: Doc
+             DataType *cc,     ///< @todo: Doc
+             DataType *fc,     ///< @todo: Doc
+             DataType *x,      ///< @todo: Doc
+             DataType *w1,     ///< @todo: Doc
+             DataType *w2,     ///< @todo: Doc
+             DataType *r,      ///< @todo: Doc
+             int *itmax,       ///< @todo: Doc
+             int *iters,       ///< @todo: Doc
+             DataType *errtol, ///< @todo: Doc
+             DataType *omega,  ///< @todo: Doc
+             int *iresid,      ///< @todo: Doc
+             int *iadjoint,    ///< @todo: Doc
+             int *meth,
+             sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   call the appropriate non-linear smoothing routine.
@@ -93,25 +95,27 @@ VEXTERNC void Vsmooth(int *nx,        ///< @todo: Doc
  *
  *  @note    Replaces nsmooth from nsmoothd.f
  */
-VEXTERNC void Vnsmooth(int *nx,        ///< @todo: Doc
-                       int *ny,        ///< @todo: Doc
-                       int *nz,        ///< @todo: Doc
-                       int *ipc,       ///< @todo: Doc
-                       double *rpc,    ///< @todo: Doc
-                       double *ac,     ///< @todo: Doc
-                       double *cc,     ///< @todo: Doc
-                       double *fc,     ///< @todo: Doc
-                       double *x,      ///< @todo: Doc
-                       double *w1,     ///< @todo: Doc
-                       double *w2,     ///< @todo: Doc
-                       double *r,      ///< @todo: Doc
-                       int *itmax,     ///< @todo: Doc
-                       int *iters,     ///< @todo: Doc
-                       double *errtol, ///< @todo: Doc
-                       double *omega,  ///< @todo: Doc
-                       int *iresid,    ///< @todo: Doc
-                       int *iadjoint,  ///< @todo: Doc
-                       int *meth       ///< @todo: Doc
+
+template <typename DataType>
+void Vnsmooth(int *nx,          ///< @todo: Doc
+              int *ny,          ///< @todo: Doc
+              int *nz,          ///< @todo: Doc
+              int *ipc,         ///< @todo: Doc
+              DataType *rpc,    ///< @todo: Doc
+              DataType *ac,     ///< @todo: Doc
+              DataType *cc,     ///< @todo: Doc
+              DataType *fc,     ///< @todo: Doc
+              DataType *x,      ///< @todo: Doc
+              DataType *w1,     ///< @todo: Doc
+              DataType *w2,     ///< @todo: Doc
+              DataType *r,      ///< @todo: Doc
+              int *itmax,       ///< @todo: Doc
+              int *iters,       ///< @todo: Doc
+              DataType *errtol, ///< @todo: Doc
+              DataType *omega,  ///< @todo: Doc
+              int *iresid,      ///< @todo: Doc
+              int *iadjoint,    ///< @todo: Doc
+              int *meth         ///< @todo: Doc
 );
 
 #endif /* _SMOOTHD_H_ */

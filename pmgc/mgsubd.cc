@@ -54,17 +54,17 @@
 
 #include "mgsubd.h"
 
-double bf;
-double oh;
-double cputme;
+DataType bf;
+DataType oh;
+DataType cputme;
 
 VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                        int *iinfo, int *ido, int *iz, int *mgprol, int *mgcoar,
-                       int *mgsolv, int *mgdisc, int *ipc, double *rpc,
-                       double *pc, double *ac, double *cc, double *fc,
-                       double *xf, double *yf, double *zf, double *gxcf,
-                       double *gycf, double *gzcf, double *a1cf, double *a2cf,
-                       double *a3cf, double *ccf, double *fcf, double *tcf,
+                       int *mgsolv, int *mgdisc, int *ipc, DataType *rpc,
+                       DataType *pc, DataType *ac, DataType *cc, DataType *fc,
+                       DataType *xf, DataType *yf, DataType *zf, DataType *gxcf,
+                       DataType *gycf, DataType *gzcf, DataType *a1cf, DataType *a2cf,
+                       DataType *a3cf, DataType *ccf, DataType *fcf, DataType *tcf,
                        sycl::queue &q) {
 
   // @todo Document this function
@@ -345,10 +345,10 @@ VPUBLIC void Vbuildstr(int *nx, int *ny, int *nz, int *nlev, int *iz) {
 }
 
 VPUBLIC void Vbuildgaler0(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                          int *nzc, int *ipkey, int *numdia, double *pcFF,
-                          int *ipcFF, double *rpcFF, double *acFF, double *ccFF,
-                          double *fcFF, int *ipc, double *rpc, double *ac,
-                          double *cc, double *fc, sycl::queue &q) {
+                          int *nzc, int *ipkey, int *numdia, DataType *pcFF,
+                          int *ipcFF, DataType *rpcFF, DataType *acFF, DataType *ccFF,
+                          DataType *fcFF, int *ipc, DataType *rpc, DataType *ac,
+                          DataType *cc, DataType *fc, sycl::queue &q) {
 
   int numdia_loc;
 
@@ -480,11 +480,11 @@ VPUBLIC int Vmaxlev(int n1, int n2, int n3) {
   return lev - 1;
 }
 
-VPUBLIC void Vprtstp(int iok, int iters, double rsnrm, double rsden,
-                     double orsnrm) {
+VPUBLIC void Vprtstp(int iok, int iters, DataType rsnrm, DataType rsden,
+                     DataType orsnrm) {
 
-  double relres = 0.0;
-  double contrac = 0.0;
+  DataType relres = 0.0;
+  DataType contrac = 0.0;
 
   // Initializing timer
   if (iters == -99) {
@@ -532,12 +532,12 @@ VPUBLIC void Vprtstp(int iok, int iters, double rsnrm, double rsden,
   }
 }
 
-VPUBLIC void Vpackmg(int *iparm, double *rparm, size_t *nrwk, int *niwk,
+VPUBLIC void Vpackmg(int *iparm, DataType *rparm, size_t *nrwk, int *niwk,
                      int *nx, int *ny, int *nz, int *nlev, int *nu1, int *nu2,
                      int *mgkey, int *itmax, int *istop, int *ipcon,
                      int *nonlin, int *mgsmoo, int *mgprol, int *mgcoar,
-                     int *mgsolv, int *mgdisc, int *iinfo, double *errtol,
-                     int *ipkey, double *omegal, double *omegan, int *irite,
+                     int *mgsolv, int *mgdisc, int *iinfo, DataType *errtol,
+                     int *ipkey, DataType *omegal, DataType *omegan, int *irite,
                      int *iperf) {
 
   /// @todo  Convert this into a struct
@@ -573,13 +573,13 @@ VPUBLIC void Vpackmg(int *iparm, double *rparm, size_t *nrwk, int *niwk,
 }
 
 VEXTERNC void Vbuildcopy0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
-                          int *nzf, double *xc, double *yc, double *zc,
-                          double *gxc, double *gyc, double *gzc, double *a1c,
-                          double *a2c, double *a3c, double *cc, double *fc,
-                          double *tc, double *xf, double *yf, double *zf,
-                          double *gxcf, double *gycf, double *gzcf,
-                          double *a1cf, double *a2cf, double *a3cf, double *ccf,
-                          double *fcf, double *tcf) {
+                          int *nzf, DataType *xc, DataType *yc, DataType *zc,
+                          DataType *gxc, DataType *gyc, DataType *gzc, DataType *a1c,
+                          DataType *a2c, DataType *a3c, DataType *cc, DataType *fc,
+                          DataType *tc, DataType *xf, DataType *yf, DataType *zf,
+                          DataType *gxcf, DataType *gycf, DataType *gzcf,
+                          DataType *a1cf, DataType *a2cf, DataType *a3cf, DataType *ccf,
+                          DataType *fcf, DataType *tcf) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -693,13 +693,13 @@ VEXTERNC void Vbuildcopy0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
 }
 
 VPUBLIC void Vbuildharm0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
-                         int *nzf, double *xc, double *yc, double *zc,
-                         double *gxc, double *gyc, double *gzc, double *a1c,
-                         double *a2c, double *a3c, double *cc, double *fc,
-                         double *tc, double *xf, double *yf, double *zf,
-                         double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                         double *a2cf, double *a3cf, double *ccf, double *fcf,
-                         double *tcf) {
+                         int *nzf, DataType *xc, DataType *yc, DataType *zc,
+                         DataType *gxc, DataType *gyc, DataType *gzc, DataType *a1c,
+                         DataType *a2c, DataType *a3c, DataType *cc, DataType *fc,
+                         DataType *tc, DataType *xf, DataType *yf, DataType *zf,
+                         DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
+                         DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
+                         DataType *tcf) {
 #if 1
   printf("WARNING:  FUNCTION IS NOT FULLY IMPLEMENTED YET!!!");
 #else
@@ -731,7 +731,7 @@ VPUBLIC void Vbuildharm0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
 
   // Statement functions
   /// @todo  Figure out where the harmo ad arith functions come from
-  double a, b, c, d, e, f, g, h;
+  DataType a, b, c, d, e, f, g, h;
 
   // How far to step into the coefficient arrays
   iadd = (*nxf - 1) / (*nx - 1);
@@ -884,8 +884,8 @@ VPUBLIC void Vbuildharm0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
 }
 
 VPUBLIC void Vbuildalg(int *nx, int *ny, int *nz, int *mode, int *nlev, int *iz,
-                       int *ipc, double *rpc, double *ac, double *cc,
-                       double *fc, double *x, double *y, double *tmp,
+                       int *ipc, DataType *rpc, DataType *ac, DataType *cc,
+                       DataType *fc, DataType *x, DataType *y, DataType *tmp,
                        sycl::queue &q) {
 
   int nxx, nyy, nzz;

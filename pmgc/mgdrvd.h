@@ -73,24 +73,26 @@
  *
  *  Replaces mgdriv from mgdrvd.f
  */
-VEXTERNC void Vmgdriv(int *iparm,    ///< @todo: Doc
-                      double *rparm, ///< @todo: Doc
-                      int *iwork,    ///< @todo: Doc
-                      double *rwork, ///< @todo: Doc
-                      double *u,     ///< @todo: Doc
-                      double *xf,    ///< @todo: Doc
-                      double *yf,    ///< @todo: Doc
-                      double *zf,    ///< @todo: Doc
-                      double *gxcf,  ///< @todo: Doc
-                      double *gycf,  ///< @todo: Doc
-                      double *gzcf,  ///< @todo: Doc
-                      double *a1cf,  ///< @todo: Doc
-                      double *a2cf,  ///< @todo: Doc
-                      double *a3cf,  ///< @todo: Doc
-                      double *ccf,   ///< @todo: Doc
-                      double *fcf,   ///< @todo: Doc
-                      double *tcf,
-                      sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vmgdriv(int *iparm,      ///< @todo: Doc
+             DataType *rparm, ///< @todo: Doc
+             int *iwork,      ///< @todo: Doc
+             DataType *rwork, ///< @todo: Doc
+             DataType *u,     ///< @todo: Doc
+             DataType *xf,    ///< @todo: Doc
+             DataType *yf,    ///< @todo: Doc
+             DataType *zf,    ///< @todo: Doc
+             DataType *gxcf,  ///< @todo: Doc
+             DataType *gycf,  ///< @todo: Doc
+             DataType *gzcf,  ///< @todo: Doc
+             DataType *a1cf,  ///< @todo: Doc
+             DataType *a2cf,  ///< @todo: Doc
+             DataType *a3cf,  ///< @todo: Doc
+             DataType *ccf,   ///< @todo: Doc
+             DataType *fcf,   ///< @todo: Doc
+             DataType *tcf,
+             sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Solves the pde using the multi-grid method
@@ -129,32 +131,34 @@ VEXTERNC void Vmgdriv(int *iparm,    ///< @todo: Doc
  *      operator, some initial parameter settings in an integer and a
  *      real parameter array, and various work arrays.
  */
-VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
-                       double *rparm, ///< @todo: Doc
-                       int *nx,       ///< @todo: Doc
-                       int *ny,       ///< @todo: Doc
-                       int *nz,       ///< @todo: Doc
-                       double *u,     ///< @todo: Doc
-                       int *iz,       ///< @todo: Doc
-                       int *ipc,      ///< @todo: Doc
-                       double *rpc,   ///< @todo: Doc
-                       double *pc,    ///< @todo: Doc
-                       double *ac,    ///< @todo: Doc
-                       double *cc,    ///< @todo: Doc
-                       double *fc,    ///< @todo: Doc
-                       double *xf,    ///< @todo: Doc
-                       double *yf,    ///< @todo: Doc
-                       double *zf,    ///< @todo: Doc
-                       double *gxcf,  ///< @todo: Doc
-                       double *gycf,  ///< @todo: Doc
-                       double *gzcf,  ///< @todo: Doc
-                       double *a1cf,  ///< @todo: Doc
-                       double *a2cf,  ///< @todo: Doc
-                       double *a3cf,  ///< @todo: Doc
-                       double *ccf,   ///< @todo: Doc
-                       double *fcf,   ///< @todo: Doc
-                       double *tcf,
-                       sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vmgdriv2(int *iparm,      ///< @todo: Doc
+              DataType *rparm, ///< @todo: Doc
+              int *nx,         ///< @todo: Doc
+              int *ny,         ///< @todo: Doc
+              int *nz,         ///< @todo: Doc
+              DataType *u,     ///< @todo: Doc
+              int *iz,         ///< @todo: Doc
+              int *ipc,        ///< @todo: Doc
+              DataType *rpc,   ///< @todo: Doc
+              DataType *pc,    ///< @todo: Doc
+              DataType *ac,    ///< @todo: Doc
+              DataType *cc,    ///< @todo: Doc
+              DataType *fc,    ///< @todo: Doc
+              DataType *xf,    ///< @todo: Doc
+              DataType *yf,    ///< @todo: Doc
+              DataType *zf,    ///< @todo: Doc
+              DataType *gxcf,  ///< @todo: Doc
+              DataType *gycf,  ///< @todo: Doc
+              DataType *gzcf,  ///< @todo: Doc
+              DataType *a1cf,  ///< @todo: Doc
+              DataType *a2cf,  ///< @todo: Doc
+              DataType *a3cf,  ///< @todo: Doc
+              DataType *ccf,   ///< @todo: Doc
+              DataType *fcf,   ///< @todo: Doc
+              DataType *tcf,
+              sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   This routine computes the required sizes of the real and integer
@@ -163,7 +167,7 @@ VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
  *
  *   The work arrays must have been declared in the calling program as:
  *
- *       double precision rwork(iretot)
+ *       DataType precision rwork(iretot)
  *       integer          iwork(iintot)
  *
  *   where:
@@ -204,10 +208,10 @@ VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
  *   the work arrays rwork and iwork will be chopped into smaller
  *   pieces according to:
  *
- *       double precision ac(STORE)         (system operators on all levels)
- *       double precision pc(27*narrc)      (prol. opers for coarse levels)
- *       double precision cc(narr),fc(narr) (helmholtz term, rhs -- all levels)
- *       double precision rpc(100*(nlev+1)) (real info for all levels)
+ *       DataType precision ac(STORE)         (system operators on all levels)
+ *       DataType precision pc(27*narrc)      (prol. opers for coarse levels)
+ *       DataType precision cc(narr),fc(narr) (helmholtz term, rhs -- all
+ * levels) DataType precision rpc(100*(nlev+1)) (real info for all levels)
  *       integer          ipc(100*(nlev+1)) (integer info for all levels)
  *       integer          iz(50,nlev+1),    (pointers into ac,pc,cc,fc,etc.)
  *
@@ -226,25 +230,26 @@ VEXTERNC void Vmgdriv2(int *iparm,    ///< @todo: Doc
  *
  *  Replaces mgsz from mgdrvd.f
  */
-VEXTERNC void Vmgsz(int *mgcoar, ///< @todo: Doc
-                    int *mgdisc, ///< @todo: Doc
-                    int *mgsolv, ///< @todo: Doc
-                    int *nx,     ///< @todo: Doc
-                    int *ny,     ///< @todo: Doc
-                    int *nz,     ///< @todo: Doc
-                    int *nlev,   ///< @todo: Doc
-                    int *nxc,    ///< @todo: Doc
-                    int *nyc,    ///< @todo: Doc
-                    int *nzc,    ///< @todo: Doc
-                    int *nf,     ///< @todo: Doc
-                    int *nc,     ///< @todo: Doc
-                    int *narr,   ///< @todo: Doc
-                    int *narrc,  ///< @todo: Doc
-                    int *n_rpc,  ///< @todo: Doc
-                    int *n_iz,   ///< @todo: Doc
-                    int *n_ipc,  ///< @todo: Doc
-                    int *iretot, ///< @todo: Doc
-                    int *iintot  ///< @todo: Doc
+
+void Vmgsz(int *mgcoar, ///< @todo: Doc
+           int *mgdisc, ///< @todo: Doc
+           int *mgsolv, ///< @todo: Doc
+           int *nx,     ///< @todo: Doc
+           int *ny,     ///< @todo: Doc
+           int *nz,     ///< @todo: Doc
+           int *nlev,   ///< @todo: Doc
+           int *nxc,    ///< @todo: Doc
+           int *nyc,    ///< @todo: Doc
+           int *nzc,    ///< @todo: Doc
+           int *nf,     ///< @todo: Doc
+           int *nc,     ///< @todo: Doc
+           int *narr,   ///< @todo: Doc
+           int *narrc,  ///< @todo: Doc
+           int *n_rpc,  ///< @todo: Doc
+           int *n_iz,   ///< @todo: Doc
+           int *n_ipc,  ///< @todo: Doc
+           int *iretot, ///< @todo: Doc
+           int *iintot  ///< @todo: Doc
 );
 
 #endif /* _MGDRVD_H_ */

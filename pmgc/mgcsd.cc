@@ -54,13 +54,13 @@
 
 #include "mgcsd.h"
 
-VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
-                    double *w1, double *w2, double *w3, int *istop, int *itmax,
+VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+                    DataType *w1, DataType *w2, DataType *w3, int *istop, int *itmax,
                     int *iters, int *ierror, int *nlev, int *ilev,
                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                    double *epsiln, double *errtol, double *omega, int *nu1,
-                    int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                    double *ac, double *cc, double *fc, double *tru,
+                    DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                    int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+                    DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                     sycl::queue &q) {
 
   int level;       // @todo: doc
@@ -80,16 +80,16 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
   int n;           // @todo: doc
   int m;           // @todo: doc
   int iadjoint;    // @todo: doc
-  double errtol_s; // @todo: doc
-  double rsden;    // @todo: doc
-  double rsnrm;    // @todo: doc
-  double orsnrm;   // @todo: doc
-  double xnum;     // @todo: doc
-  double xden;     // @todo: doc
-  double xdamp;    // @todo: doc
+  DataType errtol_s; // @todo: doc
+  DataType rsden;    // @todo: doc
+  DataType rsnrm;    // @todo: doc
+  DataType orsnrm;   // @todo: doc
+  DataType xnum;     // @todo: doc
+  DataType xden;     // @todo: doc
+  DataType xdamp;    // @todo: doc
   int lda;         // @todo: doc
 
-  double alpha; // A utility variable used to pass a parameter to xaxpy
+  DataType alpha; // A utility variable used to pass a parameter to xaxpy
   int numlev;   // A utility variable used to pass a parameter to mkcors
 
   MAT2(iz, 50, 1);

@@ -57,13 +57,12 @@
 #include "stdio.h"
 #include <sycl/sycl.hpp>
 
-typedef double DataType;
-
 VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
-                     int *numdia, int *ipc, double *rpc, double *ac, double *cc,
-                     double *fc, double *xf, double *yf, double *zf,
-                     double *gxcf, double *gycf, double *gzcf, double *a1cf,
-                     double *a2cf, double *a3cf, double *ccf, double *fcf,
+                     int *numdia, int *ipc, DataType *rpc, DataType *ac,
+                     DataType *cc, DataType *fc, DataType *xf, DataType *yf,
+                     DataType *zf, DataType *gxcf, DataType *gycf,
+                     DataType *gzcf, DataType *a1cf, DataType *a2cf,
+                     DataType *a3cf, DataType *ccf, DataType *fcf,
                      sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 14);
@@ -93,12 +92,12 @@ VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
 }
 
 VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
-                        int *ipc, double *rpc, double *oC, double *cc,
-                        double *fc, double *oE, double *oN, double *uC,
-                        double *xf, double *yf, double *zf, double *gxcf,
-                        double *gycf, double *gzcf, double *a1cf, double *a2cf,
-                        double *a3cf, double *ccf, double *fcf,
-                        sycl::queue &q) {
+                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
+                        DataType *fc, DataType *oE, DataType *oN, DataType *uC,
+                        DataType *xf, DataType *yf, DataType *zf,
+                        DataType *gxcf, DataType *gycf, DataType *gzcf,
+                        DataType *a1cf, DataType *a2cf, DataType *a3cf,
+                        DataType *ccf, DataType *fcf, sycl::queue &q) {
 
   int i, j, k; // @todo Document this function
 
@@ -111,7 +110,7 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
    *          homogeneous temporaries named using unclear abbreviations
    */
 
-  double diag;
+  DataType diag;
 
   MAT3(fc, *nx, *ny, *nz);
   MAT3(fcf, *nx, *ny, *nz);
@@ -243,13 +242,14 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
 }
 
 VPUBLIC void VbuildA_fe(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
-                        int *ipc, double *rpc, double *oC, double *cc,
-                        double *fc, double *oE, double *oN, double *uC,
-                        double *oNE, double *oNW, double *uE, double *uW,
-                        double *uN, double *uS, double *uNE, double *uNW,
-                        double *uSE, double *uSW, double *xf, double *yf,
-                        double *zf, double *gxcf, double *gycf, double *gzcf,
-                        double *a1cf, double *a2cf, double *a3cf, double *ccf,
-                        double *fcf) {
+                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
+                        DataType *fc, DataType *oE, DataType *oN, DataType *uC,
+                        DataType *oNE, DataType *oNW, DataType *uE,
+                        DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
+                        DataType *uNW, DataType *uSE, DataType *uSW,
+                        DataType *xf, DataType *yf, DataType *zf,
+                        DataType *gxcf, DataType *gycf, DataType *gzcf,
+                        DataType *a1cf, DataType *a2cf, DataType *a3cf,
+                        DataType *ccf, DataType *fcf) {
   printf("Untranslated Component: from buildAd.f\n");
 }

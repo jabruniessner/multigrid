@@ -54,13 +54,13 @@
 
 #include "mgfasd.h"
 
-VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
-                     double *w1, double *w2, double *w3, double *w4, int *istop,
+VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+                     DataType *w1, DataType *w2, DataType *w3, DataType *w4, int *istop,
                      int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     double *epsiln, double *errtol, double *omega, int *nu1,
-                     int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *fc, double *tru,
+                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                     int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+                     DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                      sycl::queue &q) {
 
   // Other Declarations
@@ -68,7 +68,7 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
   int nxf, nyf, nzf;
   int nxc, nyc, nzc;
   int istpd, iinfod;
-  double errd;
+  DataType errd;
 
   // Utility variables
   int numlev;
@@ -130,13 +130,13 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
          omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
-VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
-                    double *w1, double *w2, double *w3, double *w4, int *istop,
+VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+                    DataType *w1, DataType *w2, DataType *w3, DataType *w4, int *istop,
                     int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                    double *epsiln, double *errtol, double *omega, int *nu1,
-                    int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                    double *ac, double *cc, double *fc, double *tru,
+                    DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                    int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+                    DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                     sycl::queue &q) {
 
   // Other declarations
@@ -145,12 +145,12 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, double *x, int *iz, double *w0,
   int nxf, nyf, nzf;
   int nxc, nyc, nzc;
   int iadjoint;
-  double errtol_s;
-  double rsden, rsnrm, orsnrm;
-  double xdamp;
+  DataType errtol_s;
+  DataType rsden, rsnrm, orsnrm;
+  DataType xdamp;
 
   int numlev;
-  double alpha;
+  DataType alpha;
 
   MAT2(iz, 50, *nlev);
 

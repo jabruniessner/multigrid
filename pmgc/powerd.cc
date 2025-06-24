@@ -55,20 +55,20 @@
 #include "powerd.h"
 
 VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
-                    double *rpc, double *ac, double *cc, double *w1, double *w2,
-                    double *w3, double *w4, double *eigmax,
-                    double *eigmax_model, double *tol, int *itmax, int *iters,
+                    DataType *rpc, DataType *ac, DataType *cc, DataType *w1, DataType *w2,
+                    DataType *w3, DataType *w4, DataType *eigmax,
+                    DataType *eigmax_model, DataType *tol, int *itmax, int *iters,
                     int *iinfo, sycl::queue &q) {
 
   int lev, level;
-  double denom, fac, rho, oldrho, error, relerr;
+  DataType denom, fac, rho, oldrho, error, relerr;
 
   /// @todo  Just use a constant definition of PI here
-  double pi = 4.0 * atan(1.0);
+  DataType pi = 4.0 * atan(1.0);
 
   // Utility variables
   int skipIters = 0;
-  double alpha;
+  DataType alpha;
 
   MAT2(iz, 50, 1);
 
@@ -159,26 +159,26 @@ VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
                          2.0 * VCOS((*ny - 2) * pi / (*ny - 1)));
 }
 
-VPUBLIC void Vipower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
-                     double *w1, double *w2, double *w3, double *w4,
-                     double *eigmin, double *eigmin_model, double *tol,
+VPUBLIC void Vipower(int *nx, int *ny, int *nz, DataType *u, int *iz, DataType *w0,
+                     DataType *w1, DataType *w2, DataType *w3, DataType *w4,
+                     DataType *eigmin, DataType *eigmin_model, DataType *tol,
                      int *itmax, int *iters, int *nlev, int *ilev,
                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     double *epsiln, double *errtol, double *omega, int *nu1,
-                     int *nu2, int *mgsmoo, int *ipc, double *rpc, double *pc,
-                     double *ac, double *cc, double *tru, sycl::queue &q) {
+                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
+                     int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+                     DataType *ac, DataType *cc, DataType *tru, sycl::queue &q) {
 
   int level, lev;
-  double denom, fac, rho, oldrho;
-  double error, relerr, errtol_s;
+  DataType denom, fac, rho, oldrho;
+  DataType error, relerr, errtol_s;
   int itmax_s, iters_s, ierror_s, iok_s, iinfo_s, istop_s;
   int nu1_s, nu2_s, mgsmoo_s;
 
   /// @todo  Just use a constant definition of PI here
-  double pi = 4.0 * atan(1.0);
+  DataType pi = 4.0 * atan(1.0);
 
   // Utility variables
-  double alpha;
+  DataType alpha;
 
   MAT2(iz, 50, 1);
 
@@ -282,21 +282,21 @@ VPUBLIC void Vipower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
              2.0 * VCOS(pi / (*nz - 1)));
 }
 
-VEXTERNC void Vmpower(int *nx, int *ny, int *nz, double *u, int *iz, double *w0,
-                      double *w1, double *w2, double *w3, double *w4,
-                      double *eigmax, double *tol, int *itmax, int *iters,
+VEXTERNC void Vmpower(int *nx, int *ny, int *nz, DataType *u, int *iz, DataType *w0,
+                      DataType *w1, DataType *w2, DataType *w3, DataType *w4,
+                      DataType *eigmax, DataType *tol, int *itmax, int *iters,
                       int *nlev, int *ilev, int *nlev_real, int *mgsolv,
-                      int *iok, int *iinfo, double *epsiln, double *errtol,
-                      double *omega, int *nu1, int *nu2, int *mgsmoo, int *ipc,
-                      double *rpc, double *pc, double *ac, double *cc,
-                      double *fc, double *tru, sycl::queue &q) {
+                      int *iok, int *iinfo, DataType *epsiln, DataType *errtol,
+                      DataType *omega, int *nu1, int *nu2, int *mgsmoo, int *ipc,
+                      DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+                      DataType *fc, DataType *tru, sycl::queue &q) {
 
   // Local variables
   int lev, level;
-  double denom, fac, rho, oldrho, error;
-  double relerr;
+  DataType denom, fac, rho, oldrho, error;
+  DataType relerr;
   int itmax_s, iters_s, ierror_s, iok_s, iinfo_s, istop_s;
-  double alpha;
+  DataType alpha;
 
   MAT2(iz, 50, 1);
 

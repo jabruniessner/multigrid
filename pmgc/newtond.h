@@ -68,42 +68,44 @@
  *
  *  @note    Replaces fnewton from newtond.f
  */
-VPUBLIC void Vfnewton(int *nx,        ///< @todo: Doc
-                      int *ny,        ///< @todo: Doc
-                      int *nz,        ///< @todo: Doc
-                      double *x,      ///< @todo: Doc
-                      int *iz,        ///< @todo: Doc
-                      double *w0,     ///< @todo: Doc
-                      double *w1,     ///< @todo: Doc
-                      double *w2,     ///< @todo: Doc
-                      double *w3,     ///< @todo: Doc
-                      int *istop,     ///< @todo: Doc
-                      int *itmax,     ///< @todo: Doc
-                      int *iters,     ///< @todo: Doc
-                      int *ierror,    ///< @todo: Doc
-                      int *nlev,      ///< @todo: Doc
-                      int *ilev,      ///< @todo: Doc
-                      int *nlev_real, ///< @todo: Doc
-                      int *mgsolv,    ///< @todo: Doc
-                      int *iok,       ///< @todo: Doc
-                      int *iinfo,     ///< @todo: Doc
-                      double *epsiln, ///< @todo: Doc
-                      double *errtol, ///< @todo: Doc
-                      double *omega,  ///< @todo: Doc
-                      int *nu1,       ///< @todo: Doc
-                      int *nu2,       ///< @todo: Doc
-                      int *mgsmoo,    ///< @todo: Doc
-                      double *cprime, ///< @todo: Doc
-                      double *rhs,    ///< @todo: Doc
-                      double *xtmp,   ///< @todo: Doc
-                      int *ipc,       ///< @todo: Doc
-                      double *rpc,    ///< @todo: Doc
-                      double *pc,     ///< @todo: Doc
-                      double *ac,     ///< @todo: Doc
-                      double *cc,     ///< @todo: Doc
-                      double *fc,     ///< @todo: Doc
-                      double *tru,
-                      sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vfnewton(int *nx,          ///< @todo: Doc
+              int *ny,          ///< @todo: Doc
+              int *nz,          ///< @todo: Doc
+              DataType *x,      ///< @todo: Doc
+              int *iz,          ///< @todo: Doc
+              DataType *w0,     ///< @todo: Doc
+              DataType *w1,     ///< @todo: Doc
+              DataType *w2,     ///< @todo: Doc
+              DataType *w3,     ///< @todo: Doc
+              int *istop,       ///< @todo: Doc
+              int *itmax,       ///< @todo: Doc
+              int *iters,       ///< @todo: Doc
+              int *ierror,      ///< @todo: Doc
+              int *nlev,        ///< @todo: Doc
+              int *ilev,        ///< @todo: Doc
+              int *nlev_real,   ///< @todo: Doc
+              int *mgsolv,      ///< @todo: Doc
+              int *iok,         ///< @todo: Doc
+              int *iinfo,       ///< @todo: Doc
+              DataType *epsiln, ///< @todo: Doc
+              DataType *errtol, ///< @todo: Doc
+              DataType *omega,  ///< @todo: Doc
+              int *nu1,         ///< @todo: Doc
+              int *nu2,         ///< @todo: Doc
+              int *mgsmoo,      ///< @todo: Doc
+              DataType *cprime, ///< @todo: Doc
+              DataType *rhs,    ///< @todo: Doc
+              DataType *xtmp,   ///< @todo: Doc
+              int *ipc,         ///< @todo: Doc
+              DataType *rpc,    ///< @todo: Doc
+              DataType *pc,     ///< @todo: Doc
+              DataType *ac,     ///< @todo: Doc
+              DataType *cc,     ///< @todo: Doc
+              DataType *fc,     ///< @todo: Doc
+              DataType *tru,
+              sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Inexact-newton-multilevel method.
@@ -112,42 +114,44 @@ VPUBLIC void Vfnewton(int *nx,        ///< @todo: Doc
  *
  *  @note    Replaces newton from newtond.f
  */
-VEXTERNC void Vnewton(int *nx,        ///< @todo: Doc
-                      int *ny,        ///< @todo: Doc
-                      int *nz,        ///< @todo: Doc
-                      double *x,      ///< @todo: Doc
-                      int *iz,        ///< @todo: Doc
-                      double *w0,     ///< @todo: Doc
-                      double *w1,     ///< @todo: Doc
-                      double *w2,     ///< @todo: Doc
-                      double *w3,     ///< @todo: Doc
-                      int *istop,     ///< @todo: Doc
-                      int *itmax,     ///< @todo: Doc
-                      int *iters,     ///< @todo: Doc
-                      int *ierror,    ///< @todo: Doc
-                      int *nlev,      ///< @todo: Doc
-                      int *ilev,      ///< @todo: Doc
-                      int *nlev_real, ///< @todo: Doc
-                      int *mgsolv,    ///< @todo: Doc
-                      int *iok,       ///< @todo: Doc
-                      int *iinfo,     ///< @todo: Doc
-                      double *epsiln, ///< @todo: Doc
-                      double *errtol, ///< @todo: Doc
-                      double *omega,  ///< @todo: Doc
-                      int *nu1,       ///< @todo: Doc
-                      int *nu2,       ///< @todo: Doc
-                      int *mgsmoo,    ///< @todo: Doc
-                      double *cprime, ///< @todo: Doc
-                      double *rhs,    ///< @todo: Doc
-                      double *xtmp,   ///< @todo: Doc
-                      int *ipc,       ///< @todo: Doc
-                      double *rpc,    ///< @todo: Doc
-                      double *pc,     ///< @todo: Doc
-                      double *ac,     ///< @todo: Doc
-                      double *cc,     ///< @todo: Doc
-                      double *fc,     ///< @todo: Doc
-                      double *tru,
-                      sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vnewton(int *nx,          ///< @todo: Doc
+             int *ny,          ///< @todo: Doc
+             int *nz,          ///< @todo: Doc
+             DataType *x,      ///< @todo: Doc
+             int *iz,          ///< @todo: Doc
+             DataType *w0,     ///< @todo: Doc
+             DataType *w1,     ///< @todo: Doc
+             DataType *w2,     ///< @todo: Doc
+             DataType *w3,     ///< @todo: Doc
+             int *istop,       ///< @todo: Doc
+             int *itmax,       ///< @todo: Doc
+             int *iters,       ///< @todo: Doc
+             int *ierror,      ///< @todo: Doc
+             int *nlev,        ///< @todo: Doc
+             int *ilev,        ///< @todo: Doc
+             int *nlev_real,   ///< @todo: Doc
+             int *mgsolv,      ///< @todo: Doc
+             int *iok,         ///< @todo: Doc
+             int *iinfo,       ///< @todo: Doc
+             DataType *epsiln, ///< @todo: Doc
+             DataType *errtol, ///< @todo: Doc
+             DataType *omega,  ///< @todo: Doc
+             int *nu1,         ///< @todo: Doc
+             int *nu2,         ///< @todo: Doc
+             int *mgsmoo,      ///< @todo: Doc
+             DataType *cprime, ///< @todo: Doc
+             DataType *rhs,    ///< @todo: Doc
+             DataType *xtmp,   ///< @todo: Doc
+             int *ipc,         ///< @todo: Doc
+             DataType *rpc,    ///< @todo: Doc
+             DataType *pc,     ///< @todo: Doc
+             DataType *ac,     ///< @todo: Doc
+             DataType *cc,     ///< @todo: Doc
+             DataType *fc,     ///< @todo: Doc
+             DataType *tru,
+             sycl::queue &q ///< @todo: Doc
 );
 
 /** @brief   Form the jacobian system.
@@ -156,20 +160,22 @@ VEXTERNC void Vnewton(int *nx,        ///< @todo: Doc
  *
  *  @note    Replaces getjac from newtond.f
  */
-VEXTERNC void Vgetjac(int *nx,        ///< @todo: Doc
-                      int *ny,        ///< @todo: Doc
-                      int *nz,        ///< @todo: Doc
-                      int *nlev_real, ///< @todo: Doc
-                      int *iz,        ///< @todo: Doc
-                      int *lev,       ///< @todo: Doc
-                      int *ipkey,     ///< @todo: Doc
-                      double *x,      ///< @todo: Doc
-                      double *r,      ///< @todo: Doc
-                      double *cprime, ///< @todo: Doc
-                      double *rhs,    ///< @todo: Doc
-                      double *cc,     ///< @todo: Doc
-                      double *pc,
-                      sycl::queue &q ///< @todo: Doc
+
+template <typename DataType>
+void Vgetjac(int *nx,          ///< @todo: Doc
+             int *ny,          ///< @todo: Doc
+             int *nz,          ///< @todo: Doc
+             int *nlev_real,   ///< @todo: Doc
+             int *iz,          ///< @todo: Doc
+             int *lev,         ///< @todo: Doc
+             int *ipkey,       ///< @todo: Doc
+             DataType *x,      ///< @todo: Doc
+             DataType *r,      ///< @todo: Doc
+             DataType *cprime, ///< @todo: Doc
+             DataType *rhs,    ///< @todo: Doc
+             DataType *cc,     ///< @todo: Doc
+             DataType *pc,
+             sycl::queue &q ///< @todo: Doc
 );
 
 #endif /* _NEWTOND_H_ */

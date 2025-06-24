@@ -54,11 +54,11 @@
 
 #include "smoothd.h"
 
-VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *ac, double *cc, double *fc, double *x, double *w1,
-                      double *w2, double *r, int *itmax, int *iters,
-                      double *errtol, double *omega, int *iresid, int *iadjoint,
-                      int *meth, sycl::queue &q) {
+VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                      DataType *w1, DataType *w2, DataType *r, int *itmax,
+                      int *iters, DataType *errtol, DataType *omega,
+                      int *iresid, int *iadjoint, int *meth, sycl::queue &q) {
 
   // Do in one step
   if (*meth == 0) {
@@ -85,11 +85,11 @@ VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VEXTERNC void Vnsmooth(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *ac, double *cc, double *fc, double *x,
-                       double *w1, double *w2, double *r, int *itmax,
-                       int *iters, double *errtol, double *omega, int *iresid,
-                       int *iadjoint, int *meth) {
+VEXTERNC void Vnsmooth(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                       DataType *w1, DataType *w2, DataType *r, int *itmax,
+                       int *iters, DataType *errtol, DataType *omega,
+                       int *iresid, int *iadjoint, int *meth) {
 
   WARN_UNTESTED;
 

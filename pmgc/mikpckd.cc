@@ -57,7 +57,7 @@
 #include "hipSYCL/sycl/queue.hpp"
 #include "hipSYCL/sycl/usm.hpp"
 
-VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, double *x, double *y,
+VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                     sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
@@ -74,7 +74,7 @@ VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, double *x, double *y,
                  });
 }
 
-VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, double *x, double *y,
+VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                           sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
@@ -90,7 +90,7 @@ VPUBLIC void Vxcopy_small(int *nx, int *ny, int *nz, double *x, double *y,
                  });
 }
 
-VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, double *x, double *y,
+VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                           sycl::queue &q) {
 
   /** @note This function is exactly equivalent to calling xcopy_small with
@@ -111,8 +111,8 @@ VPUBLIC void Vxcopy_large(int *nx, int *ny, int *nz, double *x, double *y,
                  });
 }
 
-VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, double *alpha, double *x,
-                    double *y, sycl::queue &q) {
+VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, DataType *alpha, DataType *x,
+                    DataType *y, sycl::queue &q) {
 
   // Create the wrappers
   MAT3(x, *nx, *ny, *nz);
@@ -129,7 +129,7 @@ VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, double *alpha, double *x,
                  });
 }
 
-VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
+VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
 
   DataType xnrm1 = 0.0; ///< Accumulates the calculated normal value
 
@@ -156,9 +156,9 @@ VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
   return xnrm1;
 }
 
-VPUBLIC double Vxnrm2(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
+VPUBLIC DataType Vxnrm2(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
 
-  double xnrm2 = 0.0; ///< Accumulates the calculated normal value
+  DataType xnrm2 = 0.0; ///< Accumulates the calculated normal value
 
   MAT3(x, *nx, *ny, *nz);
 
@@ -186,7 +186,7 @@ VPUBLIC double Vxnrm2(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
   return VSQRT(xnrm2);
 }
 
-VPUBLIC DataType Vxdot(int *nx, int *ny, int *nz, double *x, double *y,
+VPUBLIC DataType Vxdot(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                        sycl::queue &q) {
 
   int i, j, k;
@@ -218,7 +218,7 @@ VPUBLIC DataType Vxdot(int *nx, int *ny, int *nz, double *x, double *y,
   return xdot;
 }
 
-VPUBLIC void Vazeros(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
+VPUBLIC void Vazeros(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
 
   int i, n;
   int nproc = 1;
@@ -228,8 +228,8 @@ VPUBLIC void Vazeros(int *nx, int *ny, int *nz, double *x, sycl::queue &q) {
   q.memset(&VAT(x, 1), 0, sizeof(DataType) * n).wait();
 }
 
-VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, double *x,
-                        double *gxc, double *gyc, double *gzc, sycl::queue &q) {
+VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, DataType *x,
+                        DataType *gxc, DataType *gyc, DataType *gzc, sycl::queue &q) {
 
   // Create and bind the wrappers for the source data
   MAT3(x, *nx, *ny, *nz);
@@ -276,7 +276,7 @@ VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, double *x,
   }
 }
 
-VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, double *x,
+VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, DataType *x,
                           sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
@@ -307,11 +307,11 @@ VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, double *x,
   });
 }
 
-VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, double *x) {
+VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, DataType *x) {
 
   int n, i, ii, ipara, ivect, iflag;
   int nproc = 1;
-  double xdum;
+  DataType xdum;
 
   WARN_UNTESTED;
 
@@ -320,19 +320,19 @@ VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, double *x) {
   ipara = n / nproc;
   ivect = n % nproc;
   iflag = 1;
-  xdum = (double)(VRAND);
+  xdum = (DataType)(VRAND);
 
   // Do parallel loops
   for (ii = 1; ii <= nproc; ii++)
     for (i = 1 + (ipara * (ii - 1)); i <= ipara * ii; i++)
-      VAT(x, i) = (double)(VRAND);
+      VAT(x, i) = (DataType)(VRAND);
 
   // Do vector loops
   for (i = ipara * nproc + 1; i <= n; i++)
-    VAT(x, i) = (double)(VRAND);
+    VAT(x, i) = (DataType)(VRAND);
 }
 
-VPUBLIC void Vxscal(int *nx, int *ny, int *nz, double *fac, double *x,
+VPUBLIC void Vxscal(int *nx, int *ny, int *nz, DataType *fac, DataType *x,
                     sycl::queue &q) {
 
   MAT3(x, *nx, *ny, *nz);
@@ -345,8 +345,8 @@ VPUBLIC void Vxscal(int *nx, int *ny, int *nz, double *fac, double *x,
   });
 }
 
-VPUBLIC void Vprtmatd(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                      double *ac) {
+VPUBLIC void Vprtmatd(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                      DataType *ac) {
 
   int numdia;
 
@@ -370,8 +370,8 @@ VPUBLIC void Vprtmatd(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   }
 }
 
-VPUBLIC void Vprtmatd7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                       double *oC, double *oE, double *oN, double *uC) {
+VPUBLIC void Vprtmatd7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *oC, DataType *oE, DataType *oN, DataType *uC) {
 
   int n, i, j, k;
 
@@ -400,11 +400,11 @@ VPUBLIC void Vprtmatd7(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   printf("Vprtmatd7: End diagonal matrix\n");
 }
 
-VEXTERNC void Vprtmatd27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
-                         double *oC, double *oE, double *oN, double *uC,
-                         double *oNE, double *oNW, double *uE, double *uW,
-                         double *uN, double *uS, double *uNE, double *uNW,
-                         double *uSE, double *uSW) {
+VEXTERNC void Vprtmatd27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *oC, DataType *oE, DataType *oN, DataType *uC,
+                         DataType *oNE, DataType *oNW, DataType *uE, DataType *uW,
+                         DataType *uN, DataType *uS, DataType *uNE, DataType *uNW,
+                         DataType *uSE, DataType *uSW) {
 
   int n, i, j, k;
 
@@ -449,10 +449,10 @@ VEXTERNC void Vprtmatd27(int *nx, int *ny, int *nz, int *ipc, double *rpc,
   printf("Vprtmatd27: End diagonal matrix\n");
 }
 
-VPUBLIC void Vlinesearch(int *nx, int *ny, int *nz, double *alpha, int *ipc,
-                         double *rpc, double *ac, double *cc, double *fc,
-                         double *p, double *x, double *r, double *ap,
-                         double *zk, double *zkp1) {
+VPUBLIC void Vlinesearch(int *nx, int *ny, int *nz, DataType *alpha, int *ipc,
+                         DataType *rpc, DataType *ac, DataType *cc, DataType *fc,
+                         DataType *p, DataType *x, DataType *r, DataType *ap,
+                         DataType *zk, DataType *zkp1) {
   printf("Not translated yet\n");
   exit(-1);
 }
