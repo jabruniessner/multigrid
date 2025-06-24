@@ -45,6 +45,29 @@ add_executable(test_Gbuilder_27
   test_buildG_27.cc
   )
 
+add_executable(test_Bbuilder_7
+  test_buildB_7.cc functions.cc
+  )
+
+
+add_executable(test_Bbuilder_27
+  test_buildB_27.cc functions.cc 
+  )
+
+
+target_link_libraries(test_Bbuilder_27
+  PRIVATE
+        pmgc
+        pmgf
+  )
+
+
+target_link_libraries(test_Bbuilder_7
+  PRIVATE
+        pmgc
+        pmgf
+  )
+
 target_link_libraries(test_Gbuilder_27 
     PRIVATE
         pmgc

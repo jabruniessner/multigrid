@@ -1,32 +1,38 @@
 [
 {
-  "directory": "/home/jakob/projects/multigird/build/test_pmg",
-  "command": "acpp  -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgc -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgf --acpp-targets=omp.library-only -g -o CMakeFiles/test_Pbuilder_trilin.dir/test_buildP_trilin.cc.o -c /home/jakob/projects/multigird/build/test_pmg/test_buildP_trilin.cc",
-  "file": "/home/jakob/projects/multigird/build/test_pmg/test_buildP_trilin.cc",
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Pbuilder_trilin.dir/test_buildP_trilin.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_trilin.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_trilin.cc",
   "output": "CMakeFiles/test_Pbuilder_trilin.dir/test_buildP_trilin.cc.o"
 },
 {
-  "directory": "/home/jakob/projects/multigird/build/test_pmg",
-  "command": "acpp  -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgc -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgf --acpp-targets=omp.library-only -g -o CMakeFiles/test_Pbuilder_7.dir/test_buildP_7.cc.o -c /home/jakob/projects/multigird/build/test_pmg/test_buildP_7.cc",
-  "file": "/home/jakob/projects/multigird/build/test_pmg/test_buildP_7.cc",
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Pbuilder_7.dir/test_buildP_7.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_7.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_7.cc",
   "output": "CMakeFiles/test_Pbuilder_7.dir/test_buildP_7.cc.o"
 },
 {
-  "directory": "/home/jakob/projects/multigird/build/test_pmg",
-  "command": "acpp  -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgc -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgf --acpp-targets=omp.library-only -g -o CMakeFiles/test_Pbuilder_27.dir/test_buildP_27.cc.o -c /home/jakob/projects/multigird/build/test_pmg/test_buildP_27.cc",
-  "file": "/home/jakob/projects/multigird/build/test_pmg/test_buildP_27.cc",
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Pbuilder_27.dir/test_buildP_27.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_27.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildP_27.cc",
   "output": "CMakeFiles/test_Pbuilder_27.dir/test_buildP_27.cc.o"
 },
 {
-  "directory": "/home/jakob/projects/multigird/build/test_pmg",
-  "command": "acpp  -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgc -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgf --acpp-targets=omp.library-only -g -o CMakeFiles/test_Gbuilder_1.dir/test_buildG_1.cc.o -c /home/jakob/projects/multigird/build/test_pmg/test_buildG_1.cc",
-  "file": "/home/jakob/projects/multigird/build/test_pmg/test_buildG_1.cc",
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Gbuilder_1.dir/test_buildG_1.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_1.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_1.cc",
   "output": "CMakeFiles/test_Gbuilder_1.dir/test_buildG_1.cc.o"
 },
 {
-  "directory": "/home/jakob/projects/multigird/build/test_pmg",
-  "command": "acpp  -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgc -isystem /home/jakob/projects/multigird/build/test_pmg/../../pmgf --acpp-targets=omp.library-only -g -o CMakeFiles/test_Gbuilder_7.dir/test_buildG_7.cc.o -c /home/jakob/projects/multigird/build/test_pmg/test_buildG_7.cc",
-  "file": "/home/jakob/projects/multigird/build/test_pmg/test_buildG_7.cc",
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Gbuilder_7.dir/test_buildG_7.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_7.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_7.cc",
   "output": "CMakeFiles/test_Gbuilder_7.dir/test_buildG_7.cc.o"
+},
+{
+  "directory": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg",
+  "command": "acpp  -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgc -isystem /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/../pmgf --acpp-targets=omp.library-only -o CMakeFiles/test_Gbuilder_27.dir/test_buildG_27.cc.o -c /home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_27.cc",
+  "file": "/home/jakob/projects/multigird/Compare_pmg_fortran_version_vs_sycl_version/test_pmg/test_buildG_27.cc",
+  "output": "CMakeFiles/test_Gbuilder_27.dir/test_buildG_27.cc.o"
 }
 ]
