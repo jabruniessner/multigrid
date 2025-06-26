@@ -90,10 +90,16 @@ DataType compute_residual_PBE(Domain<Dim, strides_all...> &rhs,
   std::array<Domain<Dim, strides_all...>, Dim> epsilon_maps{
       epsilon_x, epsilon_y, epsilon_z};
 
+  //  std::cout << "The sol domain at the beginning is: " << std::endl;
+  //  sol.print_domain();
+
   convolution::PBE_Convolve(helper, sol, kappa_map, epsilon_maps, Kappa_2,
                             grid_step, epsilon_r, delta_epsilon);
 
   add_domains(helper, rhs, helper);
+
+  //  std::cout << "The helper function is: " << std::endl;
+  //  helper.print_domain();
 
   DataType result;
   domain_compute_norm_squared(result, helper);
@@ -610,10 +616,10 @@ struct V_Cycle_PBE {
                      rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
                      kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
 
-        std::cout << "The domain after the presmoothing steps is: "
-                  << std::endl;
+        //  std::cout << "The domain after the presmoothing steps is: "
+        //            << std::endl;
 
-        next.get_domain().print_domain();
+        //  next.get_domain().print_domain();
 
         // This computes -A, in this case
         convolution::PBE_Convolve(current.template get_domain<iter_level>(),
@@ -627,8 +633,8 @@ struct V_Cycle_PBE {
                     rhs_domain.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
 
-        std::cout << "The defect domain before coarsening is: " << std::endl;
-        current.get_domain().print_domain();
+        //  std::cout << "The defect domain before coarsening is: " <<
+        //  std::endl; current.get_domain().print_domain();
 
         level_transition::coarsening(
             rhs_domain.template get_domain<iter_level - 1>(),
@@ -636,8 +642,9 @@ struct V_Cycle_PBE {
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
 
-        std::cout << "The right hand side after coarseing is: " << std::endl;
-        rhs_domain.template get_domain<iter_level - 1>().print_domain();
+        //  std::cout << "The right hand side after coarseing is: " <<
+        //  std::endl; rhs_domain.template get_domain<iter_level -
+        //  1>().print_domain();
 
         iteration<iter_level - 1>(next, current, rhs_domain, epsilon_x,
                                   epsilon_y, epsilon_z, kappa_map, kappa_2,
@@ -645,30 +652,31 @@ struct V_Cycle_PBE {
                                   omega, num_iters_, coarsening_operator,
                                   smoother_iters_pre, smoother_iters_post);
 
-        std::cout << "The solution after coarse grid solving is: " << std::endl;
-        next.template get_domain<iter_level - 1>().print_domain();
+        //  std::cout << "The solution after coarse grid solving is: " <<
+        //  std::endl; next.template get_domain<iter_level -
+        //  1>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
 
-        std::cout << "The refined coars grid solution: " << std::endl;
-        current.template get_domain<iter_level>().print_domain();
+        // std::cout << "The refined coars grid solution: " << std::endl;
+        // current.template get_domain<iter_level>().print_domain();
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
 
-        std::cout << "After adding the coarse grid correction: " << std::endl;
-        next.template get_domain<iter_level>().print_domain();
+        // std::cout << "After adding the coarse grid correction: " <<
+        // std::endl; next.template get_domain<iter_level>().print_domain();
       }
 
       post_smoother(Integer<iter_level>{}, smoother_iters_pre, current, next,
                     rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
                     kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
 
-      std::cout << "After doing the post smoothing the guess is: " << std::endl;
-      current.template get_domain<iter_level>().print_domain();
+      // std::cout << "After doing the post smoothing the guess is: " <<
+      // std::endl; current.template get_domain<iter_level>().print_domain();
 
       //  post_smoother(Integer<iter_level>{}, smoother_iters_post, current,
       //  next,

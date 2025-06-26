@@ -24,7 +24,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 20;
+constexpr std::size_t base_length = 1;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 4;
 constexpr DataType ionic_strength = 0.15;
@@ -327,9 +327,20 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < iter_num; i++) {
 
+      //  std::cout << "The sol prior to copmute_residual is: " << std::endl;
+      //  sol.template get_domain<nlev>().print_domain();
+
+      //  std::cout << std::endl;
+      //  std::cout << std::endl;
+
+      //  std::cout << "The lhs_domain1 domain before computing the residual is:
+      //  "
+      //            << std::endl;
+      // lhs_domain1.template get_domain<nlev>().print_domain();
+
       DataType const residual =
           compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
+                               lhs_domain1.template get_domain<nlev>(),
                                lhs_domain2.template get_domain<nlev>(),
                                kappa_.template get_domain<nlev>(),
                                epsilonx_map.template get_domain<nlev>(),
