@@ -7,7 +7,7 @@
 \hoffset= -10mm       % may need change
 \voffset= -25mm 
 
-\title{Multigrid Solver Template}
+\title{Simple Laplacian with RB Gau{\ss}-Seidel Smoother}
 %\author{Jakob Niessner}
 %\date{June 2025}
 
@@ -27,6 +27,8 @@
   Stencil Size    & 7        \\
   Coarse Grid Solver & CG \\
   Dimension & $64 \times 64 \times 64$ \\
+  Coarsening & injection \\ 
+  Prolongation & trilinear interpolation \\
   \hline
 \end{tabular}
 \end{center}
