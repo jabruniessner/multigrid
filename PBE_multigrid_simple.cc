@@ -23,15 +23,15 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 2;
+constexpr std::size_t nlev = 2u;
+constexpr std::size_t base_length = 20;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 4;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = 0;
 constexpr DataType ionradius = 1.5;
-constexpr DataType grid_step = 0.5;
+constexpr DataType grid_step = 1;
 
 // constexpr DataType delta_epsilon = 0;
 constexpr DataType delta_epsilon = 0; // Difference in epsilon
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
+    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
                                        sol.template get_domain<1>(), values_op,
                                        offsets_op);
 
@@ -320,7 +320,9 @@ int main(int argc, char *argv[]) {
 
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
-    std::index_sequence<1> num_iters{};
+    constexpr std::size_t number_iterations = 1;
+
+    std::index_sequence<number_iterations> num_iters{};
     std::index_sequence<2> smoothing_steps;
 
     for (int i = 0; i < iter_num; i++) {
@@ -335,8 +337,8 @@ int main(int argc, char *argv[]) {
                                epsilonz_map.template get_domain<nlev>(),
                                kappa_2, grid_step, epsilon_r, delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
+      std::cout << "The residual after " << number_iterations * i
+                << " iterations is " << residual << std::endl;
 
       v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
                         epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
@@ -360,12 +362,12 @@ int main(int argc, char *argv[]) {
 
     // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-    //  std::index_sequence<20> iter_nums{};
-    //  // for (int i = 0; i < iter_num; i++)
-    //  j_smoother(Integer<1>{}, iter_nums, lhs_domain1, sol, rhs_domain,
-    //  kappa_,
-    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-    //             epsilon_r, delta_epsilon, omega);
+    // std::index_sequence<2> iter_nums{};
+    // for (int i = 0; i < iter_num; i++)
+    // j_smoother(Integer<nlev>{}, iter_nums, lhs_domain1, sol, rhs_domain,
+    // kappa_,
+    //            epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+    //            epsilon_r, delta_epsilon, omega);
 
     // sol.get_domain().print_domain();
     //   //
@@ -383,18 +385,18 @@ int main(int argc, char *argv[]) {
     //   values,
     //              offsets_op, box_length, omega);
 
-    // sol.get_domain().print_domain();
+    // lhs_domain1.get_domain().print_domain();
 
     // rhs_domain.get_domain().print_domain();
 
-    domain::add_domains(init_guess, boundary_domain, init_guess);
-    init_guess.print_domain();
+    // domain::add_domains(init_guess, boundary_domain, init_guess);
+    // init_guess.print_domain();
 
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "The right hand side is: " << std::endl;
     std::cout << "<<========================>>" << std::endl;
-    rhs.print_domain();
+    // rhs.print_domain();
 
     //  std::ofstream outfile{filename_out};
     //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);

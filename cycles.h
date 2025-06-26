@@ -342,14 +342,14 @@ struct Gauss_Seidel_PBE {
 
   {
 
-    std::cout << "We are doing a Gauss-Seidel smoothing" << std::endl;
+    // std::cout << "We are doing a Gauss-Seidel smoothing" << std::endl;
 
     static_assert(sizeof...(Num_Iters) == 1 ||
                   sizeof...(Num_Iters) == nlev - 1);
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
-    std::cout << "The number of iterations is " << num_iters << std::endl;
+    //  std::cout << "The number of iterations is " << num_iters << std::endl;
 
     auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
@@ -590,8 +590,9 @@ struct V_Cycle_PBE {
       constexpr std::size_t num_iters =
           get_num_iters<iter_level, Num_Iters...>();
 
-      std::cout << "The number of iterations on level " << iter_level << " is "
-                << num_iters << std::endl;
+      // std::cout << "The number of iterations on level " << iter_level << " is
+      // "
+      //           << num_iters << std::endl;
 
       auto epsilon_x_domain = epsilon_x.template get_domain<iter_level>();
       auto epsilon_y_domain = epsilon_y.template get_domain<iter_level>();
@@ -609,6 +610,11 @@ struct V_Cycle_PBE {
                      rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
                      kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
 
+        std::cout << "The domain after the presmoothing steps is: "
+                  << std::endl;
+
+        next.get_domain().print_domain();
+
         // This computes -A, in this case
         convolution::PBE_Convolve(current.template get_domain<iter_level>(),
                                   next.template get_domain<iter_level>(),
@@ -621,11 +627,17 @@ struct V_Cycle_PBE {
                     rhs_domain.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
 
+        std::cout << "The defect domain before coarsening is: " << std::endl;
+        current.get_domain().print_domain();
+
         level_transition::coarsening(
             rhs_domain.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
+
+        std::cout << "The right hand side after coarseing is: " << std::endl;
+        rhs_domain.template get_domain<iter_level - 1>().print_domain();
 
         iteration<iter_level - 1>(next, current, rhs_domain, epsilon_x,
                                   epsilon_y, epsilon_z, kappa_map, kappa_2,
@@ -633,18 +645,30 @@ struct V_Cycle_PBE {
                                   omega, num_iters_, coarsening_operator,
                                   smoother_iters_pre, smoother_iters_post);
 
+        std::cout << "The solution after coarse grid solving is: " << std::endl;
+        next.template get_domain<iter_level - 1>().print_domain();
+
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
 
+        std::cout << "The refined coars grid solution: " << std::endl;
+        current.template get_domain<iter_level>().print_domain();
+
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
+
+        std::cout << "After adding the coarse grid correction: " << std::endl;
+        next.template get_domain<iter_level>().print_domain();
       }
 
       post_smoother(Integer<iter_level>{}, smoother_iters_pre, current, next,
                     rhs_domain, kappa_map, epsilon_x, epsilon_y, epsilon_z,
                     kappa_2, grid_step, epsilon_r, delta_epsilon, omega);
+
+      std::cout << "After doing the post smoothing the guess is: " << std::endl;
+      current.template get_domain<iter_level>().print_domain();
 
       //  post_smoother(Integer<iter_level>{}, smoother_iters_post, current,
       //  next,
