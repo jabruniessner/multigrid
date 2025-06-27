@@ -1,0 +1,44 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+
+
+\textwidth=150mm
+\textheight=250mm
+\hoffset= -10mm       % may need change
+\voffset= -25mm 
+
+\title{Simple Laplacian with RB Gau{\ss}-Seidel Smoother}
+%\author{Jakob Niessner}
+%\date{June 2025}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{center}
+\begin{tabular}{|c|c|}
+  \hline
+  Specification & Value \\
+  \hline
+  Smoother        & RB GS        \\
+  Number of Level & 4        \\
+  Smoothing steps & 2        \\
+  Stencil Size    & 7        \\
+  Coarse Grid Solver & CG \\
+  Dimension & $64 \times 64 \times 64$ \\
+  Coarsening & injection \\ 
+  Prolongation & trilinear interpolation \\
+  \hline
+\end{tabular}
+\end{center}
+
+\begin{figure}[h!]
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{Residual_plot_4_l.pdf}
+  \end{center}
+  \caption{}\label{fig:}
+\end{figure}
+  
+
+\end{document}
