@@ -46,10 +46,11 @@ int main(int argc, char *argv[]) {
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
-  constexpr std::size_t nlev = 1u;
-  constexpr std::size_t base_length = 3u;
-  constexpr DataType omega = 4. / 5.;
-  constexpr DataType box_length = 6;
+  constexpr std::size_t nlev = 2u;
+  constexpr std::size_t base_length = 1u;
+  constexpr DataType omega = 1.;
+  constexpr DataType box_length = 12;
+  constexpr DataType upper_grid_step = 1;
 
   Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain1(
       q);
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
                       // as it is only applied to the right hand side anyways
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
-                                     box_length, Integer<base_length>{});
+                                     upper_grid_step, Integer<base_length>{});
 
   diff_operator.print_operator();
 
@@ -153,52 +154,59 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<5, 5, 5> smoother_sequence{};
+  std::index_sequence<2> smoother_sequence{};
   GS_Smoother g_smoother(rhs_domain);
 
-  g_smoother(Integer<1>{}, std::index_sequence<2>{}, lhs_domain1, rhs_domain,
-             (DataType)1.0, (DataType)1.0);
+  // g_smoother(Integer<2>{}, std::index_sequence<2>{}, lhs_domain2,
+  // lhs_domain1,
+  //            rhs_domain, (DataType)1.0, (DataType)1.0);
 
-  q.wait();
+  // q.wait();
 
-  lhs_domain1.get_domain().print_domain();
-  //  rhs_domain.get_domain().print_domain();
+  // lhs_domain2.get_domain().print_domain();
 
-  //  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-3)>{},
-  //                              rhs_domain.template get_domain<1>(),
-  //                              diff_operator.template get_values<1>(),
-  //                              diff_operator.template get_offsets<1>());
-  //
+  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-3)>{},
+                              rhs_domain.template get_domain<1>(),
+                              diff_operator.template get_values<1>(),
+                              diff_operator.template get_offsets<1>());
+
   //  //  //  //  // mult_level.print_operator();
-  //  std::index_sequence<2, 2, 1> num_iters_level{};
-  //  V_Cycle_base v_cycle(j_smoother, j_smoother, solver, lhs_domain1,
-  //  mult_level,
-  //                       diff_operator, coarser);
-  //
-  //  auto *current = &lhs_domain1;
-  //  auto *next = &lhs_domain2;
-  //  Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
-  //      helper(Paddings::PERIODIC, q, 1);
-  //
-  //  auto start = std::chrono::high_resolution_clock::now();
-  //  for (int num = 0; num < num_iter; num++) {
-  //
-  //    DataType const residual = compute_residual(
-  //        rhs_domain.template get_domain<nlev>(),
-  //        current->template get_domain<nlev>(), helper,
-  //        diff_operator.get_values(), diff_operator.get_offsets());
-  //
-  //    std::cout << "The residual after " << num << " iterations is " <<
-  //    residual
-  //              << std::endl;
-  //
-  //    // std::swap(current, next);
-  //
-  //    v_cycle.iteration(*current, *next, rhs_domain, mult_level,
-  //    diff_operator,
-  //                      coarser, 1., omega, num_iters_level,
-  //                      smoother_sequence, smoother_sequence);
-  //}
+  std::index_sequence<1> num_iters_level{};
+  V_Cycle_base v_cycle(g_smoother, g_smoother, solver, lhs_domain1, mult_level,
+                       diff_operator, coarser);
+
+  auto *current = &lhs_domain1;
+  auto *next = &lhs_domain2;
+  Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
+      helper(Paddings::PERIODIC, q, 1);
+
+  // std::cout << "The right hand side domain is: " << std::endl;
+  // rhs_domain.get_domain().print_domain();
+
+  auto start = std::chrono::high_resolution_clock::now();
+  for (int num = 0; num < num_iter; num++) {
+
+    DataType const residual = compute_residual(
+        rhs_domain.template get_domain<nlev>(),
+        current->template get_domain<nlev>(), helper,
+        diff_operator.get_values(), diff_operator.get_offsets());
+
+    std::cout << "The residual after " << num << " iterations is " << residual
+              << std::endl;
+
+    // std::swap(current, next);
+
+    v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
+                      coarser, upper_grid_step, omega, num_iters_level,
+                      smoother_sequence, smoother_sequence);
+    //  std::cout << "After the iterations the current is: " << std::endl;
+    //  current->get_domain().print_domain();
+    //  std::cout << "After the iteration the next is: " << std::endl;
+    //  next->get_domain().print_domain();
+  }
+
+  std::cout << "After the iterations: " << std::endl;
+  lhs_domain1.get_domain().print_domain();
 
   //   //   // Convolve(helper, current->template get_domain<nlev>(),
   //   //   //          diff_operator.get_values(),

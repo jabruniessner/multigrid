@@ -21,6 +21,8 @@ constexpr double const_sqrt(double x, double guess = 1.0) {
              : const_sqrt(x, (guess + x / guess) / 2);
 }
 
+constexpr double sqrt2 = const_sqrt(2, 1.414);
+
 inline double harmonic_average(double x, double y) {
   return 2 * x * y / (x + y);
 }

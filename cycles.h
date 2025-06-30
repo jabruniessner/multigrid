@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "level_transition.h"
+#include "scientific_quantities.h"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -73,8 +74,10 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
                           const std::array<OffsetType, size> &offsets) {
   convolution::Subtract_Convolve(helper, sol, rhs, values, offsets);
   DataType result;
+  DataType rhs_norm;
   domain_compute_norm_squared(result, helper);
-  return std::sqrt(result / sol.num_values);
+  domain_compute_norm_squared(rhs_norm, rhs);
+  return std::sqrt(result) / std::sqrt(rhs_norm);
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -181,6 +184,7 @@ struct GS_Smoother {
   template <std::size_t level, typename DataType, std::size_t... Num_Iters,
             std::size_t... dims>
   void operator()(Integer<level>, std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
                   Multigrid_domain<Dim, nlev, base_length...> &src,
                   Multigrid_domain<Dim, nlev, base_length...> &rhs,
                   const DataType grid_step, const DataType omega,
@@ -195,8 +199,7 @@ struct GS_Smoother {
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
-    std::cout << "The num iters are: " << num_iters << std::endl;
-
+    auto &dest_domain = dest.template get_domain<level>();
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
     using d_type = std::remove_reference_t<decltype(src_domain)>;
@@ -227,7 +230,6 @@ struct GS_Smoother {
     } else {
       for (int i = 0; i < num_iters; i++) {
         for (int color = 0; color < 2; color++) {
-          std::cout << "Color " << color << std::endl;
           src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
             ((I[dims] += src_domain.padding_width), ...);
 
@@ -245,17 +247,21 @@ struct GS_Smoother {
         }
       }
     }
+
+    std::swap(dest_domain.values_buff, src_domain.values_buff);
   }
 
   template <std::size_t level, typename DataType, std::size_t... Num_Iters>
   void operator()(Integer<level>, std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
                   Multigrid_domain<Dim, nlev, base_length...> &src,
                   Multigrid_domain<Dim, nlev, base_length...> &rhs,
                   DataType grid_step, DataType omega)
 
   {
-    this->operator()(Integer<level>{}, std::index_sequence<Num_Iters...>{}, src,
-                     rhs, grid_step, omega, std::make_index_sequence<Dim>{});
+    this->operator()(Integer<level>{}, std::index_sequence<Num_Iters...>{},
+                     dest, src, rhs, grid_step, omega,
+                     std::make_index_sequence<Dim>{});
   }
 };
 
@@ -560,7 +566,7 @@ struct V_Cycle_base {
           &Diff_operator,
       Multi_Level_operator<Dim, DataType, length_coarsening_op, base_length1,
                            nlev> &coarsening_operator,
-      DataType box_length, DataType omega,
+      DataType grid_step, DataType omega,
       std::index_sequence<Num_Iters...> num_iters_,
       std::index_sequence<Num_Iters_Smoother_Pre...> smoother_iters_pre,
       std::index_sequence<Num_Iters_Smoother_Post...> smoother_iters_post) {
@@ -580,11 +586,16 @@ struct V_Cycle_base {
           get_num_iters<iter_level, Num_Iters...>();
 
       for (int j = 0; j < num_iters; j++) {
+        // std::cout << "The grid step: " << grid_step << std::endl;
+        // std::cout << "The right hand side is: " << std::endl;
+        // rhs_domain.get_domain().print_domain();
         pre_smoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
-                     rhs_domain,
-                     Smooth_operator.template get_values<iter_level>(),
-                     Smooth_operator.template get_offsets<iter_level>(),
-                     box_length, omega);
+                     rhs_domain, grid_step, omega);
+
+        // next.template get_domain<nlev>().q.wait();
+
+        // std::cout << "Next after the presmoothing: " << std::endl;
+        // next.template get_domain<nlev>().print_domain();
 
         convolution::Convolve(current.template get_domain<iter_level>(),
                               next.template get_domain<iter_level>(),
@@ -601,10 +612,16 @@ struct V_Cycle_base {
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
 
+        // std::cout << "After the coarsening: " << std::endl;
+        // rhs_domain.template get_domain<iter_level - 1>().print_domain();
+
         iteration<iter_level - 1>(next, current, rhs_domain, Smooth_operator,
                                   Diff_operator, coarsening_operator,
-                                  box_length, omega, num_iters_,
+                                  sqrt2 * grid_step, omega, num_iters_,
                                   smoother_iters_pre, smoother_iters_post);
+
+        // std::cout << "After the coarse grid solve: " << std::endl;
+        // next.template get_domain<iter_level - 1>().print_domain();
 
         level_transition::refinement(
             current.template get_domain<iter_level>(),
@@ -613,13 +630,17 @@ struct V_Cycle_base {
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
-      }
 
-      post_smoother(Integer<iter_level>{}, smoother_iters_post, current, next,
-                    rhs_domain,
-                    Smooth_operator.template get_values<iter_level>(),
-                    Smooth_operator.template get_offsets<iter_level>(),
-                    box_length, omega);
+        // std::cout << "After refine and add: " << std::endl;
+        // next.template get_domain<iter_level>().print_domain();
+
+        post_smoother(Integer<iter_level>{}, smoother_iters_post, current, next,
+                      rhs_domain, grid_step, omega);
+
+        // current.get_domain().print_domain();
+        // std::cout << "After post_smoothing the current is: " << std::endl;
+        // current.get_domain().print_domain();
+      }
     }
   }
   Solver &solver;

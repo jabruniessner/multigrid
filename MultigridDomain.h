@@ -1,6 +1,7 @@
 #include "Domain.h"
 #include "level_transition.h"
 #include "predefinitions.h"
+#include "scientific_quantities.h"
 #include "utils.h"
 #include <format>
 #include <utility>
@@ -150,16 +151,17 @@ struct Multi_Level_operator
 
   Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &values_new,
                        std::array<OffsetType, length> &offsets,
-                       DataType Box_Length, Integer<base_length>)
+                       DataType grid_step, Integer<base_length>)
       : offsets(offsets),
         Multi_Level_operator<Dim, DataType, length, base_length, nlev - 1>(
-            Integer<nlev - 1>{}, values_new, offsets, Box_Length,
+            Integer<nlev - 1>{}, values_new, offsets, grid_step * sqrt2,
             Integer<base_length>{}) {
 
-    auto num_points =
-        std::get<0>(Multigrid_domain<1, nlev, base_length>::length) + 1;
+    auto h = grid_step;
 
-    auto h = Box_Length / num_points;
+    std::cout << "The grid step is: " << grid_step << std::endl;
+    std::cout << "The nlev is: " << nlev << std::endl;
+
     for (int i = 0; i < length; i++) {
 
       this->values[i] = values_new[i] / (h * h);
@@ -214,12 +216,10 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
 
   Multi_Level_operator(Integer<1>, std::array<DataType, length> &values_new,
                        std::array<OffsetType, length> &offsets,
-                       DataType Box_Length, Integer<base_length>)
+                       DataType grid_step, Integer<base_length>)
       : offsets(offsets) {
 
-    auto num_points =
-        std::get<0>(Multigrid_domain<1, 1u, base_length>::length) + 1;
-    auto h = Box_Length / num_points;
+    auto h = grid_step;
     for (int i = 0; i < length; i++) {
 
       this->values[i] = values_new[i] / (h * h);
