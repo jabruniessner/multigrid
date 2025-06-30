@@ -328,7 +328,7 @@ p0=[0.05]
 
 x=range(0, 9, 10)
 
-guess, residuals_mg = multigrid_V_cycle(base_length; num_iters=[10, 1]);
+@time guess, residuals_mg = multigrid_V_cycle(base_length; num_iters=[10, 1]);
 fit = curve_fit(model, x, residuals_mg, p0)
 param=fit.param
 label_string = @sprintf("2-levels: %4.2e", param[1])

@@ -30,6 +30,9 @@ add_executable(test_lvl_trans3D tests_level_transition3D.cc)
 add_executable(MultiGrid_test MultigridDomain_test.cc)
 add_executable(Laplacian2D Laplacian_2D.cc)
 add_executable(Laplacian3D Laplacian_3D.cc)
+add_executable(Laplacian3D_GS Laplacian_3D_GS.cc)
+
+
 add_executable(matrix_creation_test main_test_matrix_creation.cc)
 add_executable(test_ILU test_ILU.cc)
 add_executable(topological_test dots_in_sphere.cc)
