@@ -1,0 +1,68 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+
+
+\textwidth=150mm
+\textheight=250mm
+\hoffset= -10mm       % may need change
+\voffset= -25mm 
+
+\title{Simple Laplacian RB Gau{\ss}-Seidel Smoother and other Measures}
+\author{Jakob Niessner}
+%\date{June 2025}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{|c|c|}
+      \hline
+      \textbf{Parameter} & \textbf{Value} \\
+      \hline
+      Grid size & $65 \times 65 \times 65$ \\
+      Smoother & RB Gau{\ss}-Seidel \\
+      Smoothing steps & 2 \\
+      Stencil size & 7 \\
+      Coarse grid solver & CG \\
+      Coarse grid dimensions & $33 \times 33 \times 33$ \\
+      Coarsening & injection \\ 
+      Prolongation & trilinear interpolation \\
+      Boundary conditions & Dirichlet \\ 
+      Number of iterations & 10 \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \caption{Solver specifications}
+\end{table}
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{|c|c|c|}
+  \hline
+  Task & time & \% \\
+  \hline
+  Overall & 0.56(0.48) & 100        \\
+  Presmoothing & 0.135 & 24.046 \\
+  Restriction & 0.0616 & 10.93  \\
+  Prolongation & 0.082 & 14.48 \\
+  Postsmoothing & 0.136 & 24.1 \\
+  Residual computation & 0.072 & 12.77  \\
+  Finest level &    0.484(0.416)   & 86,5(85.2) \\ 
+  \hline
+\end{tabular}
+\end{center}
+\caption{Time profile for solver. The values in () were measured wihout residual computation. }
+\end{table}
+
+%\begin{figure}[h!]
+%  \begin{center}:
+%    \includegraphics[width=0.95\textwidth]{Residuals_plotted_asymmetric.pdf}
+%  \end{center}
+%  \label{fig:}
+%\end{figure}
+  
+
+\end{document}
