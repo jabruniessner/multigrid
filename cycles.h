@@ -81,6 +81,33 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
   return std::sqrt(result) / std::sqrt(rhs_norm);
 }
 
+template <Dimension Dim, Length... strides_all, typename DataType,
+          typename OffsetType, size_t size>
+DataType compute_truth_deviation(Domain<Dim, strides_all...> &truth,
+                                 Domain<Dim, strides_all...> &sol,
+                                 Domain<Dim, strides_all...> &helper,
+                                 const std::array<DataType, size> &values,
+                                 const std::array<OffsetType, size> &offsets) {
+  domain::add_domains(helper, sol, truth);
+  DataType result;
+  domain_compute_norm_squared(result, helper);
+  return std::sqrt(result) / helper.num_dofs;
+}
+
+template <Dimension Dim, Length... strides_all, typename DataType,
+          typename OffsetType, size_t size>
+DataType compute_truth_deviaton_gradient(
+    Domain<Dim, strides_all...> &truth, Domain<Dim, strides_all...> &sol,
+    Domain<Dim, strides_all...> &helper, Domain<Dim, strides_all...> &helper2,
+    const std::array<DataType, size> &values,
+    const std::array<OffsetType, size> &offsets) {
+
+  domain::add_domains(helper, sol, truth);
+  convolution::Convolve(helper2, helper, values, offsets);
+  DataType result = domain::domain_scalar_product(helper2, helper);
+  return std::sqrt(result) / helper.num_dofs;
+}
+
 template <Dimension Dim, Length... strides_all>
 DataType compute_residual_PBE(Domain<Dim, strides_all...> &rhs,
                               Domain<Dim, strides_all...> &sol,

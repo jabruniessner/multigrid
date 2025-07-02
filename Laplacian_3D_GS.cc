@@ -5,6 +5,7 @@
 #include "level_transition.h"
 #include "profiling_library.h"
 #include <chrono>
+#include <fstream>
 #include <string>
 #include <utility>
 
@@ -55,6 +56,9 @@ int main(int argc, char *argv[]) {
   // constexpr DataType box_length = 12;
   constexpr DataType upper_grid_step = 1;
 
+  constexpr auto &length =
+      Multigrid_domain<3, nlev, base_length, base_length, base_length>::length;
+
   Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain1(
       q);
   Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain2(
@@ -64,20 +68,37 @@ int main(int argc, char *argv[]) {
   Multigrid_domain<3, nlev, base_length, base_length, base_length>
       boundary_values(q);
 
+  Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
+      u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
+      helper(Paddings::PERIODIC, q, 1);
+
+  std::cout << "The number of dofs is: " << u_domain.num_dofs;
+
+  auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
+    return -3 * x * x - 4 * y * y + 7 * z * z;
+  };
+
+  q.parallel_for(sycl::range<3>(std::get<0>(length), std::get<1>(length),
+                                std::get<2>(length)),
+                 [=](sycl::id<3> I) {
+                   I[0] += 1;
+                   I[1] += 1;
+                   I[2] += 1;
+                   u_domain(I[0], I[1], I[2]) = boundary_conditions(
+                       (DataType)I[0] / (std::get<0>(length) + 2),
+                       (DataType)I[1] / (std::get<1>(length) + 2),
+                       (DataType)I[2] / (std::get<2>(length) + 2));
+                 });
+  // std::ofstream u_file("u_file_test.dx");
+  // u_domain.print_dx_to_stream(u_file, 0, 0, 0, 1);
+
   // std::cout << "lhs_domain1: " << std::endl;
   // print_multigrid_domain(lhs_domain1);
-
-  constexpr auto &length =
-      Multigrid_domain<3, nlev, base_length, base_length, base_length>::length;
 
   // std::cout << "The length is: " << std::get<0>(length) << std::endl;
 
   // std::cout << "After initialization we get:" << std::endl;
   // print_multigrid_domain(lhs_domain1);
-
-  auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
-    return -3 * x * x - 4 * y * y + 7 * z * z;
-  };
 
   {
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
@@ -129,6 +150,14 @@ int main(int argc, char *argv[]) {
                                      upper_grid_step, Integer<base_length>{});
 
   diff_operator.print_operator();
+
+  // convolution::Convolve(convolved, u_domain, diff_operator.get_values(),
+  //                       diff_operator.get_offsets());
+
+  // std::ofstream file("convolved.dx");
+  // convolved.print_dx_to_stream(file, 0, 0, 0, 1);
+
+  // Here I am testing that ty u is indeed harmonic
 
   std::array<OffsetType, 7u> offsets{{{-1, 0, 0},
                                       {1, 0, 0},
@@ -202,7 +231,7 @@ int main(int argc, char *argv[]) {
   auto *current = &lhs_domain1;
   auto *next = &lhs_domain2;
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
-      helper(Paddings::PERIODIC, q, 1);
+      helper2(Paddings::PERIODIC, q, 1);
 
   // std::cout << "The right hand side domain is: " << std::endl;
   // rhs_domain.get_domain().print_domain();
@@ -210,15 +239,19 @@ int main(int argc, char *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
 
-    // std::cout << "With next: " << std::endl;
-    //  DataType const residual = compute_residual(
-    //      rhs_domain.template get_domain<nlev>(),
-    //      next->template get_domain<nlev>(), helper,
-    //      diff_operator.get_values(), diff_operator.get_offsets());
+    DataType const deviation = compute_truth_deviation(
+        u_domain, next->template get_domain<nlev>(), helper,
+        diff_operator.get_values(), diff_operator.get_offsets());
 
-    //  std::cout << "The residual after " << num << " iterations is " <<
-    //  residual
-    //            << std::endl;
+    std::cout << "The deviation after " << num << " iterations is " << deviation
+              << std::endl;
+
+    DataType const deviation_grad = compute_truth_deviaton_gradient(
+        u_domain, next->template get_domain<nlev>(), helper, helper2,
+        diff_operator.get_values(), diff_operator.get_offsets());
+
+    std::cout << "The deviation_grad after " << num << "iterations is "
+              << deviation_grad << std::endl;
 
     std::swap(current, next);
 
