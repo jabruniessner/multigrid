@@ -17,18 +17,8 @@ set(CMAKE_CXX_COMPILER "acpp")
 
 include_directories("mdspan")
 
-# Set the CUDA path
-set(CUDA_PATH "/usr/local/cuda-12.6")
 
-# Include NVTX headers
-include_directories("${CUDA_PATH}/targets/x86_64-linux/include")
-
-# Find NVTX library
-find_library(NVTX_LIBRARY nvToolsExt
-    HINTS "${CUDA_PATH}/targets/x86_64-linux/lib"
-)
-
-
+add_library(prof SHARED profiling_library.cc)
 
 #endif()
 
@@ -45,7 +35,8 @@ add_executable(Laplacian2D Laplacian_2D.cc)
 add_executable(Laplacian3D Laplacian_3D.cc)
 add_executable(Laplacian3D_GS Laplacian_3D_GS.cc)
 # Link NVTX to your target
-target_link_libraries(Laplacian3D_GS PRIVATE ${NVTX_LIBRARY})
+target_link_libraries(Laplacian3D_GS PRIVATE prof)
+target_compile_definitions(Laplacian3D_GS PRIVATE PROFILING)
 
 
 

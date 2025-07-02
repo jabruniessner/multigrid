@@ -1,9 +1,10 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
+#include "hipSYCL/sycl/queue.hpp"
 #include "level_transition.h"
+#include "profiling_library.h"
 #include <chrono>
-#include <nvToolsExt.h>
 #include <string>
 #include <utility>
 
@@ -45,7 +46,8 @@ int main(int argc, char *argv[]) {
 #endif
 
   sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
+                sycl::property_list{sycl::property::queue::in_order{},
+                                    sycl::property::queue::enable_profiling{}});
 
   constexpr std::size_t nlev = 5u;
   constexpr std::size_t base_length = 16u;
@@ -171,7 +173,7 @@ int main(int argc, char *argv[]) {
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
 
-  //  //  //  //  // mult_level.print_operator();
+  // mult_level.print_operator();
   std::index_sequence<1> num_iters_level{};
   V_Cycle_base v_cycle(g_smoother, g_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
@@ -188,19 +190,21 @@ int main(int argc, char *argv[]) {
   for (int num = 0; num < num_iter; num++) {
 
     // std::cout << "With next: " << std::endl;
-    DataType const residual = compute_residual(
-        rhs_domain.template get_domain<nlev>(),
-        next->template get_domain<nlev>(), helper, diff_operator.get_values(),
-        diff_operator.get_offsets());
+    //  DataType const residual = compute_residual(
+    //      rhs_domain.template get_domain<nlev>(),
+    //      next->template get_domain<nlev>(), helper,
+    //      diff_operator.get_values(), diff_operator.get_offsets());
 
-    std::cout << "The residual after " << num << " iterations is " << residual
-              << std::endl;
+    //  std::cout << "The residual after " << num << " iterations is " <<
+    //  residual
+    //            << std::endl;
 
     std::swap(current, next);
 
     v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
-                      coarser, upper_grid_step, omega, num_iters_level,
-                      smoother_sequence, smoother_sequence);
+                      coarser, upper_grid_step, omega, diff_operator,
+                      num_iters_level, smoother_sequence, smoother_sequence);
+
     //  std::cout << "After the iterations the current is: " << std::endl;
     //  current->get_domain().print_domain();
     //  std::cout << "After the iteration the next is: " << std::endl;

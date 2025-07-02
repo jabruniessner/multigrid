@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "level_transition.h"
+#include "profiling_library.h"
 #include "scientific_quantities.h"
 #include <array>
 #include <cmath>
@@ -570,10 +571,14 @@ struct V_Cycle_base {
       Multi_Level_operator<Dim, DataType, length_coarsening_op, base_length1,
                            nlev> &coarsening_operator,
       DataType grid_step, DataType omega,
+      Multi_Level_operator<Dim, DataType, length, base_length1, nlev>
+          diff_operator,
       std::index_sequence<Num_Iters...> num_iters_,
       std::index_sequence<Num_Iters_Smoother_Pre...> smoother_iters_pre,
       std::index_sequence<Num_Iters_Smoother_Post...> smoother_iters_post,
       const bool zero_initialize = false) {
+
+    PROFILE_ADD
 
     static_assert(sizeof...(Num_Iters) == 1 ||
                   sizeof...(Num_Iters) == nlev - 1);
@@ -590,21 +595,38 @@ struct V_Cycle_base {
           get_num_iters<iter_level, Num_Iters...>();
 
       for (int j = 0; j < num_iters; j++) {
+        PROFILE_START(overall_time)
+
+        if (iter_level == nlev) {
+          PROFILE_START(residual_computation)
+          DataType const residual = compute_residual(
+              rhs_domain.template get_domain<nlev>(),
+              current.template get_domain<nlev>(),
+              next.template get_domain<nlev>(), diff_operator.get_values(),
+              diff_operator.get_offsets());
+
+          std::cout << "The residual after " << j << " iterations is "
+                    << residual << std::endl;
+          PROFILE_END(residual_computation)
+        }
+
         //  std::cout << "The grid step: " << grid_step << std::endl;
         //  std::cout << "The right hand side is: " << std::endl;
         //  rhs_domain.template get_domain<iter_level>().print_domain();
 
         //  std::cout << "The current before presmoothing is: " << std::endl;
         //  current.template get_domain<iter_level>().print_domain();
-
+        PROFILE_START(pre_smoothing)
         pre_smoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
                      rhs_domain, grid_step, omega, zero_initialize);
+        PROFILE_END(pre_smoothing)
 
         //  next.template get_domain<nlev>().q.wait();
 
         //  std::cout << "Next after the presmoothing: " << std::endl;
         //  next.template get_domain<iter_level>().print_domain();
 
+        PROFILE_START(restriction)
         convolution::Convolve(current.template get_domain<iter_level>(),
                               next.template get_domain<iter_level>(),
                               Diff_operator.template get_values<iter_level>(),
@@ -619,6 +641,7 @@ struct V_Cycle_base {
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
+        PROFILE_END(restriction)
 
         //  next.template get_domain<iter_level>().q.wait();
 
@@ -627,14 +650,15 @@ struct V_Cycle_base {
 
         iteration<iter_level - 1>(
             next, current, rhs_domain, Smooth_operator, Diff_operator,
-            coarsening_operator, sqrt2 * grid_step, omega, num_iters_,
-            smoother_iters_pre, smoother_iters_post, true);
+            coarsening_operator, sqrt2 * grid_step, omega, diff_operator,
+            num_iters_, smoother_iters_pre, smoother_iters_post, true);
 
         //  next.template get_domain<nlev>().q.wait();
 
         //  std::cout << "After the coarse grid solve: " << std::endl;
         //  next.template get_domain<iter_level - 1>().print_domain();
 
+        PROFILE_START(refinement)
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
@@ -642,20 +666,23 @@ struct V_Cycle_base {
         add_domains(current.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
+        PROFILE_END(refinement)
 
         //  next.template get_domain<nlev>().q.wait();
 
         //  std::cout << "After refine and add: " << std::endl;
         //  next.template get_domain<iter_level>().print_domain();
-
+        PROFILE_START(post_smoothing)
         post_smoother(Integer<iter_level>{}, smoother_iters_post, next, current,
                       rhs_domain, grid_step, omega, false);
+        PROFILE_END(post_smoothing)
 
         //  next.template get_domain<iter_level>().q.wait();
 
         //  current.get_domain().print_domain();
         //  std::cout << "After post_smoothing the current is: " << std::endl;
         //  current.template get_domain<iter_level>().print_domain();
+        PROFILE_END(overall_time)
       }
     }
   }
