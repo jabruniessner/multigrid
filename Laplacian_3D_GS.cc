@@ -74,21 +74,42 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "After initialization we get:" << std::endl;
   // print_multigrid_domain(lhs_domain1);
+
+  auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
+    return -3 * x * x - 4 * y * y + 7 * z * z;
+  };
+
   {
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
-           boundary_domain(I[0], I[1], 0) = 0.;
-           boundary_domain(I[0], I[1], std::get<2>(length) + 1) = 1.;
-           boundary_domain(0, I[0], I[1]) =
-               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+           boundary_domain(I[0], I[1], 0) = boundary_conditions(
+               (DataType)I[0] / (std::get<1>(length) + 2),
+               (DataType)I[1] / (std::get<2>(length) + 2), 0);
+
+           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 2),
+                                   (DataType)I[1] / (std::get<2>(length) + 2),
+                                   1);
+
+           boundary_domain(0, I[0], I[1]) = boundary_conditions(
+               0, (DataType)I[0] / (std::get<1>(length) + 2),
+               (DataType)I[1] / (std::get<2>(length) + 2));
+
            boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
-               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
-           boundary_domain(I[0], 0, I[1]) =
-               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+               boundary_conditions(1,
+                                   (DataType)I[0] / (std::get<1>(length) + 2),
+                                   (DataType)I[1] / (std::get<2>(length) + 2));
+
+           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
+               (DataType)I[0] / (std::get<1>(length) + 2), 0,
+               (DataType)I[1] / (std::get<2>(length) + 2));
+
            boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
-               (DataType)I[1] / (DataType)(std::get<2>(length) + 1);
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 2),
+                                   1,
+                                   (DataType)I[1] / (std::get<2>(length) + 2));
          })
         .wait();
   }
