@@ -78,17 +78,18 @@ int main(int argc, char *argv[]) {
     return -3 * x * x - 4 * y * y + 7 * z * z;
   };
 
-  q.parallel_for(sycl::range<3>(std::get<0>(length), std::get<1>(length),
-                                std::get<2>(length)),
-                 [=](sycl::id<3> I) {
-                   I[0] += 1;
-                   I[1] += 1;
-                   I[2] += 1;
-                   u_domain(I[0], I[1], I[2]) = boundary_conditions(
-                       (DataType)I[0] / (std::get<0>(length) + 2),
-                       (DataType)I[1] / (std::get<1>(length) + 2),
-                       (DataType)I[2] / (std::get<2>(length) + 2));
-                 });
+  q.parallel_for(
+      sycl::range<3>(std::get<0>(length) + 2, std::get<1>(length) + 2,
+                     std::get<2>(length) + 2),
+      [=](sycl::id<3> I) {
+        //  I[0] += 1;
+        //  I[1] += 1;
+        //  I[2] += 1;
+        u_domain(I[0], I[1], I[2]) =
+            boundary_conditions((DataType)I[0] / (std::get<0>(length) + 1),
+                                (DataType)I[1] / (std::get<1>(length) + 1),
+                                (DataType)I[2] / (std::get<2>(length) + 1));
+      });
   // std::ofstream u_file("u_file_test.dx");
   // u_domain.print_dx_to_stream(u_file, 0, 0, 0, 1);
 
@@ -101,39 +102,81 @@ int main(int argc, char *argv[]) {
   // print_multigrid_domain(lhs_domain1);
 
   {
-    auto &boundary_domain = boundary_values.template get_domain<nlev>();
+    auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
            boundary_domain(I[0], I[1], 0) = boundary_conditions(
-               (DataType)I[0] / (std::get<1>(length) + 2),
-               (DataType)I[1] / (std::get<2>(length) + 2), 0);
+               (DataType)I[0] / (std::get<1>(length) + 1),
+               (DataType)I[1] / (std::get<2>(length) + 1), 0);
 
            boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
-               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 2),
-                                   (DataType)I[1] / (std::get<2>(length) + 2),
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
+                                   (DataType)I[1] / (std::get<2>(length) + 1),
                                    1);
 
            boundary_domain(0, I[0], I[1]) = boundary_conditions(
-               0, (DataType)I[0] / (std::get<1>(length) + 2),
-               (DataType)I[1] / (std::get<2>(length) + 2));
+               0, (DataType)I[0] / (std::get<1>(length) + 1),
+               (DataType)I[1] / (std::get<2>(length) + 1));
 
            boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
                boundary_conditions(1,
-                                   (DataType)I[0] / (std::get<1>(length) + 2),
-                                   (DataType)I[1] / (std::get<2>(length) + 2));
+                                   (DataType)I[0] / (std::get<1>(length) + 1),
+                                   (DataType)I[1] / (std::get<2>(length) + 1));
 
            boundary_domain(I[0], 0, I[1]) = boundary_conditions(
-               (DataType)I[0] / (std::get<1>(length) + 2), 0,
-               (DataType)I[1] / (std::get<2>(length) + 2));
+               (DataType)I[0] / (std::get<1>(length) + 1), 0,
+               (DataType)I[1] / (std::get<2>(length) + 1));
 
            boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
-               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 2),
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
                                    1,
-                                   (DataType)I[1] / (std::get<2>(length) + 2));
+                                   (DataType)I[1] / (std::get<2>(length) + 1));
          })
         .wait();
+
+    //  std::cout << "The boundary domain is: " << std::endl;
+    //  boundary_domain.print_domain();
   }
+
+  //  {
+  //    auto &boundary_domain = lhs_domain2.template get_domain<nlev>();
+  //    q.parallel_for(
+  //         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+  //         [=](sycl::id<2> I) {
+  //           boundary_domain(I[0], I[1], 0) = boundary_conditions(
+  //               (DataType)I[0] / (std::get<1>(length) + 2),
+  //               (DataType)I[1] / (std::get<2>(length) + 2), 0);
+  //
+  //           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
+  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
+  //               2),
+  //                                   (DataType)I[1] / (std::get<2>(length) +
+  //                                   2), 1);
+  //
+  //           boundary_domain(0, I[0], I[1]) = boundary_conditions(
+  //               0, (DataType)I[0] / (std::get<1>(length) + 2),
+  //               (DataType)I[1] / (std::get<2>(length) + 2));
+  //
+  //           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
+  //               boundary_conditions(1,
+  //                                   (DataType)I[0] / (std::get<1>(length) +
+  //                                   2), (DataType)I[1] / (std::get<2>(length)
+  //                                   + 2));
+  //
+  //           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
+  //               (DataType)I[0] / (std::get<1>(length) + 2), 0,
+  //               (DataType)I[1] / (std::get<2>(length) + 2));
+  //
+  //           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
+  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
+  //               2),
+  //                                   1,
+  //                                   (DataType)I[1] / (std::get<2>(length) +
+  //                                   2));
+  //         })
+  //        .wait();
+  //  }
 
   std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
                                         {1, 0, 0},
@@ -233,31 +276,35 @@ int main(int argc, char *argv[]) {
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
       helper2(Paddings::PERIODIC, q, 1);
 
+  //  std::ofstream previous("previous_domain.dx");
+  //  next->get_domain().print_dx_to_stream(previous, 0, 0, 0, 1);
+  //  previous.close();
+
   // std::cout << "The right hand side domain is: " << std::endl;
   // rhs_domain.get_domain().print_domain();
+
+  std::ofstream out_file_devation("deviations.txt");
 
   auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
 
     DataType const deviation = compute_truth_deviation(
-        u_domain, next->template get_domain<nlev>(), helper,
+        u_domain, current->template get_domain<nlev>(), helper,
         diff_operator.get_values(), diff_operator.get_offsets());
-
-    std::cout << "The deviation after " << num << " iterations is " << deviation
-              << std::endl;
 
     DataType const deviation_grad = compute_truth_deviaton_gradient(
-        u_domain, next->template get_domain<nlev>(), helper, helper2,
-        diff_operator.get_values(), diff_operator.get_offsets());
+        u_domain, current->template get_domain<nlev>(), helper, helper2,
+        diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
 
-    std::cout << "The deviation_grad after " << num << "iterations is "
-              << deviation_grad << std::endl;
-
-    std::swap(current, next);
+    out_file_devation << "The deviation after " << num << " iterations is "
+                      << deviation << " The deviation_grad is "
+                      << deviation_grad << std::endl;
 
     v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, diff_operator,
                       num_iters_level, smoother_sequence, smoother_sequence);
+
+    std::swap(current, next);
 
     //  std::cout << "After the iterations the current is: " << std::endl;
     //  current->get_domain().print_domain();
@@ -266,6 +313,17 @@ int main(int argc, char *argv[]) {
   }
 
   q.wait();
+
+  // std::ofstream true_file("u_domain.dx");
+  // u_domain.print_dx_to_stream(true_file, 0, 0, 0, 1);
+  // true_file.close();
+  // std::ofstream sol_file("sol_domain.dx");
+  // next->get_domain().print_dx_to_stream(sol_file, 0, 0, 0, 1);
+  //  std::cout << "The u domain is: " << std::endl;
+  //  u_domain.print_domain();
+  //
+  //  std::cout << "The solution is: " << std::endl;
+  //  current->get_domain().print_domain();
 
   // std::cout << "After the iterations: " << std::endl;
   // lhs_domain1.get_domain().print_domain();
