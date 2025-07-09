@@ -22,7 +22,7 @@
       \hline
       \textbf{Parameter} & \textbf{Value} \\
       \hline
-      Grid size & $65 \times 65 \times 65$ \\
+      Grid size & $513 \times 513 \times 513$ \\
       Smoother & RB Gau{\ss}-Seidel \\
       Smoothing steps & 2 \\
       Stencil size & 7 \\
@@ -32,6 +32,7 @@
       Prolongation & trilinear interpolation \\
       Boundary conditions & Dirichlet \\ 
       Number of iterations & 10 \\
+      True solution & $u(x, y, z) = -3x^2 -4y^2 +7z^2$ \\
       \hline
     \end{tabular}
   \end{center}
@@ -56,6 +57,29 @@
 \end{center}
 \caption{Time profile for solver. The values in () were measured wihout residual computation. }
 \end{table}
+
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{residuals.pdf}
+  \end{center}
+  \label{residuals}
+  \caption{Residuals by num iterations}
+\end{figure}
+
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{deviations.pdf}
+  \end{center}
+  \label{deviations}
+  \caption{The deviation from the analytic solution and the deviation of the energy norm plotted against the number of iterations}
+\end{figure}
+
+
+
+
+
 
 %\begin{figure}[h!]
 %  \begin{center}:
