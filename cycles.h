@@ -78,8 +78,8 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
   DataType result;
   DataType rhs_norm;
   domain_compute_norm_squared(result, helper);
-  domain_compute_norm_squared(rhs_norm, rhs);
-  return std::sqrt(result) / std::sqrt(rhs_norm);
+  // domain_compute_norm_squared(rhs_norm, rhs);
+  return std::sqrt(result / helper.num_dofs);
 }
 
 template <Dimension Dim, Length... strides_all, typename DataType,
@@ -625,18 +625,18 @@ struct V_Cycle_base {
       for (int j = 0; j < num_iters; j++) {
         PROFILE_START(overall_time)
 
-        //  if (iter_level == nlev) {
-        //    PROFILE_START(residual_computation)
-        //    DataType const residual = compute_residual(
-        //        rhs_domain.template get_domain<nlev>(),
-        //        current.template get_domain<nlev>(),
-        //        next.template get_domain<nlev>(), diff_operator.get_values(),
-        //        diff_operator.get_offsets());
+        if (iter_level == nlev) {
+          PROFILE_START(residual_computation)
+          DataType const residual = compute_residual(
+              rhs_domain.template get_domain<nlev>(),
+              current.template get_domain<nlev>(),
+              next.template get_domain<nlev>(), diff_operator.get_values(),
+              diff_operator.get_offsets());
 
-        //    std::cout << "The residual after " << j << " iterations is "
-        //              << residual << std::endl;
-        //    PROFILE_END(residual_computation)
-        //  }
+          std::cout << "The residual after " << j << " iterations is "
+                    << residual << std::endl;
+          PROFILE_END(residual_computation)
+        }
 
         //  std::cout << "The grid step: " << grid_step << std::endl;
         //  std::cout << "The right hand side is: " << std::endl;
@@ -691,7 +691,7 @@ struct V_Cycle_base {
         //                                                              1);
         //  }
 
-        level_transition::coarsening(
+        level_transition::coarsening_inject(
             rhs_domain.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),

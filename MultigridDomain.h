@@ -230,10 +230,8 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
                        std::array<OffsetType, length> &&offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets) {};
-
-  auto get_values() { return values; }
-
-  auto get_offsets() { return offsets; }
+  template <std::size_t access_level = 1> auto get_values() { return values; }
+  template <std::size_t access_level = 1> auto get_offsets() { return offsets; }
 
   void print_operator() {
     std::cout << "The level is: " << 1 << std::endl;

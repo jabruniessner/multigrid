@@ -1,5 +1,5 @@
 import numpy as np 
-import sys; sys.path.append('../../interesting_code_snippets/')
+import sys; sys.path.append('/home/jakob/projects/interesting_code_snippets/')
 from itertools import chain
 import time
 from functions import read_dx_grid

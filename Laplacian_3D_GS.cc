@@ -2,10 +2,12 @@
 #include "MultigridDomain.h"
 #include "cycles.h"
 #include "hipSYCL/sycl/queue.hpp"
+#include "hipSYCL/sycl/usm.hpp"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include <chrono>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -28,6 +30,85 @@ void Initializing_all_rhs(
                offsets_coarsening);
     Initializing_all_rhs<Dim, base_length, nlev, level - 1>(MultDomain);
   }
+}
+
+DataType f(DataType a, DataType b, DataType c, DataType d, DataType e,
+           DataType f, DataType g, DataType i, DataType l, DataType m,
+           DataType n, DataType h) {
+  return (296.0 / 45.0) * sycl::pow(h, 7) -
+         1.0 / 90.0 * sycl::pow(h, 5) *
+             (56 * b - 32 * c + 21 * d - 24 * e + 28 * f - 49 * g) +
+         18 * sycl::pow(h, 4) * sycl::pow(l, 3) +
+         32 * sycl::pow(h, 4) * sycl::pow(m, 3) +
+         98 * sycl::pow(h, 4) * sycl::pow(n, 3) +
+         (1.0 / 10.0) * sycl::pow(h, 3) * sycl::pow(i, 2) +
+         (1.0 / 30.0) * sycl::pow(h, 3) * i * (3 * a + b + c + d + e + f + g) +
+         9 * sycl::pow(h, 3) * sycl::pow(l, 4) +
+         16 * sycl::pow(h, 3) * sycl::pow(m, 4) +
+         49 * sycl::pow(h, 3) * sycl::pow(n, 4) +
+         (1.0 / 60.0) * sycl::pow(h, 3) *
+             (6 * sycl::pow(a, 2) + 2 * a * b + 2 * a * c + 2 * a * e +
+              2 * sycl::pow(b, 2) + 2 * sycl::pow(c, 2) + 2 * sycl::pow(d, 2) +
+              d * (2 * a + b + c) + 2 * sycl::pow(e, 2) + 2 * sycl::pow(f, 2) +
+              f * (2 * a + b + e) + 2 * sycl::pow(g, 2) + g * (2 * a + c + e)) +
+         (1.0 / 2.0) * sycl::pow(l, 2) *
+             (24 * sycl::pow(h, 5) + 3 * sycl::pow(h, 3) * i +
+              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         (1.0 / 10.0) * l *
+             (30 * sycl::pow(h, 6) + 18 * sycl::pow(h, 4) * i +
+              sycl::pow(h, 4) *
+                  (12 * a + 3 * b + 3 * c + 2 * d + 8 * e + 7 * f + 7 * g)) +
+         (2.0 / 3.0) * sycl::pow(m, 2) *
+             (32 * sycl::pow(h, 5) + 36 * sycl::pow(h, 4) * l +
+              3 * sycl::pow(h, 3) * i + 36 * sycl::pow(h, 3) * sycl::pow(l, 2) +
+              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         (2.0 / 15.0) * m *
+             (40 * sycl::pow(h, 6) + 180 * sycl::pow(h, 5) * l +
+              18 * sycl::pow(h, 4) * i +
+              180 * sycl::pow(h, 4) * sycl::pow(l, 2) +
+              sycl::pow(h, 4) *
+                  (12 * a + 3 * b + 8 * c + 7 * d + 3 * e + 2 * f + 7 * g)) +
+         (7.0 / 6.0) * sycl::pow(n, 2) *
+             (56 * sycl::pow(h, 5) - 36 * sycl::pow(h, 4) * l -
+              48 * sycl::pow(h, 4) * m - 3 * sycl::pow(h, 3) * i -
+              36 * sycl::pow(h, 3) * sycl::pow(l, 2) -
+              48 * sycl::pow(h, 3) * sycl::pow(m, 2) -
+              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         (7.0 / 30.0) * n *
+             (70 * sycl::pow(h, 6) - 180 * sycl::pow(h, 5) * l -
+              240 * sycl::pow(h, 5) * m - 18 * sycl::pow(h, 4) * i -
+              180 * sycl::pow(h, 4) * sycl::pow(l, 2) -
+              240 * sycl::pow(h, 4) * sycl::pow(m, 2) -
+              sycl::pow(h, 4) *
+                  (12 * a + 8 * b + 3 * c + 7 * d + 3 * e + 7 * f + 2 * g));
+};
+
+template <std::size_t Dim, std::size_t... strides_all>
+DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
+                           DataType h) {
+  DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
+
+  std::array<int, Dim> length{(strides_all + 1)...};
+
+  sol_domain.q.parallel_for(
+      sycl::range((strides_all + 1)...),
+      sycl::reduction(result, sycl::plus<>()), [=](sycl::id<Dim> I, auto &r) {
+        r += f(sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
+               sol_domain(I[0], I[1] + 1, I[2]),
+               sol_domain(I[0], I[1] + 1, I[2] + 1),
+               sol_domain(I[0] + 1, I[1], I[2]),
+               sol_domain(I[0] + 1, I[1], I[2] + 1),
+               sol_domain(I[0] + 1, I[1] + 1, I[2]),
+               sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
+
+               (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
+               (DataType)I[2] / (length[2]), h);
+      });
+
+  DataType result_device = 0;
+  sol_domain.q.memcpy(&result_device, result, sizeof(DataType)).wait();
+
+  return std::sqrt(result_device);
 }
 
 int main(int argc, char *argv[]) {
@@ -72,7 +153,14 @@ int main(int argc, char *argv[]) {
       u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
       helper(Paddings::PERIODIC, q, 1);
 
-  std::cout << "The number of dofs is: " << u_domain.num_dofs;
+  std::cout << "The number of dofs is: " << u_domain.num_dofs << std::endl;
+
+  std::cout << "The length are: " << std::get<0>(length) << " "
+            << std::get<1>(length) << " " << std::get<2>(length) << std::endl;
+
+  constexpr DataType h = (DataType)1 / (std::get<0>(length) + 1);
+
+  std::cout << "The value of h is: " << h << std::endl;
 
   auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
     return -3 * x * x - 4 * y * y + 7 * z * z;
@@ -90,6 +178,7 @@ int main(int argc, char *argv[]) {
                                 (DataType)I[1] / (std::get<1>(length) + 1),
                                 (DataType)I[2] / (std::get<2>(length) + 1));
       });
+
   // std::ofstream u_file("u_file_test.dx");
   // u_domain.print_dx_to_stream(u_file, 0, 0, 0, 1);
 
@@ -237,6 +326,8 @@ int main(int argc, char *argv[]) {
   //  / 16.,
   //  // //                                         1. / 16., 2. / 16., 1.
   //  / 16.};
+  //
+  //  Lambda expression for computing deviation
 
   std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
   std::array<DataType, 1u> values_coarse{1.};
@@ -250,7 +341,8 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<2> smoother_sequence{};
+  std::index_sequence<3> smoother_sequence_pre{};
+  std::index_sequence<3> smoother_sequence_post{};
   GS_Smoother g_smoother(rhs_domain);
 
   // g_smoother(Integer<2>{}, std::index_sequence<2>{}, lhs_domain2,
@@ -261,7 +353,7 @@ int main(int argc, char *argv[]) {
 
   // lhs_domain2.get_domain().print_domain();
 
-  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-5)>{},
+  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-8)>{},
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
@@ -282,10 +374,14 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "The right hand side domain is: " << std::endl;
   // rhs_domain.get_domain().print_domain();
+  std::stringstream filenames;
 
-  std::ofstream out_file_devation("deviations.txt");
+  filenames << "deviations" << base_length << ".txt";
+
+  std::ofstream out_file_devation(filenames.str());
 
   auto start = std::chrono::high_resolution_clock::now();
+
   for (int num = 0; num < num_iter; num++) {
 
     DataType const deviation = compute_truth_deviation(
@@ -302,7 +398,8 @@ int main(int argc, char *argv[]) {
 
     v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, diff_operator,
-                      num_iters_level, smoother_sequence, smoother_sequence);
+                      num_iters_level, smoother_sequence_pre,
+                      smoother_sequence_post);
 
     std::swap(current, next);
 
@@ -314,11 +411,27 @@ int main(int argc, char *argv[]) {
 
   q.wait();
 
-  // std::ofstream true_file("u_domain.dx");
-  // u_domain.print_dx_to_stream(true_file, 0, 0, 0, 1);
-  // true_file.close();
-  // std::ofstream sol_file("sol_domain.dx");
-  // next->get_domain().print_dx_to_stream(sol_file, 0, 0, 0, 1);
+  auto &sol_domain = current->get_domain();
+
+  // std::cout << "The sol domain is given by: " << std::endl;
+  // sol_domain.print_domain();
+
+  DataType result = compute_deviation(sol_domain, h);
+
+  std::cout << "The deviation is given by " << result << std::endl;
+
+  //  std::stringstream true_file_name;
+  //  true_file_name << "u_domain" << base_length << ".dx";
+  //  std::ofstream true_file(true_file_name.str());
+  //
+  //  u_domain.print_dx_to_stream(true_file, 0, 0, 0, 1);
+  //  true_file.close();
+  //
+  //  std::stringstream sol_file_name;
+  //  sol_file_name << "sol_domain" << base_length << ".dx";
+  //
+  //  std::ofstream sol_file(sol_file_name.str());
+  //  current->get_domain().print_dx_to_stream(sol_file, 0, 0, 0, 1);
   //  std::cout << "The u domain is: " << std::endl;
   //  u_domain.print_domain();
   //
