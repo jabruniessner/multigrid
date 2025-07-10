@@ -69,7 +69,7 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                    });
   });
 
-  dest.q.wait();
+  // dest.q.wait();
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,

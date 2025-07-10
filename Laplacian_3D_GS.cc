@@ -81,7 +81,7 @@ DataType f(DataType a, DataType b, DataType c, DataType d, DataType e,
               240 * sycl::pow(h, 4) * sycl::pow(m, 2) -
               sycl::pow(h, 4) *
                   (12 * a + 8 * b + 3 * c + 7 * d + 3 * e + 7 * f + 2 * g));
-};
+}
 
 template <std::size_t Dim, std::size_t... strides_all>
 DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
@@ -103,6 +103,61 @@ DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
 
                (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
                (DataType)I[2] / (length[2]), h);
+      });
+
+  DataType result_device = 0;
+  sol_domain.q.memcpy(&result_device, result, sizeof(DataType)).wait();
+
+  return std::sqrt(result_device);
+}
+
+DataType f_grad(DataType a, DataType b, DataType c, DataType d, DataType e,
+                DataType f, DataType g, DataType i, DataType l, DataType m,
+                DataType n, DataType h) {
+  return (296.0 / 3.0) * sycl::pow(h, 5) +
+         36 * sycl::pow(h, 3) * sycl::pow(l, 2) +
+         64 * sycl::pow(h, 3) * sycl::pow(m, 2) +
+         196 * sycl::pow(h, 3) * sycl::pow(n, 2) -
+         2.0 / 3.0 * sycl::pow(h, 3) *
+             (14 * b - 8 * c + 3 * d - 6 * e + 4 * f - 7 * g) +
+         h * sycl::pow(i, 2) - 2.0 / 3.0 * h * i * (d + f + g) +
+         (1.0 / 3.0) * h *
+             (3 * sycl::pow(a, 2) - 2 * a * b - 2 * a * c - 2 * a * e +
+              2 * sycl::pow(b, 2) + 2 * sycl::pow(c, 2) + 2 * sycl::pow(d, 2) -
+              d * (b + c) + 2 * sycl::pow(e, 2) + 2 * sycl::pow(f, 2) -
+              f * (b + e) + 2 * sycl::pow(g, 2) - g * (c + e)) +
+         2 * l *
+             (18 * sycl::pow(h, 4) + 2 * sycl::pow(h, 2) * i -
+              sycl::pow(h, 2) * (2 * a + b + c + 2 * d - 2 * e - f - g)) +
+         (8.0 / 3.0) * m *
+             (24 * sycl::pow(h, 4) + 2 * sycl::pow(h, 2) * i -
+              sycl::pow(h, 2) * (2 * a + b - 2 * c - d + e + 2 * f - g)) +
+         (14.0 / 3.0) * n *
+             (42 * sycl::pow(h, 4) - 2 * sycl::pow(h, 2) * i +
+              sycl::pow(h, 2) * (2 * a - 2 * b + c - d + e - f + 2 * g));
+}
+
+template <std::size_t Dim, std::size_t... strides_all>
+DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
+                             DataType h) {
+  DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
+
+  std::array<int, Dim> length{(strides_all + 1)...};
+
+  sol_domain.q.parallel_for(
+      sycl::range((strides_all + 1)...),
+      sycl::reduction(result, sycl::plus<>()), [=](sycl::id<Dim> I, auto &r) {
+        r += f_grad(sol_domain(I[0], I[1], I[2]),
+                    sol_domain(I[0], I[1], I[2] + 1),
+                    sol_domain(I[0], I[1] + 1, I[2]),
+                    sol_domain(I[0], I[1] + 1, I[2] + 1),
+                    sol_domain(I[0] + 1, I[1], I[2]),
+                    sol_domain(I[0] + 1, I[1], I[2] + 1),
+                    sol_domain(I[0] + 1, I[1] + 1, I[2]),
+                    sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
+
+                    (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
+                    (DataType)I[2] / (length[2]), h);
       });
 
   DataType result_device = 0;
@@ -341,8 +396,8 @@ int main(int argc, char *argv[]) {
 
   // rhs_domain.domain.print_domain();
 
-  std::index_sequence<3> smoother_sequence_pre{};
-  std::index_sequence<3> smoother_sequence_post{};
+  std::index_sequence<2> smoother_sequence_pre{};
+  std::index_sequence<2> smoother_sequence_post{};
   GS_Smoother g_smoother(rhs_domain);
 
   // g_smoother(Integer<2>{}, std::index_sequence<2>{}, lhs_domain2,
@@ -384,17 +439,17 @@ int main(int argc, char *argv[]) {
 
   for (int num = 0; num < num_iter; num++) {
 
-    DataType const deviation = compute_truth_deviation(
-        u_domain, current->template get_domain<nlev>(), helper,
-        diff_operator.get_values(), diff_operator.get_offsets());
+    //  DataType const deviation = compute_truth_deviation(
+    //      u_domain, current->template get_domain<nlev>(), helper,
+    //      diff_operator.get_values(), diff_operator.get_offsets());
 
-    DataType const deviation_grad = compute_truth_deviaton_gradient(
-        u_domain, current->template get_domain<nlev>(), helper, helper2,
-        diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
+    //  DataType const deviation_grad = compute_truth_deviaton_gradient(
+    //      u_domain, current->template get_domain<nlev>(), helper, helper2,
+    //      diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
 
-    out_file_devation << "The deviation after " << num << " iterations is "
-                      << deviation << " The deviation_grad is "
-                      << deviation_grad << std::endl;
+    //  out_file_devation << "The deviation after " << num << " iterations is "
+    //                    << deviation << " The deviation_grad is "
+    //                    << deviation_grad << std::endl;
 
     v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, diff_operator,
@@ -419,6 +474,10 @@ int main(int argc, char *argv[]) {
   DataType result = compute_deviation(sol_domain, h);
 
   std::cout << "The deviation is given by " << result << std::endl;
+
+  DataType e_norm = compute_energy_norm(sol_domain, h);
+
+  std::cout << "The gradient is given by " << e_norm << std::endl;
 
   //  std::stringstream true_file_name;
   //  true_file_name << "u_domain" << base_length << ".dx";
