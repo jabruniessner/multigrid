@@ -900,7 +900,7 @@ struct V_Cycle_PBE {
         //  std::cout << "The defect domain before coarsening is: " <<
         //  std::endl; current.get_domain().print_domain();
 
-        level_transition::coarsening(
+        level_transition::coarsening_inject(
             rhs_domain.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),
