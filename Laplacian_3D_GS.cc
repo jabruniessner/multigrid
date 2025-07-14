@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
 #else
-  sycl::gpu_selector selector;
+  sycl::cpu_selector selector;
 #endif
 
   sycl::queue q(selector,
@@ -466,18 +466,18 @@ int main(int argc, char *argv[]) {
 
   q.wait();
 
-  auto &sol_domain = current->get_domain();
-
-  // std::cout << "The sol domain is given by: " << std::endl;
-  // sol_domain.print_domain();
-
-  DataType result = compute_deviation(sol_domain, h);
-
-  std::cout << "The deviation is given by " << result << std::endl;
-
-  DataType e_norm = compute_energy_norm(sol_domain, h);
-
-  std::cout << "The gradient is given by " << e_norm << std::endl;
+  //  auto &sol_domain = current->get_domain();
+  //
+  //  // std::cout << "The sol domain is given by: " << std::endl;
+  //  // sol_domain.print_domain();
+  //
+  //  DataType result = compute_deviation(sol_domain, h);
+  //
+  //  std::cout << "The deviation is given by " << result << std::endl;
+  //
+  //  DataType e_norm = compute_energy_norm(sol_domain, h);
+  //
+  //  std::cout << "The gradient is given by " << e_norm << std::endl;
 
   //  std::stringstream true_file_name;
   //  true_file_name << "u_domain" << base_length << ".dx";
