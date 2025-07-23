@@ -74,8 +74,11 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     ((num_dofs *= strides_all), ...);
 
     values_buff = sycl::malloc_device<DataType>(num_values, q);
-    q.wait();
-    // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+
+    if constexpr (std::is_arithmetic_v<DataType>) {
+      q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+      // q.wait();
+    }
   }
 
   template <typename... Positions>
