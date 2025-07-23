@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
 #else
-  sycl::cpu_selector selector;
+  sycl::gpu_selector selector;
 #endif
 
   sycl::queue q(selector,
@@ -199,10 +199,14 @@ int main(int argc, char *argv[]) {
       q);
   Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain2(
       q);
+  Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain3(
+      q);
   Multigrid_domain<3, nlev, base_length, base_length, base_length> rhs_domain(
       q);
   Multigrid_domain<3, nlev, base_length, base_length, base_length>
       boundary_values(q);
+  Multigrid_domain<3, nlev, base_length, base_length, base_length>
+      defect_domain(q);
 
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
       u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
@@ -391,8 +395,8 @@ int main(int argc, char *argv[]) {
                                Integer<base_length>{});
   //  // coarser.print_operator();
 
-  Convolve(rhs_domain.domain, boundary_values.domain,
-           diff_operator.get_values(), diff_operator.get_offsets());
+  //  Convolve(rhs_domain.domain, boundary_values.domain,
+  //           diff_operator.get_values(), diff_operator.get_offsets());
 
   // rhs_domain.domain.print_domain();
 
@@ -418,8 +422,8 @@ int main(int argc, char *argv[]) {
   V_Cycle_base v_cycle(g_smoother, g_smoother, solver, lhs_domain1, mult_level,
                        diff_operator, coarser);
 
-  auto *current = &lhs_domain1;
-  auto *next = &lhs_domain2;
+  auto *current = &lhs_domain2;
+  auto *next = &lhs_domain3;
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
       helper2(Paddings::PERIODIC, q, 1);
 
@@ -439,24 +443,33 @@ int main(int argc, char *argv[]) {
 
   for (int num = 0; num < num_iter; num++) {
 
-    //  DataType const deviation = compute_truth_deviation(
-    //      u_domain, current->template get_domain<nlev>(), helper,
-    //      diff_operator.get_values(), diff_operator.get_offsets());
+    DataType const deviation = compute_truth_deviation(
+        u_domain, lhs_domain1.get_domain(), helper, diff_operator.get_values(),
+        diff_operator.get_offsets());
 
-    //  DataType const deviation_grad = compute_truth_deviaton_gradient(
-    //      u_domain, current->template get_domain<nlev>(), helper, helper2,
-    //      diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
+    DataType const deviation_grad = compute_truth_deviaton_gradient(
+        u_domain, lhs_domain1.get_domain(), helper, helper2,
+        diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
 
-    //  out_file_devation << "The deviation after " << num << " iterations is "
-    //                    << deviation << " The deviation_grad is "
-    //                    << deviation_grad << std::endl;
+    out_file_devation << "The deviation after " << num << " iterations is "
+                      << deviation << " The deviation_grad is "
+                      << deviation_grad << std::endl;
 
-    v_cycle.iteration(*next, *current, rhs_domain, mult_level, diff_operator,
+    // Computing the defect
+    convolution::Subtract_Convolve(
+        defect_domain.get_domain(), lhs_domain1.get_domain(),
+        rhs_domain.get_domain(), diff_operator.get_values(),
+        diff_operator.get_offsets());
+
+    v_cycle.iteration(*next, *current, defect_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, diff_operator,
                       num_iters_level, smoother_sequence_pre,
-                      smoother_sequence_post);
+                      smoother_sequence_post, true);
 
-    std::swap(current, next);
+    add_domains(lhs_domain1.get_domain(), next->get_domain(),
+                lhs_domain1.get_domain());
+
+    // std::swap(current, next);
 
     //  std::cout << "After the iterations the current is: " << std::endl;
     //  current->get_domain().print_domain();
@@ -466,18 +479,18 @@ int main(int argc, char *argv[]) {
 
   q.wait();
 
-  //  auto &sol_domain = current->get_domain();
-  //
-  //  // std::cout << "The sol domain is given by: " << std::endl;
-  //  // sol_domain.print_domain();
-  //
-  //  DataType result = compute_deviation(sol_domain, h);
-  //
-  //  std::cout << "The deviation is given by " << result << std::endl;
-  //
-  //  DataType e_norm = compute_energy_norm(sol_domain, h);
-  //
-  //  std::cout << "The gradient is given by " << e_norm << std::endl;
+  auto &sol_domain = current->get_domain();
+
+  // std::cout << "The sol domain is given by: " << std::endl;
+  // sol_domain.print_domain();
+
+  DataType result = compute_deviation(lhs_domain1.get_domain(), h);
+
+  std::cout << "The deviation is given by " << result << std::endl;
+
+  DataType e_norm = compute_energy_norm(lhs_domain1.get_domain(), h);
+
+  std::cout << "The gradient is given by " << e_norm << std::endl;
 
   //  std::stringstream true_file_name;
   //  true_file_name << "u_domain" << base_length << ".dx";

@@ -627,12 +627,17 @@ struct V_Cycle_base {
 
         if (iter_level == nlev) {
           PROFILE_START(residual_computation)
-          DataType const residual = compute_residual(
-              rhs_domain.template get_domain<nlev>(),
-              current.template get_domain<nlev>(),
-              next.template get_domain<nlev>(), diff_operator.get_values(),
-              diff_operator.get_offsets());
+          //  DataType const residual = compute_residual(
+          //      rhs_domain.template get_domain<nlev>(),
+          //      current.template get_domain<nlev>(),
+          //      next.template get_domain<nlev>(), diff_operator.get_values(),
+          //      diff_operator.get_offsets());
 
+          DataType residual;
+          domain_compute_norm_squared(residual,
+                                      rhs_domain.template get_domain<nlev>());
+          residual = std::sqrt(residual /
+                               rhs_domain.template get_domain<nlev>().num_dofs);
           std::cout << "The residual after " << j << " iterations is "
                     << residual << std::endl;
           PROFILE_END(residual_computation)
@@ -661,15 +666,18 @@ struct V_Cycle_base {
         //    std::endl; current.get_domain().print_domain();
         //  }
 
-        PROFILE_START(restriction)
-        convolution::Convolve(current.template get_domain<iter_level>(),
-                              next.template get_domain<iter_level>(),
-                              Diff_operator.template get_values<iter_level>(),
-                              Diff_operator.template get_offsets<iter_level>());
+        PROFILE_START(defect_computation)
+        convolution::Subtract_Convolve(
+            current.template get_domain<iter_level>(),
+            next.template get_domain<iter_level>(),
+            rhs_domain.template get_domain<iter_level>(),
+            Diff_operator.template get_values<iter_level>(),
+            Diff_operator.template get_offsets<iter_level>());
 
-        subtract_domains(current.template get_domain<iter_level>(),
-                         rhs_domain.template get_domain<iter_level>(),
-                         current.template get_domain<iter_level>());
+        //  subtract_domains(current.template get_domain<iter_level>(),
+        //                   rhs_domain.template get_domain<iter_level>(),
+        //                   current.template get_domain<iter_level>());
+        PROFILE_END(defect_computation)
 
         //  if constexpr (iter_level == nlev) {
         //    std::cout << "The next after the subtract_domains is: " <<
@@ -690,7 +698,7 @@ struct V_Cycle_base {
         //                                                              0, 0,
         //                                                              1);
         //  }
-
+        PROFILE_START(restriction)
         level_transition::coarsening_inject(
             rhs_domain.template get_domain<iter_level - 1>(),
             current.template get_domain<iter_level>(),

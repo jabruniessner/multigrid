@@ -82,6 +82,32 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                     std::make_index_sequence<Dim>());
 }
 
+template <typename DataType, size_t size, std::size_t... strides_all>
+void coarsening_inject_sequential(
+    Domain<3, ((strides_all + 1) / 2 - 1)...> &dest,
+    Domain<3, strides_all...> &src) {
+  assert(dest.q == src.q);
+  // assert(dest.padding_width == src.padding_width);
+  constexpr std::array<const std::size_t, 3> a{strides_all...};
+
+  dest.q.submit([&](sycl::handler &h) {
+    h.single_task([=]() {
+      int i_coarse = 1;
+      for (int i = 1; i <= a[0]; i += 2) {
+        int j_coarse = 1;
+        for (int j = 1; j <= a[1]; j += 2) {
+          int k_coarse = 1;
+          for (int k = 1; k <= a[2]; k += 2) {
+            dest(i_coarse++, j_coarse++, k_coarse++) = src(i, j, k);
+          }
+        }
+      }
+    });
+  });
+
+  // dest.q.wait();
+}
+
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, std::size_t... dims>
 void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,

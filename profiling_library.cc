@@ -18,6 +18,7 @@ Values::~Values() {
 
   PRINT_TIMING(overall_time);
   PRINT_TIMING(pre_smoothing);
+  PRINT_TIMING(defect_computation);
   PRINT_TIMING(restriction);
   PRINT_TIMING(refinement);
   PRINT_TIMING(post_smoothing);

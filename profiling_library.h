@@ -15,6 +15,7 @@ struct stack_depth {
 struct Values {
   double pre_smoothing = 0;
   double refinement = 0;
+  double defect_computation = 0;
   double restriction = 0;
   double post_smoothing = 0;
   double residual_computation = 0;
