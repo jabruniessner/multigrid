@@ -16,33 +16,37 @@ using namespace domain;
 // constexpr Length nlev = 5;
 // constexpr Length values_1D = utils::Power<2u, nlev>::value - 1;
 
-template <Dimension Dim, std::size_t nlev, std::size_t... base_length>
-struct Multigrid_domain
-    : public Multigrid_domain<Dim, nlev - 1, base_length...> {
+template <typename DataType, Dimension Dim, std::size_t nlev,
+          std::size_t... base_length>
+struct Multigrid_domain_t
+    : public Multigrid_domain_t<DataType, Dim, nlev - 1, base_length...> {
 
   using OffsetType = std::array<int, Dim>;
 
-  Multigrid_domain(sycl::queue &q)
+  Multigrid_domain_t(sycl::queue &q)
       : domain(Paddings::PERIODIC, q, 1),
-        Multigrid_domain<Dim, nlev - 1, base_length...>(q) {};
+        Multigrid_domain_t<DataType, Dim, nlev - 1, base_length...>(q) {};
 
   template <std::size_t lev = nlev, typename... Position1D>
   DataType get_value(Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
     static_assert(sizeof...(Position1D) == Dim);
-    return Multigrid_domain<Dim, lev, base_length...>::domain.get_value(i...);
+    return Multigrid_domain_t<DataType, Dim, lev, base_length...>::domain
+        .get_value(i...);
   }
 
   template <std::size_t lev = nlev, typename... Position1D>
   void set_value(DataType val, Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
     static_assert(sizeof...(Position1D) == Dim);
-    Multigrid_domain<Dim, lev, base_length...>::domain.set_value(val, i...);
+    Multigrid_domain_t<DataType, Dim, lev, base_length...>::domain.set_value(
+        val, i...);
   }
 
   template <std::size_t lev = nlev>
-  decltype(Multigrid_domain<Dim, lev, base_length...>::domain) &get_domain() {
-    return Multigrid_domain<Dim, lev, base_length...>::domain;
+  decltype(Multigrid_domain_t<DataType, Dim, lev, base_length...>::domain) &
+  get_domain() {
+    return Multigrid_domain_t<DataType, Dim, lev, base_length...>::domain;
   }
 
   void print_level() { std::cout << nlev << std::endl; }
@@ -60,7 +64,7 @@ struct Multigrid_domain
   }
 
   template <std::size_t level = nlev> auto get_length() {
-    return Multigrid_domain<Dim, level, base_length...>::length;
+    return Multigrid_domain_t<DataType, Dim, level, base_length...>::length;
   }
 
   template <std::size_t... indices> struct Domain_Type {
@@ -69,7 +73,7 @@ struct Multigrid_domain
     }
     constexpr static std::tuple length =
         std::make_tuple((base_length * utils::Power<2u, nlev>::value - 1)...);
-    using domain_t = Domain<Dim, std::get<indices>(length)...>;
+    using domain_t = Grid<DataType, Dim, std::get<indices>(length)...>;
   };
 
   template <std::size_t... indices>
@@ -83,9 +87,9 @@ struct Multigrid_domain
   decltype(domain_t_v)::domain_t domain;
 };
 
-template <Dimension Dim, std::size_t... base_length>
-struct Multigrid_domain<Dim, 0u, base_length...> {
-  Multigrid_domain(sycl::queue &q) : domain(Paddings::PERIODIC, q, 1) {}
+template <typename DataType, Dimension Dim, std::size_t... base_length>
+struct Multigrid_domain_t<DataType, Dim, 0u, base_length...> {
+  Multigrid_domain_t(sycl::queue &q) : domain(Paddings::PERIODIC, q, 1) {}
 
   template <typename... Position1D> DataType get_value(Position1D... i) {
     return domain.get_value(i...);
@@ -106,7 +110,7 @@ struct Multigrid_domain<Dim, 0u, base_length...> {
     }
     constexpr static std::tuple length =
         std::make_tuple((base_length * utils::Power<2u, 0u>::value - 1)...);
-    using domain_t = Domain<Dim, std::get<indices>(length)...>;
+    using domain_t = Grid<DataType, Dim, std::get<indices>(length)...>;
   };
 
   template <std::size_t... indices>
@@ -118,10 +122,14 @@ struct Multigrid_domain<Dim, 0u, base_length...> {
   decltype(Domain_Type(std::make_index_sequence<Dim>{}))::domain_t domain;
 };
 
+template <Dimension Dim, std::size_t nlev, std::size_t... base_length>
+using Multigrid_domain =
+    Multigrid_domain_t<DataType, Dim, nlev, base_length...>;
+
 template <Dimension Dim, std::size_t nlev, std::size_t level = nlev,
           std::size_t... base_length>
 void print_multigrid_domain(
-    Multigrid_domain<Dim, nlev, base_length...> &MultDomain) {
+    Multigrid_domain_t<DataType, Dim, nlev, base_length...> &MultDomain) {
   if constexpr (level == 0) {
     return;
   } else {
