@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <ostream>
 #include <tuple>
@@ -257,6 +258,104 @@ struct GS_Smoother {
     if constexpr (num_iters == 0) {
       return;
     } else {
+      for (int i = 0; i < num_iters; i++) {
+        for (int color = 0; color < 2; color++) {
+          src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+            ((I[dims] += src_domain.padding_width), ...);
+
+            if ((I[dims] + ...) % 2 == color) {
+              const auto subs =
+                  (index_sub_in_place(dims, src_domain, I[dims]...) + ...) *
+                  (zeros_start && i == 0 ? color : 1);
+
+              const auto adds =
+                  (index_add_in_place(dims, src_domain, I[dims]...) + ...) *
+                  (zeros_start && i == 0 ? color : 1);
+
+              src_domain(I[dims]...) =
+                  diag_inverse * (adds + subs + h * h * rhs_domain(I[dims]...));
+            }
+          });
+        }
+      }
+    }
+
+    std::swap(dest_domain.values_buff, src_domain.values_buff);
+  }
+
+  template <std::size_t level, typename DataType, std::size_t... Num_Iters>
+  void operator()(Integer<level>, std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
+                  Multigrid_domain<Dim, nlev, base_length...> &src,
+                  Multigrid_domain<Dim, nlev, base_length...> &rhs,
+                  DataType grid_step, DataType omega,
+                  const bool zeros_initialize = false)
+
+  {
+    this->operator()(Integer<level>{}, std::index_sequence<Num_Iters...>{},
+                     dest, src, rhs, grid_step, omega,
+                     std::make_index_sequence<Dim>{}, zeros_initialize);
+  }
+};
+
+template <Dimension Dim, std::size_t nlev, Length... base_length>
+struct GS_Smoother_epsilon {
+  GS_Smoother_epsilon() {};
+
+  GS_Smoother_epsilon(Multigrid_domain<Dim, nlev, base_length...>) {}
+
+  template <std::size_t num> struct TD;
+
+  template <std::size_t level, typename DataType, std::size_t... Num_Iters,
+            std::size_t... dims>
+  void operator()(Integer<level>, std::index_sequence<Num_Iters...>,
+                  Multigrid_domain<Dim, nlev, base_length...> &dest,
+                  Multigrid_domain<Dim, nlev, base_length...> &src,
+                  Multigrid_domain<Dim, nlev, base_length...> &rhs,
+                  Multigrid_domain<Dim, nlev, base_length...> &epsilon,
+                  const DataType grid_step, const DataType omega,
+                  std::index_sequence<dims...>, bool zeros_start = false)
+
+  {
+
+    static_assert(sizeof...(Num_Iters) == 1 ||
+                  sizeof...(Num_Iters) == nlev - 1);
+
+    static_assert(Dim == sizeof...(dims));
+
+    constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
+
+    auto &dest_domain = dest.template get_domain<level>();
+    auto &src_domain = src.template get_domain<level>();
+    auto &rhs_domain = rhs.template get_domain<level>();
+    auto &epsilon_domain = epsilon.template get_domain<level>();
+    using d_type = std::remove_reference_t<decltype(src_domain)>;
+
+    const DataType h = grid_step;
+    const DataType diag_inverse = omega / (2 * Dim);
+
+    std::array<Dimension, Dim> strides_array =
+        std::to_array(src_domain.strides);
+    auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
+
+    auto index_add_in_place = [=](int place, const d_type domain,
+                                  auto... elems) {
+      std::array<std::size_t, sizeof...(elems)> indices{elems...};
+      indices[place] += 1;
+      return std::apply(domain, indices);
+    };
+
+    auto index_sub_in_place = [=](int place, const d_type domain,
+                                  auto... elems) {
+      std::array<std::size_t, sizeof...(elems)> indices{elems...};
+      indices[place] -= 1;
+      return std::apply(domain, indices);
+    };
+
+    if constexpr (num_iters == 0) {
+      return;
+    } else {
+
       for (int i = 0; i < num_iters; i++) {
         for (int color = 0; color < 2; color++) {
           src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {

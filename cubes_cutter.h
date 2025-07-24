@@ -29,9 +29,10 @@ struct Cutter {
       const DataType *sphere_position, const DataType sphere_radius,
       const DataType grid_step, const std::size_t position_0,
       const std::size_t position_1, const std::size_t position_2,
-      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
-      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside)
-      const {
+      const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid
+
+  ) const {
 
     Cutter_utils::vector3d point{static_cast<DataType>(position_0),
                                  static_cast<DataType>(position_1),
@@ -62,15 +63,16 @@ struct Cutter {
   }
 };
 
-template <typename Cutter, typename DataType, typename... Domains,
-          std::size_t... DomainSize, Dimension Dim, typename... Positions,
-          Length... directions>
+template <Length length, typename Cutter, typename DataType,
+          typename... Domains, std::size_t... DomainSize, Dimension Dim,
+          typename... Positions, Length... directions>
 void cutting_cubes_helper(
     const Cutter &cutter,
-    std::tuple<Sphere<DataType, Dim> &, const DataType &,
-               const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., 19> &,
-               const domain::Grid<std::uint32_t, Dim, DomainSize...> &,
-               Domains &...>
+    std::tuple<
+        Sphere<DataType, Dim> &, const DataType &,
+        const domain::Grid<std::uint32_t, Dim, DomainSize...> &,
+        const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., length> &,
+        Domains &...>
         arg_tuple,
     const std::index_sequence<directions...>, Positions... positions) {
 
@@ -178,7 +180,7 @@ void cutting_cubes_helper(
         .5);
 
     for (int i = lower_bound; i <= upper_bound; ++i) {
-      cutting_cubes_helper(
+      cutting_cubes_helper<length>(
           cutter, arg_tuple,
           std::make_index_sequence<sizeof...(directions) + 1>{}, i);
     }
@@ -205,7 +207,7 @@ void cutting_cubes_helper(
     const int upper_bound = std::floor((current_value + sqrt) / grid_step - .5);
 
     for (int i = lower_bound; i <= upper_bound; i++) {
-      cutting_cubes_helper(
+      cutting_cubes_helper<length>(
           cutter, arg_tuple, // NOLINT
           std::make_index_sequence<sizeof...(directions) + 1>{}, positions...,
           i);
@@ -213,16 +215,18 @@ void cutting_cubes_helper(
   }
 }
 
-template <typename Cutter, typename DataType, Dimension Dim,
+template <Length length, typename Cutter, typename DataType, Dimension Dim,
           typename... Domains, Length... DomainSize>
 void cutting_cubes(
     const Cutter &cutter,
-    std::tuple<Sphere<DataType, Dim> &, const DataType &,
-               const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., 19> &,
-               const domain::Grid<std::uint32_t, Dim, DomainSize...> &,
-               Domains &...>
+    std::tuple<
+        Sphere<DataType, Dim> &, const DataType &,
+        const domain::Grid<std::uint32_t, Dim, DomainSize...> &,
+        const domain::Grid<std::uint32_t, Dim + 1, DomainSize..., length> &,
+        Domains &...>
         arg_tuple) {
-  cutting_cubes_helper(cutter, arg_tuple, std::make_index_sequence<0u>{});
+  cutting_cubes_helper<length>(cutter, arg_tuple,
+                               std::make_index_sequence<0u>{});
 }
 
 } // namespace cubes_cutter

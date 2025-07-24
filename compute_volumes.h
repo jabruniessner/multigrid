@@ -210,8 +210,8 @@ struct Volume_comp {
       const DataType *sphere_position, const DataType sphere_radius,
       const DataType grid_step, const std::size_t position_0,
       const std::size_t position_1, const std::size_t position_2,
-      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
       const domain::Grid<std::uint32_t, Dim, side_lengths...> &inside_outside,
+      const domain::Grid<std::uint32_t, Dim + 1, side_lengths..., 19> &tet_grid,
       const domain::Grid<DataType, Dim + 1, side_lengths..., 6> &tetrahedra)
       const {
 

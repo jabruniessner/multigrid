@@ -105,9 +105,12 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     return k;
   }
 
-  std::enable_if_t<std::is_floating_point_v<DataType>>
-  print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
-                     DataType zmin, DataType Box_length) const {
+  template <typename DataType2>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                       std::is_same_v<DataType2, DataType>,
+                   void>
+  print_dx_to_stream(std::ostream &out, DataType2 xmin, DataType2 ymin,
+                     DataType2 zmin, DataType2 Box_length) const {
 
 #define format_v(X) std::format("{:<+13e} ", X)
 
@@ -157,8 +160,9 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     out << "component \"data\" value 3" << std::endl;
   }
 
-  template <typename... Indices>
-  std::enable_if_t<std::is_floating_point_v<DataType>>
+  template <typename... Indices, typename DataType2 = DataType>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
   print_domain(Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
       for (Position1D i = 0;
@@ -170,8 +174,9 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     }
   };
 
-  template <typename... Indices>
-  std::enable_if_t<std::is_floating_point_v<DataType>>
+  template <typename... Indices, typename DataType2 = DataType>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
   print_domain_to_stream(std::ostream &output, Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
       constexpr auto size = sizeof...(Indices);
@@ -187,20 +192,25 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     }
   }
 
-  template <std::size_t... Ints>
-  std::enable_if_t<std::is_floating_point_v<DataType>>
+  template <std::size_t... Ints, typename DataType2 = DataType>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
   print_header(std::ostream &output, std::index_sequence<Ints...>) {
     output << "Dimension: " << Dim << std::endl;
     output << "Number of points in direction:" << std::endl;
     ((output << "Dir " << Ints << " " << strides_all + 1 << std::endl), ...);
   }
 
-  std::enable_if_t<std::is_floating_point_v<DataType>>
+  template <typename DataType2 = DataType>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
   print_header(std::ostream &output) {
     print_header(output, std::make_index_sequence<Dim>{});
   }
 
-  std::enable_if_t<std::is_floating_point_v<DataType>>
+  template <typename DataType2 = DataType>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
   print_to_output(std::ostream &output) {
     print_header(output);
     print_domain_to_stream(output);
