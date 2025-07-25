@@ -30,7 +30,7 @@ constexpr DataType delta_epsilon = epsilon_p - epsilon_r;
 constexpr DataType grid_step = 1.;
 constexpr std::size_t nlev = 4;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 16;
+constexpr std::size_t side_length = 6;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
 using MG_domain =
@@ -41,8 +41,6 @@ using MG_domain =
 template <typename T> struct TD;
 
 using cube_tetrahedrons = std::array<sycl::half, 6>;
-
-template <typename T> struct TD;
 
 template <std::size_t level = nlev>
 void coarsen_domains(MG_domain<std::uint32_t, 0u> domain) {
@@ -77,6 +75,7 @@ void mark_epsilons_helper(
 
     if (std::apply(io_domain, (vec_base)vector) == 1) {
       values(pos..., j) = static_cast<num_type_3>(1);
+      return;
     }
   }
 }

@@ -1,0 +1,27 @@
+read
+mol pqr single_atom.pqr
+end
+
+elec name viz
+mg-manual
+dime 33 33 33
+grid .5 .5 .5
+gcent  mol 1
+mol 1
+lpbe
+bcfl mdh
+ion charge 1 conc 0.15 radius 1.500
+ion charge -1 conc 0.15 radius 1.500
+pdie 4.0
+sdie 78.4
+chgm spl0
+srfm mol
+srad 0.0
+swin 0.3
+temp 298.15
+write kappa dx kappa_apbs
+write charge dx charge_apbs
+write pot dx single_atom
+end
+
+quit
