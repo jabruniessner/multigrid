@@ -47,16 +47,22 @@ constexpr auto make_index_sequence_with_offset() {
 }
 
 template <typename Tuple, std::size_t... Ints>
-std::tuple<std::tuple_element_t<Ints, Tuple>...>
+constexpr std::tuple<std::tuple_element_t<Ints, Tuple>...>
 extract_tuple(Tuple &&tuple, std::index_sequence<Ints...>) {
   return {std::get<Ints>(std::forward<Tuple>(tuple))...};
 }
 
 template <typename Tuple, std::size_t... Ints>
-std::tuple<std::tuple_element_t<Ints, Tuple>...>
+constexpr std::tuple<std::tuple_element_t<Ints, Tuple>...>
 extract_tuple(Tuple &tuple, std::index_sequence<Ints...>) {
   return {std::get<Ints>(std::forward<Tuple>(tuple))...};
 }
+
+// template <typename Tuple, std::size_t... Ints>
+// constexpr std::tuple<std::tuple_element_t<Ints, Tuple>...>
+// extract_tuple(Tuple tuple, std::index_sequence<Ints...>) {
+//   return {std::get<Ints>(std::forward<Tuple>(tuple))...};
+// }
 
 template <std::size_t index, typename... Elements>
 constexpr auto get_stack_element(Elements... elements) {
@@ -83,11 +89,25 @@ template <std::size_t base> struct Power<base, 0u> {
   constexpr static std::size_t value = 1;
 };
 
+template <typename Func, typename... Ts>
+constexpr auto tuple_map(const std::tuple<Ts...> &t, Func f) {
+  return std::apply(
+      [&](const Ts &...elems) { return std::make_tuple(f(elems)...); }, t);
+}
+
 template <Arithmetic T> constexpr T power_off(T t, std::size_t n) {
   if (n == 0) {
     return 1;
   } else {
     return t * power_off(t, n - 1);
+  }
+}
+
+template <UnsignedIntegral T> constexpr T factorial(T t) {
+  if (t == 0) {
+    return 1;
+  } else {
+    return t * factorial(t - 1);
   }
 }
 

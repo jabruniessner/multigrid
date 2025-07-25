@@ -37,7 +37,7 @@ constexpr DataType grid_step = 1;
 constexpr DataType delta_epsilon = 0; // Difference in epsilon
 
 using Domain_Type =
-    Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
+    Multigrid_domain<Dim, 0u, nlev, base_length, base_length, base_length>;
 
 using Domain_Type_upper = decltype(Domain_Type::domain_t_v)::domain_t;
 

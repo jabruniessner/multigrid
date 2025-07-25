@@ -96,4 +96,13 @@ inline DataType determinant(DataType Matrix[3][3]) {
 
 } // namespace blas
 
+// makeing the vector tuple like
+namespace std {
+template <typename T, std::size_t N>
+struct tuple_size<blas::vector<T, N>> : tuple_size<array<T, N>> {};
+
+template <std::size_t I, typename T, std::size_t N>
+struct tuple_element<I, blas::vector<T, N>> : tuple_element<I, array<T, N>> {};
+} // namespace std
+
 #endif // !BLAS_H

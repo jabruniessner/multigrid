@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
                 sycl::property_list{sycl::property::queue::in_order{},
                                     sycl::property::queue::enable_profiling{}});
 
-  constexpr std::size_t nlev = 5u;
+  constexpr std::size_t nlev = 2u;
   constexpr std::size_t base_length = 16u;
   constexpr DataType omega = 1.;
   // constexpr DataType box_length = 12;

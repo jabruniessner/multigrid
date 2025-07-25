@@ -797,6 +797,7 @@ struct V_Cycle_base {
         //                                                              0, 0,
         //                                                              1);
         //  }
+
         PROFILE_START(restriction)
         level_transition::coarsening_inject(
             rhs_domain.template get_domain<iter_level - 1>(),

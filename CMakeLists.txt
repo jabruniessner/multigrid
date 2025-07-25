@@ -63,6 +63,13 @@ add_executable(compute_vol_2_spheres compute_volume_2_spheres.cc)
 add_executable(partial_volume_computes computing_partial_volumes.cc fileio.cc)
 
 
+add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc fileio.cc)
+# Link NVTX to your target
+target_link_libraries(Laplacian3D_epsilon PRIVATE prof)
+target_compile_definitions(Laplacian3D_epsilon PRIVATE PROFILING)
+
+
+
 
 message(STATUS "C++ Compiler: ${CMAKE_CXX_COMPILER}")
 
