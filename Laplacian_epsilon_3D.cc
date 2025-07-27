@@ -152,8 +152,12 @@ void set_n_values_to_one_and_f(
 }
 
 // This functions is intended for use with Paddingwidth 1
+
+int checker_count = 0;
 void check_correctness(std::array<std::uint8_t, 8> epsilon,
                        std::array<std::uint8_t, 6> tets) {
+
+  checker_count++;
 
   auto i = std::reduce(tets.begin(), tets.end());
   // Checking whether the number is correct first check for 0 and 7
@@ -181,9 +185,9 @@ void check_correctness(std::array<std::uint8_t, 8> epsilon,
 
       for (std::uint8_t j = 0; indices != 0; indices &= indices - 1, j++) {
         std::uint8_t lsb_i = indices & (~indices + 1);
-        std::cout << "The value for k is: " << (int)k << std::endl;
-        std::cout << "lsb_i: " << (int)lsb_i << " lsb: " << (int)lsb
-                  << std::endl;
+        //  std::cout << "The value for k is: " << (int)k << std::endl;
+        //  std::cout << "lsb_i: " << (int)lsb_i << " lsb: " << (int)lsb
+        //            << std::endl;
         if (lsb_i + lsb == k) {
           auto index = __builtin_ctz(lsb);
           assert(tets[2 * index + j]);
@@ -322,6 +326,8 @@ int main(int argc, char *argv[]) {
 
     q.wait();
   }
+
+  std::cout << "The checker count is: " << checker_count << std::endl;
 
   return 0;
 }
