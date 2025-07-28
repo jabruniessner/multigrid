@@ -10,6 +10,13 @@
 
 namespace utils {
 
+template <typename First, typename... Rest> struct First_struct {
+  using Type = First;
+};
+
+template <typename First, typename... Rest>
+using First_t = typename First_struct<First, Rest...>::Type;
+
 template <typename Tuple1, typename Tuple2, std::size_t... indices>
 void add_to_tuple(Tuple1 &tuple_1, Tuple2 &tuple_2,
                   std::index_sequence<indices...>) {

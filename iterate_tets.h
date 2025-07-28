@@ -8,7 +8,7 @@
 
 template <Dimension Dim, Dimension helper_dim, UnsignedIntegral num_type,
           typename Callable>
-inline void iterate_over_tets_helper(std::array<num_type, Dim + 1> &a,
+inline void iterate_over_tets_helper(blas::vector<num_type, Dim + 1> &a,
                                      num_type indices, std::size_t &j,
                                      Callable func) {
   if constexpr (helper_dim == Dim) {
@@ -33,7 +33,7 @@ template <Dimension Dim, UnsignedIntegral num_type, typename Callable>
 inline void iterate_over_tets(Callable func) {
   constexpr auto upper_limit = utils::Power<2, Dim>::value;
   // number of corners in tetrahedra: Dim+1
-  std::array<num_type, Dim + 1> a{};
+  blas::vector<num_type, Dim + 1> a{};
   // Last corner will always be 2^Dim-1
   constexpr num_type mask = utils::Power<2, Dim>::value - 1;
 

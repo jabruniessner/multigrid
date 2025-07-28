@@ -1,8 +1,11 @@
+#include "bitshift_lib.h"
+#include "iterate_tets.h"
 #include "predefinitions.h"
 #include "utils.h"
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <iostream>
 #include <ostream>
@@ -161,7 +164,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   }
 
   template <typename... Indices, typename DataType2 = DataType>
-  std::enable_if_t<std::is_floating_point_v<DataType> &&
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
                    std::is_same_v<DataType, DataType2>>
   print_domain(Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
@@ -170,12 +173,18 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
         print_domain(indices..., i);
       std::cout << std::endl;
     } else {
-      std::cout << std::format("{:6.3f} ", this->get_value(indices...));
+      if constexpr (std::is_floating_point_v<DataType>) {
+        std::cout << std::format("{:6.3f} ", this->get_value(indices...));
+      } else if constexpr (std::is_same_v<DataType, std::uint8_t>) {
+        std::cout << (int)(this->get_value(indices...));
+      } else {
+        std::cout << this->get_value(indices...);
+      }
     }
   };
 
   template <typename... Indices, typename DataType2 = DataType>
-  std::enable_if_t<std::is_floating_point_v<DataType> &&
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
                    std::is_same_v<DataType, DataType2>>
   print_domain_to_stream(std::ostream &output, Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
@@ -193,7 +202,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   }
 
   template <std::size_t... Ints, typename DataType2 = DataType>
-  std::enable_if_t<std::is_floating_point_v<DataType> &&
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
                    std::is_same_v<DataType, DataType2>>
   print_header(std::ostream &output, std::index_sequence<Ints...>) {
     output << "Dimension: " << Dim << std::endl;
@@ -202,14 +211,14 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   }
 
   template <typename DataType2 = DataType>
-  std::enable_if_t<std::is_floating_point_v<DataType> &&
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
                    std::is_same_v<DataType, DataType2>>
   print_header(std::ostream &output) {
     print_header(output, std::make_index_sequence<Dim>{});
   }
 
   template <typename DataType2 = DataType>
-  std::enable_if_t<std::is_floating_point_v<DataType> &&
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
                    std::is_same_v<DataType, DataType2>>
   print_to_output(std::ostream &output) {
     print_header(output);
@@ -226,6 +235,88 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
 
   static constexpr std::array<Length, Dim> length{strides_all...};
 };
+
+template <typename DataType, UnsignedIntegral Num_Type, Dimension Dim,
+          typename F_type, Length... strides_all, typename... Positions>
+void print_grid_with_f(
+    Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> domain,
+    DataType grid_step, std::ostream &out, F_type function,
+    std::size_t boundary, Positions... positions) {
+
+  if constexpr (sizeof...(Positions) == Dim) {
+    function(domain, grid_step, out, positions...);
+  } else {
+    std::array<Length, sizeof...(strides_all)> a{(strides_all + boundary)...};
+    for (int i = 0; i < a[sizeof...(Positions)]; i++) {
+      print_grid_with_f<DataType, Num_Type, Dim, F_type, strides_all...>(
+          domain, grid_step, out, function, boundary, positions..., i);
+    }
+  }
+}
+
+// template <typename DataType, UnsignedIntegral Num_Type, Dimension Dim,
+//           Length... strides_all, typename... Positions>
+// void print_tets(
+//     Grid<DataType, Dim + 1, strides_all..., utils::factorial(Dim) - 2>
+//     domain, DataType grid_step, std::ostream &out, Positions... positions) {
+//
+//   if constexpr (sizeof...(Positions) == Dim) {
+//
+//   } else {
+//   }
+// }
+template <typename DataType> class TD;
+
+template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all,
+          typename... Positions>
+void print_grid_to_inp(
+    Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> &grid,
+    DataType grid_step, std::ostream &out) {
+
+  std::size_t num_values = ((strides_all + 2 * grid.padding_width) * ...);
+  std::size_t num_tets =
+      utils::factorial(Dim) * ((strides_all + grid.padding_width) * ...);
+
+  out << num_values << " " << num_tets << " 0 0" << std::endl;
+  auto print_points = [&](auto domain, auto grid_step, auto &out,
+                          auto... positions) {
+    out << flatten_index<strides_all...>(grid.padding_width, positions...)
+        << " ";
+
+    ((out << std::format("{:6.3e}", grid_step * positions) << " "), ...);
+    out << std::endl;
+  };
+
+  auto print_tets = [&](auto domain, auto grid_step, auto &out,
+                        auto... positions) {
+    auto print_tet = [&](blas::vector<Num_Type, Dim + 1> &a, auto j) {
+      auto index = flatten_index<strides_all..., utils::factorial(Dim) - 2>(
+          grid.padding_width, positions..., j);
+      out << index << " " << (int)grid.get_value(positions..., j) << " tet ";
+
+      auto num_pos = a + blas::vector<int, Dim + 1>{positions...};
+      // auto num_pos = blas::vector<int, Dim + 1>{positions...} + a;
+
+      for (auto i : num_pos) {
+        out << i << " ";
+      }
+      out << std::endl;
+      // out << grid.get_value(positions, j)
+    };
+
+    iterate_over_tets<Dim, Num_Type>(print_tet);
+  };
+
+  print_grid_with_f<DataType, Num_Type, Dim, decltype(print_points),
+                    strides_all...>(grid, grid_step, out, print_points,
+                                    2 * grid.padding_width);
+
+  print_grid_with_f<DataType, Num_Type, Dim, decltype(print_tets),
+                    strides_all...>(grid, grid_step, out, print_tets,
+                                    grid.padding_width);
+
+  // print_tets();
+}
 
 template <Dimension Dim, Length... strides_all>
 using Domain = Grid<DataType, Dim, strides_all...>;

@@ -1,6 +1,8 @@
 #include "concepts.h"
 #include "predefinitions.h"
 #include <array>
+#include <ranges>
+#include <type_traits>
 
 #ifndef BLAS_H
 #define BLAS_H
@@ -15,31 +17,42 @@ struct vector : std::array<DataType, Dim> {
   template <typename... T>
   constexpr vector(const T... t) : std::array<DataType, Dim>{t...} {}
 
-  inline constexpr vector operator+(const vector &vector2) const {
-    vector new_vec;
+  template <typename Other_type>
+  using common_type = std::common_type_t<DataType, Other_type>;
+
+  template <typename Other_type>
+  inline constexpr vector<common_type<Other_type>, Dim>
+  operator+(const vector<Other_type, Dim> &vector2) const {
+    vector<common_type<Other_type>, Dim> new_vec;
     for (int i = 0; i < Dim; i++)
       new_vec[i] = vector2[i] + (*this)[i];
 
     return new_vec;
   }
 
-  inline constexpr vector operator-(const vector &vector2) const {
-    vector new_vec;
+  template <typename Other_type>
+  inline constexpr vector<common_type<Other_type>, Dim>
+  operator-(const vector<Other_type, Dim> &vector2) const {
+    vector<common_type<Other_type>, Dim> new_vec;
     for (int i = 0; i < Dim; i++)
       new_vec[i] = (*this)[i] - vector2[i];
 
     return new_vec;
   }
 
-  inline constexpr vector operator*(const DataType &value) const {
-    vector new_vec;
+  template <typename Other_type>
+  inline constexpr vector<common_type<Other_type>, Dim>
+  operator*(const Other_type &value) const {
+    vector<common_type<Other_type>, Dim> new_vec;
     for (int i = 0; i < Dim; i++) {
       new_vec[i] = (*this)[i] * value;
     }
     return new_vec;
   }
 
-  inline constexpr DataType operator*(const vector &vector2) const {
+  template <typename Other_type>
+  inline constexpr common_type<Other_type>
+  operator*(const vector<Other_type, Dim> &vector2) const {
     DataType return_value = 0;
     for (int i = 0; i < Dim; i++)
       return_value += vector2[i] * (*this)[i];
@@ -47,14 +60,17 @@ struct vector : std::array<DataType, Dim> {
     return return_value;
   }
 
-  inline constexpr vector operator/=(const DataType divisor) {
+  template <typename Other_type>
+  inline constexpr vector<Other_type, Dim>
+  operator/=(const Other_type divisor) {
     for (DataType &i : *this) {
       i /= divisor;
     }
     return *this;
   }
 
-  inline constexpr vector operator*=(const DataType factor) {
+  template <typename Other_type>
+  inline constexpr vector<Other_type, Dim> operator*=(const Other_type factor) {
     for (DataType &i : (*this)) {
       i *= factor;
     }

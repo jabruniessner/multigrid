@@ -7,6 +7,7 @@
 #include "cubes_cutter.h"
 #include "cutting_tetrahedra.h"
 #include "dot_finder.h"
+#include "epsilon_marker.h"
 #include "fileio.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
@@ -19,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <experimental/mdspan>
+#include <fstream>
 #include <iostream>
 #include <locale>
 #include <sycl/sycl.hpp>
@@ -208,7 +210,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+#ifdef DEBUGMODE
+  sycl::cpu_selector selector;
+#else
   sycl::gpu_selector selector;
+#endif
+
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
 
@@ -281,6 +288,10 @@ int main(int argc, char *argv[]) {
     domain::Grid<std::uint8_t, 4, 0, 0, 0, 4> trial_tetraeda_domain(
         Paddings::PERIODIC, q, 1);
 
+    std::ofstream outfile("outfile.inp");
+    domain::print_grid_to_inp<std::uint8_t, 3, 0, 0, 0>(trial_tetraeda_domain,
+                                                        1.f, outfile);
+
     int i = 0;
     auto func = [&](decltype(trial_domain)) mutable { i++; };
     auto func2 = [&](decltype(trial_domain) domain) {
@@ -322,9 +333,11 @@ int main(int argc, char *argv[]) {
       set_n_values_to_one_and_f(trial_domain, i, 0, func3);
     }
 
-    std::cout << "The value if i is: " << i << std::endl;
+    std::cout << "The value of i is: " << i << std::endl;
 
     q.wait();
+
+    trial_domain.print_domain();
   }
 
   std::cout << "The checker count is: " << checker_count << std::endl;
