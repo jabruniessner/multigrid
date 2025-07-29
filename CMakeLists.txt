@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
+#set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g -fsanitize=address -fno-omit-frame-pointer")
+
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -64,6 +66,8 @@ add_executable(partial_volume_computes computing_partial_volumes.cc fileio.cc)
 
 
 add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc fileio.cc)
+add_executable(get_epsilon Get_epsilons.cc)
+
 # Link NVTX to your target
 target_link_libraries(Laplacian3D_epsilon PRIVATE prof)
 target_compile_definitions(Laplacian3D_epsilon PRIVATE PROFILING)

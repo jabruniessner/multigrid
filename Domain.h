@@ -267,8 +267,7 @@ void print_grid_with_f(
 // }
 template <typename DataType> class TD;
 
-template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all,
-          typename... Positions>
+template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all>
 void print_grid_to_inp(
     Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> &grid,
     DataType grid_step, std::ostream &out) {
@@ -294,12 +293,27 @@ void print_grid_to_inp(
           grid.padding_width, positions..., j);
       out << index << " " << (int)grid.get_value(positions..., j) << " tet ";
 
-      auto num_pos = a + blas::vector<int, Dim + 1>{positions...};
-      // auto num_pos = blas::vector<int, Dim + 1>{positions...} + a;
+      for (auto i : a) {
+        auto vec =
+            bitshift::convert_byte_to_vec<std::size_t, decltype(i), 3>(i);
+        auto pos_vec = vec + blas::vector<int, Dim>{positions...};
 
-      for (auto i : num_pos) {
-        out << i << " ";
+        auto index = std::apply(
+            [&](auto... positions) {
+              return flatten_index<strides_all...>(grid.padding_width,
+                                                   positions...);
+            },
+            (std::array<std::size_t, 3>)pos_vec);
+
+        out << index << " ";
       }
+
+      //  auto num_pos = a + blas::vector<int, Dim + 1>{positions...};
+      //  // auto num_pos = blas::vector<int, Dim + 1>{positions...} + a;
+
+      //  for (auto i : num_pos) {
+      //    out << i << " ";
+      //  }
       out << std::endl;
       // out << grid.get_value(positions, j)
     };

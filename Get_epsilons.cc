@@ -9,6 +9,7 @@
 #include "dot_finder.h"
 #include "epsilon_marker.h"
 #include "fileio.h"
+#include "hipSYCL/sycl/info/device.hpp"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
 #include "hipSYCL/sycl/libkernel/nd_item.hpp"
@@ -23,6 +24,7 @@
 #include <fstream>
 #include <iostream>
 #include <locale>
+#include <sstream>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
 #include <tuple>
@@ -32,7 +34,7 @@ constexpr DataType delta_epsilon = epsilon_p - epsilon_r;
 constexpr DataType grid_step = 1.;
 constexpr std::size_t nlev = 4;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 6;
+constexpr std::size_t side_length = 1;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
 using MG_domain =
@@ -70,11 +72,47 @@ void mark_epsilon_MG(MG_domain<num_type1, 0u> inside_outside,
 
 template <UnsignedIntegral num_type1, UnsignedIntegral num_type2>
 void mark_epsilon_MG(
-    MG_domain<num_type1, 0u> inside_outside,
-    MG_domain<num_type2, 1u, utils::factorial(Dim) - 2> values) {
+    MG_domain<num_type1, 0u> &inside_outside,
+    MG_domain<num_type2, 1u, utils::factorial(Dim) - 2> &values) {
 
   mark_epsilon_MG(inside_outside, values,
                   utils::make_index_sequence_with_offset<1, nlev>());
+}
+
+template <UnsignedIntegral num_type2, std::size_t level>
+void print_tets_MG_helper(
+    MG_domain<num_type2, 1u, utils::factorial(Dim) - 2> &values,
+    DataType grid_step) {
+
+  std::stringstream ss;
+  ss << "outfile" << level << ".inp";
+  std::ofstream outfile(ss.str());
+  std::cout << "The level is: " << level << " ";
+  std::cout << "The strides are: "
+            << side_length * utils::power_off(2, level) - 1 << std::endl;
+  domain::print_grid_to_inp<num_type2, Dim,
+                            side_length * utils::power_off(2, level) - 1,
+                            side_length * utils::power_off(2, level) - 1,
+                            side_length * utils::power_off(2, level) - 1>(
+      values.template get_domain<level>(), grid_step, outfile);
+  //  outfile.close();
+};
+
+template <UnsignedIntegral num_type2, std::size_t... level>
+void print_tets_MG(MG_domain<num_type2, 1u, utils::factorial(Dim) - 2> &values,
+                   std::index_sequence<level...>) {
+
+  constexpr auto nlev = sizeof...(level);
+  (print_tets_MG_helper<num_type2, level>(
+       values, 1.0f * utils::Power<2, nlev - level>::value),
+   ...);
+}
+
+template <UnsignedIntegral num_type2>
+void print_tets_MG(
+    MG_domain<num_type2, 1u, utils::factorial(Dim) - 2> &values) {
+
+  print_tets_MG(values, utils::make_index_sequence_with_offset<1, nlev>());
 }
 
 template <UnsignedIntegral num_type1, Dimension Dim, Length... strides_all,
@@ -147,11 +185,12 @@ void check_correctness(std::array<std::uint8_t, 8> epsilon,
 
 int main(int argc, char *argv[]) {
 
-  if (argc != 5) {
-    std::cerr << "Usage: " << argv[0]
-              << " <input_pqr_file> origin_x origin_y origin_z" << std::endl;
-    return 1;
-  }
+  //  if (argc != 5) {
+  //    std::cerr << "Usage: " << argv[0]
+  //              << " <input_pqr_file> origin_x origin_y origin_z" <<
+  //              std::endl;
+  //    return 1;
+  //  }
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -161,6 +200,11 @@ int main(int argc, char *argv[]) {
 
   sycl::queue q(selector,
                 sycl::property_list{sycl::property::queue::in_order{}});
+
+  auto dev = q.get_device();
+
+  std::cout << "Running on " << dev.get_info<sycl::info::device::name>()
+            << std::endl;
 
   // sycl::queue q(selector);
 
@@ -181,23 +225,27 @@ int main(int argc, char *argv[]) {
 
   std::list<Atom<DataType>> atoms;
 
-  std::string filename = argv[1];
-  DataType origin_x = std::atof(argv[2]);
-  DataType origin_y = std::atof(argv[3]);
-  DataType origin_z = std::atof(argv[4]);
+  //  std::string filename = argv[1];
+  //  DataType origin_x = std::atof(argv[2]);
+  //  DataType origin_y = std::atof(argv[3]);
+  //  DataType origin_z = std::atof(argv[4]);
 
-  read_pqr_file(filename, atoms);
+  // read_pqr_file(filename, atoms);
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(atoms.size());
 
-  for (auto &atom : atoms) {
-    atom.Position[0] -= origin_x;
-    atom.Position[1] -= origin_y;
-    atom.Position[2] -= origin_z;
-    // atom.radius += 1.5f;
-    atoms_vector.push_back(atom);
-  }
+  //  for (auto &atom : atoms) {
+  //    atom.Position[0] -= origin_x;
+  //    atom.Position[1] -= origin_y;
+  //    atom.Position[2] -= origin_z;
+  //    // atom.radius += 1.5f;
+  //    atoms_vector.push_back(atom);
+  //  }
+
+  atoms_vector.push_back({1.f});
+  atoms_vector[0].Position = {8.f, 8.f, 8.f};
+  atoms_vector[0].radius = 3.f;
 
   // cubes_cutter::Cutter cutter{};
   // volume_computer::Volume_comp v_comp{};
@@ -221,69 +269,13 @@ int main(int argc, char *argv[]) {
     coarsen_domains(inside_outside);
 
     mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
-  }
-
-  {
-
-    domain::Grid<std::uint8_t, 3, 0, 0, 0> trial_domain(Paddings::PERIODIC, q,
-                                                        1);
-
-    domain::Grid<std::uint8_t, 4, 0, 0, 0, 4> trial_tetraeda_domain(
-        Paddings::PERIODIC, q, 1);
-
-    std::ofstream outfile("outfile.inp");
-    domain::print_grid_to_inp<std::uint8_t, 3, 0, 0, 0>(trial_tetraeda_domain,
-                                                        1.f, outfile);
-
-    int i = 0;
-    auto func = [&](decltype(trial_domain)) mutable { i++; };
-    auto func2 = [&](decltype(trial_domain) domain) {
-      std::array<std::uint8_t, 8> a{};
-      domain.q.memcpy(a.data(), domain.values_buff,
-                      sizeof(std::uint8_t) * domain.num_values);
-      domain.q.wait();
-      for (auto i : a)
-        std::cout << (int)i << " ";
-      std::cout << std::endl;
-    };
-
-    auto func3 = [&](decltype(trial_domain) domain) {
-      q.memset(trial_tetraeda_domain.values_buff, 0,
-               sizeof(std::uint8_t) * trial_tetraeda_domain.num_values);
-      mark_epsilons<3, std::uint8_t, std::uint8_t>(domain,
-                                                   trial_tetraeda_domain);
-
-      // getting the values of the tetraeda_array
-      std::array<std::uint8_t, 6> tets{};
-      q.memcpy(tets.data(), trial_tetraeda_domain.values_buff,
-               sizeof(std::uint8_t) * 6);
-
-      // getting the values from the domain
-      std::array<std::uint8_t, 8> epsilons{};
-      q.memcpy(epsilons.data(), trial_domain.values_buff,
-               sizeof(std::uint8_t) * trial_domain.num_values);
-
-      q.wait();
-      // Finished getting the value from the device
-
-      check_correctness(epsilons, tets);
-    };
-
-    std::cout << "The number of values of the domain is: "
-              << trial_domain.num_values << std::endl;
-
-    for (std::size_t i = 0; i <= 8; i++) {
-      set_n_values_to_one_and_f(trial_domain, i, 0, func3);
-    }
-
-    std::cout << "The value of i is: " << i << std::endl;
-
     q.wait();
 
-    trial_domain.print_domain();
+    // std::ofstream outfile("hello_world.inp");
+    print_tets_MG(Volumes_tetrahedra);
   }
 
-  std::cout << "The checker count is: " << checker_count << std::endl;
+  // std::cout << "The checker count is: " << checker_count << std::endl;
 
   return 0;
 }
