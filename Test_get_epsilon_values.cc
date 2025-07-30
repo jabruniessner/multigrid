@@ -149,11 +149,12 @@ void check_correctness(std::array<std::uint8_t, 8> epsilon,
 
 int main(int argc, char *argv[]) {
 
-  if (argc != 5) {
-    std::cerr << "Usage: " << argv[0]
-              << " <input_pqr_file> origin_x origin_y origin_z" << std::endl;
-    return 1;
-  }
+  //  if (argc != 5) {
+  //    std::cerr << "Usage: " << argv[0]
+  //              << " <input_pqr_file> origin_x origin_y origin_z" <<
+  //              std::endl;
+  //    return 1;
+  //  }
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -169,66 +170,16 @@ int main(int argc, char *argv[]) {
   MG_domain<std::uint32_t, 0u> inside_outside(q);
   MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2> Volumes_tetrahedra(q);
 
-  std::cout << "The number of values in the inside outside domain is: "
-            << inside_outside.get_domain().num_values << std::endl;
+  auto &epsilon_domain_coarse = Volumes_tetrahedra.template get_domain<1>();
+  auto &inside_outside_coarse = inside_outside.template get_domain<1>();
+  auto values_device = sycl::malloc_device<std::uint8_t>(2 * Dim, q);
+  std::array<std::uint8_t, 6> values{};
+  // TD<decltype(inside_outside_coarse)> td1;
+  // TD<decltype(epsilon_domain_coarse)> td;
 
-  std::cout << "The number of values in the Volumes_tetrahedra domain is: "
-            << Volumes_tetrahedra.get_domain().num_values << std::endl;
-
-  using Domain_type = decltype(Volumes_tetrahedra.get_domain());
-  using Domain_type_io = decltype(inside_outside.get_domain());
-
-  //  TD<Domain_type> td;
-  //  TD<Domain_type_io> td2;
-
-  std::list<Atom<DataType>> atoms;
-
-  std::string filename = argv[1];
-  DataType origin_x = std::atof(argv[2]);
-  DataType origin_y = std::atof(argv[3]);
-  DataType origin_z = std::atof(argv[4]);
-
-  read_pqr_file(filename, atoms);
-
-  std::vector<Atom<DataType>> atoms_vector;
-  atoms_vector.reserve(atoms.size());
-
-  for (auto &atom : atoms) {
-    atom.Position[0] -= origin_x;
-    atom.Position[1] -= origin_y;
-    atom.Position[2] -= origin_z;
-    // atom.radius += 1.5f;
-    atoms_vector.push_back(atom);
-  }
-
-  // cubes_cutter::Cutter cutter{};
-  // volume_computer::Volume_comp v_comp{};
-
-  // Copy atoms to device
-  {
-    Atom<DataType> *atoms_device =
-        sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
-
-    q.memcpy(atoms_device, atoms_vector.data(),
-             sizeof(Atom<DataType>) * atoms_vector.size());
-
-    // Finding all the dots inside the protein
-    auto &io_domain = inside_outside.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      Sphere<DataType, Dim> Atom = atoms_device[I];
-      find_dots_in_sphere(Atom, io_domain, static_cast<DataType>(1.));
-    });
-
-    // Coarsening the dots domain
-    coarsen_domains(inside_outside);
-
-    mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
-
-    std::array<std::uint8_t, 2 * Dim> values{};
-    std::uint8_t *values_device = sycl::malloc_device<std::uint8_t>(2 * Dim, q);
-
-    auto &epsilon_domain_coarse = Volumes_tetrahedra.template get_domain<1>();
-    // TD<decltype(epsilon_domain_coarse)> td;
+  auto f = [&](auto &io_domain) {
+    mark_epsilons<Dim, std::uint32_t, std::uint8_t>(io_domain,
+                                                    epsilon_domain_coarse);
     q.single_task([=]() {
       auto vals = get_tet_vals_dim<std::uint8_t, Dim, 1, 1, 1>(
           epsilon_domain_coarse, 1, 1, 1);
@@ -240,13 +191,18 @@ int main(int argc, char *argv[]) {
     q.memcpy(values.data(), values_device,
              sizeof(std::uint8_t) * values.size());
 
+    q.memset(epsilon_domain_coarse.values_buff, 0,
+             epsilon_domain_coarse.num_values * sizeof(std::uint8_t));
+
     q.wait();
 
     std::cout << "The values of the array are: " << std::endl;
     for (auto i : values)
       std::cout << (int)i << " ";
     std::cout << std::endl;
-  }
+  };
+
+  set_n_values_to_one_and_f(inside_outside_coarse, 1, 0, f);
 
   return 0;
 }

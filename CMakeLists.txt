@@ -70,6 +70,8 @@ add_executable(get_epsilon Get_epsilons.cc)
 
 add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc  fileio.cc)
 
+add_executable(test_get_epsilon_values Test_get_epsilon_values.cc)
+
 
 # Link NVTX to your target
 target_link_libraries(Laplacian3D_epsilon PRIVATE prof)

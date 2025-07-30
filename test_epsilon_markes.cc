@@ -9,11 +9,9 @@
 #include "dot_finder.h"
 #include "epsilon_marker.h"
 #include "fileio.h"
-#include "get_epsilon_values.h"
 #include "hipSYCL/sycl/libkernel/half.hpp"
 #include "hipSYCL/sycl/libkernel/memory.hpp"
 #include "hipSYCL/sycl/libkernel/nd_item.hpp"
-#include "hipSYCL/sycl/usm.hpp"
 #include "iterate_tets.h"
 #include "ply_file_writer.h"
 #include <array>
@@ -34,7 +32,7 @@ constexpr DataType delta_epsilon = epsilon_p - epsilon_r;
 constexpr DataType grid_step = 1.;
 constexpr std::size_t nlev = 4;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 1;
+constexpr std::size_t side_length = 6;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
 using MG_domain =
@@ -223,30 +221,69 @@ int main(int argc, char *argv[]) {
     coarsen_domains(inside_outside);
 
     mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
+  }
 
-    std::array<std::uint8_t, 2 * Dim> values{};
-    std::uint8_t *values_device = sycl::malloc_device<std::uint8_t>(2 * Dim, q);
+  {
 
-    auto &epsilon_domain_coarse = Volumes_tetrahedra.template get_domain<1>();
-    // TD<decltype(epsilon_domain_coarse)> td;
-    q.single_task([=]() {
-      auto vals = get_tet_vals_dim<std::uint8_t, Dim, 1, 1, 1>(
-          epsilon_domain_coarse, 1, 1, 1);
+    domain::Grid<std::uint8_t, 3, 0, 0, 0> trial_domain(Paddings::PERIODIC, q,
+                                                        1);
 
-      for (int i = 0; i < 2 * Dim; i++)
-        values_device[i] = vals[i];
-    });
+    domain::Grid<std::uint8_t, 4, 0, 0, 0, 4> trial_tetraeda_domain(
+        Paddings::PERIODIC, q, 1);
 
-    q.memcpy(values.data(), values_device,
-             sizeof(std::uint8_t) * values.size());
+    std::ofstream outfile("outfile.inp");
+    domain::print_grid_to_inp<std::uint8_t, 3, 0, 0, 0>(trial_tetraeda_domain,
+                                                        1.f, outfile);
+
+    int i = 0;
+    auto func = [&](decltype(trial_domain)) mutable { i++; };
+    auto func2 = [&](decltype(trial_domain) domain) {
+      std::array<std::uint8_t, 8> a{};
+      domain.q.memcpy(a.data(), domain.values_buff,
+                      sizeof(std::uint8_t) * domain.num_values);
+      domain.q.wait();
+      for (auto i : a)
+        std::cout << (int)i << " ";
+      std::cout << std::endl;
+    };
+
+    auto func3 = [&](decltype(trial_domain) domain) {
+      q.memset(trial_tetraeda_domain.values_buff, 0,
+               sizeof(std::uint8_t) * trial_tetraeda_domain.num_values);
+      mark_epsilons<3, std::uint8_t, std::uint8_t>(domain,
+                                                   trial_tetraeda_domain);
+
+      // getting the values of the tetraeda_array
+      std::array<std::uint8_t, 6> tets{};
+      q.memcpy(tets.data(), trial_tetraeda_domain.values_buff,
+               sizeof(std::uint8_t) * 6);
+
+      // getting the values from the domain
+      std::array<std::uint8_t, 8> epsilons{};
+      q.memcpy(epsilons.data(), trial_domain.values_buff,
+               sizeof(std::uint8_t) * trial_domain.num_values);
+
+      q.wait();
+      // Finished getting the value from the device
+
+      check_correctness(epsilons, tets);
+    };
+
+    std::cout << "The number of values of the domain is: "
+              << trial_domain.num_values << std::endl;
+
+    for (std::size_t i = 0; i <= 8; i++) {
+      set_n_values_to_one_and_f(trial_domain, i, 0, func3);
+    }
+
+    std::cout << "The value of i is: " << i << std::endl;
 
     q.wait();
 
-    std::cout << "The values of the array are: " << std::endl;
-    for (auto i : values)
-      std::cout << (int)i << " ";
-    std::cout << std::endl;
+    trial_domain.print_domain();
   }
+
+  std::cout << "The checker count is: " << checker_count << std::endl;
 
   return 0;
 }
