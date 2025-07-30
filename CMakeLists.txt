@@ -65,8 +65,11 @@ add_executable(compute_vol_2_spheres compute_volume_2_spheres.cc)
 add_executable(partial_volume_computes computing_partial_volumes.cc fileio.cc)
 
 
-add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc fileio.cc)
+add_executable(Test_epsilon test_epsilon_markes.cc  fileio.cc)
 add_executable(get_epsilon Get_epsilons.cc)
+
+add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc  fileio.cc)
+
 
 # Link NVTX to your target
 target_link_libraries(Laplacian3D_epsilon PRIVATE prof)

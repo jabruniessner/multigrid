@@ -102,7 +102,7 @@ constexpr auto tuple_map(const std::tuple<Ts...> &t, Func f) {
       [&](const Ts &...elems) { return std::make_tuple(f(elems)...); }, t);
 }
 
-template <Arithmetic T> constexpr T power_off(T t, std::size_t n) {
+template <Arithmetic T> consteval T power_off(T t, std::size_t n) {
   if (n == 0) {
     return 1;
   } else {
@@ -110,7 +110,7 @@ template <Arithmetic T> constexpr T power_off(T t, std::size_t n) {
   }
 }
 
-template <UnsignedIntegral T> constexpr T factorial(T t) {
+template <UnsignedIntegral T> consteval T factorial(T t) {
   if (t == 0) {
     return 1;
   } else {
