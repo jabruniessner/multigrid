@@ -2,32 +2,25 @@
 #include "Domain.h"
 #include "MultigridDomain.h"
 #include "bitshift_lib.h"
-#include "compute_faces.h"
 #include "compute_volumes.h"
 #include "cubes_cutter.h"
 #include "cutting_tetrahedra.h"
+#include "cycles.h"
 #include "dot_finder.h"
 #include "epsilon_marker.h"
 #include "fileio.h"
 #include "get_epsilon_values.h"
-#include "hipSYCL/sycl/libkernel/half.hpp"
-#include "hipSYCL/sycl/libkernel/memory.hpp"
-#include "hipSYCL/sycl/libkernel/nd_item.hpp"
-#include "hipSYCL/sycl/usm.hpp"
 #include "iterate_tets.h"
-#include "ply_file_writer.h"
 #include <array>
 #include <boost/container/static_vector.hpp>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <experimental/mdspan>
-#include <fstream>
+#include <functional>
 #include <iostream>
-#include <locale>
 #include <sycl/sycl.hpp>
 #include <sys/types.h>
-#include <tuple>
+#include <type_traits>
 #include <utility>
 
 constexpr DataType delta_epsilon = epsilon_p - epsilon_r;
@@ -41,6 +34,26 @@ using MG_domain =
     multigrid_domain::Multigrid_domain_t<D_Type, Dim, Type_dim, nlev,
                                          side_length, side_length, side_length,
                                          type_dirs...>;
+
+template <std::size_t N>
+using MemFnPtrd_type =
+    decltype(&MG_domain<DataType, 0u>::template get_domain<N>);
+
+template <std::size_t N>
+using d_type = std::remove_reference_t<
+    std::invoke_result_t<MemFnPtrd_type<N>, MG_domain<DataType, 0u>>>;
+
+template <std::size_t N>
+using MemFnPtrd_type_eps =
+    decltype(&MG_domain<std::uint8_t, 1u,
+                        utils::factorial(Dim) - 2>::template get_domain<N>);
+
+template <std::size_t N>
+using d_type_eps = std::remove_reference_t<std::invoke_result_t<
+    MemFnPtrd_type_eps<N>,
+    MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2>>>;
+
+using domain::Domain;
 
 template <typename T> struct TD;
 
@@ -79,81 +92,91 @@ void mark_epsilon_MG(
                   utils::make_index_sequence_with_offset<1, nlev>());
 }
 
-template <UnsignedIntegral num_type1, Dimension Dim, Length... strides_all,
-          typename func_type>
-void set_n_values_to_one_and_f(
-    domain::Grid<num_type1, Dim, strides_all...> domain, std::size_t n,
-    std::size_t current_val, func_type function) {
-  if (n == 0) {
-    function(domain);
-  } else {
-    for (std::size_t i = current_val; i < domain.num_values; i++) {
-      domain.q.submit([=](sycl::handler &h) {
-        h.single_task([=]() { domain.values_buff[i] = 1; });
-      });
-      set_n_values_to_one_and_f(domain, n - 1, i + 1, function);
-      domain.q.memset(&domain.values_buff[i], 0,
-                      sizeof(num_type1) * (domain.num_values - (i)));
-    }
-  }
+template <Dimension Dim, UnsignedIntegral num_type, DataType grid_step,
+          std::size_t... dims>
+auto map(auto &domain, sycl::id<Dim> I, auto epsilon_domain,
+         std::index_sequence<dims...>) {
+
+  constexpr DataType h_2_inv = 1 / (grid_step * grid_step);
+  constexpr auto strides_array =
+      std::remove_reference_t<decltype(domain)>::length;
+
+  using d_type = std::remove_reference_t<decltype(domain)>;
+
+  auto index_add_in_place = [=](int place, const d_type domain,
+                                auto epsilon_values, auto... elems) {
+    std::array<std::size_t, sizeof...(elems)> indices{elems...};
+    indices[place] += 1;
+    return std::apply(domain, indices) *
+           get_local_epsilon(
+               static_cast<num_type>(2 * Dim - epsilon_values[place]),
+               epsilon_values[place]);
+  };
+
+  auto index_sub_in_place = [=](int place, const d_type domain,
+                                auto epsilon_values, auto... elems) {
+    std::array<std::size_t, sizeof...(elems)> indices{elems...};
+    indices[place] -= 1;
+    return std::apply(domain, indices) *
+           get_local_epsilon(
+               static_cast<num_type>(2 * Dim - epsilon_values[place]),
+               epsilon_values[place]);
+  };
+
+  std::array<num_type, 2 * Dim> epsilon_values =
+      get_tet_vals_dim<num_type, Dim, std::get<dims>(strides_array)...>(
+          epsilon_domain, (int)I[dims]...);
+
+  const auto subs =
+      (index_sub_in_place(dims, domain, epsilon_values, I[dims]...) + ...);
+
+  const auto adds =
+      (index_add_in_place(dims, domain, epsilon_values, I[dims]...) + ...);
+
+  DataType middle_value = 0;
+  for (int i = 0; i < 2 * Dim; i++)
+    middle_value += get_local_epsilon(
+        static_cast<num_type>(2 * Dim - epsilon_values[i]), epsilon_values[i]);
+
+  return (-adds - subs + middle_value * domain(I[dims]...)) * h_2_inv;
 }
+
+template <Dimension Dim, UnsignedIntegral num_type, DataType grid_step>
+auto map(auto domain, sycl::id<Dim> id, auto epsilon_domain) {
+  return map<Dim, num_type, grid_step>(domain, id, epsilon_domain,
+                                       std::make_index_sequence<Dim>{});
+}
+
+template <Dimension Dim, std::size_t access_level> struct map_struct {
+
+  map_struct() = delete;
+  map_struct(d_type_eps<access_level> epsilon_domain)
+      : epsilon_domain(epsilon_domain) {}
+
+  map_struct(MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2> eps_domain)
+      : epsilon_domain(eps_domain.template get_domain<access_level>()) {}
+
+  DataType operator()(d_type<access_level> domain, sycl::id<Dim> id) {
+    return map<Dim, std::uint8_t,
+               grid_step * utils::power_off(sqrt2, nlev - access_level)>(
+        domain, id, epsilon_domain);
+  }
+
+  d_type_eps<access_level> epsilon_domain;
+};
 
 // This functions is intended for use with Paddingwidth 1
 
-int checker_count = 0;
-void check_correctness(std::array<std::uint8_t, 8> epsilon,
-                       std::array<std::uint8_t, 6> tets) {
-
-  checker_count++;
-
-  auto i = std::reduce(tets.begin(), tets.end());
-  // Checking whether the number is correct first check for 0 and 7
-  if (epsilon[0] == 1 || epsilon[7] == 1) {
-    assert(i == 6);
-    return;
-  }
-
-  for (int k = 1, l = 0; k <= 4; k *= 2) {
-    if (epsilon[k]) {
-      //  std::cout << "The value of k is: ";
-      //  std::cout << k << std::endl;
-      //  std::cout << "The value of l is: " << l << std::endl;
-      assert(tets[l] == 1 && tets[l + 1] == 1);
-    }
-    l += 2;
-  }
-
-  for (std::uint8_t k : {3, 5, 6}) {
-    if (epsilon[k]) {
-      // getting_list_significant bit
-      std::uint8_t lsb = k & (~k + 1);
-      std::uint8_t indices = ~lsb & 7;
-      bool passed = false;
-
-      for (std::uint8_t j = 0; indices != 0; indices &= indices - 1, j++) {
-        std::uint8_t lsb_i = indices & (~indices + 1);
-        //  std::cout << "The value for k is: " << (int)k << std::endl;
-        //  std::cout << "lsb_i: " << (int)lsb_i << " lsb: " << (int)lsb
-        //            << std::endl;
-        if (lsb_i + lsb == k) {
-          auto index = __builtin_ctz(lsb);
-          assert(tets[2 * index + j]);
-          passed = true;
-        }
-      }
-
-      assert(passed);
-    }
-  }
-}
-
 int main(int argc, char *argv[]) {
 
-  if (argc != 5) {
+  if (argc != 6) {
     std::cerr << "Usage: " << argv[0]
-              << " <input_pqr_file> origin_x origin_y origin_z" << std::endl;
+              << " <input_pqr_file> origin_x origin_y origin_z num_iters"
+              << std::endl;
     return 1;
   }
+
+  int num_iter = std::stoi(argv[5]);
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -168,6 +191,19 @@ int main(int argc, char *argv[]) {
 
   MG_domain<std::uint32_t, 0u> inside_outside(q);
   MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2> Volumes_tetrahedra(q);
+
+  constexpr auto &length = MG_domain<DataType, 0u>::length;
+
+  MG_domain<DataType, 0u> lhs_domain1(q);
+  MG_domain<DataType, 0u> lhs_domain2(q);
+  MG_domain<DataType, 0u> lhs_domain3(q);
+  MG_domain<DataType, 0u> rhs_domain(q);
+  MG_domain<DataType, 0u> boundary_values(q);
+  MG_domain<DataType, 0u> defect_domain(q);
+
+  Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
+      u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
+      helper(Paddings::PERIODIC, q, 1);
 
   std::cout << "The number of values in the inside outside domain is: "
             << inside_outside.get_domain().num_values << std::endl;
@@ -223,29 +259,73 @@ int main(int argc, char *argv[]) {
     coarsen_domains(inside_outside);
 
     mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
+  }
 
-    std::array<std::uint8_t, 2 * Dim> values{};
-    std::uint8_t *values_device = sycl::malloc_device<std::uint8_t>(2 * Dim, q);
+  // Defining the necessary function and creating the CG and GS type
+  {
 
-    auto &epsilon_domain_coarse = Volumes_tetrahedra.template get_domain<1>();
-    // TD<decltype(epsilon_domain_coarse)> td;
-    q.single_task([=]() {
-      auto vals = get_tet_vals_dim<std::uint8_t, Dim, 1, 1, 1>(
-          epsilon_domain_coarse, 1, 1, 1);
+    // Instantiation the linear map for the coarse grid solver
+    using d_type = decltype(lhs_domain1.template get_domain<1>());
+    auto vol_domain = Volumes_tetrahedra.template get_domain<1>();
+    constexpr auto grid_fac = utils::power_off(2, nlev);
 
-      for (int i = 0; i < 2 * Dim; i++)
-        values_device[i] = vals[i];
-    });
+    std::function<DataType(d_type, sycl::id<Dim>)> func = [=](d_type domain,
+                                                              sycl::id<Dim> I) {
+      return map<Dim, std::uint8_t, grid_step * const_sqrt(grid_fac)>(
+          domain, I, vol_domain);
+    };
 
-    q.memcpy(values.data(), values_device,
-             sizeof(std::uint8_t) * values.size());
+    auto solver = cg_solver::make_solver<DataType, 3>(
+        Float<1e-5>{}, lhs_domain1.template get_domain<1>(), func);
+
+    // TD<decltype(lhs_domain1)> td;
+
+    cycles::GS_Smoother_epsilon smoother{lhs_domain1, Volumes_tetrahedra};
+
+    multigrid_domain::Multi_Level_map<Dim, DataType, map_struct, nlev> map_type{
+        Volumes_tetrahedra};
+
+    // cycles::V_Cycle_base v_cycle{smoother, smoother, solver, lhs_domain1};
+
+    auto *current = &lhs_domain2;
+    auto *next = &lhs_domain3;
+    Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
+        helper2(Paddings::PERIODIC, q, 1);
+
+    std::stringstream filenames;
+
+    filenames << "deviations" << side_length << ".txt";
+
+    std::ofstream out_file_devation(filenames.str());
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // for (int num = 0; num < num_iter; num++) {
+
+    //   // Computing the defect
+    //   convolution::Subtract_Convolve_map(defect_domain.get_domain(),
+    //                                      lhs_domain1.get_domain(),
+    //                                      rhs_domain.get_domain());
+
+    //   v_cycle.iteration(*next, *current, defect_domain, mult_level,
+    //                     diff_operator, coarser, upper_grid_step, omega,
+    //                     diff_operator, num_iters_level,
+    //                     smoother_sequence_pre, smoother_sequence_post, true);
+
+    //   add_domains(lhs_domain1.get_domain(), next->get_domain(),
+    //               lhs_domain1.get_domain());
+
+    //   // std::swap(current, next);
+
+    //   //  std::cout << "After the iterations the current is: " << std::endl;
+    //   //  current->get_domain().print_domain();
+    //   //  std::cout << "After the iteration the next is: " << std::endl;
+    //   //  next->get_domain().print_domain();
+    // }
 
     q.wait();
 
-    std::cout << "The values of the array are: " << std::endl;
-    for (auto i : values)
-      std::cout << (int)i << " ";
-    std::cout << std::endl;
+    // Now doing the actual solving
   }
 
   return 0;

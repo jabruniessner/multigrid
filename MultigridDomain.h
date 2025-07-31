@@ -191,120 +191,42 @@ void print_multigrid_domain(
   }
 }
 
-template <Dimension Dim, typename DataType, std::size_t length,
-          Length base_length, std::size_t nlev>
-struct Multi_Level_operator
-    : public Multi_Level_operator<Dim, DataType, length, base_length,
-                                  nlev - 1> {
-  using OffsetType = std::array<int, Dim>;
+template <Dimension Dim, typename DataType,
+          template <Dimension, std::size_t> typename Func_type,
+          std::size_t nlev>
+struct Multi_Level_map
+    : public Multi_Level_map<Dim, DataType, Func_type, nlev - 1> {
 
-  Multi_Level_operator() {};
+  Multi_Level_map(auto... map_init_args)
+      : map(map_init_args...),
+        Multi_Level_map<Dim, DataType, Func_type, nlev - 1>(map_init_args...) {
+        };
 
-  Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &values,
-                       std::array<OffsetType, length> &offsets,
-                       Integer<base_length>)
-      : values(values), offsets(offsets),
-        Multi_Level_operator<Dim, DataType, length, base_length, nlev - 1>(
-            Integer<nlev - 1>{}, values, offsets, Integer<base_length>{}) {};
+  Multi_Level_map(Integer<nlev>, Integer<Dim>)
+      : Multi_Level_map<Dim, DataType, Func_type, nlev - 1>(Integer<nlev - 1>{},
+                                                            Integer<Dim>{}) {};
 
-  Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &values_new,
-                       std::array<OffsetType, length> &offsets,
-                       DataType grid_step, Integer<base_length>)
-      : offsets(offsets),
-        Multi_Level_operator<Dim, DataType, length, base_length, nlev - 1>(
-            Integer<nlev - 1>{}, values_new, offsets, grid_step * sqrt2,
-            Integer<base_length>{}) {
-
-    auto h = grid_step;
-
-    std::cout << "The grid step is: " << grid_step << std::endl;
-    std::cout << "The nlev is: " << nlev << std::endl;
-
-    for (int i = 0; i < length; i++) {
-
-      this->values[i] = values_new[i] / (h * h);
-    }
-  };
-
-  Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &&values,
-                       std::array<OffsetType, length> &&offsets,
-                       Integer<base_length>)
-      : values(values), offsets(offsets),
-        Multi_Level_operator<Dim, DataType, length, nlev - 1, base_length>(
-            Integer<nlev - 1>{}, values, offsets) {};
-
-  template <std::size_t access_level = nlev> auto &get_values() {
-    return Multi_Level_operator<Dim, DataType, length, base_length,
-                                access_level>::values;
+  template <std::size_t access_level = nlev>
+  Func_type<Dim, access_level> get_map() {
+    return Multi_Level_map<Dim, DataType, Func_type, access_level>::map;
   }
 
-  template <std::size_t access_level = nlev> auto &get_offsets() {
-    return Multi_Level_operator<Dim, DataType, length, base_length,
-                                access_level>::offsets;
-  }
-
-  void print_operator() {
-    std::cout << "The level is: " << nlev << std::endl;
-    std::cout << std::endl << std::endl;
-
-    for (int i = 0; i < length; i++) {
-      for (int j = 0; j < Dim; j++)
-        std::cout << " " << std::format("{:>2}", offsets[i][j]);
-      std::cout << ":";
-      std::cout << " " << values[i] << std::endl;
-    }
-
-    Multi_Level_operator<Dim, DataType, length, base_length,
-                         nlev - 1>::print_operator();
-  }
-
-  std::array<DataType, length> values;
-  std::array<OffsetType, length> offsets;
+  Func_type<Dim, nlev> map;
 };
 
-template <Dimension Dim, typename DataType, std::size_t length,
-          Length base_length>
-struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
+template <Dimension Dim, typename DataType,
+          template <Dimension, std::size_t> typename FuncType>
+struct Multi_Level_map<Dim, DataType, FuncType, 1u> {
   using OffsetType = std::array<int, Dim>;
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values,
-                       std::array<OffsetType, length> &offsets,
-                       Integer<base_length>)
-      : values(values), offsets(offsets) {};
+  Multi_Level_map(auto... map_init_args) : map(map_init_args...) {}
+  Multi_Level_map(Integer<1>, Integer<Dim>) {};
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values_new,
-                       std::array<OffsetType, length> &offsets,
-                       DataType grid_step, Integer<base_length>)
-      : offsets(offsets) {
-
-    auto h = grid_step;
-    for (int i = 0; i < length; i++) {
-
-      this->values[i] = values_new[i] / (h * h);
-    }
+  template <std::size_t access_level = 1> FuncType<Dim, 1u> get_map() {
+    return map;
   }
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &&values,
-                       std::array<OffsetType, length> &&offsets,
-                       Integer<base_length>)
-      : values(values), offsets(offsets) {};
-  template <std::size_t access_level = 1> auto get_values() { return values; }
-  template <std::size_t access_level = 1> auto get_offsets() { return offsets; }
-
-  void print_operator() {
-    std::cout << "The level is: " << 1 << std::endl;
-    std::cout << std::endl << std::endl;
-
-    for (int i = 0; i < length; i++) {
-      for (int j = 0; j < Dim; j++)
-        std::cout << " " << std::format("{:>2}", offsets[i][j]);
-      std::cout << ":";
-      std::cout << " " << values[i] << std::endl;
-    }
-  }
-
-  std::array<DataType, length> values;
-  std::array<OffsetType, length> offsets;
+  FuncType<Dim, 1u> map;
 };
 
 } // namespace multigrid_domain

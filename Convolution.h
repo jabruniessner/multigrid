@@ -94,6 +94,41 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                            std::make_index_sequence<Dim>());
 }
 
+template <typename DataType, typename FuncType, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+
+int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
+                          Domain<Dim, strides_all...> &src,
+                          Domain<Dim, strides_all...> &rhs, FuncType func,
+                          std::index_sequence<dims...>) {
+  assert(dest.q == src.q);
+  assert(dest.padding_width == src.padding_width);
+
+  dest.q.submit([&](sycl::handler &h) {
+    h.parallel_for(sycl::range<Dim>(dest.strides[dims]...),
+                   [=](sycl::id<Dim> I) {
+                     ((I[dims] += dest.padding_width), ...);
+
+                     DataType result = func(src, I);
+
+                     dest(I[dims]...) = rhs(I[dims]...) - result;
+                   });
+  });
+
+  // dest.q.wait();
+
+  return 0;
+}
+
+template <typename DataType, typename FuncType, Dimension Dim,
+          Length... strides_all>
+int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
+                          Domain<Dim, strides_all...> &src,
+                          Domain<Dim, strides_all...> &rhs, FuncType func) {
+  return Subtract_Convolve_map(dest, src, rhs, func,
+                               std::make_index_sequence<Dim>());
+}
+
 template <int direction, typename DataType, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
 inline DataType

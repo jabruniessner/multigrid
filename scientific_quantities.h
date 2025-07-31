@@ -11,8 +11,8 @@ constexpr double beta = 1 / (k_b * T);
 constexpr double potential_unit = k_b * T / e;
 constexpr double epsilon_SI = 8.8541878128e-12;
 constexpr double epsilon = epsilon_SI * 1e-10 / (e * e) * k_b * T;
-constexpr double epsilon_r = 78.4;
-constexpr double epsilon_p = 4.0;
+constexpr DataType epsilon_r = 78.4;
+constexpr DataType epsilon_p = 4.0;
 constexpr double n_a = 6.0221408e23;
 
 constexpr double const_sqrt(double x, double guess = 1.0) {
@@ -52,5 +52,10 @@ constexpr double Kappa(double IS) {
 constexpr double KappaA(double IS) { return Kappa(IS) * 1e-10; }
 
 constexpr double KappaA2(double IS) { return KappaA(IS) * KappaA(IS); }
+
+template <typename Num_Type>
+inline DataType get_local_epsilon(Num_Type weight1, Num_Type weight2) {
+  return (weight1 * epsilon_r + weight2 * (epsilon_p)) / (weight1 + weight2);
+}
 
 #endif // !SCIENTFIC_CONSTANTS_AND_FUNCTIONS_H
