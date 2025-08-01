@@ -11,8 +11,8 @@ constexpr double beta = 1 / (k_b * T);
 constexpr double potential_unit = k_b * T / e;
 constexpr double epsilon_SI = 8.8541878128e-12;
 constexpr double epsilon = epsilon_SI * 1e-10 / (e * e) * k_b * T;
-constexpr DataType epsilon_r = 78.4;
-constexpr DataType epsilon_p = 4.0;
+constexpr DataType epsilon_r = 1.0; // 78.4;
+constexpr DataType epsilon_p = 1.0; // 4.0;
 constexpr double n_a = 6.0221408e23;
 
 constexpr double const_sqrt(double x, double guess = 1.0) {

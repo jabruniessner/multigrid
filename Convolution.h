@@ -94,8 +94,8 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                            std::make_index_sequence<Dim>());
 }
 
-template <typename DataType, typename FuncType, Dimension Dim,
-          Length... strides_all, std::size_t... dims>
+template <typename FuncType, Dimension Dim, Length... strides_all,
+          std::size_t... dims>
 
 int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
                           Domain<Dim, strides_all...> &src,
@@ -120,8 +120,7 @@ int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
   return 0;
 }
 
-template <typename DataType, typename FuncType, Dimension Dim,
-          Length... strides_all>
+template <typename FuncType, Dimension Dim, Length... strides_all>
 int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
                           Domain<Dim, strides_all...> &src,
                           Domain<Dim, strides_all...> &rhs, FuncType func) {

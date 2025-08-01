@@ -23,11 +23,13 @@
 #include <type_traits>
 #include <utility>
 
-constexpr DataType delta_epsilon = epsilon_p - epsilon_r;
+template <typename T> struct TD;
+
 constexpr DataType grid_step = 1.;
-constexpr std::size_t nlev = 4;
+constexpr std::size_t nlev = 2;
 constexpr std::size_t Dim = 3;
 constexpr std::size_t side_length = 1;
+constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
 using MG_domain =
@@ -54,10 +56,6 @@ using d_type_eps = std::remove_reference_t<std::invoke_result_t<
     MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2>>>;
 
 using domain::Domain;
-
-template <typename T> struct TD;
-
-using cube_tetrahedrons = std::array<sycl::half, 6>;
 
 template <std::size_t level = nlev>
 void coarsen_domains(MG_domain<std::uint32_t, 0u> domain) {
@@ -94,7 +92,7 @@ void mark_epsilon_MG(
 
 template <Dimension Dim, UnsignedIntegral num_type, DataType grid_step,
           std::size_t... dims>
-auto map(auto &domain, sycl::id<Dim> I, auto epsilon_domain,
+auto map(auto domain, sycl::id<Dim> I, auto epsilon_domain,
          std::index_sequence<dims...>) {
 
   constexpr DataType h_2_inv = 1 / (grid_step * grid_step);
@@ -156,7 +154,7 @@ template <Dimension Dim, std::size_t access_level> struct map_struct {
   map_struct(MG_domain<std::uint8_t, 1u, utils::factorial(Dim) - 2> eps_domain)
       : epsilon_domain(eps_domain.template get_domain<access_level>()) {}
 
-  DataType operator()(d_type<access_level> domain, sycl::id<Dim> id) {
+  DataType operator()(d_type<access_level> domain, sycl::id<Dim> id) const {
     return map<Dim, std::uint8_t,
                grid_step * utils::power_off(sqrt2, nlev - access_level)>(
         domain, id, epsilon_domain);
@@ -169,14 +167,14 @@ template <Dimension Dim, std::size_t access_level> struct map_struct {
 
 int main(int argc, char *argv[]) {
 
-  if (argc != 6) {
-    std::cerr << "Usage: " << argv[0]
-              << " <input_pqr_file> origin_x origin_y origin_z num_iters"
-              << std::endl;
-    return 1;
-  }
+  //  if (argc != 6) {
+  //    std::cerr << "Usage: " << argv[0]
+  //              << " <input_pqr_file> origin_x origin_y origin_z num_iters"
+  //              << std::endl;
+  //    return 1;
+  //  }
 
-  int num_iter = std::stoi(argv[5]);
+  int num_iter = std::stoi(argv[1]);
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -214,78 +212,121 @@ int main(int argc, char *argv[]) {
   using Domain_type = decltype(Volumes_tetrahedra.get_domain());
   using Domain_type_io = decltype(inside_outside.get_domain());
 
+  {
+
+    auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
+      return -3 * x * x - 4 * y * y + 7 * z * z;
+    };
+
+    auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
+    q.parallel_for(
+         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+         [=](sycl::id<2> I) {
+           boundary_domain(I[0], I[1], 0) = boundary_conditions(
+               (DataType)I[0] / (std::get<1>(length) + 1),
+               (DataType)I[1] / (std::get<2>(length) + 1), 0);
+
+           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
+                                   (DataType)I[1] / (std::get<2>(length) + 1),
+                                   1);
+
+           boundary_domain(0, I[0], I[1]) = boundary_conditions(
+               0, (DataType)I[0] / (std::get<1>(length) + 1),
+               (DataType)I[1] / (std::get<2>(length) + 1));
+
+           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
+               boundary_conditions(1,
+                                   (DataType)I[0] / (std::get<1>(length) + 1),
+                                   (DataType)I[1] / (std::get<2>(length) + 1));
+
+           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
+               (DataType)I[0] / (std::get<1>(length) + 1), 0,
+               (DataType)I[1] / (std::get<2>(length) + 1));
+
+           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
+               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
+                                   1,
+                                   (DataType)I[1] / (std::get<2>(length) + 1));
+         })
+        .wait();
+
+    //  std::cout << "The boundary domain is: " << std::endl;
+    //  boundary_domain.print_domain();
+  }
+
   //  TD<Domain_type> td;
   //  TD<Domain_type_io> td2;
 
-  std::list<Atom<DataType>> atoms;
-
-  std::string filename = argv[1];
-  DataType origin_x = std::atof(argv[2]);
-  DataType origin_y = std::atof(argv[3]);
-  DataType origin_z = std::atof(argv[4]);
-
-  read_pqr_file(filename, atoms);
-
-  std::vector<Atom<DataType>> atoms_vector;
-  atoms_vector.reserve(atoms.size());
-
-  for (auto &atom : atoms) {
-    atom.Position[0] -= origin_x;
-    atom.Position[1] -= origin_y;
-    atom.Position[2] -= origin_z;
-    // atom.radius += 1.5f;
-    atoms_vector.push_back(atom);
-  }
+  //  std::list<Atom<DataType>> atoms;
+  //
+  //  std::string filename = argv[1];
+  //  DataType origin_x = std::atof(argv[2]);
+  //  DataType origin_y = std::atof(argv[3]);
+  //  DataType origin_z = std::atof(argv[4]);
+  //
+  //  read_pqr_file(filename, atoms);
+  //
+  //  std::vector<Atom<DataType>> atoms_vector;
+  //  atoms_vector.reserve(atoms.size());
+  //
+  //  for (auto &atom : atoms) {
+  //    atom.Position[0] -= origin_x;
+  //    atom.Position[1] -= origin_y;
+  //    atom.Position[2] -= origin_z;
+  //    // atom.radius += 1.5f;
+  //    atoms_vector.push_back(atom);
+  //  }
 
   // cubes_cutter::Cutter cutter{};
   // volume_computer::Volume_comp v_comp{};
 
   // Copy atoms to device
-  {
-    Atom<DataType> *atoms_device =
-        sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
-
-    q.memcpy(atoms_device, atoms_vector.data(),
-             sizeof(Atom<DataType>) * atoms_vector.size());
-
-    // Finding all the dots inside the protein
-    auto &io_domain = inside_outside.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      Sphere<DataType, Dim> Atom = atoms_device[I];
-      find_dots_in_sphere(Atom, io_domain, static_cast<DataType>(1.));
-    });
-
-    // Coarsening the dots domain
-    coarsen_domains(inside_outside);
-
-    mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
-  }
+  //  {
+  //    Atom<DataType> *atoms_device =
+  //        sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
+  //
+  //    q.memcpy(atoms_device, atoms_vector.data(),
+  //             sizeof(Atom<DataType>) * atoms_vector.size());
+  //
+  //    // Finding all the dots inside the protein
+  //    auto &io_domain = inside_outside.template get_domain<nlev>();
+  //    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+  //      Sphere<DataType, Dim> Atom = atoms_device[I];
+  //      find_dots_in_sphere(Atom, io_domain, static_cast<DataType>(1.));
+  //    });
+  //
+  //    // Coarsening the dots domain
+  //    coarsen_domains(inside_outside);
+  //
+  //    mark_epsilon_MG(inside_outside, Volumes_tetrahedra);
+  //  }
 
   // Defining the necessary function and creating the CG and GS type
   {
 
     // Instantiation the linear map for the coarse grid solver
-    using d_type = decltype(lhs_domain1.template get_domain<1>());
+    // using d_type = decltype(lhs_domain1.template get_domain<1>());
     auto vol_domain = Volumes_tetrahedra.template get_domain<1>();
     constexpr auto grid_fac = utils::power_off(2, nlev);
 
-    std::function<DataType(d_type, sycl::id<Dim>)> func = [=](d_type domain,
-                                                              sycl::id<Dim> I) {
-      return map<Dim, std::uint8_t, grid_step * const_sqrt(grid_fac)>(
-          domain, I, vol_domain);
-    };
+    std::function<DataType(d_type<1u>, sycl::id<Dim>)> func =
+        [=](d_type<1u> domain, sycl::id<Dim> I) {
+          return map<Dim, std::uint8_t, grid_step * const_sqrt(grid_fac)>(
+              domain, I, vol_domain);
+        };
 
-    auto solver = cg_solver::make_solver<DataType, 3>(
-        Float<1e-5>{}, lhs_domain1.template get_domain<1>(), func);
+    auto domain = lhs_domain1.template get_domain<1>();
 
-    // TD<decltype(lhs_domain1)> td;
+    auto solver =
+        cg_solver::make_solver<DataType, 3>(Float<1e-5>{}, domain, func);
 
     cycles::GS_Smoother_epsilon smoother{lhs_domain1, Volumes_tetrahedra};
 
     multigrid_domain::Multi_Level_map<Dim, DataType, map_struct, nlev> map_type{
         Volumes_tetrahedra};
 
-    // cycles::V_Cycle_base v_cycle{smoother, smoother, solver, lhs_domain1};
+    cycles::V_Cycle_base v_cycle{smoother, smoother, solver, lhs_domain1};
 
     auto *current = &lhs_domain2;
     auto *next = &lhs_domain3;
@@ -300,28 +341,32 @@ int main(int argc, char *argv[]) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    // for (int num = 0; num < num_iter; num++) {
+    std::index_sequence<1> num_iters_level;
+    std::index_sequence<2> smoother_sequence_pre;
+    std::index_sequence<3> smoother_sequence_post;
 
-    //   // Computing the defect
-    //   convolution::Subtract_Convolve_map(defect_domain.get_domain(),
-    //                                      lhs_domain1.get_domain(),
-    //                                      rhs_domain.get_domain());
+    for (int num = 0; num < num_iter; num++) {
 
-    //   v_cycle.iteration(*next, *current, defect_domain, mult_level,
-    //                     diff_operator, coarser, upper_grid_step, omega,
-    //                     diff_operator, num_iters_level,
-    //                     smoother_sequence_pre, smoother_sequence_post, true);
+      // Computing the defect
+      convolution::Subtract_Convolve_map(
+          defect_domain.get_domain(), lhs_domain1.get_domain(),
+          rhs_domain.get_domain(), map_type.get_map());
 
-    //   add_domains(lhs_domain1.get_domain(), next->get_domain(),
-    //               lhs_domain1.get_domain());
+      v_cycle.iteration(*next, *current, defect_domain, map_type, grid_step,
+                        omega, num_iters_level, smoother_sequence_pre,
+                        smoother_sequence_post, true);
 
-    //   // std::swap(current, next);
+      add_domains(lhs_domain1.get_domain(), next->get_domain(),
+                  lhs_domain1.get_domain());
 
-    //   //  std::cout << "After the iterations the current is: " << std::endl;
-    //   //  current->get_domain().print_domain();
-    //   //  std::cout << "After the iteration the next is: " << std::endl;
-    //   //  next->get_domain().print_domain();
-    // }
+      std::swap(current, next);
+
+      //  std::cout << "After the iterations the current is: " <<
+      // std::endl;
+      //  current->get_domain().print_domain();
+      //  std::cout << "After the iteration the next is: " << std::endl;
+      //  next->get_domain().print_domain();
+    }
 
     q.wait();
 

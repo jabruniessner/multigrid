@@ -308,7 +308,8 @@ struct GS_Smoother_epsilon {
 
   GS_Smoother_epsilon(Multigrid_domain<Dim, nlev, base_length...>,
                       Multigrid_domain_t<num_type, Dim, 1, nlev, base_length...,
-                                         utils::factorial(Dim) - 2> &epsilon)
+                                         utils::factorial(Dim) - 2>
+                          epsilon)
       : epsilon(epsilon) {}
 
   template <std::size_t num> struct TD;
@@ -330,10 +331,10 @@ struct GS_Smoother_epsilon {
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
-    auto &dest_domain = dest.template get_domain<level>();
-    auto &src_domain = src.template get_domain<level>();
-    auto &rhs_domain = rhs.template get_domain<level>();
-    auto &epsilon_domain = epsilon.template get_domain<level>();
+    auto dest_domain = dest.template get_domain<level>();
+    auto src_domain = src.template get_domain<level>();
+    auto rhs_domain = rhs.template get_domain<level>();
+    auto epsilon_domain = epsilon.template get_domain<level>();
     using d_type = std::remove_reference_t<decltype(src_domain)>;
 
     const DataType h = grid_step;
@@ -348,8 +349,9 @@ struct GS_Smoother_epsilon {
       std::array<std::size_t, sizeof...(elems)> indices{elems...};
       indices[place] += 1;
       return std::apply(domain, indices) *
-             get_local_epsilon(2 * Dim - epsilon_values[place],
-                               epsilon_values[place]);
+             get_local_epsilon(
+                 static_cast<num_type>(2 * Dim - epsilon_values[place]),
+                 static_cast<num_type>(epsilon_values[place]));
     };
 
     auto index_sub_in_place = [=](int place, const d_type domain,
@@ -357,8 +359,9 @@ struct GS_Smoother_epsilon {
       std::array<std::size_t, sizeof...(elems)> indices{elems...};
       indices[place] -= 1;
       return std::apply(domain, indices) *
-             get_local_epsilon(2 * Dim - epsilon_values[place],
-                               epsilon_values[place]);
+             get_local_epsilon(
+                 static_cast<num_type>(2 * Dim - epsilon_values[place]),
+                 static_cast<num_type>(epsilon_values[place]));
     };
 
     if constexpr (num_iters == 0) {
@@ -373,7 +376,7 @@ struct GS_Smoother_epsilon {
             std::array<num_type, 2 * Dim> epsilon_values =
                 get_tet_vals_dim<num_type, Dim,
                                  std::get<dims>(strides_array)...>(
-                    epsilon_domain, I[dims]...);
+                    epsilon_domain, (int)I[dims]...);
 
             if ((I[dims] + ...) % 2 == color) {
               const auto subs =
@@ -390,8 +393,9 @@ struct GS_Smoother_epsilon {
 
               DataType middle_value = 0;
               for (int i = 0; i < 2 * Dim; i++)
-                middle_value += get_local_epsilon(2 * Dim - epsilon_values[i],
-                                                  epsilon_values[i]);
+                middle_value += get_local_epsilon(
+                    static_cast<num_type>(2 * Dim - epsilon_values[i]),
+                    static_cast<num_type>(epsilon_values[i]));
 
               src_domain(I[dims]...) =
                   diag_inverse *
@@ -420,7 +424,8 @@ struct GS_Smoother_epsilon {
   }
 
   Multigrid_domain_t<num_type, Dim, 1, nlev, base_length...,
-                     utils::factorial(Dim) - 2> &epsilon;
+                     utils::factorial(Dim) - 2>
+      epsilon;
 };
 
 template <Dimension Dim, std::size_t nlev, Length... base_length>
@@ -699,7 +704,7 @@ template <typename Pre_Smoother, typename Post_Smoother, typename Solver,
           std::size_t level = nlev, std::size_t base_length1 = 1,
           std::size_t... base_length>
 struct V_Cycle_base {
-  V_Cycle_base(Pre_Smoother &presmoother, Post_Smoother &post_smoother,
+  V_Cycle_base(Pre_Smoother &presmoother, Post_Smoother &postsmoother,
                Solver &solver,
                Multigrid_domain_t<DataType, Dim, 0u, nlev, base_length1,
                                   base_length...> &)
@@ -781,6 +786,7 @@ struct V_Cycle_base {
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
+        PROFILE_END(refinement)
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
