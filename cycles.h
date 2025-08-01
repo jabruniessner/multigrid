@@ -331,8 +331,8 @@ struct GS_Smoother_epsilon {
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
-    auto dest_domain = dest.template get_domain<level>();
-    auto src_domain = src.template get_domain<level>();
+    auto &dest_domain = dest.template get_domain<level>();
+    auto &src_domain = src.template get_domain<level>();
     auto rhs_domain = rhs.template get_domain<level>();
     auto epsilon_domain = epsilon.template get_domain<level>();
     using d_type = std::remove_reference_t<decltype(src_domain)>;
@@ -397,14 +397,17 @@ struct GS_Smoother_epsilon {
                     static_cast<num_type>(2 * Dim - epsilon_values[i]),
                     static_cast<num_type>(epsilon_values[i]));
 
+              constexpr auto fac_inv = 1. / utils::factorial(Dim);
+
               src_domain(I[dims]...) =
-                  diag_inverse *
-                  (adds + subs + h * h * middle_value * rhs_domain(I[dims]...));
+                  (adds + subs + h * h * rhs_domain(I[dims]...)) / middle_value;
             }
           });
         }
       }
     }
+
+    src.domain.q.wait();
 
     std::swap(dest_domain.values_buff, src_domain.values_buff);
   }
@@ -427,6 +430,16 @@ struct GS_Smoother_epsilon {
                      utils::factorial(Dim) - 2>
       epsilon;
 };
+
+template <typename num_type, Dimension Dim, std::size_t nlev,
+          Length... base_length>
+auto make_GS_Smoother_epsilon(
+    Multigrid_domain<Dim, nlev, base_length...> a,
+    Multigrid_domain_t<num_type, Dim, 1, nlev, base_length...,
+                       utils::factorial(Dim) - 2>
+        epsilon) {
+  return GS_Smoother_epsilon<num_type, Dim, nlev, base_length...>(a, epsilon);
+}
 
 template <Dimension Dim, std::size_t nlev, Length... base_length>
 struct Jacobi_Smoother_PBE {
@@ -733,7 +746,8 @@ struct V_Cycle_base {
 
     if constexpr (iter_level == 1) {
       solver(next.template get_domain<iter_level>(),
-             rhs_domain.template get_domain<iter_level>());
+             rhs_domain.template get_domain<iter_level>(),
+             func.template get_map<iter_level>());
       return;
     } else {
 
@@ -760,8 +774,9 @@ struct V_Cycle_base {
         presmoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
                     rhs_domain, grid_step, omega, zero_initialize);
         PROFILE_END(pre_smoothing)
+        PRINT_DOMAIN(pre_smoothing, next, iter_level, nlev)
 
-        next.template get_domain<nlev>().q.wait();
+        //  next.template get_domain<nlev>().q.wait();
 
         PROFILE_START(defect_computation)
         convolution::Subtract_Convolve_map(
@@ -769,6 +784,8 @@ struct V_Cycle_base {
             next.template get_domain<iter_level>(),
             rhs_domain.template get_domain<iter_level>(),
             func.template get_map<iter_level>());
+
+        PRINT_DOMAIN(Subtract_Convolve, current, iter_level, nlev)
 
         PROFILE_END(defect_computation)
 
@@ -786,12 +803,13 @@ struct V_Cycle_base {
         level_transition::refinement(
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
-        PROFILE_END(refinement)
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
         PROFILE_END(refinement)
+
+        PRINT_DOMAIN(correction, next, iter_level, nlev)
 
         PROFILE_START(post_smoothing)
         postsmoother(Integer<iter_level>{}, smoother_iters_post, next, next,

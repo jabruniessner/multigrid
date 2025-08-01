@@ -17,12 +17,11 @@ using namespace domain;
 
 template <typename DataType, Dimension Dim, Length... strides_all,
           std::size_t... dims>
-void CG_solver(
-    Domain<Dim, strides_all...> &init_guess, Domain<Dim, strides_all...> &rhs,
-    Domain<Dim, strides_all...> &defect_r,
-    Domain<Dim, strides_all...> &defect_p,
-    std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim> I)> map,
-    DataType thresh, const std::index_sequence<dims...> &) {
+void CG_solver(Domain<Dim, strides_all...> &init_guess,
+               Domain<Dim, strides_all...> &rhs,
+               Domain<Dim, strides_all...> &defect_r,
+               Domain<Dim, strides_all...> &defect_p, auto map, DataType thresh,
+               const std::index_sequence<dims...> &) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
   assert(defect_r.num_values == defect_p.num_values &&
@@ -101,7 +100,8 @@ void CG_solver(
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  // std::cout << "The residual before the conjugate gradient is: " << residual
+  // std::cout << "The residual before the conjugate gradient is: " <<
+  // residual
   //           << std::endl;
 
   int count = 0;
@@ -164,8 +164,8 @@ void CG_solver(
     //  if (r_squared_value == 0)
     //    return;
 
-    //  if (p_squared_A_value == 0)
-    //    return;
+    if (p_squared_A_value == 0)
+      return;
     // init_guess.print_domain();
 
     q.submit([&](sycl::handler &h) {
@@ -188,12 +188,10 @@ void CG_solver(
 }
 
 template <typename DataType, Dimension Dim, Length... strides_all>
-void CG_solver(
-    Domain<Dim, strides_all...> &init_guess, Domain<Dim, strides_all...> &rhs,
-    Domain<Dim, strides_all...> &defect_r,
-    Domain<Dim, strides_all...> &defect_p,
-    std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim>)> map,
-    DataType m) {
+void CG_solver(Domain<Dim, strides_all...> &init_guess,
+               Domain<Dim, strides_all...> &rhs,
+               Domain<Dim, strides_all...> &defect_r,
+               Domain<Dim, strides_all...> &defect_p, auto map, DataType m) {
   CG_solver<DataType, Dim, strides_all...>(init_guess, rhs, defect_r, defect_p,
                                            map, m,
                                            std::make_index_sequence<Dim>());
@@ -202,35 +200,29 @@ void CG_solver(
 template <typename DataType, DataType thresh, Dimension Dim,
           Length... strides_all>
 struct Solver_CG {
-  Solver_CG(
-      Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
-      std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim>)> map)
+  Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain)
       : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
-        defect_p(Paddings::PERIODIC, sample_domain.q, 1), map(map) {};
+        defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
 
   void operator()(Domain<Dim, strides_all...> &init_guess,
-                  Domain<Dim, strides_all...> &rhs) {
+                  Domain<Dim, strides_all...> &rhs, auto map) {
     CG_solver<DataType, Dim, strides_all...>(init_guess, rhs, defect_r,
                                              defect_p, map, thresh);
   }
 
   Domain<Dim, strides_all...> defect_r;
   Domain<Dim, strides_all...> defect_p;
-  std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim>)> map;
 };
 
 template <typename DataType, DataType thresh, Dimension Dim,
           Length... strides_all>
-Solver_CG(Float<thresh>, Domain<Dim, strides_all...>,
-          std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim>)>)
+Solver_CG(Float<thresh>, Domain<Dim, strides_all...>)
     -> Solver_CG<DataType, thresh, Dim, strides_all...>;
 
 template <typename DataType, Dimension Dim, DataType thresh,
           Length... strides_all>
-auto make_solver(
-    Float<thresh> float_num, Domain<Dim, strides_all...> &domain,
-    std::function<DataType(Domain<Dim, strides_all...>, sycl::id<Dim>)> f) {
-  return Solver_CG<DataType, thresh, Dim, strides_all...>{float_num, domain, f};
+auto make_solver(Float<thresh> float_num, Domain<Dim, strides_all...> &domain) {
+  return Solver_CG<DataType, thresh, Dim, strides_all...>{float_num, domain};
 }
 
 } // namespace cg_solver

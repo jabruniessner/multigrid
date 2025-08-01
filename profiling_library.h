@@ -52,4 +52,15 @@ extern Values values;
 #define PROFILE_END(type)
 #endif
 
+#ifdef DEBUGMOD
+#define PRINT_DOMAIN(name, domain, iter_level, nlev)                           \
+  if constexpr (iter_level == nlev) {                                          \
+    std::cout << "After " << #name << std::endl;                               \
+    domain.template get_domain<iter_level>().print_domain();                   \
+  }
+
+#else
+#define PRINT_DOMAIN(name, domain, iter_level, nlev)
+#endif
+
 #endif

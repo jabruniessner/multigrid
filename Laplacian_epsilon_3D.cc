@@ -26,9 +26,9 @@
 template <typename T> struct TD;
 
 constexpr DataType grid_step = 1.;
-constexpr std::size_t nlev = 2;
+constexpr std::size_t nlev = 5;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 1;
+constexpr std::size_t side_length = 16;
 constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
@@ -156,7 +156,8 @@ template <Dimension Dim, std::size_t access_level> struct map_struct {
 
   DataType operator()(d_type<access_level> domain, sycl::id<Dim> id) const {
     return map<Dim, std::uint8_t,
-               grid_step * utils::power_off(sqrt2, nlev - access_level)>(
+               (DataType)(grid_step *
+                          utils::power_off(sqrt2, nlev - access_level))>(
         domain, id, epsilon_domain);
   }
 
@@ -312,16 +313,20 @@ int main(int argc, char *argv[]) {
 
     std::function<DataType(d_type<1u>, sycl::id<Dim>)> func =
         [=](d_type<1u> domain, sycl::id<Dim> I) {
-          return map<Dim, std::uint8_t, grid_step * const_sqrt(grid_fac)>(
-              domain, I, vol_domain);
+          return map<Dim, std::uint8_t,
+                     DataType(grid_step * const_sqrt(grid_fac))>(domain, I,
+                                                                 vol_domain);
         };
 
     auto domain = lhs_domain1.template get_domain<1>();
 
     auto solver =
-        cg_solver::make_solver<DataType, 3>(Float<1e-5>{}, domain, func);
+        cg_solver::make_solver<DataType, 3>(Float<(DataType)1e-5>{}, domain);
 
-    cycles::GS_Smoother_epsilon smoother{lhs_domain1, Volumes_tetrahedra};
+    using num_type = decltype(Volumes_tetrahedra)::ValueType;
+
+    auto smoother = cycles::make_GS_Smoother_epsilon<num_type>(
+        lhs_domain1, Volumes_tetrahedra);
 
     multigrid_domain::Multi_Level_map<Dim, DataType, map_struct, nlev> map_type{
         Volumes_tetrahedra};
@@ -343,7 +348,7 @@ int main(int argc, char *argv[]) {
 
     std::index_sequence<1> num_iters_level;
     std::index_sequence<2> smoother_sequence_pre;
-    std::index_sequence<3> smoother_sequence_post;
+    std::index_sequence<2> smoother_sequence_post;
 
     for (int num = 0; num < num_iter; num++) {
 

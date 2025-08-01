@@ -62,6 +62,9 @@ std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
 }
 
 template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
+
+  using ValueType = DataType;
+
   template <typename... Length>
   Grid(Paddings padding, sycl::queue &q, int padding_width)
       : strides{strides_all...}, padding(padding), padding_width(padding_width),
