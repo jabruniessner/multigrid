@@ -100,13 +100,19 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  // std::cout << "The residual before the conjugate gradient is: " <<
-  // residual
-  //           << std::endl;
+  std::cout << "The residual before the conjugate gradient is: " << residual
+            << std::endl;
+
+  std::cout << "The threshold is: " << thresh << std::endl;
 
   int count = 0;
   while (thresh < residual) {
     count++;
+    if (count % 1000 == 0) {
+      std::cout << "The residual after " << count << " iterations is "
+                << residual << std::endl;
+    }
+
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(r_squared_next, sycl::plus<>()),
                    [=](sycl::id<Dim> I, auto &r_squared_plus_1) {
@@ -151,15 +157,6 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                      DataType result = map(defect_p, I);
                      pAp += result * defect_p(I[dims]...);
                    });
-
-    if (count % 10 == 0) {
-      DataType r_squared_value = 0;
-      DataType p_squared_A_value = 0;
-
-      q.memcpy(&r_squared_value, r_squared, sizeof(DataType));
-      q.memcpy(&p_squared_A_value, p_squared_A, sizeof(DataType)).wait();
-      residual = std::sqrt(r_squared_value / defect_r.num_dofs);
-    }
 
     //  if (r_squared_value == 0)
     //    return;
