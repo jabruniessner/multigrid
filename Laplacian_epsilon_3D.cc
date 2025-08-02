@@ -24,9 +24,9 @@
 
 template <typename T> struct TD;
 
-constexpr std::size_t nlev = 1;
+constexpr std::size_t nlev = 2;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 256;
+constexpr std::size_t side_length = 128;
 constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
@@ -36,7 +36,7 @@ using MG_domain =
                                          type_dirs...>;
 
 constexpr auto &length = MG_domain<DataType, 0u>::length;
-constexpr DataType box_length_x = 33.;
+constexpr DataType box_length_x = 32.;
 constexpr DataType grid_step = box_length_x / std::get<0>(length);
 
 template <std::size_t N>

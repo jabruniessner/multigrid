@@ -175,6 +175,9 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
         *p_squared_A = 0;
       });
     });
+
+    q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
+    residual = std::sqrt(residual);
   }
 
   //  std::cout << "We made " << count << " CG iterations." << std::endl;
