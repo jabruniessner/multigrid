@@ -316,22 +316,29 @@ void print_grid_with_f(
 // }
 template <typename DataType> class TD;
 
-template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all>
+template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all,
+          typename... Origin>
 void print_grid_to_inp(
+    std::ostream &out,
     Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> &grid,
-    DataType grid_step, std::ostream &out) {
+    DataType grid_step, Origin... origin) {
+
+  static_assert(Dim == sizeof...(origin),
+                "There is a mismatch in the length of the origin and the "
+                "number of dimensions");
 
   std::size_t num_values = ((strides_all + 2 * grid.padding_width) * ...);
   std::size_t num_tets =
       utils::factorial(Dim) * ((strides_all + grid.padding_width) * ...);
 
-  out << num_values << " " << num_tets << " 0 0" << std::endl;
+  out << num_values << " " << num_tets << " 0 0 0" << std::endl;
   auto print_points = [&](auto domain, auto grid_step, auto &out,
                           auto... positions) {
     out << flatten_index<strides_all...>(grid.padding_width, positions...)
         << " ";
 
-    ((out << std::format("{:6.3e}", grid_step * positions) << " "), ...);
+    ((out << std::format("{:6.3e}", grid_step * positions + origin) << " "),
+     ...);
     out << std::endl;
   };
 
