@@ -24,9 +24,9 @@
 
 template <typename T> struct TD;
 
-constexpr std::size_t nlev = 2;
+constexpr std::size_t nlev = 1;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 128;
+constexpr std::size_t side_length = 64;
 constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
@@ -380,6 +380,9 @@ int main(int argc, char *argv[]) {
     }
 
     q.wait();
+
+    lhs_domain1.get_domain().print_vti_to_file(
+        "cool_data.vti", origin_x, origin_y, origin_z, box_length_x);
 
     // Now doing the actual solving
   }

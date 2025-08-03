@@ -13,6 +13,12 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkXMLImageDataWriter.h>
 
 #ifndef DOMAIN_H
 #define DOMAIN_H
@@ -164,6 +170,46 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     out << "component \"positions\" value 1" << std::endl;
     out << "component \"connections\" value 2" << std::endl;
     out << "component \"data\" value 3" << std::endl;
+  }
+
+  template <typename DataType2>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                       std::is_same_v<DataType2, DataType> && (Dim == 3),
+                   void>
+  print_vti_to_file(std::string outfile, DataType2 xmin, DataType2 ymin,
+                    DataType2 zmin, DataType2 Box_length) const {
+    // Create vtkImageData object
+
+    DataType spacing = Box_length / std::get<0>(length);
+    vtkSmartPointer<vtkImageData> imageData =
+        vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions((strides_all + 2)...);
+    imageData->SetSpacing(Box_length / std::get<0>(length),
+                          Box_length / std::get<1>(length),
+                          Box_length / std::get<2>(length));
+    imageData->SetOrigin(xmin, ymin, zmin);
+    imageData->AllocateScalars(VTK_DOUBLE, 1); // 1 component per point
+
+    using vtkTypeArray = std::conditional_t<std::is_same_v<DataType, float>,
+                                            vtkFloatArray, vtkDoubleArray>;
+
+    DataType *values = new DataType[this->num_values];
+    q.memcpy(values, this->values_buff, sizeof(DataType) * this->num_values)
+        .wait();
+
+    auto dataArray = vtkSmartPointer<vtkTypeArray>::New();
+    dataArray->SetNumberOfComponents(1); // Scalar
+    dataArray->SetArray(const_cast<DataType *>(values), this->num_values,
+                        1); // 0 = VTK does not own memory
+
+    //  // Attach to image
+    imageData->GetPointData()->SetScalars(dataArray);
+
+    //  // Write to .vti
+    auto writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+    writer->SetFileName(outfile.c_str());
+    writer->SetInputData(imageData);
+    writer->Write();
   }
 
   template <typename... Indices, typename DataType2 = DataType>
