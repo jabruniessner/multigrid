@@ -757,18 +757,20 @@ struct V_Cycle_base {
       for (int j = 0; j < num_iters; j++) {
         PROFILE_START(overall_time)
 
-        if (iter_level == nlev) {
-          PROFILE_START(residual_computation)
+        //  if (iter_level == nlev) {
+        //    PROFILE_START(residual_computation)
 
-          DataType residual;
-          domain_compute_norm_squared(residual,
-                                      rhs_domain.template get_domain<nlev>());
-          residual = std::sqrt(residual /
-                               rhs_domain.template get_domain<nlev>().num_dofs);
-          std::cout << "The residual after " << j << " iterations is "
-                    << residual << std::endl;
-          PROFILE_END(residual_computation)
-        }
+        //    DataType residual;
+        //    domain_compute_norm_squared(residual,
+        //                                rhs_domain.template
+        //                                get_domain<nlev>());
+        //    residual = std::sqrt(residual /
+        //                         rhs_domain.template
+        //                         get_domain<nlev>().num_dofs);
+        //    std::cout << "The residual after " << j << " iterations is "
+        //              << residual << std::endl;
+        //    PROFILE_END(residual_computation)
+        //  }
 
         PROFILE_START(pre_smoothing)
         presmoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
@@ -804,9 +806,10 @@ struct V_Cycle_base {
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
 
-        add_domains(next.template get_domain<iter_level>(),
-                    next.template get_domain<iter_level>(),
-                    current.template get_domain<iter_level>());
+        add_and_multiply_domains(next.template get_domain<iter_level>(),
+                                 next.template get_domain<iter_level>(),
+                                 current.template get_domain<iter_level>(),
+                                 omega);
         PROFILE_END(refinement)
 
         PRINT_DOMAIN(correction, next, iter_level, nlev)

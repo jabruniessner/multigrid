@@ -25,10 +25,10 @@
 
 template <typename T> struct TD;
 
-constexpr std::size_t nlev = 1;
+constexpr std::size_t nlev = 2;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 1;
-constexpr DataType omega = 1.;
+constexpr std::size_t side_length = 16;
+// constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>
 using MG_domain =
@@ -37,7 +37,7 @@ using MG_domain =
                                          type_dirs...>;
 
 constexpr auto &length = MG_domain<DataType, 0u>::length;
-constexpr DataType box_length_x = 32.;
+constexpr DataType box_length_x = 16.;
 constexpr DataType grid_step = box_length_x / std::get<0>(length);
 
 template <std::size_t N>
@@ -171,14 +171,15 @@ template <Dimension Dim, std::size_t access_level> struct map_struct {
 
 int main(int argc, char *argv[]) {
 
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0]
-              << " <input_pqr_file> origin_x origin_y origin_z num_iters"
+              << " <input_pqr_file> origin_x origin_y origin_z omega num_iters"
               << std::endl;
     return 1;
   }
 
-  int num_iter = std::stoi(argv[5]);
+  DataType omega = std::stod(argv[5]);
+  int num_iter = std::stoi(argv[6]);
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -207,11 +208,11 @@ int main(int argc, char *argv[]) {
       u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
       helper(Paddings::PERIODIC, q, 1);
 
-  std::cout << "The number of values in the inside outside domain is: "
-            << inside_outside.get_domain().num_values << std::endl;
-
-  std::cout << "The number of values in the Volumes_tetrahedra domain is: "
-            << Volumes_tetrahedra.get_domain().num_values << std::endl;
+  //  std::cout << "The number of values in the inside outside domain is: "
+  //            << inside_outside.get_domain().num_values << std::endl;
+  //
+  //  std::cout << "The number of values in the Volumes_tetrahedra domain is: "
+  //            << Volumes_tetrahedra.get_domain().num_values << std::endl;
 
   using Domain_type = decltype(Volumes_tetrahedra.get_domain());
   using Domain_type_io = decltype(inside_outside.get_domain());
@@ -342,8 +343,10 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::index_sequence<1> num_iters_level;
-    std::index_sequence<2> smoother_sequence_pre;
-    std::index_sequence<2> smoother_sequence_post;
+    std::index_sequence<10> smoother_sequence_pre;
+    std::index_sequence<10> smoother_sequence_post;
+
+    std::cout << "The value for omega is: " << omega << std::endl;
 
     for (int num = 0; num < num_iter; num++) {
 
@@ -356,8 +359,9 @@ int main(int argc, char *argv[]) {
                         omega, num_iters_level, smoother_sequence_pre,
                         smoother_sequence_post, true);
 
-      add_domains(lhs_domain1.get_domain(), next->get_domain(),
-                  lhs_domain1.get_domain());
+      domain::add_and_multiply_domains(lhs_domain1.get_domain(),
+                                       lhs_domain1.get_domain(),
+                                       next->get_domain(), (DataType)1.0);
 
       // Computing the defect after adding
       convolution::Subtract_Convolve_map(
@@ -382,17 +386,17 @@ int main(int argc, char *argv[]) {
 
     q.wait();
 
-    lhs_domain1.get_domain().print_vti_to_file(
-        "cool_data.vti", origin_x, origin_y, origin_z, box_length_x);
+    //  lhs_domain1.get_domain().print_vti_to_file(
+    //      "cool_data.vti", origin_x, origin_y, origin_z, box_length_x);
 
-    std::ofstream outfile{"tetrahedra_grid.inp"};
+    //  std::ofstream outfile{"tetrahedra_grid.inp"};
 
-    domain::print_grid_to_inp<std::uint8_t, Dim,
-                              side_length * utils::power_off(2, nlev) - 1,
-                              side_length * utils::power_off(2, nlev) - 1,
-                              side_length * utils::power_off(2, nlev) - 1>(
-        outfile, Volumes_tetrahedra.get_domain(), grid_step, origin_x, origin_y,
-        origin_z);
+    //  domain::print_grid_to_inp<std::uint8_t, Dim,
+    //                            side_length * utils::power_off(2, nlev) - 1,
+    //                            side_length * utils::power_off(2, nlev) - 1,
+    //                            side_length * utils::power_off(2, nlev) - 1>(
+    //      outfile, Volumes_tetrahedra.get_domain(), grid_step, origin_x,
+    //      origin_y, origin_z);
 
     // Now doing the actual solving
   }

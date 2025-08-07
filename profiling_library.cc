@@ -11,6 +11,7 @@ stack_depth::~stack_depth() { stack_depth_counter--; }
 
 Values::~Values() {
 
+#ifdef PROFILING
 #define PRINT_TIMING(type)                                                     \
   std::cout << #type << " time: " << type                                      \
             << "s: " << (overall_time == 0 ? 0 : type / overall_time * 100)    \
@@ -23,6 +24,7 @@ Values::~Values() {
   PRINT_TIMING(refinement);
   PRINT_TIMING(post_smoothing);
   PRINT_TIMING(residual_computation);
+#endif
 }
 
 Values values;

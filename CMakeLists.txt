@@ -83,7 +83,7 @@ add_executable(test_get_epsilon_values Test_get_epsilon_values.cc)
 
 # Link NVTX to your target
 target_link_libraries(Laplacian3D_epsilon PRIVATE prof)
-target_compile_definitions(Laplacian3D_epsilon PRIVATE PROFILING)
+#target_compile_definitions(Laplacian3D_epsilon PRIVATE PROFILING)
 target_link_libraries(Laplacian3D_epsilon PRIVATE 
     VTK::CommonCore
     VTK::CommonDataModel

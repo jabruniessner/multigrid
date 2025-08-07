@@ -100,10 +100,10 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  std::cout << "The residual before the conjugate gradient is: " << residual
-            << std::endl;
-
-  std::cout << "The threshold is: " << thresh << std::endl;
+  //  std::cout << "The residual before the conjugate gradient is: " << residual
+  //            << std::endl;
+  //
+  //  std::cout << "The threshold is: " << thresh << std::endl;
 
   int count = 0;
   while (thresh < residual) {
