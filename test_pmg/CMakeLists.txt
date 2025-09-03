@@ -4,6 +4,8 @@ project("Testpmgversion")
 
 set(CMAKE_CXX_COMPILER "acpp")
 
+
+
 add_library(pmgc SHARED IMPORTED)
 set_target_properties(pmgc PROPERTIES
   IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/../pmgc/libpmgc.so"
@@ -15,6 +17,8 @@ set_target_properties(pmgf PROPERTIES
   IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/../pmgf/libmgrid.so"
   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../pmgf/"
 )
+
+set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_FLAGS "--acpp-targets=omp.library-only")
 
@@ -53,6 +57,17 @@ add_executable(test_Bbuilder_7
 add_executable(test_Bbuilder_27
   test_buildB_27.cc functions.cc 
   )
+
+add_executable(test_gsd7
+  test_gsd7.cc functions.cc
+  )
+
+target_link_libraries(test_gsd7
+  PRIVATE
+        pmgc
+        pmgf
+  )
+
 
 
 target_link_libraries(test_Bbuilder_27
