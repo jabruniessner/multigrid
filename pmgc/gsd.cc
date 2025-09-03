@@ -172,40 +172,46 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, double *rpc,
             const int j = I[1] + 2;
             const int k = I[2] + 2;
 
-            const auto tmpO =
-                +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) +
-                VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) +
-                VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) +
-                VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
+            if ((i + j + k) % 8 == color) {
 
-            const auto tmpU =
-                +VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
-                VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) +
-                VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) +
-                VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) +
-                VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) +
-                VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) +
-                VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) +
-                VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) +
-                VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
+              const auto tmpO =
+                  +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                  VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                  VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                  VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                  VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) +
+                  VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) +
+                  VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) +
+                  VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
 
-            const auto tmpD =
-                +VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) +
-                VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) +
-                VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) +
-                VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) +
-                VAT3(uSW, i + 1, j + 1, k - 1) * VAT3(x, i + 1, j + 1, k - 1) +
-                VAT3(uSE, i - 1, j + 1, k - 1) * VAT3(x, i - 1, j + 1, k - 1) +
-                VAT3(uNW, i + 1, j - 1, k - 1) * VAT3(x, i + 1, j - 1, k - 1) +
-                VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
+              const auto tmpU =
+                  +VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
+                  VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) +
+                  VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) +
+                  VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) +
+                  VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) +
+                  VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) +
+                  VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) +
+                  VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) +
+                  VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
 
-            VAT3(x, i, j, k) = (VAT3(fc, i, j, k) + (tmpO + tmpU + tmpD)) /
-                               (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+              const auto tmpD =
+                  +VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                  VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) +
+                  VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) +
+                  VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) +
+                  VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) +
+                  VAT3(uSW, i + 1, j + 1, k - 1) *
+                      VAT3(x, i + 1, j + 1, k - 1) +
+                  VAT3(uSE, i - 1, j + 1, k - 1) *
+                      VAT3(x, i - 1, j + 1, k - 1) +
+                  VAT3(uNW, i + 1, j - 1, k - 1) *
+                      VAT3(x, i + 1, j - 1, k - 1) +
+                  VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
+
+              VAT3(x, i, j, k) = (VAT3(fc, i, j, k) + (tmpO + tmpU + tmpD)) /
+                                 (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+            }
           });
   }
 }
