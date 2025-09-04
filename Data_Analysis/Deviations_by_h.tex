@@ -1,0 +1,109 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+\lstset{
+  language=C++,              % Set language to C++
+  basicstyle=\ttfamily\small,   % Code font
+  keywordstyle=\color{blue},    % Keywords in blue
+  commentstyle=\color{gray},   % Comments in gray
+  stringstyle=\color{red},     % Strings in red
+  numbers=left,                % Line numbers on the left
+  numberstyle=\tiny,
+  stepnumber=1,
+  breaklines=true,             % Line breaking
+  frame=single,                % Frame around the code
+  tabsize=2,
+  showstringspaces=false
+}
+
+
+\textwidth=150mm
+\textheight=250mm
+\hoffset= -10mm       % may need change
+\voffset= -25mm 
+
+\title{Simple Laplacian RB Gau{\ss}-Seidel Smoother and other Measures}
+\author{Jakob Niessner}
+%\date{June 2025}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{|c|c|}
+      \hline
+      \textbf{Parameter} & \textbf{Value} \\
+      \hline
+      Smoother & RB Gau{\ss}-Seidel \\
+      Stencil size & 7 \\
+      Coarsening & injection \\ 
+      Prolongation & trilinear interpolation \\
+      Boundary conditions & Dirichlet \\ 
+      True solution & $u(x, y, z) = -3x^2 -4y^2 +7z^2$ \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \caption{Solver specifications}
+\end{table}
+
+
+\begin{figure}[h!]
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{deviations_by_h.pdf}
+  \end{center}
+  \label{residuals}
+  \caption{Integral deviation $\left(\sqrt{\int (sol-u)^2 dx} \right)$ and Energy norm by grid step size}
+\end{figure}
+
+\pagebreak
+
+\begin{figure}
+\begin{lstlisting}
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
+                       Domain<Dim, strides_all...> &src,
+                       const std::array<DataType, size> values,
+                       const std::array<Offsets, size> offsets,
+                       std::index_sequence<dims...>) {
+  assert(dest.q == src.q);
+  // assert(dest.padding_width == src.padding_width);
+
+  dest.q.submit([&](sycl::handler &h) {
+    h.parallel_for(sycl::range<Dim>(dest.strides[dims]...),
+                   [=](sycl::id<Dim> I) {
+                     ((I[dims] += dest.padding_width), ...);
+                     const sycl::id<Dim> I_fine{2 * I[dims]...};
+                     dest(I[dims]...) = src(I_fine[dims]...);
+                   });
+  });
+
+  
+}
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all>
+void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
+                       Domain<Dim, strides_all...> &src,
+                       const std::array<DataType, size> values,
+                       const std::array<Offsets, size> offsets) {
+  coarsening_inject(dest, src, values, offsets,
+                    std::make_index_sequence<Dim>());
+}
+
+\end{lstlisting}
+\caption{Injection routine}
+\end{figure}
+
+
+
+  
+
+\end{document}

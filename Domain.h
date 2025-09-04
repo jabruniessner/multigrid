@@ -1,14 +1,24 @@
+#include "bitshift_lib.h"
+#include "iterate_tets.h"
 #include "predefinitions.h"
 #include "utils.h"
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <iostream>
 #include <ostream>
 #include <sycl/sycl.hpp>
 #include <tuple>
+#include <type_traits>
 #include <utility>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkXMLImageDataWriter.h>
 
 #ifndef DOMAIN_H
 #define DOMAIN_H
@@ -58,6 +68,9 @@ std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
 }
 
 template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
+
+  using ValueType = DataType;
+
   template <typename... Length>
   Grid(Paddings padding, sycl::queue &q, int padding_width)
       : strides{strides_all...}, padding(padding), padding_width(padding_width),
@@ -73,8 +86,11 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     ((num_dofs *= strides_all), ...);
 
     values_buff = sycl::malloc_device<DataType>(num_values, q);
-    q.wait();
-    // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+
+    if constexpr (std::is_arithmetic_v<DataType>) {
+      q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+      // q.wait();
+    }
   }
 
   template <typename... Positions>
@@ -101,26 +117,12 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     return k;
   }
 
-  DataType *values_buff;
-  Length strides[Dim];
-  Length num_values;
-  Length num_dofs;
-  Length padding_width;
-  Paddings padding;
-  sycl::queue &q;
-
-  static constexpr std::array<Length, Dim> length{strides_all...};
-};
-
-template <Dimension Dim, Length... strides_all>
-struct Domain : Grid<DataType, Dim, strides_all...> {
-  Domain(Paddings padding, sycl::queue &q, int padding_width)
-      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {
-    q.memset(this->values_buff, 0, this->num_values * sizeof(DataType)).wait();
-  }
-
-  void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
-                          DataType zmin, DataType Box_length) const {
+  template <typename DataType2>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                       std::is_same_v<DataType2, DataType>,
+                   void>
+  print_dx_to_stream(std::ostream &out, DataType2 xmin, DataType2 ymin,
+                     DataType2 zmin, DataType2 Box_length) const {
 
 #define format_v(X) std::format("{:<+13e} ", X)
 
@@ -170,19 +172,70 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     out << "component \"data\" value 3" << std::endl;
   }
 
-  template <typename... Indices> void print_domain(Indices... indices) {
+  template <typename DataType2>
+  std::enable_if_t<std::is_floating_point_v<DataType> &&
+                       std::is_same_v<DataType2, DataType> && (Dim == 3),
+                   void>
+  print_vti_to_file(std::string outfile, DataType2 xmin, DataType2 ymin,
+                    DataType2 zmin, DataType2 Box_length) const {
+    // Create vtkImageData object
+
+    DataType spacing = Box_length / std::get<0>(length);
+    vtkSmartPointer<vtkImageData> imageData =
+        vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions((strides_all + 2)...);
+    imageData->SetSpacing(Box_length / std::get<0>(length),
+                          Box_length / std::get<1>(length),
+                          Box_length / std::get<2>(length));
+    imageData->SetOrigin(xmin, ymin, zmin);
+    imageData->AllocateScalars(VTK_DOUBLE, 1); // 1 component per point
+
+    using vtkTypeArray = std::conditional_t<std::is_same_v<DataType, float>,
+                                            vtkFloatArray, vtkDoubleArray>;
+
+    DataType *values = new DataType[this->num_values];
+    q.memcpy(values, this->values_buff, sizeof(DataType) * this->num_values)
+        .wait();
+
+    auto dataArray = vtkSmartPointer<vtkTypeArray>::New();
+    dataArray->SetNumberOfComponents(1); // Scalar
+    dataArray->SetArray(const_cast<DataType *>(values), this->num_values,
+                        1); // 0 = VTK does not own memory
+
+    //  // Attach to image
+    imageData->GetPointData()->SetScalars(dataArray);
+
+    //  // Write to .vti
+    auto writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+    writer->SetFileName(outfile.c_str());
+    writer->SetInputData(imageData);
+    writer->Write();
+  }
+
+  template <typename... Indices, typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
+  print_domain(Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
       for (Position1D i = 0;
            i < this->strides[sizeof...(Indices)] + 2 * this->padding_width; i++)
         print_domain(indices..., i);
       std::cout << std::endl;
     } else {
-      std::cout << std::format("{:6.3f} ", this->get_value(indices...));
+      if constexpr (std::is_floating_point_v<DataType>) {
+        std::cout << std::format("{:6.3f} ", this->get_value(indices...));
+      } else if constexpr (std::is_same_v<DataType, std::uint8_t>) {
+        std::cout << (int)(this->get_value(indices...));
+      } else {
+        std::cout << this->get_value(indices...);
+      }
     }
   };
 
-  template <typename... Indices>
-  void print_domain_to_stream(std::ostream &output, Indices... indices) {
+  template <typename... Indices, typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
+  print_domain_to_stream(std::ostream &output, Indices... indices) {
     if constexpr (sizeof...(Indices) < Dim) {
       constexpr auto size = sizeof...(Indices);
       constexpr auto dimension_size =
@@ -197,22 +250,146 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     }
   }
 
-  template <std::size_t... Ints>
-  void print_header(std::ostream &output, std::index_sequence<Ints...>) {
+  template <std::size_t... Ints, typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
+  print_header(std::ostream &output, std::index_sequence<Ints...>) {
     output << "Dimension: " << Dim << std::endl;
     output << "Number of points in direction:" << std::endl;
     ((output << "Dir " << Ints << " " << strides_all + 1 << std::endl), ...);
   }
 
-  void print_header(std::ostream &output) {
+  template <typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
+  print_header(std::ostream &output) {
     print_header(output, std::make_index_sequence<Dim>{});
   }
 
-  void print_to_output(std::ostream &output) {
+  template <typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                   std::is_same_v<DataType, DataType2>>
+  print_to_output(std::ostream &output) {
     print_header(output);
     print_domain_to_stream(output);
   }
+
+  DataType *values_buff;
+  Length strides[Dim];
+  Length num_values;
+  Length num_dofs;
+  Length padding_width;
+  Paddings padding;
+  sycl::queue &q;
+
+  static constexpr std::array<Length, Dim> length{strides_all...};
 };
+
+template <typename DataType, UnsignedIntegral Num_Type, Dimension Dim,
+          typename F_type, Length... strides_all, typename... Positions>
+void print_grid_with_f(
+    Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> domain,
+    DataType grid_step, std::ostream &out, F_type function,
+    std::size_t boundary, Positions... positions) {
+
+  if constexpr (sizeof...(Positions) == Dim) {
+    function(domain, grid_step, out, positions...);
+  } else {
+    std::array<Length, sizeof...(strides_all)> a{(strides_all + boundary)...};
+    for (int i = 0; i < a[sizeof...(Positions)]; i++) {
+      print_grid_with_f<DataType, Num_Type, Dim, F_type, strides_all...>(
+          domain, grid_step, out, function, boundary, positions..., i);
+    }
+  }
+}
+
+// template <typename DataType, UnsignedIntegral Num_Type, Dimension Dim,
+//           Length... strides_all, typename... Positions>
+// void print_tets(
+//     Grid<DataType, Dim + 1, strides_all..., utils::factorial(Dim) - 2>
+//     domain, DataType grid_step, std::ostream &out, Positions... positions) {
+//
+//   if constexpr (sizeof...(Positions) == Dim) {
+//
+//   } else {
+//   }
+// }
+template <typename DataType> class TD;
+
+template <UnsignedIntegral Num_Type, Dimension Dim, Length... strides_all,
+          typename... Origin>
+void print_grid_to_inp(
+    std::ostream &out,
+    Grid<Num_Type, Dim + 1, strides_all..., utils::factorial(Dim) - 2> &grid,
+    DataType grid_step, Origin... origin) {
+
+  static_assert(Dim == sizeof...(origin),
+                "There is a mismatch in the length of the origin and the "
+                "number of dimensions");
+
+  std::size_t num_values = ((strides_all + 2 * grid.padding_width) * ...);
+  std::size_t num_tets =
+      utils::factorial(Dim) * ((strides_all + grid.padding_width) * ...);
+
+  out << num_values << " " << num_tets << " 0 0 0" << std::endl;
+  auto print_points = [&](auto domain, auto grid_step, auto &out,
+                          auto... positions) {
+    out << flatten_index<strides_all...>(grid.padding_width, positions...)
+        << " ";
+
+    ((out << std::format("{:6.3e}", grid_step * positions + origin) << " "),
+     ...);
+    out << std::endl;
+  };
+
+  auto print_tets = [&](auto domain, auto grid_step, auto &out,
+                        auto... positions) {
+    auto print_tet = [&](blas::vector<Num_Type, Dim + 1> &a, auto j) {
+      auto index = flatten_index<strides_all..., utils::factorial(Dim) - 2>(
+          grid.padding_width, positions..., j);
+      out << index << " " << (int)grid.get_value(positions..., j) << " tet ";
+
+      for (auto i : a) {
+        auto vec =
+            bitshift::convert_byte_to_vec<std::size_t, decltype(i), 3>(i);
+        auto pos_vec = vec + blas::vector<int, Dim>{positions...};
+
+        auto index = std::apply(
+            [&](auto... positions) {
+              return flatten_index<strides_all...>(grid.padding_width,
+                                                   positions...);
+            },
+            (std::array<std::size_t, 3>)pos_vec);
+
+        out << index << " ";
+      }
+
+      //  auto num_pos = a + blas::vector<int, Dim + 1>{positions...};
+      //  // auto num_pos = blas::vector<int, Dim + 1>{positions...} + a;
+
+      //  for (auto i : num_pos) {
+      //    out << i << " ";
+      //  }
+      out << std::endl;
+      // out << grid.get_value(positions, j)
+    };
+
+    iterate_over_tets<Dim, Num_Type>(print_tet);
+  };
+
+  print_grid_with_f<DataType, Num_Type, Dim, decltype(print_points),
+                    strides_all...>(grid, grid_step, out, print_points,
+                                    2 * grid.padding_width);
+
+  print_grid_with_f<DataType, Num_Type, Dim, decltype(print_tets),
+                    strides_all...>(grid, grid_step, out, print_tets,
+                                    grid.padding_width);
+
+  // print_tets();
+}
+
+template <Dimension Dim, Length... strides_all>
+using Domain = Grid<DataType, Dim, strides_all...>;
 
 template <Dimension Dim, Length... strides_all, std::size_t... dims>
 int domain_compute_norm_squared(DataType &result,

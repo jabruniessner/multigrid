@@ -19,20 +19,19 @@
 
 // template <typename T> inline T square(T x) { return x * x; }
 
-template <typename DataType, Dimension Dim, Length... strides,
-          typename... Positions, Length... directions>
-void find_dots_in_sphere_helper(Sphere<DataType, Dim> &sphere,
-                                domain::Domain<Dim, strides...> &domain,
-                                DataType grid_step,
-                                std::index_sequence<directions...>,
-                                Positions... positions) {
+template <typename DataType, typename DataType2, Dimension Dim,
+          Length... strides, typename... Positions, Length... directions>
+void find_dots_in_sphere_helper(
+    Sphere<DataType, Dim> &sphere,
+    domain::Grid<DataType2, Dim, strides...> &domain, DataType grid_step,
+    std::index_sequence<directions...>, Positions... positions) {
 
   static_assert(sizeof...(directions) <= Dim,
                 "Break condition never satisfied");
 
   if constexpr (sizeof...(directions) == Dim) {
     auto a = std::make_tuple(positions...);
-    domain(positions...) = 1;
+    domain(positions...) = static_cast<DataType2>(1);
 
   } else if constexpr (sizeof...(directions) == 0) {
 
@@ -77,9 +76,10 @@ void find_dots_in_sphere_helper(Sphere<DataType, Dim> &sphere,
   }
 }
 
-template <typename DataType, Dimension Dim, Length... strides>
+template <typename DataType, typename DataType2, Dimension Dim,
+          Length... strides>
 void find_dots_in_sphere(Sphere<DataType, Dim> &sphere,
-                         domain::Domain<Dim, strides...> domain,
+                         domain::Grid<DataType2, Dim, strides...> domain,
                          const DataType grid_step) {
   find_dots_in_sphere_helper(sphere, domain, grid_step,
                              std::make_index_sequence<0u>{});

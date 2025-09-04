@@ -28,7 +28,7 @@ constexpr int side_length_y = 100;
 constexpr int side_length_z = 100;
 constexpr int num_edges = 19;
 
-using DataType = float;
+// using DataType = float;
 
 template <typename T> struct TD;
 

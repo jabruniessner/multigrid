@@ -13,4 +13,8 @@ concept subscriptable = requires(T t, Index i) {
 template <typename T>
 concept Arithmetic = std::is_arithmetic_v<T>;
 
+template <typename num_type>
+concept UnsignedIntegral =
+    std::is_integral_v<num_type> && !std::is_signed_v<num_type>;
+
 #endif // !CONCEPTS_H

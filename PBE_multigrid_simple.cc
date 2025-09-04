@@ -31,14 +31,14 @@ constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa; // kappa * kappa;
 constexpr DataType ionradius = 1.5;
-constexpr DataType grid_step = 0.5;
+constexpr DataType grid_step = 1;
 
 // constexpr DataType delta_epsilon = 0;
 constexpr DataType delta_epsilon =
     epsilon_p - epsilon_r; // Difference in epsilon
 
 using Domain_Type =
-    Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
+    Multigrid_domain<Dim, 0u, nlev, base_length, base_length, base_length>;
 
 using Domain_Type_upper = decltype(Domain_Type::domain_t_v)::domain_t;
 
@@ -79,16 +79,17 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type domain) {
 
 int main(int argc, char *argv[]) {
 
-  // epsilon_r = 1.0;
+  // constexpr DataType epsilon_r = 1.0;
 
   using OffsetType = std::array<int, Dim>;
 
-  if (argc < 3) {
-    std::cout
-        << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
-        << std::endl;
-    return 0;
-  }
+  //  if (argc < 3) {
+  //    std::cout
+  //        << "Usage: ./this_program in_file out_file x_min y_min z_min
+  //        num_iters"
+  //        << std::endl;
+  //    return 0;
+  //  }
   // int num_iters = std::stoi(argv[3]);
 
 #ifdef DEBUGMODE
@@ -100,30 +101,30 @@ int main(int argc, char *argv[]) {
   sycl::queue q{selector,
                 sycl::property_list{sycl::property::queue::in_order{}}};
 
-  std::string filename_in{argv[1]};
-  std::string filename_out{argv[2]};
+  // std::string filename_in{argv[1]};
+  // std::string filename_out{argv[2]};
   std::list<Atom<DataType>> atom_list;
-  read_pqr_file(filename_in, atom_list);
+  // read_pqr_file(filename_in, atom_list);
 
   const auto num_atoms = atom_list.size();
 
   std::vector<Atom<DataType>> atoms_vector;
   atoms_vector.reserve(num_atoms);
 
-  auto x_min = std::stod(argv[3]);
-  auto y_min = std::stod(argv[4]);
-  auto z_min = std::stod(argv[5]);
-  int iter_num = std::stof(argv[6]);
+  //  auto x_min = std::stod(argv[3]);
+  //  auto y_min = std::stod(argv[4]);
+  //  auto z_min = std::stod(argv[5]);
+  int iter_num = std::stof(argv[1]);
 
   // std::printf("The threshold is %f\n", thresh);
 
-  for (auto &atom : atom_list) {
-    atom.Position[0] -= x_min;
-    atom.Position[1] -= y_min;
-    atom.Position[2] -= z_min;
-    // atom.radius += ionradius;
-    atoms_vector.push_back(atom);
-  }
+  //  for (auto &atom : atom_list) {
+  //    atom.Position[0] -= x_min;
+  //    atom.Position[1] -= y_min;
+  //    atom.Position[2] -= z_min;
+  //    // atom.radius += ionradius;
+  //    atoms_vector.push_back(atom);
+  //  }
 
   Atom<DataType> *atoms_device =
       sycl::malloc_device<Atom<DataType>>(atom_list.size(), q);
@@ -298,47 +299,44 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-8>{},
+    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
                                        sol.template get_domain<1>(), values_op,
                                        offsets_op);
 
-    // Jacobi_Smoother_PBE j_smoother(rhs_domain);
-    //
     Gauss_Seidel_PBE j_smoother(rhs_domain);
 
     V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
 
-    std::index_sequence<1> num_iters{};
-    std::index_sequence<2> smoothing_steps;
+    constexpr std::size_t number_iterations = 1;
 
-    auto *a = &sol;
-    auto *b = &lhs_domain1;
+    std::index_sequence<number_iterations> num_iters{};
+    std::index_sequence<2> smoothing_steps;
 
     for (int i = 0; i < iter_num; i++) {
 
-      // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-      // grid_step,
-      //           epsilon_r, delta_epsilon);
+      //  std::cout << "The sol prior to copmute_residual is: " << std::endl;
+      //  sol.template get_domain<nlev>().print_domain();
+
+      //  std::cout << std::endl;
+      //  std::cout << std::endl;
+
+      //  std::cout << "The lhs_domain1 domain before computing the residual is:
+      //  "
+      //            << std::endl;
+      // lhs_domain1.template get_domain<nlev>().print_domain();
 
       DataType const residual =
           compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
+                               lhs_domain1.template get_domain<nlev>(),
                                lhs_domain2.template get_domain<nlev>(),
                                kappa_.template get_domain<nlev>(),
-                               epsilony_map.template get_domain<nlev>(),
+                               epsilonx_map.template get_domain<nlev>(),
                                epsilony_map.template get_domain<nlev>(),
                                epsilonz_map.template get_domain<nlev>(),
                                kappa_2, grid_step, epsilon_r, delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
-
-      //  std::index_sequence<30> iter_nums{};
-      //  j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
-      //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
-      //             grid_step, epsilon_r, delta_epsilon, omega);
-
-      // std::swap(a, b);
+      std::cout << "The residual after " << number_iterations * i
+                << " iterations is " << residual << std::endl;
 
       v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
                         epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
@@ -346,58 +344,79 @@ int main(int argc, char *argv[]) {
                         smoothing_steps, smoothing_steps);
     }
 
-    // cg_solver::CG_solver_PBE(
-    //    //     init_guess, rhs, defect_r, defect_p, kappa_map,
-    //    epsilon_domains,
-    //    //     kappa_2, static_cast<DataType>(1.),
-    //    static_cast<DataType>(epsilon_r),
-    //    //     delta_epsilon, diff_operator.get_values(),
-    //     diff_operator.get_offsets(), thresh);
-    //
-    //    // domain::subtract_domains(init_guess, boundary_domain, init_guess);
-    //
-    //    //  q.wait();
-    //
-    //    // Jacobi_Smoother_4BE j_smoother(rhs_domain);
+    std::cout << "The residual after " << i << " iterations is " << residual
+              << std::endl;
 
     //  std::index_sequence<30> iter_nums{};
-    //  j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain,
-    //  kappa_,
-    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
-    //             epsilon_r, delta_epsilon, omega);
+    //  j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
+    //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
+    //             grid_step, epsilon_r, delta_epsilon, omega);
 
-    // sol.get_domain().print_domain();
-    //   //
-    //   //  Smoothing operator
-    //   std::array<DataType, 7u>
-    //       values{-omega * 1. / 6., -omega * 1. / 6., -1. + omega,
-    //              -omega * 1. / 6., -omega * 1. / 6., -omega * 1 / 6.,
-    //              -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
+    // std::swap(a, b);
 
-    // sol.get_domain().print_domain();
-    //  Here I am checking out the previous smoother
-    //  Jacobi_Smoother j_smoother(rhs_domain);
-    // std::index_sequence<1> num_iters{};
-    // j_smoother(Integer<1>{}, num_iters, sol, lhs_domain1, rhs_domain, values,
-    //            offsets_op, box_length, omega);
-
-    // sol.get_domain().print_domain();
-
-    // rhs_domain.get_domain().print_domain();
-
-    domain::add_domains(init_guess, boundary_domain, init_guess);
-
-    // sol.get_domain().print_domain();
-
-    std::ofstream outfile{filename_out};
-    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
-
-    //  init_guess.print_domain();
+    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map, epsilony_map,
+                      epsilonz_map, kappa_, kappa_2, grid_step, epsilon_r,
+                      delta_epsilon, omega, num_iters, coarser, smoothing_steps,
+                      smoothing_steps);
   }
 
-  q.wait();
+  // cg_solver::CG_solver_PBE(
+  //    //     init_guess, rhs, defect_r, defect_p, kappa_map,
+  //    epsilon_domains,
+  //    //     kappa_2, static_cast<DataType>(1.),
+  //    static_cast<DataType>(epsilon_r),
+  //    //     delta_epsilon, diff_operator.get_values(),
+  //     diff_operator.get_offsets(), thresh);
+  //
+  //    // domain::subtract_domains(init_guess, boundary_domain, init_guess);
+  //
+  //    //  q.wait();
+  //
+  //    // Jacobi_Smoother_4BE j_smoother(rhs_domain);
 
-  // std::cout << "The length is: " << std::get<0>(length) << std::endl;
+  //  std::index_sequence<30> iter_nums{};
+  //  j_smoother(Integer<1>{}, iter_nums, sol, lhs_domain1, rhs_domain,
+  //  kappa_,
+  //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2, grid_step,
+  //             epsilon_r, delta_epsilon, omega);
 
-  return 0;
+  // sol.get_domain().print_domain();
+  //   //
+  //   //  Smoothing operator
+  //   std::array<DataType, 7u>
+  //       values{-omega * 1. / 6., -omega * 1. / 6., -1. + omega,
+  //              -omega * 1. / 6., -omega * 1. / 6., -omega * 1 / 6.,
+  //              -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
+
+  // sol.get_domain().print_domain();
+  //  Here I am checking out the previous smoother
+  //  Jacobi_Smoother j_smoother(rhs_domain);
+  // std::index_sequence<1> num_iters{};
+  // j_smoother(Integer<1>{}, num_iters, sol, lhs_domain1, rhs_domain, values,
+  //            offsets_op, box_length, omega);
+
+  // lhs_domain1.get_domain().print_domain();
+
+  // rhs_domain.get_domain().print_domain();
+
+  // domain::add_domains(init_guess, boundary_domain, init_guess);
+  // init_guess.print_domain();
+
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "The right hand side is: " << std::endl;
+  std::cout << "<<========================>>" << std::endl;
+  // rhs.print_domain();
+
+  //  std::ofstream outfile{filename_out};
+  //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
+
+  //  init_guess.print_domain();
+}
+
+q.wait();
+
+// std::cout << "The length is: " << std::get<0>(length) << std::endl;
+
+return 0;
 }

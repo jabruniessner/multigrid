@@ -148,15 +148,15 @@ int main(int argc, char *argv[]) {
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Sphere<DataType, Dim> &atom = atoms_device[i];
       auto arg_tuple =
-          std::forward_as_tuple(atom, grid_step, grid_edges, inside_outside);
-      cubes_cutter::cutting_cubes(cutter, arg_tuple);
+          std::forward_as_tuple(atom, grid_step, inside_outside, grid_edges);
+      cubes_cutter::cutting_cubes<19>(cutter, arg_tuple);
     });
 
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
       Sphere<DataType, Dim> &atom = atoms_device[i];
-      auto arg_tuple = std::forward_as_tuple(
-          atom, grid_step, grid_edges, inside_outside, Volumes_tetrahedra);
-      cubes_cutter::cutting_cubes(v_comp, arg_tuple);
+      auto arg_tuple = std::forward_as_tuple(atom, grid_step, inside_outside,
+                                             grid_edges, Volumes_tetrahedra);
+      cubes_cutter::cutting_cubes<19>(v_comp, arg_tuple);
     });
   }
 
