@@ -5,10 +5,10 @@
 #include "vhal.h"
 #include "vmatrix.h"
 
-#ifdef USE_DOUBLE
-using DataType = double;
-#else
-using DataType = float;
-#endif
+// #ifdef USE_DOUBLE
+// using DataType = double;
+// #else
+// using DataType = float;
+// #endif
 
 #endif

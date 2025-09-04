@@ -17,6 +17,23 @@ set(CMAKE_CXX_COMPILER "acpp")
 
 include_directories("mdspan")
 
+
+include(ExternalProject)
+
+ExternalProject_Add(pmgc
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/pmgc
+    BINARY_DIR ${CMAKE_BINARY_DIR}/pmgc
+    CMAKE_ARGS 
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/pmgc
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+      -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+      -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+    INSTALL_COMMAND ""
+)
+
+
+
 #endif()
 
 # Add the executable

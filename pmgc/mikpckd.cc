@@ -54,8 +54,7 @@
 
 #include "mikpckd.h"
 #include "abps_macros.h"
-#include "hipSYCL/sycl/queue.hpp"
-#include "hipSYCL/sycl/usm.hpp"
+#include "precision.h"
 
 VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                     sycl::queue &q) {
@@ -129,7 +128,8 @@ VPUBLIC void Vxaxpy(int *nx, int *ny, int *nz, DataType *alpha, DataType *x,
                  });
 }
 
-VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
+VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, DataType *x,
+                        sycl::queue &q) {
 
   DataType xnrm1 = 0.0; ///< Accumulates the calculated normal value
 
@@ -156,7 +156,8 @@ VPUBLIC DataType Vxnrm1(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) 
   return xnrm1;
 }
 
-VPUBLIC DataType Vxnrm2(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
+VPUBLIC DataType Vxnrm2(int *nx, int *ny, int *nz, DataType *x,
+                        sycl::queue &q) {
 
   DataType xnrm2 = 0.0; ///< Accumulates the calculated normal value
 
@@ -229,7 +230,8 @@ VPUBLIC void Vazeros(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
 }
 
 VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, DataType *x,
-                        DataType *gxc, DataType *gyc, DataType *gzc, sycl::queue &q) {
+                        DataType *gxc, DataType *gyc, DataType *gzc,
+                        sycl::queue &q) {
 
   // Create and bind the wrappers for the source data
   MAT3(x, *nx, *ny, *nz);
@@ -402,9 +404,10 @@ VPUBLIC void Vprtmatd7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 
 VEXTERNC void Vprtmatd27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
                          DataType *oC, DataType *oE, DataType *oN, DataType *uC,
-                         DataType *oNE, DataType *oNW, DataType *uE, DataType *uW,
-                         DataType *uN, DataType *uS, DataType *uNE, DataType *uNW,
-                         DataType *uSE, DataType *uSW) {
+                         DataType *oNE, DataType *oNW, DataType *uE,
+                         DataType *uW, DataType *uN, DataType *uS,
+                         DataType *uNE, DataType *uNW, DataType *uSE,
+                         DataType *uSW) {
 
   int n, i, j, k;
 
@@ -450,9 +453,9 @@ VEXTERNC void Vprtmatd27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 }
 
 VPUBLIC void Vlinesearch(int *nx, int *ny, int *nz, DataType *alpha, int *ipc,
-                         DataType *rpc, DataType *ac, DataType *cc, DataType *fc,
-                         DataType *p, DataType *x, DataType *r, DataType *ap,
-                         DataType *zk, DataType *zkp1) {
+                         DataType *rpc, DataType *ac, DataType *cc,
+                         DataType *fc, DataType *p, DataType *x, DataType *r,
+                         DataType *ap, DataType *zk, DataType *zkp1) {
   printf("Not translated yet\n");
   exit(-1);
 }

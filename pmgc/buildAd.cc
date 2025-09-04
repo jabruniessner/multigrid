@@ -53,7 +53,7 @@
  */
 
 #include "buildAd.h"
-#include "hipSYCL/sycl/queue.hpp"
+#include "precision.h"
 #include "stdio.h"
 #include <sycl/sycl.hpp>
 

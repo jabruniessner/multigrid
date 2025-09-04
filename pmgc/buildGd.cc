@@ -54,6 +54,7 @@
 
 #include "buildGd.h"
 #include <sycl/sycl.hpp>
+#include "precision.h"
 
 VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
                      int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, sycl::queue& q) {

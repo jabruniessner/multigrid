@@ -54,10 +54,10 @@
 
 #include "gsd.h"
 
-VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
-                   DataType *cc, DataType *fc, DataType *x, DataType *w1, DataType *w2,
-                   DataType *r, int *itmax, int *iters, DataType *errtol,
-                   DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
+void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
+           DataType *cc, DataType *fc, DataType *x, DataType *w1, DataType *w2,
+           DataType *r, int *itmax, int *iters, DataType *errtol,
+           DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
 
   int numdia; /// @todo: doc
 
@@ -80,11 +80,11 @@ VPUBLIC void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType 
   }
 }
 
-VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                     DataType *oC, DataType *cc, DataType *fc, DataType *oE, DataType *oN,
-                     DataType *uC, DataType *x, DataType *w1, DataType *w2, DataType *r,
-                     int *itmax, int *iters, DataType *errtol, DataType *omega,
-                     int *iresid, int *iadjoint, sycl::queue &q) {
+void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
+             DataType *cc, DataType *fc, DataType *oE, DataType *oN,
+             DataType *uC, DataType *x, DataType *w1, DataType *w2, DataType *r,
+             int *itmax, int *iters, DataType *errtol, DataType *omega,
+             int *iresid, int *iadjoint, sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);
@@ -100,63 +100,37 @@ VPUBLIC void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 
   for (*iters = 1; *iters <= *itmax; (*iters)++) {
 
-    // Do the red points ***
-    q.parallel_for(sycl::range<3>((*nx - 2) / 2 + (*nx) % 2, *ny - 2, *nz - 2),
-                   [=](sycl::id<3> I) {
-                     const int i = 2 * I[0] + 2;
-                     const int j = I[1] + 2;
-                     const int k = I[2] + 2;
+    for (int color = 0; color <= 1; color++)
+      q.parallel_for(
+          sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+            const int i = I[0] + 2;
+            const int j = I[1] + 2;
+            const int k = I[2] + 2;
 
-                     const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-                                       (*iadjoint) * (1 - (j + k + 2) % 2);
+            const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
+                              (*iadjoint) * (1 - (j + k + 2) % 2);
 
-                     if (i >= ioff + 2)
-                       VAT3(x, i, j, k) =
-                           (VAT3(fc, i, j, k) +
-                            VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                            VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                            VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                            VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                            VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                            VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
-                           (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-                   });
-
-    // Do the black points
-
-    q.parallel_for(sycl::range<3>((*nx - 2) / 2 + (*nx) % 2, *ny - 2, *nz - 2),
-                   [=](sycl::id<3> I) {
-                     const int i = 2 * I[0] + 2;
-                     const int j = I[1] + 2;
-                     const int k = I[2] + 2;
-
-                     const auto ioff = (*iadjoint) * ((j + k + 2) % 2) +
-                                       (1 - *iadjoint) * (1 - (j + k + 2) % 2);
-
-                     VAT3(x, i, j, k) =
-                         (VAT3(fc, i, j, k) +
-                          VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                          VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                          VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                          VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                          VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                          VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
-                         (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-                   });
+            if ((i + j + k) % 2 == color)
+              VAT3(x, i, j, k) = (VAT3(fc, i, j, k) +
+                                  VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                                  VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                                  VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                                  VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                                  VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                                  VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
+                                 (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+          });
   }
-
-  if (*iresid == 1)
-    Vmresid7_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, x, r, q);
 }
 
-VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                      DataType *oC, DataType *cc, DataType *fc, DataType *oE,
-                      DataType *oN, DataType *uC, DataType *oNE, DataType *oNW,
-                      DataType *uE, DataType *uW, DataType *uN, DataType *uS,
-                      DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
-                      DataType *x, DataType *w1, DataType *w2, DataType *r, int *itmax,
-                      int *iters, DataType *errtol, DataType *omega, int *iresid,
-                      int *iadjoint, sycl::queue &q) {
+void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
+              DataType *cc, DataType *fc, DataType *oE, DataType *oN,
+              DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
+              DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
+              DataType *uNW, DataType *uSE, DataType *uSW, DataType *x,
+              DataType *w1, DataType *w2, DataType *r, int *itmax, int *iters,
+              DataType *errtol, DataType *omega, int *iresid, int *iadjoint,
+              sycl::queue &q) {
 
   int i, j, k;
   int i1, j1, k1;
@@ -190,122 +164,54 @@ VPUBLIC void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   MAT3(uSE, *nx, *ny, *nz);
   MAT3(uSW, *nx, *ny, *nz);
 
-  // Do the gauss-seidel iteration itmax times
-
-  /*
-  i1    = (1 - *iadjoint) *   2  + (    *iadjoint) * (*nx - 1);
-  i2    = (    *iadjoint) *   2  + (1 - *iadjoint) * (*nx - 1);
-  j1    = (1 - *iadjoint) *   2  + (    *iadjoint) * (*ny - 1);
-  j2    = (    *iadjoint) *   2  + (1 - *iadjoint) * (*ny - 1);
-  k1    = (1 - *iadjoint) *   2  + (    *iadjoint) * (*nz - 1);
-  k2    = (    *iadjoint) *   2  + (1 - *iadjoint) * (*nz - 1);
-  istep = (    *iadjoint) * (-1) + (1 - *iadjoint) * (1);
-  */
-
-  i1 = (1 - *iadjoint) * 2 + *iadjoint * (*nx - 1);
-  i2 = *iadjoint * 2 + (1 - *iadjoint) * (*nx - 1);
-  j1 = (1 - *iadjoint) * 2 + *iadjoint * (*ny - 1);
-  j2 = *iadjoint * 2 + (1 - *iadjoint) * (*ny - 1);
-  k1 = (1 - *iadjoint) * 2 + *iadjoint * (*nz - 1);
-  k2 = *iadjoint * 2 + (1 - *iadjoint) * (*nz - 1);
-  istep = *iadjoint * (-1) + (1 - *iadjoint) * (1);
-
   for (*iters = 1; *iters <= *itmax; (*iters)++) {
+    for (int color = 0; color <= 8; color++)
+      q.parallel_for(
+          sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+            const int i = I[0] + 2;
+            const int j = I[1] + 2;
+            const int k = I[2] + 2;
 
-    // #pragma omp parallel for private(i, j, k, ioff, tmpO, tmpU, tmpD)   //Why
-    // was this commented out?
-    for (k = 2; k <= *nz - 1; k++) {
+            if ((i + j + k) % 8 == color) {
 
-      for (j = 2; j <= *ny - 1; j++) {
+              const auto tmpO =
+                  +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                  VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                  VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                  VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                  VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) +
+                  VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) +
+                  VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) +
+                  VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
 
-        ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-               (*iadjoint) * (1 - (j + k + 2) % 2);
+              const auto tmpU =
+                  +VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
+                  VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) +
+                  VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) +
+                  VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) +
+                  VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) +
+                  VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) +
+                  VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) +
+                  VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) +
+                  VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
 
-        for (i = 2 + ioff; i <= *nx - 1; i += 2) {
+              const auto tmpD =
+                  +VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                  VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) +
+                  VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) +
+                  VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) +
+                  VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) +
+                  VAT3(uSW, i + 1, j + 1, k - 1) *
+                      VAT3(x, i + 1, j + 1, k - 1) +
+                  VAT3(uSE, i - 1, j + 1, k - 1) *
+                      VAT3(x, i - 1, j + 1, k - 1) +
+                  VAT3(uNW, i + 1, j - 1, k - 1) *
+                      VAT3(x, i + 1, j - 1, k - 1) +
+                  VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
 
-          tmpO = +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                 VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                 VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                 VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                 VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) +
-                 VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) +
-                 VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) +
-                 VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
-
-          tmpU = +VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
-                 VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) +
-                 VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) +
-                 VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) +
-                 VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) +
-                 VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) +
-                 VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) +
-                 VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) +
-                 VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
-
-          tmpD = +VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                 VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) +
-                 VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) +
-                 VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) +
-                 VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) +
-                 VAT3(uSW, i + 1, j + 1, k - 1) * VAT3(x, i + 1, j + 1, k - 1) +
-                 VAT3(uSE, i - 1, j + 1, k - 1) * VAT3(x, i - 1, j + 1, k - 1) +
-                 VAT3(uNW, i + 1, j - 1, k - 1) * VAT3(x, i + 1, j - 1, k - 1) +
-                 VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
-
-          VAT3(x, i, j, k) = (VAT3(fc, i, j, k) + (tmpO + tmpU + tmpD)) /
-                             (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-        }
-      }
-    }
-
-    // #pragma omp parallel for private(i, j, k, ioff, tmpO, tmpU, tmpD)
-    for (k = 2; k <= *nz - 1; k++) {
-
-      for (j = 2; j <= *ny - 1; j++) {
-
-        ioff = (*iadjoint) * ((j + k + 2) % 2) +
-               (1 - *iadjoint) * (1 - (j + k + 2) % 2);
-
-        for (i = 2 + ioff; i <= *nx - 1; i += 2) {
-
-          tmpO = +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                 VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                 VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                 VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                 VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) +
-                 VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) +
-                 VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) +
-                 VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
-
-          tmpU = +VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
-                 VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) +
-                 VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) +
-                 VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) +
-                 VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) +
-                 VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) +
-                 VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) +
-                 VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) +
-                 VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
-
-          tmpD = +VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                 VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) +
-                 VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) +
-                 VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) +
-                 VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) +
-                 VAT3(uSW, i + 1, j + 1, k - 1) * VAT3(x, i + 1, j + 1, k - 1) +
-                 VAT3(uSE, i - 1, j + 1, k - 1) * VAT3(x, i - 1, j + 1, k - 1) +
-                 VAT3(uNW, i + 1, j - 1, k - 1) * VAT3(x, i + 1, j - 1, k - 1) +
-                 VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
-
-          VAT3(x, i, j, k) = (VAT3(fc, i, j, k) + (tmpO + tmpU + tmpD)) /
-                             (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
-        }
-      }
-    }
+              VAT3(x, i, j, k) = (VAT3(fc, i, j, k) + (tmpO + tmpU + tmpD)) /
+                                 (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+            }
+          });
   }
-
-  // If specified, return the new residual as well
-  if (*iresid == 1)
-    Vmresid27_1s(nx, ny, nz, ipc, rpc, oC, cc, fc, oE, oN, uC, oNE, oNW, uE, uW,
-                 uN, uS, uNE, uNW, uSE, uSW, x, r, q);
 }

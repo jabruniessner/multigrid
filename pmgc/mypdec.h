@@ -58,6 +58,7 @@
 #include "math.h"
 
 #include "abps_macros.h"
+#include "precision.h"
 
 #define MAXIONS 50
 #define MAXPOLY 50

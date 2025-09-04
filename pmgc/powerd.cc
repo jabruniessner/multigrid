@@ -55,10 +55,10 @@
 #include "powerd.h"
 
 VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
-                    DataType *rpc, DataType *ac, DataType *cc, DataType *w1, DataType *w2,
-                    DataType *w3, DataType *w4, DataType *eigmax,
-                    DataType *eigmax_model, DataType *tol, int *itmax, int *iters,
-                    int *iinfo, sycl::queue &q) {
+                    DataType *rpc, DataType *ac, DataType *cc, DataType *w1,
+                    DataType *w2, DataType *w3, DataType *w4, DataType *eigmax,
+                    DataType *eigmax_model, DataType *tol, int *itmax,
+                    int *iters, int *iinfo, sycl::queue &q) {
 
   int lev, level;
   DataType denom, fac, rho, oldrho, error, relerr;
@@ -159,14 +159,15 @@ VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
                          2.0 * VCOS((*ny - 2) * pi / (*ny - 1)));
 }
 
-VPUBLIC void Vipower(int *nx, int *ny, int *nz, DataType *u, int *iz, DataType *w0,
-                     DataType *w1, DataType *w2, DataType *w3, DataType *w4,
-                     DataType *eigmin, DataType *eigmin_model, DataType *tol,
-                     int *itmax, int *iters, int *nlev, int *ilev,
-                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                     int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
-                     DataType *ac, DataType *cc, DataType *tru, sycl::queue &q) {
+VPUBLIC void Vipower(int *nx, int *ny, int *nz, DataType *u, int *iz,
+                     DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                     DataType *w4, DataType *eigmin, DataType *eigmin_model,
+                     DataType *tol, int *itmax, int *iters, int *nlev,
+                     int *ilev, int *nlev_real, int *mgsolv, int *iok,
+                     int *iinfo, DataType *epsiln, DataType *errtol,
+                     DataType *omega, int *nu1, int *nu2, int *mgsmoo, int *ipc,
+                     DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+                     DataType *tru, sycl::queue &q) {
 
   int level, lev;
   DataType denom, fac, rho, oldrho;
@@ -282,14 +283,15 @@ VPUBLIC void Vipower(int *nx, int *ny, int *nz, DataType *u, int *iz, DataType *
              2.0 * VCOS(pi / (*nz - 1)));
 }
 
-VEXTERNC void Vmpower(int *nx, int *ny, int *nz, DataType *u, int *iz, DataType *w0,
-                      DataType *w1, DataType *w2, DataType *w3, DataType *w4,
-                      DataType *eigmax, DataType *tol, int *itmax, int *iters,
-                      int *nlev, int *ilev, int *nlev_real, int *mgsolv,
-                      int *iok, int *iinfo, DataType *epsiln, DataType *errtol,
-                      DataType *omega, int *nu1, int *nu2, int *mgsmoo, int *ipc,
-                      DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
-                      DataType *fc, DataType *tru, sycl::queue &q) {
+VEXTERNC void Vmpower(int *nx, int *ny, int *nz, DataType *u, int *iz,
+                      DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                      DataType *w4, DataType *eigmax, DataType *tol, int *itmax,
+                      int *iters, int *nlev, int *ilev, int *nlev_real,
+                      int *mgsolv, int *iok, int *iinfo, DataType *epsiln,
+                      DataType *errtol, DataType *omega, int *nu1, int *nu2,
+                      int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+                      DataType *ac, DataType *cc, DataType *fc, DataType *tru,
+                      sycl::queue &q) {
 
   // Local variables
   int lev, level;

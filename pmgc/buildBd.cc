@@ -53,6 +53,7 @@
  */
 
 #include "buildBd.h"
+#include "precision.h"
 #include <sycl/sycl.hpp>
 
 VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
@@ -110,9 +111,10 @@ VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
 }
 
 VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                           DataType *oC, DataType *oE, DataType *oN, DataType *uC,
-                           int *ipcB, DataType *rpcB, DataType *acB, int *n, int *m,
-                           int *lda, sycl::queue &q) {
+                           DataType *oC, DataType *oE, DataType *oN,
+                           DataType *uC, int *ipcB, DataType *rpcB,
+                           DataType *acB, int *n, int *m, int *lda,
+                           sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -172,12 +174,13 @@ VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 }
 
 VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                            DataType *oC, DataType *oE, DataType *oN, DataType *uC,
-                            DataType *oNE, DataType *oNW, DataType *uE, DataType *uW,
-                            DataType *uN, DataType *uS, DataType *uNE, DataType *uNW,
-                            DataType *uSE, DataType *uSW, int *ipcB, DataType *rpcB,
-                            DataType *acB, int *n, int *m, int *lda,
-                            sycl::queue &q) {
+                            DataType *oC, DataType *oE, DataType *oN,
+                            DataType *uC, DataType *oNE, DataType *oNW,
+                            DataType *uE, DataType *uW, DataType *uN,
+                            DataType *uS, DataType *uNE, DataType *uNW,
+                            DataType *uSE, DataType *uSW, int *ipcB,
+                            DataType *rpcB, DataType *acB, int *n, int *m,
+                            int *lda, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;

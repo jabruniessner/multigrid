@@ -54,12 +54,13 @@
 
 #include "buildPd.h"
 #include "abps_macros.h"
-#include "hipSYCL/sycl/queue.hpp"
+#include "precision.h"
 #include <sycl/sycl.hpp>
 
 VPUBLIC void VbuildP(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *mgprol, int *ipc, DataType *rpc, DataType *pc, DataType *ac,
-                     DataType *xf, DataType *yf, DataType *zf, sycl::queue &q) {
+                     int *mgprol, int *ipc, DataType *rpc, DataType *pc,
+                     DataType *ac, DataType *xf, DataType *yf, DataType *zf,
+                     sycl::queue &q) {
 
   int numdia;
 
@@ -105,13 +106,14 @@ VPUBLIC void VbuildP_trilin(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
 
 VEXTERNC void
 VbuildPb_trilin(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
-                DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
-                DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE, DataType *uPW,
-                DataType *uPNE, DataType *uPNW, DataType *uPSE, DataType *uPSW,
-                DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW,
-                DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
-                DataType *xf, DataType *yf, DataType *zf, sycl::queue &q) {
+                DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
+                DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
+                DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
+                DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+                DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN,
+                DataType *dPS, DataType *dPE, DataType *dPW, DataType *dPNE,
+                DataType *dPNW, DataType *dPSE, DataType *dPSW, DataType *xf,
+                DataType *yf, DataType *zf, sycl::queue &q) {
 
   // int i, j, k;
 
@@ -213,17 +215,17 @@ VPUBLIC void VbuildP_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
                RAT2(pc, 1, 25), RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
 }
 
-VPUBLIC void VbuildPb_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                          int *nzc, int *ipc, DataType *rpc, DataType *oC,
-                          DataType *oE, DataType *oN, DataType *uC, DataType *oPC,
-                          DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
-                          DataType *oPNE, DataType *oPNW, DataType *oPSE,
-                          DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
-                          DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
-                          DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN,
-                          DataType *dPS, DataType *dPE, DataType *dPW, DataType *dPNE,
-                          DataType *dPNW, DataType *dPSE, DataType *dPSW,
-                          sycl::queue &q) {
+VPUBLIC void
+VbuildPb_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
+             int *ipc, DataType *rpc, DataType *oC, DataType *oE, DataType *oN,
+             DataType *uC, DataType *oPC, DataType *oPN, DataType *oPS,
+             DataType *oPE, DataType *oPW, DataType *oPNE, DataType *oPNW,
+             DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
+             DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE,
+             DataType *uPNW, DataType *uPSE, DataType *uPSW, DataType *dPC,
+             DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW,
+             DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
+             sycl::queue &q) {
 
   // DataType won, half, quarter, eighth;
 
@@ -620,19 +622,19 @@ VPUBLIC void VbuildP_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
       RAT2(pc, 1, 27), q);
 }
 
-VPUBLIC void VbuildPb_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                           int *nzc, int *ipc, DataType *rpc, DataType *oC,
-                           DataType *oE, DataType *oN, DataType *uC, DataType *oNE,
-                           DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
-                           DataType *uS, DataType *uNE, DataType *uNW, DataType *uSE,
-                           DataType *uSW, DataType *oPC, DataType *oPN, DataType *oPS,
-                           DataType *oPE, DataType *oPW, DataType *oPNE, DataType *oPNW,
-                           DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
-                           DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE,
-                           DataType *uPNW, DataType *uPSE, DataType *uPSW,
-                           DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE,
-                           DataType *dPW, DataType *dPNE, DataType *dPNW,
-                           DataType *dPSE, DataType *dPSW, sycl::queue &q) {
+VPUBLIC void
+VbuildPb_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
+              int *ipc, DataType *rpc, DataType *oC, DataType *oE, DataType *oN,
+              DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
+              DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
+              DataType *uNW, DataType *uSE, DataType *uSW, DataType *oPC,
+              DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
+              DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
+              DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
+              DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
+              DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+              DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
+              DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
   int i, j, k;
 
