@@ -108,10 +108,10 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   int count = 0;
   while (thresh < residual) {
     count++;
-    if (count % 1000 == 0) {
-      std::cout << "The residual after " << count << " iterations is "
-                << residual << std::endl;
-    }
+    //  if (count % 1000 == 0) {
+    //    std::cout << "The residual after " << count << " iterations is "
+    //              << residual << std::endl;
+    //  }
 
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(r_squared_next, sycl::plus<>()),

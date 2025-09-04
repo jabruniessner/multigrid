@@ -1,4 +1,6 @@
 #include "Domain.h"
+#include "hipSYCL/sycl/libkernel/range.hpp"
+#include "hipSYCL/sycl/usm.hpp"
 #include "level_transition.h"
 #include "predefinitions.h"
 #include "scientific_quantities.h"
@@ -231,6 +233,43 @@ struct Multi_Level_map<Dim, DataType, FuncType, 1u> {
 
   FuncType<Dim, 1u> map;
 };
+
+template <Dimension Dim, typename Functype, Length... strides_all,
+          std::size_t... dirs>
+DataType get_ideal_omega(Domain<Dim, strides_all...> x,
+                         Domain<Dim, strides_all...> r,
+                         Domain<Dim, strides_all...> b, Functype map,
+                         std::index_sequence<dirs...>) {
+
+  sycl::queue &q = x.q;
+
+  DataType *upper_lower =
+      sycl::malloc_device<DataType>(sizeof(DataType) * 2, q);
+
+  q.parallel_for(sycl::range{strides_all...},
+                 sycl::reduction(upper_lower, sycl::plus<>()),
+                 sycl::reduction(upper_lower + 1, sycl::plus<>()),
+                 [=](sycl::id<Dim> I, auto &acc_upper, auto &acc_lower) {
+                   ((I[dirs] += x.padding_width), ...);
+                   acc_upper += r(I[dirs]...) * b(I[dirs]...) -
+                                r(I[dirs]...) * map(x, I);
+
+                   acc_lower += r(I[dirs]...) * map(r, I);
+                 })
+      .wait();
+
+  std::array<DataType, 2> upper_lower_host;
+  q.memcpy(upper_lower_host.data(), upper_lower, sizeof(DataType) * 2).wait();
+
+  return upper_lower_host[0] / upper_lower_host[1];
+}
+
+template <Dimension Dim, typename FuncType, Length... strides_all>
+DataType get_ideal_omega(Domain<Dim, strides_all...> x,
+                         Domain<Dim, strides_all...> r,
+                         Domain<Dim, strides_all...> b, FuncType map) {
+  return get_ideal_omega(x, r, b, map, std::make_index_sequence<Dim>{});
+}
 
 } // namespace multigrid_domain
 

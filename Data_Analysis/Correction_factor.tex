@@ -1,0 +1,140 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+%\usepackage[ruled, vlined]{algorithm2e}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{enumitem}
+
+\textwidth=150mm
+\textheight=250mm
+\hoffset= -10mm       % may need change
+\voffset= -25mm 
+
+\title{Finding the ideal factor for adding the defect correction in a multigrid solver for the Laplician equation with discontinuous coefficients}
+\author{Jakob Niessner}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Theoretical background}
+
+The multigrid method in its most general form is outlined below. We denote $u_i,$ the current guess, $A^{h/H}$  the differential operator on the fine ($h$) or on the coarse ($H$) grid, and $f$  the right hand side.
+
+\begin{algorithm}[H]
+
+
+\caption{Multigrid cycle}
+
+\vspace{0.4cm}
+\begin{itemize}
+    \item Pre-smoothing to reduce high-frequency errors.
+     \begin{equation}
+       v_i = S_{\textit{pre}}(u_i, f, A, \nu_1),
+     \end{equation}
+    \item Compute the residual on the fine grid:
+        \begin{equation}
+          r^h = f - A^h v_i,
+        \end{equation}
+        \item Restrict the residual according to some Restriction operator $R$
+        \begin{equation}
+          r^H = R r^h,
+        \end{equation}
+        \item Solve on the coarser grid (Possible using nestest multigrid cycles)
+        \begin{equation}
+          A^H e^H = r^H,
+        \end{equation}
+        \item Prolongate and correct. 
+          \begin{equation}
+            \tilde{v}_i = v_i + P e^H,
+         \end{equation}
+        \item Post-smoothing:
+          \begin{equation}
+            u_{i+1} = S_{\textit{post}}(\tilde{v}_i, f, A, \nu_2),
+          \end{equation}
+    \item Repeat until convergence criteria are met (e.g., residual norm below a threshold).
+\end{itemize}
+
+\end{algorithm}
+
+\noindent
+This scheme with a 2-iteration Gauss-Seidel smoother work very nicely if $A$ is a discretization of the Laplacian operator $\Delta = -\nabla \cdot \nabla$ on a uniform grid (Q1, Finite difference, etc. ). However, this can drastically change if $A$ is represents the Laplacian with discontinuous coefficients, i.e., $-\nabla \cdot (\epsilon \nabla)$ with $\epsilon$ being piecewise constant. In this case, the above scheme converges much worse up to the point were it diverges. It has therefore been proposed to add a defect correction term in step 5, i.e.,
+
+\begin{equation}
+  \tilde{v}_i = v_i + \omega P e^H 
+\end{equation}
+
+
+\noindent
+The remaining question is: What is the best choice $\omega_{\textit{ideal}}$? The easiest starting point would be to simply guess $\omega_{\textit{ideal}}.$ However, this this is very tedious and probably very problem dependent. It is therefore desirable to find a more systematic way to determine it.  
+
+\newpage
+
+\subsection{Formula for the optimal $\omega$}
+
+In order to find a formula for the optimal $\omega,$ we can start with a geometic argument. Note that if $\epsilon$ is positive, which it is, for example, in electrostatics. The operator $A$ is positive definite and symmetric. Therefore, the problem: Fin $x$ such that 
+
+\begin{equation}
+  Ax = f
+\end{equation}
+
+
+\noindent
+is equivalent to the the optimization problem: Find $x$ such that the functional
+\begin{equation}
+  \Phi(x) = \frac{1}{2} \langle x,  A x \rangle - \langle x , f \rangle
+\end{equation}
+is minimial. Here, $\langle \cdot, \cdot \rangle$ denotes the standard inner product. Given that $\tilde{v}_i$ is the next guess before the post-smoothing, $\omega$ should be chosen such that $\Phi(\tilde{v}_i)$ is minimal. Hence, we should choose $\omega$ such that the function (denoting $e = e^H$ for simplicity)
+
+\begin{equation}
+ \phi(\omega) = \frac{1}{2} \langle v_i + \omega e,  A (v_i + \omega  e) \rangle - \langle v_i + \omega  e , f \rangle,
+\end{equation}
+
+\noindent
+is minimal. Since the above function is a parabola, with a positive prefactor, the minimum is unique and given by the solution of the equation 
+
+\begin{equation}
+  \frac{d \phi}{d \omega} = 0.
+\end{equation}
+
+\noindent
+This solution to this equaiton is given by
+\begin{equation}
+  \omega_{\textit{ideal}} = \frac{\langle f - A v_i, e \rangle}{\langle A e, e \rangle}.
+  \label{eq:omega_ideal}
+\end{equation}
+
+
+\newpage
+
+\section{Numerical experiments}
+
+In order to find the optimal $\omega,$ we followed $2$ approaches. 
+\begin{itemize}
+  \item[1.)] First We guessed and tried to systematically narrow down to the optimal $\omega.$
+  \item[2.)] We used the equation \eqref{eq:omega_ideal} to compute the ideal $\omega$.
+\end{itemize}
+
+\noindent
+As a test case, we used a 3D-cube as a domain with a side length of $16$ units with a sphere of radius $1.8$ units in the center. The coefficient $\epsilon$ was set to $4$ inside the sphere and $8$ outside. As a FEM-discretization, we used a cubic mesh, where each cube was divided into $6$ tetrahedra, such that the resulting stencil is a $7$-point stencil. We used $513 \times 513 \times 513$ grid points, s.t. we hade $511$ degrees of freedom in eacht direction. The right hand side was set to $0$ everywhere, and the boundary conditions were set according to the function $u(x, y, y) = -3x^2 - 4y^2+7z^2$. $2$-pre and post-smoothing steps were used. And 2 levels, such that the coarse grid had $255 \times 255 \times 255$ degrees of freedom.
+
+
+\subsection{Systematic search for the optimal $\omega$}
+
+\subsection{Using the formula for $\omega_{\textit{ideal}}$}
+
+
+
+
+
+\end{document}
