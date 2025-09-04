@@ -29,6 +29,13 @@ find_package(VTK REQUIRED COMPONENTS
   ImagingCore
 )
 
+link_libraries( 
+    VTK::CommonCore
+    VTK::CommonDataModel
+    VTK::IOXML
+    )
+
+
 
 #endif()
 
@@ -60,7 +67,7 @@ add_executable(create_kappa create_kappa_map.cc fileio.cc)
 add_executable(create_charge_test test_charge_add.cc)
 add_executable(create_charge_dist create_charge_distribution.cc fileio.cc)
 add_executable(test_kappa_functions test_kappa_function.cc)
-#add_executable(PBE_example PBE_example.cc fileio.cc)
+add_executable(PBE_example PBE_example.cc fileio.cc)
 add_executable(PBE_multigrid_simple PBE_multigrid_simple.cc fileio.cc)
 #add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
@@ -84,11 +91,11 @@ add_executable(test_get_epsilon_values Test_get_epsilon_values.cc)
 # Link NVTX to your target
 target_link_libraries(Laplacian3D_epsilon PRIVATE prof)
 #target_compile_definitions(Laplacian3D_epsilon PRIVATE PROFILING)
-target_link_libraries(Laplacian3D_epsilon PRIVATE 
-    VTK::CommonCore
-    VTK::CommonDataModel
-    VTK::IOXML
-    )
+#target_link_libraries(Laplacian3D_epsilon PRIVATE 
+#    VTK::CommonCore
+#    VTK::CommonDataModel
+#    VTK::IOXML
+#    )
 
 
 

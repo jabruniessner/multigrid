@@ -37,7 +37,7 @@ constexpr DataType grid_step = 1;
 constexpr DataType delta_epsilon = 0; // Difference in epsilon
 
 using Domain_Type =
-    Multigrid_domain<Dim, 0u, nlev, base_length, base_length, base_length>;
+    Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
 
 using Domain_Type_upper = decltype(Domain_Type::domain_t_v)::domain_t;
 
@@ -158,10 +158,11 @@ int main(int argc, char *argv[]) {
   std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
   std::array<DataType, 1u> values_coarse{1.};
 
-  Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
-                               Integer<base_length>{});
+  // Multi_Level_operator coarser(Integer<nlev>{}, values_coarse,
+  // offsets_coarse,
+  //                              Integer<base_length>{});
 
-  coarser.print_operator();
+  // coarser.print_operator();
 
   {
 
@@ -312,13 +313,14 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
-                                       sol.template get_domain<1>(), values_op,
-                                       offsets_op);
+    //    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
+    //                                       sol.template get_domain<1>(),
+    //                                       values_op, offsets_op);
 
     Gauss_Seidel_PBE j_smoother(rhs_domain);
 
-    V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain, coarser);
+    // V_Cycle_PBE v_cycle(j_smoother, j_smoother, cg_solver, rhs_domain,
+    // coarser);
 
     constexpr std::size_t number_iterations = 1;
 
@@ -351,10 +353,11 @@ int main(int argc, char *argv[]) {
       std::cout << "The residual after " << number_iterations * i
                 << " iterations is " << residual << std::endl;
 
-      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
-                        epsilony_map, epsilonz_map, kappa_, kappa_2, grid_step,
-                        epsilon_r, delta_epsilon, omega, num_iters, coarser,
-                        smoothing_steps, smoothing_steps);
+      //      v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map,
+      //                        epsilony_map, epsilonz_map, kappa_, kappa_2,
+      //                        grid_step, epsilon_r, delta_epsilon, omega,
+      //                        num_iters, coarser, smoothing_steps,
+      //                        smoothing_steps);
     }
 
     // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,

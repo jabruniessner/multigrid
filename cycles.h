@@ -806,11 +806,22 @@ struct V_Cycle_base {
             current.template get_domain<iter_level>(),
             next.template get_domain<iter_level - 1>());
 
+        PROFILE_END(refinement)
+
+        if (omega == (DataType)0) {
+          omega = get_ideal_omega(next.template get_domain<iter_level>(),
+                                  current.template get_domain<iter_level>(),
+                                  rhs_domain.template get_domain<iter_level>(),
+                                  func.template get_map<iter_level>());
+
+          //  std::cout << "The value for omega on iter_level " << iter_level
+          //            << " is " << omega << std::endl;
+        }
+
         add_and_multiply_domains(next.template get_domain<iter_level>(),
                                  next.template get_domain<iter_level>(),
                                  current.template get_domain<iter_level>(),
                                  omega);
-        PROFILE_END(refinement)
 
         PRINT_DOMAIN(correction, next, iter_level, nlev)
 

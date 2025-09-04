@@ -25,7 +25,7 @@
 
 template <typename T> struct TD;
 
-constexpr std::size_t nlev = 2;
+constexpr std::size_t nlev = 5;
 constexpr std::size_t Dim = 3;
 constexpr std::size_t side_length = 16;
 // constexpr DataType omega = 1.;
@@ -343,8 +343,8 @@ int main(int argc, char *argv[]) {
     auto start = std::chrono::high_resolution_clock::now();
 
     std::index_sequence<1> num_iters_level;
-    std::index_sequence<10> smoother_sequence_pre;
-    std::index_sequence<10> smoother_sequence_post;
+    std::index_sequence<2> smoother_sequence_pre;
+    std::index_sequence<2> smoother_sequence_post;
 
     std::cout << "The value for omega is: " << omega << std::endl;
 
@@ -355,25 +355,39 @@ int main(int argc, char *argv[]) {
           defect_domain.get_domain(), lhs_domain1.get_domain(),
           rhs_domain.get_domain(), map_type.get_map());
 
-      v_cycle.iteration(*next, *current, defect_domain, map_type, grid_step,
-                        omega, num_iters_level, smoother_sequence_pre,
-                        smoother_sequence_post, true);
-
-      domain::add_and_multiply_domains(lhs_domain1.get_domain(),
-                                       lhs_domain1.get_domain(),
-                                       next->get_domain(), (DataType)1.0);
-
-      // Computing the defect after adding
-      convolution::Subtract_Convolve_map(
-          defect_domain.get_domain(), lhs_domain1.get_domain(),
-          rhs_domain.get_domain(), map_type.get_map());
-
       DataType residual{};
       domain_compute_norm_squared(residual, defect_domain.get_domain());
       residual =
           std::sqrt(residual / rhs_domain.template get_domain<nlev>().num_dofs);
       std::cout << "The residual after " << num << " iterations is " << residual
                 << std::endl;
+
+      v_cycle.iteration(*next, *current, defect_domain, map_type, grid_step,
+                        omega, num_iters_level, smoother_sequence_pre,
+                        smoother_sequence_post, true);
+
+      DataType omega_upper_scale = 0;
+
+      if (omega == (DataType)0) {
+        omega_upper_scale = multigrid_domain::get_ideal_omega(
+            lhs_domain1.get_domain(), next->get_domain(),
+            rhs_domain.get_domain(), map_type.get_map());
+
+        //  std::cout << "The found value for omega is: " << omega_upper_scale
+        //            << std::endl;
+      } else {
+        omega_upper_scale = omega;
+      }
+
+      domain::add_and_multiply_domains(lhs_domain1.get_domain(),
+                                       lhs_domain1.get_domain(),
+                                       next->get_domain(), omega_upper_scale);
+      // omega_upper_scale);
+
+      // Computing the defect after adding
+      convolution::Subtract_Convolve_map(
+          defect_domain.get_domain(), lhs_domain1.get_domain(),
+          rhs_domain.get_domain(), map_type.get_map());
 
       std::swap(current, next);
 

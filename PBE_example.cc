@@ -142,8 +142,8 @@ int main(int argc, char *argv[]) {
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
                       // as it is only applied to the right hand side anyways
 
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
-                                     box_length, Integer<base_length>{});
+  //  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+  //                                     box_length, Integer<base_length>{});
 
   {
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
@@ -223,10 +223,9 @@ int main(int argc, char *argv[]) {
                Dim>
         epsilon_domains{epsilonx_domain, epsilony_domain, epsilonz_domain};
 
-    convolution::PBE_Convolve(
-        rhs, boundary_domain, kappa_map, epsilon_domains, kappa_2,
-        static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
-        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
+    convolution::PBE_Convolve(rhs, boundary_domain, kappa_map, epsilon_domains,
+                              kappa_2, static_cast<DataType>(1.),
+                              static_cast<DataType>(epsilon_r), delta_epsilon);
 
     //  //  q.wait();
 
@@ -244,18 +243,19 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    cg_solver::CG_solver_PBE(
-        init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
-        kappa_2, static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
-        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets(),
-        num_iters);
+    //    cg_solver::CG_solver_PBE(
+    //        init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
+    //        kappa_2, static_cast<DataType>(1.),
+    //        static_cast<DataType>(epsilon_r), delta_epsilon,
+    //        diff_operator.get_values(), diff_operator.get_offsets(),
+    //        num_iters);
 
     domain::subtract_domains(init_guess, boundary_domain, init_guess);
 
     //  //  q.wait();
 
     std::ofstream outfile{filename_out};
-    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);
+    // init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);
   }
 
   std::cout << "The length is: " << std::get<0>(length) << std::endl;
