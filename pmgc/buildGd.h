@@ -54,8 +54,10 @@
 #ifndef _BUILDGD_H_
 #define _BUILDGD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include <sycl/sycl.hpp>
+
+namespace pmgc {
 
 template <typename DataType>
 void VbuildG(int *nxf,       ///< @todo: doc
@@ -488,5 +490,5 @@ void VbuildG_27(int *nxf,       ///< @todo: doc
                 DataType *XuSW,
                 sycl::queue &q ///< @todo: doc
 );
-
+} // namespace pmgc
 #endif // _BUILDGD_H_

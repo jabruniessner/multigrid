@@ -53,38 +53,15 @@
  */
 
 #include "gsd.h"
+#include "precision.h"
 
-void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
-           DataType *cc, DataType *fc, DataType *x, DataType *w1, DataType *w2,
-           DataType *r, int *itmax, int *iters, DataType *errtol,
-           DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
+namespace pmgc {
 
-  int numdia; /// @todo: doc
-
-  MAT2(ac, *nx * *ny * *nz, 1);
-
-  // Do in one step ***
-  numdia = VAT(ipc, 11);
-  if (numdia == 7) {
-    Vgsrb7x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-            RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, w1, w2, r, itmax, iters, errtol,
-            omega, iresid, iadjoint, q);
-  } else if (numdia == 27) {
-    Vgsrb27x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-             RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
-             RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
-             RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14),
-             x, w1, w2, r, itmax, iters, errtol, omega, iresid, iadjoint, q);
-  } else {
-    printf("GSRB: invalid stencil type given...\n");
-  }
-}
-
-void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
-             DataType *cc, DataType *fc, DataType *oE, DataType *oN,
-             DataType *uC, DataType *x, DataType *w1, DataType *w2, DataType *r,
-             int *itmax, int *iters, DataType *errtol, DataType *omega,
-             int *iresid, int *iadjoint, sycl::queue &q) {
+template <>
+void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                       DataType *oN, DataType *uC, DataType *x, int *itmax,
+                       sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);
@@ -98,7 +75,7 @@ void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
   MAT3(uC, *nx, *ny, *nz);
   MAT3(oC, *nx, *ny, *nz);
 
-  for (*iters = 1; *iters <= *itmax; (*iters)++) {
+  for (int iters = 1; iters <= *itmax; iters++) {
 
     for (int color = 0; color <= 1; color++)
       q.parallel_for(
@@ -107,8 +84,8 @@ void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
             const int j = I[1] + 2;
             const int k = I[2] + 2;
 
-            const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-                              (*iadjoint) * (1 - (j + k + 2) % 2);
+            //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
+            //                    (*iadjoint) * (1 - (j + k + 2) % 2);
 
             if ((i + j + k) % 2 == color)
               VAT3(x, i, j, k) = (VAT3(fc, i, j, k) +
@@ -123,14 +100,14 @@ void Vgsrb7x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
   }
 }
 
-void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
-              DataType *cc, DataType *fc, DataType *oE, DataType *oN,
-              DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
-              DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
-              DataType *uNW, DataType *uSE, DataType *uSW, DataType *x,
-              DataType *w1, DataType *w2, DataType *r, int *itmax, int *iters,
-              DataType *errtol, DataType *omega, int *iresid, int *iadjoint,
-              sycl::queue &q) {
+template <>
+void Vgsrb27x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *oC, DataType *cc, DataType *fc, DataType *oE,
+                        DataType *oN, DataType *uC, DataType *oNE,
+                        DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+                        DataType *uS, DataType *uNE, DataType *uNW,
+                        DataType *uSE, DataType *uSW, DataType *x, int *itmax,
+                        sycl::queue &q) {
 
   int i, j, k;
   int i1, j1, k1;
@@ -164,7 +141,7 @@ void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
   MAT3(uSE, *nx, *ny, *nz);
   MAT3(uSW, *nx, *ny, *nz);
 
-  for (*iters = 1; *iters <= *itmax; (*iters)++) {
+  for (int iters = 1; iters <= *itmax; iters++) {
     for (int color = 0; color <= 8; color++)
       q.parallel_for(
           sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
@@ -215,3 +192,31 @@ void Vgsrb27x(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *oC,
           });
   }
 }
+
+template <typename DataType>
+void Vgsrb(int *nx, int *ny, int *nz, int *ipc, DataType *rpc, DataType *ac,
+           DataType *cc, DataType *fc, DataType *x, DataType *w1, DataType *w2,
+           DataType *r, int *itmax, int *iters, DataType *errtol,
+           DataType *omega, int *iresid, int *iadjoint, sycl::queue &q) {
+
+  int numdia; /// @todo: doc
+
+  MAT2(ac, *nx * *ny * *nz, 1);
+
+  // Do in one step ***
+  numdia = VAT(ipc, 11);
+  if (numdia == 7) {
+    Vgsrb7x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+            RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, itmax, q);
+  } else if (numdia == 27) {
+    Vgsrb27x(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+             RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
+             RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
+             RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14),
+             x, itmax, q);
+  } else {
+    printf("GSRB: invalid stencil type given...\n");
+  }
+}
+
+} // namespace pmgc

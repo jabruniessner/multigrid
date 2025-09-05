@@ -54,7 +54,7 @@
 #ifndef _SMOOTHD_H_
 #define _SMOOTHD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "cgd.h"
 #include "gsd.h"
@@ -65,6 +65,8 @@
  *
  *  @note    Replaces smooth from smoothd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vsmooth(int *nx,          ///< @todo: Doc
@@ -117,5 +119,6 @@ void Vnsmooth(int *nx,          ///< @todo: Doc
               int *iadjoint,    ///< @todo: Doc
               int *meth         ///< @todo: Doc
 );
+} // namespace pmgc
 
 #endif /* _SMOOTHD_H_ */

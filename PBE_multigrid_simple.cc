@@ -347,20 +347,12 @@ int main(int argc, char *argv[]) {
       //                        smoothing_steps);
     }
 
-    std::cout << "The residual after " << i << " iterations is " << residual
-              << std::endl;
-
     //  std::index_sequence<30> iter_nums{};
     //  j_smoother(Integer<nlev>{}, iter_nums, *a, *a, rhs_domain, kappa_,
     //             epsilonx_map, epsilony_map, epsilonz_map, kappa_2,
     //             grid_step, epsilon_r, delta_epsilon, omega);
 
     // std::swap(a, b);
-
-    v_cycle.iteration(sol, lhs_domain1, rhs_domain, epsilonx_map, epsilony_map,
-                      epsilonz_map, kappa_, kappa_2, grid_step, epsilon_r,
-                      delta_epsilon, omega, num_iters, coarser, smoothing_steps,
-                      smoothing_steps);
   }
 
   // cg_solver::CG_solver_PBE(
@@ -415,11 +407,4 @@ int main(int argc, char *argv[]) {
   //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
 
   //  init_guess.print_domain();
-}
-
-q.wait();
-
-// std::cout << "The length is: " << std::get<0>(length) << std::endl;
-
-return 0;
 }

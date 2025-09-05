@@ -53,67 +53,22 @@
  */
 
 #include "buildPd.h"
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include "precision.h"
 #include <sycl/sycl.hpp>
 
-VPUBLIC void VbuildP(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *mgprol, int *ipc, DataType *rpc, DataType *pc,
-                     DataType *ac, DataType *xf, DataType *yf, DataType *zf,
-                     sycl::queue &q) {
+namespace pmgc {
 
-  int numdia;
-
-  MAT2(pc, *nxc * *nyc * *nzc, 1);
-  MAT2(ac, *nxf * *nyf * *nzf, 1);
-
-  if (*mgprol == 0) {
-
-    VbuildP_trilin(nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), xf, yf, zf, q);
-
-  } else if (*mgprol == 1) {
-
-    numdia = VAT(ipc, 11);
-
-    if (numdia == 7) {
-      VbuildP_op7(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
-                  RAT2(pc, 1, 1), q);
-    } else if (numdia == 27) {
-      VbuildP_op27(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
-                   RAT2(pc, 1, 1), q);
-    } else {
-      printf("BUILDP: invalid stencil type given: %d\n", numdia);
-    }
-  }
-}
-
-VPUBLIC void VbuildP_trilin(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                            int *nzc, DataType *pc, DataType *xf, DataType *yf,
-                            DataType *zf, sycl::queue &q) {
-
-  MAT2(pc, *nxc * *nyc * *nzc, 1);
-
-  VbuildPb_trilin(
-      nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), RAT2(pc, 1, 2),
-      RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5), RAT2(pc, 1, 6),
-      RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9), RAT2(pc, 1, 10),
-      RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13), RAT2(pc, 1, 14),
-      RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
-      RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21), RAT2(pc, 1, 22),
-      RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25), RAT2(pc, 1, 26),
-      RAT2(pc, 1, 27), xf, yf, zf, q);
-}
-
-VEXTERNC void
-VbuildPb_trilin(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
-                DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
-                DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
-                DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
-                DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN,
-                DataType *dPS, DataType *dPE, DataType *dPW, DataType *dPNE,
-                DataType *dPNW, DataType *dPSE, DataType *dPSW, DataType *xf,
-                DataType *yf, DataType *zf, sycl::queue &q) {
+template <>
+void VbuildPb_trilin<DataType>(
+    int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc, DataType *oPC,
+    DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
+    DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC,
+    DataType *uPN, DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE,
+    DataType *uPNW, DataType *uPSE, DataType *uPSW, DataType *dPC,
+    DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW, DataType *dPNE,
+    DataType *dPNW, DataType *dPSE, DataType *dPSW, DataType *xf, DataType *yf,
+    DataType *zf, sycl::queue &q) {
 
   // int i, j, k;
 
@@ -194,38 +149,35 @@ VbuildPb_trilin(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
                  });
 }
 
-VPUBLIC void VbuildP_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                         int *nzc, int *ipc, DataType *rpc, DataType *ac,
-                         DataType *pc, sycl::queue &q) {
+template <>
+void VbuildP_trilin<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                              int *nzc, DataType *pc, DataType *xf,
+                              DataType *yf, DataType *zf, sycl::queue &q) {
 
-  MAT2(ac, *nxf * *nyf * *nzf, 1);
   MAT2(pc, *nxc * *nyc * *nzc, 1);
 
-  WARN_UNTESTED;
-
-  VbuildPb_op7(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
-               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(pc, 1, 1),
-               RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
-               RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
-               RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12),
-               RAT2(pc, 1, 13), RAT2(pc, 1, 14), RAT2(pc, 1, 15),
-               RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
-               RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
-               RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24),
-               RAT2(pc, 1, 25), RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
+  VbuildPb_trilin(
+      nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), RAT2(pc, 1, 2),
+      RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5), RAT2(pc, 1, 6),
+      RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9), RAT2(pc, 1, 10),
+      RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13), RAT2(pc, 1, 14),
+      RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
+      RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21), RAT2(pc, 1, 22),
+      RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25), RAT2(pc, 1, 26),
+      RAT2(pc, 1, 27), xf, yf, zf, q);
 }
 
-VPUBLIC void
-VbuildPb_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-             int *ipc, DataType *rpc, DataType *oC, DataType *oE, DataType *oN,
-             DataType *uC, DataType *oPC, DataType *oPN, DataType *oPS,
-             DataType *oPE, DataType *oPW, DataType *oPNE, DataType *oPNW,
-             DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
-             DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE,
-             DataType *uPNW, DataType *uPSE, DataType *uPSW, DataType *dPC,
-             DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW,
-             DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
-             sycl::queue &q) {
+template <>
+void VbuildPb_op7<DataType>(
+    int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc, int *ipc,
+    DataType *rpc, DataType *oC, DataType *oE, DataType *oN, DataType *uC,
+    DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
+    DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
+    DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE, DataType *uPW,
+    DataType *uPNE, DataType *uPNW, DataType *uPSE, DataType *uPSW,
+    DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW,
+    DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
+    sycl::queue &q) {
 
   // DataType won, half, quarter, eighth;
 
@@ -597,44 +549,41 @@ VbuildPb_op7(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
   });
 }
 
-VPUBLIC void VbuildP_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                          int *nzc, int *ipc, DataType *rpc, DataType *ac,
-                          DataType *pc, sycl::queue &q) {
+template <>
+void VbuildP_op7<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                           int *nzc, int *ipc, DataType *rpc, DataType *ac,
+                           DataType *pc, sycl::queue &q) {
 
   MAT2(ac, *nxf * *nyf * *nzf, 1);
   MAT2(pc, *nxc * *nyc * *nzc, 1);
 
   WARN_UNTESTED;
 
-  VbuildPb_op27(
-      nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc,
-
-      RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
-      RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
-      RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-      RAT2(ac, 1, 13), RAT2(ac, 1, 14), RAT2(pc, 1, 1), RAT2(pc, 1, 2),
-      RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5), RAT2(pc, 1, 6),
-      RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9), RAT2(pc, 1, 10),
-      RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13), RAT2(pc, 1, 14),
-      RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
-      RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21), RAT2(pc, 1, 22),
-      RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25), RAT2(pc, 1, 26),
-      RAT2(pc, 1, 27), q);
+  VbuildPb_op7(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
+               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(pc, 1, 1),
+               RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
+               RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
+               RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12),
+               RAT2(pc, 1, 13), RAT2(pc, 1, 14), RAT2(pc, 1, 15),
+               RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
+               RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
+               RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24),
+               RAT2(pc, 1, 25), RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
 }
 
-VPUBLIC void
-VbuildPb_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-              int *ipc, DataType *rpc, DataType *oC, DataType *oE, DataType *oN,
-              DataType *uC, DataType *oNE, DataType *oNW, DataType *uE,
-              DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
-              DataType *uNW, DataType *uSE, DataType *uSW, DataType *oPC,
-              DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
-              DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
-              DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
-              DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
-              DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
-              DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
-              DataType *dPSE, DataType *dPSW, sycl::queue &q) {
+template <>
+void VbuildPb_op27<DataType>(
+    int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc, int *ipc,
+    DataType *rpc, DataType *oC, DataType *oE, DataType *oN, DataType *uC,
+    DataType *oNE, DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+    DataType *uS, DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW,
+    DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW,
+    DataType *oPNE, DataType *oPNW, DataType *oPSE, DataType *oPSW,
+    DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE, DataType *uPW,
+    DataType *uPNE, DataType *uPNW, DataType *uPSE, DataType *uPSW,
+    DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE, DataType *dPW,
+    DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
+    sycl::queue &q) {
 
   int i, j, k;
 
@@ -1134,3 +1083,62 @@ VbuildPb_op27(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
     // fprintf(data, "%19.12E\n", VAT3(uPSW, ii, jj, kk));
   });
 }
+
+template <>
+void VbuildP_op27<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                            int *nzc, int *ipc, DataType *rpc, DataType *ac,
+                            DataType *pc, sycl::queue &q) {
+
+  MAT2(ac, *nxf * *nyf * *nzf, 1);
+  MAT2(pc, *nxc * *nyc * *nzc, 1);
+
+  WARN_UNTESTED;
+
+  VbuildPb_op27(
+      nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc,
+
+      RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
+      RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
+      RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+      RAT2(ac, 1, 13), RAT2(ac, 1, 14), RAT2(pc, 1, 1), RAT2(pc, 1, 2),
+      RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5), RAT2(pc, 1, 6),
+      RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9), RAT2(pc, 1, 10),
+      RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13), RAT2(pc, 1, 14),
+      RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
+      RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21), RAT2(pc, 1, 22),
+      RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25), RAT2(pc, 1, 26),
+      RAT2(pc, 1, 27), q);
+}
+
+template <>
+void VbuildP<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                       int *nzc, int *mgprol, int *ipc, DataType *rpc,
+                       DataType *pc, DataType *ac, DataType *xf, DataType *yf,
+                       DataType *zf, sycl::queue &q) {
+
+  int numdia;
+
+  MAT2(pc, *nxc * *nyc * *nzc, 1);
+  MAT2(ac, *nxf * *nyf * *nzf, 1);
+
+  if (*mgprol == 0) {
+
+    VbuildP_trilin(nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), xf, yf, zf, q);
+
+  } else if (*mgprol == 1) {
+
+    numdia = VAT(ipc, 11);
+
+    if (numdia == 7) {
+      VbuildP_op7(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
+                  RAT2(pc, 1, 1), q);
+    } else if (numdia == 27) {
+      VbuildP_op27(nxf, nyf, nzf, nxc, nyc, nzc, ipc, rpc, RAT2(ac, 1, 1),
+                   RAT2(pc, 1, 1), q);
+    } else {
+      printf("BUILDP: invalid stencil type given: %d\n", numdia);
+    }
+  }
+}
+
+} // namespace pmgc

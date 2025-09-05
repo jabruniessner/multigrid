@@ -35,6 +35,23 @@ ExternalProject_Add(pmgc
 )
 
 
+# Paths where pmgc will install
+set(PMGC_PREFIX ${CMAKE_BINARY_DIR}/pmgc)
+set(PMGC_LIB ${PMGC_PREFIX}/libpmgc.so)   # adjust name for your lib
+set(PMGC_INCLUDE ${CMAKE_SOURCE_DIR}/pmgc)
+
+# Create imported target
+add_library(pmgc_lib SHARED IMPORTED)
+set_target_properties(pmgc_lib PROPERTIES
+    IMPORTED_LOCATION ${PMGC_LIB}
+    INTERFACE_INCLUDE_DIRECTORIES ${PMGC_INCLUDE}
+)
+
+
+# Make sure it's built before you link against it
+add_dependencies(pmgc_lib pmgc)
+
+
 
 add_library(prof SHARED profiling_library.cc)
 
@@ -85,6 +102,9 @@ add_executable(create_charge_dist create_charge_distribution.cc fileio.cc)
 add_executable(test_kappa_functions test_kappa_function.cc)
 add_executable(PBE_example PBE_example.cc fileio.cc)
 add_executable(PBE_multigrid_simple PBE_multigrid_simple.cc fileio.cc)
+add_executable(PBE_pmgc_gsd_test PBE_pmgc_gsd_test.cc fileio.cc)
+target_link_libraries(PBE_pmgc_gsd_test PRIVATE pmgc_lib)
+
 #add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
 add_executable(applying_cuts_test_debug applying_cuts_to_domain_debug.cc fileio.cc)

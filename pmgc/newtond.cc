@@ -55,15 +55,17 @@
 
 #include "newtond.h"
 
-VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
-                      DataType *w1, DataType *w2, DataType *w3, int *istop,
-                      int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
-                      int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                      DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                      int *nu2, int *mgsmoo, DataType *cprime, DataType *rhs,
-                      DataType *xtmp, int *ipc, DataType *rpc, DataType *pc,
-                      DataType *ac, DataType *cc, DataType *fc, DataType *tru,
-                      sycl::queue &q) {
+namespace pmgc {
+
+VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, DataType *x, int *iz,
+                      DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                      int *istop, int *itmax, int *iters, int *ierror,
+                      int *nlev, int *ilev, int *nlev_real, int *mgsolv,
+                      int *iok, int *iinfo, DataType *epsiln, DataType *errtol,
+                      DataType *omega, int *nu1, int *nu2, int *mgsmoo,
+                      DataType *cprime, DataType *rhs, DataType *xtmp, int *ipc,
+                      DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+                      DataType *fc, DataType *tru, sycl::queue &q) {
 
   int level, itmxd, nlevd, iterd, iokd;
   int nxf, nyf, nzf;
@@ -135,15 +137,15 @@ VPUBLIC void Vfnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType 
           nu2, mgsmoo, cprime, rhs, xtmp, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
-VPUBLIC void Vnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
-                     DataType *w1, DataType *w2, DataType *w3, int *istop, int *itmax,
-                     int *iters, int *ierror, int *nlev, int *ilev,
-                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                     int *nu2, int *mgsmoo, DataType *cprime, DataType *rhs,
-                     DataType *xtmp, int *ipc, DataType *rpc, DataType *pc,
-                     DataType *ac, DataType *cc, DataType *fc, DataType *tru,
-                     sycl::queue &q) {
+VPUBLIC void Vnewton(int *nx, int *ny, int *nz, DataType *x, int *iz,
+                     DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                     int *istop, int *itmax, int *iters, int *ierror, int *nlev,
+                     int *ilev, int *nlev_real, int *mgsolv, int *iok,
+                     int *iinfo, DataType *epsiln, DataType *errtol,
+                     DataType *omega, int *nu1, int *nu2, int *mgsmoo,
+                     DataType *cprime, DataType *rhs, DataType *xtmp, int *ipc,
+                     DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+                     DataType *fc, DataType *tru, sycl::queue &q) {
 
   int level, lev;
   int itmax_s, iters_s, ierror_s, iok_s, iinfo_s, istop_s;
@@ -484,8 +486,9 @@ VPUBLIC void Vnewton(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *
 }
 
 VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
-                     int *lev, int *ipkey, DataType *x, DataType *r, DataType *cprime,
-                     DataType *rhs, DataType *cc, DataType *pc, sycl::queue &q) {
+                     int *lev, int *ipkey, DataType *x, DataType *r,
+                     DataType *cprime, DataType *rhs, DataType *cc,
+                     DataType *pc, sycl::queue &q) {
 
   int nxx, nyy, nzz;
   int nxold, nyold, nzold;
@@ -526,3 +529,5 @@ VPUBLIC void Vgetjac(int *nx, int *ny, int *nz, int *nlev_real, int *iz,
             q);
   }
 }
+
+} // namespace pmgc

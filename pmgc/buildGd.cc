@@ -56,98 +56,13 @@
 #include <sycl/sycl.hpp>
 #include "precision.h"
 
-VPUBLIC void VbuildG(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, sycl::queue& q) {
 
-  MAT2(pcFF, *nxc * *nyc * *nzc, 27);
-  MAT2(acFF, *nxf * *nyf * *nzf, 27);
-  MAT2(ac, *nxc * *nyc * *nzc, 27);
+namespace pmgc {
 
-  // Call the build routine ***
-  if (*numdia == 1) {
 
-    VbuildG_1(
 
-        nxf, nyf, nzf, nxc, nyc, nzc,
-
-        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
-        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
-        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
-        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
-        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
-        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
-        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
-        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
-        RAT2(pcFF, 1, 27),
-
-        RAT2(acFF, 1, 1),
-
-        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
-        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
-        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
-
-    );
-
-  } else if (*numdia == 7) {
-
-    VbuildG_7(
-
-        nxf, nyf, nzf, nxc, nyc, nzc,
-
-        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
-        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
-        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
-        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
-        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
-        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
-        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
-        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
-        RAT2(pcFF, 1, 27),
-
-        RAT2(acFF, 1, 1), RAT2(acFF, 1, 2), RAT2(acFF, 1, 3), RAT2(acFF, 1, 4),
-
-        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
-        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
-        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
-
-    );
-
-  } else if (*numdia == 27) {
-
-    VbuildG_27(
-
-        nxf, nyf, nzf, nxc, nyc, nzc,
-
-        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
-        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
-        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
-        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
-        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
-        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
-        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
-        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
-        RAT2(pcFF, 1, 27),
-
-        RAT2(acFF, 1, 1), RAT2(acFF, 1, 2), RAT2(acFF, 1, 3), RAT2(acFF, 1, 4),
-        RAT2(acFF, 1, 5), RAT2(acFF, 1, 6), RAT2(acFF, 1, 7), RAT2(acFF, 1, 8),
-        RAT2(acFF, 1, 9), RAT2(acFF, 1, 10), RAT2(acFF, 1, 11),
-        RAT2(acFF, 1, 12), RAT2(acFF, 1, 13), RAT2(acFF, 1, 14),
-
-        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
-        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
-        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
-
-    );
-
-  } else {
-    printf("BUILDG: invalid stencil type given...\n");
-  }
-}
-
-VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
+template<>
+void VbuildG_1<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
                        DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
                        DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
                        DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
@@ -518,8 +433,8 @@ VPUBLIC void VbuildG_1(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
       });
 }
 
-VPUBLIC void
-VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
+template<> void
+VbuildG_7<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
           DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
           DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
           DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
@@ -1443,8 +1358,8 @@ VbuildG_7(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC
   
 }
 
-VPUBLIC void
-VbuildG_27(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
+template<> void
+VbuildG_27<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
            DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
            DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
            DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
@@ -3354,3 +3269,99 @@ VbuildG_27(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oP
         // fprintf(data, "%19.12E\n", VAT3(XuSW, ii, jj, kk));
       });
 }
+
+template<>
+void VbuildG<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
+                     int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, sycl::queue& q) {
+
+  MAT2(pcFF, *nxc * *nyc * *nzc, 27);
+  MAT2(acFF, *nxf * *nyf * *nzf, 27);
+  MAT2(ac, *nxc * *nyc * *nzc, 27);
+
+  // Call the build routine ***
+  if (*numdia == 1) {
+
+    VbuildG_1(
+
+        nxf, nyf, nzf, nxc, nyc, nzc,
+
+        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
+        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
+        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
+        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
+        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
+        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
+        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
+        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
+        RAT2(pcFF, 1, 27),
+
+        RAT2(acFF, 1, 1),
+
+        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
+        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
+        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
+
+    );
+
+  } else if (*numdia == 7) {
+
+    VbuildG_7(
+
+        nxf, nyf, nzf, nxc, nyc, nzc,
+
+        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
+        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
+        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
+        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
+        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
+        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
+        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
+        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
+        RAT2(pcFF, 1, 27),
+
+        RAT2(acFF, 1, 1), RAT2(acFF, 1, 2), RAT2(acFF, 1, 3), RAT2(acFF, 1, 4),
+
+        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
+        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
+        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
+
+    );
+
+  } else if (*numdia == 27) {
+
+    VbuildG_27(
+
+        nxf, nyf, nzf, nxc, nyc, nzc,
+
+        RAT2(pcFF, 1, 1), RAT2(pcFF, 1, 2), RAT2(pcFF, 1, 3), RAT2(pcFF, 1, 4),
+        RAT2(pcFF, 1, 5), RAT2(pcFF, 1, 6), RAT2(pcFF, 1, 7), RAT2(pcFF, 1, 8),
+        RAT2(pcFF, 1, 9), RAT2(pcFF, 1, 10), RAT2(pcFF, 1, 11),
+        RAT2(pcFF, 1, 12), RAT2(pcFF, 1, 13), RAT2(pcFF, 1, 14),
+        RAT2(pcFF, 1, 15), RAT2(pcFF, 1, 16), RAT2(pcFF, 1, 17),
+        RAT2(pcFF, 1, 18), RAT2(pcFF, 1, 19), RAT2(pcFF, 1, 20),
+        RAT2(pcFF, 1, 21), RAT2(pcFF, 1, 22), RAT2(pcFF, 1, 23),
+        RAT2(pcFF, 1, 24), RAT2(pcFF, 1, 25), RAT2(pcFF, 1, 26),
+        RAT2(pcFF, 1, 27),
+
+        RAT2(acFF, 1, 1), RAT2(acFF, 1, 2), RAT2(acFF, 1, 3), RAT2(acFF, 1, 4),
+        RAT2(acFF, 1, 5), RAT2(acFF, 1, 6), RAT2(acFF, 1, 7), RAT2(acFF, 1, 8),
+        RAT2(acFF, 1, 9), RAT2(acFF, 1, 10), RAT2(acFF, 1, 11),
+        RAT2(acFF, 1, 12), RAT2(acFF, 1, 13), RAT2(acFF, 1, 14),
+
+        RAT2(ac, 1, 1), RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4),
+        RAT2(ac, 1, 5), RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
+        RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+        RAT2(ac, 1, 13), RAT2(ac, 1, 14), q
+
+    );
+
+  } else {
+    printf("BUILDG: invalid stencil type given...\n");
+  }
+}
+
+
+
+} //namespace pmgc

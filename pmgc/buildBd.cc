@@ -53,68 +53,18 @@
  */
 
 #include "buildBd.h"
+#include "hipSYCL/sycl/queue.hpp"
 #include "precision.h"
 #include <sycl/sycl.hpp>
 
-VPUBLIC void Vbuildband(int *key, int *nx, int *ny, int *nz, int *ipc,
-                        DataType *rpc, DataType *ac, int *ipcB, DataType *rpcB,
-                        DataType *acB) {
+namespace pmgc {
 
-  int numdia;
-  int n, m;
-  int lda, info;
-
-  MAT2(ac, *nx * *ny * *nz, 1);
-
-  // Do in one step
-  numdia = VAT(ipc, 11);
-  if (numdia == 7) {
-
-    n = (*nx - 2) * (*ny - 2) * (*nz - 2);
-    m = (*nx - 2) * (*ny - 2);
-    lda = m + 1;
-
-    Vbuildband1_7(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), RAT2(ac, 1, 2),
-                  RAT2(ac, 1, 3), RAT2(ac, 1, 4), ipcB, rpcB, acB, &n, &m,
-                  &lda);
-
-  } else if (numdia == 27) {
-
-    n = (*nx - 2) * (*ny - 2) * (*nz - 2);
-    m = (*nx - 2) * (*ny - 2) + (*nx - 2) + 1;
-    lda = m + 1;
-
-    Vbuildband1_27(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), RAT2(ac, 1, 2),
-                   RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5),
-                   RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
-                   RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11),
-                   RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14), ipcB,
-                   rpcB, acB, &n, &m, &lda);
-  } else {
-    printf("Vbuildband: invalid stencil type given...\n");
-  }
-
-  // Factor the system
-  *key = 0;
-  info = 0;
-
-  Vdpbfa(acB, &lda, &n, &m, &info);
-  VAT(ipcB, 4) = 1;
-
-  if (info != 0) {
-
-    printf("Vbuildband: dpbfa problem: %d\n", info);
-    printf("Vbuildband: leading principle minor not PD...\n");
-
-    *key = 1;
-  }
-}
-
-VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                           DataType *oC, DataType *oE, DataType *oN,
-                           DataType *uC, int *ipcB, DataType *rpcB,
-                           DataType *acB, int *n, int *m, int *lda,
-                           sycl::queue &q) {
+template <>
+void Vbuildband1_7<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                             DataType *oC, DataType *oE, DataType *oN,
+                             DataType *uC, int *ipcB, DataType *rpcB,
+                             DataType *acB, int *n, int *m, int *lda,
+                             sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -173,14 +123,15 @@ VPUBLIC void Vbuildband1_7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                            DataType *oC, DataType *oE, DataType *oN,
-                            DataType *uC, DataType *oNE, DataType *oNW,
-                            DataType *uE, DataType *uW, DataType *uN,
-                            DataType *uS, DataType *uNE, DataType *uNW,
-                            DataType *uSE, DataType *uSW, int *ipcB,
-                            DataType *rpcB, DataType *acB, int *n, int *m,
-                            int *lda, sycl::queue &q) {
+template <>
+void Vbuildband1_27<DataType>(int *nx, int *ny, int *nz, int *ipc,
+                              DataType *rpc, DataType *oC, DataType *oE,
+                              DataType *oN, DataType *uC, DataType *oNE,
+                              DataType *oNW, DataType *uE, DataType *uW,
+                              DataType *uN, DataType *uS, DataType *uNE,
+                              DataType *uNW, DataType *uSE, DataType *uSW,
+                              int *ipcB, DataType *rpcB, DataType *acB, int *n,
+                              int *m, int *lda, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -296,3 +247,59 @@ VPUBLIC void Vbuildband1_27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
     // fprintf(data, "%19.12E\n", VAT2(acB, kk, jj));
   });
 }
+
+template <>
+void Vbuildband<DataType>(int *key, int *nx, int *ny, int *nz, int *ipc,
+                          DataType *rpc, DataType *ac, int *ipcB,
+                          DataType *rpcB, DataType *acB, sycl::queue &q) {
+
+  int numdia;
+  int n, m;
+  int lda, info;
+
+  MAT2(ac, *nx * *ny * *nz, 1);
+
+  // Do in one step
+  numdia = VAT(ipc, 11);
+  if (numdia == 7) {
+
+    n = (*nx - 2) * (*ny - 2) * (*nz - 2);
+    m = (*nx - 2) * (*ny - 2);
+    lda = m + 1;
+
+    Vbuildband1_7(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), RAT2(ac, 1, 2),
+                  RAT2(ac, 1, 3), RAT2(ac, 1, 4), ipcB, rpcB, acB, &n, &m, &lda,
+                  q);
+
+  } else if (numdia == 27) {
+
+    n = (*nx - 2) * (*ny - 2) * (*nz - 2);
+    m = (*nx - 2) * (*ny - 2) + (*nx - 2) + 1;
+    lda = m + 1;
+
+    Vbuildband1_27(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), RAT2(ac, 1, 2),
+                   RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5),
+                   RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8),
+                   RAT2(ac, 1, 9), RAT2(ac, 1, 10), RAT2(ac, 1, 11),
+                   RAT2(ac, 1, 12), RAT2(ac, 1, 13), RAT2(ac, 1, 14), ipcB,
+                   rpcB, acB, &n, &m, &lda, q);
+  } else {
+    printf("Vbuildband: invalid stencil type given...\n");
+  }
+
+  // Factor the system
+  *key = 0;
+  info = 0;
+
+  Vdpbfa(acB, &lda, &n, &m, &info);
+  VAT(ipcB, 4) = 1;
+
+  if (info != 0) {
+
+    printf("Vbuildband: dpbfa problem: %d\n", info);
+    printf("Vbuildband: leading principle minor not PD...\n");
+
+    *key = 1;
+  }
+}
+} // namespace pmgc

@@ -54,7 +54,7 @@
 #ifndef _NEWTOND_H_
 #define _NEWTOND_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "matvecd.h"
 #include "mgcsd.h"
@@ -68,6 +68,8 @@
  *
  *  @note    Replaces fnewton from newtond.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vfnewton(int *nx,          ///< @todo: Doc
@@ -177,5 +179,7 @@ void Vgetjac(int *nx,          ///< @todo: Doc
              DataType *pc,
              sycl::queue &q ///< @todo: Doc
 );
+
+} // namespace pmgc
 
 #endif /* _NEWTOND_H_ */

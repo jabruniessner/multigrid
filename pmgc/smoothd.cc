@@ -54,6 +54,8 @@
 
 #include "smoothd.h"
 
+namespace pmgc {
+
 VEXTERNC void Vsmooth(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
                       DataType *ac, DataType *cc, DataType *fc, DataType *x,
                       DataType *w1, DataType *w2, DataType *r, int *itmax,
@@ -115,3 +117,4 @@ VEXTERNC void Vnsmooth(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
     exit(-1);
   }
 }
+} // namespace pmgc

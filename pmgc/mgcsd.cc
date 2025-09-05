@@ -53,33 +53,36 @@
  */
 
 #include "mgcsd.h"
+#include "precision.h"
 
-VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
-                    DataType *w1, DataType *w2, DataType *w3, int *istop, int *itmax,
-                    int *iters, int *ierror, int *nlev, int *ilev,
-                    int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                    DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                    int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
-                    DataType *ac, DataType *cc, DataType *fc, DataType *tru,
-                    sycl::queue &q) {
+namespace pmgc {
 
-  int level;       // @todo: doc
-  int lev;         // @todo: doc
-  int itmax_s;     // @todo: doc
-  int iters_s;     // @todo: doc
-  int nuuu;        // @todo: doc
-  int mgsmoo_s;    // @todo: doc
-  int iresid;      // @todo: doc
-  int nxf;         // @todo: doc
-  int nyf;         // @todo: doc
-  int nzf;         // @todo: doc
-  int nxc;         // @todo: doc
-  int nyc;         // @todo: doc
-  int nzc;         // @todo: doc
-  int lpv;         // @todo: doc
-  int n;           // @todo: doc
-  int m;           // @todo: doc
-  int iadjoint;    // @todo: doc
+template <typename DataType>
+void Vmvcs(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
+           DataType *w1, DataType *w2, DataType *w3, int *istop, int *itmax,
+           int *iters, int *ierror, int *nlev, int *ilev, int *nlev_real,
+           int *mgsolv, int *iok, int *iinfo, DataType *epsiln,
+           DataType *errtol, DataType *omega, int *nu1, int *nu2, int *mgsmoo,
+           int *ipc, DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
+           DataType *fc, DataType *tru, sycl::queue &q) {
+
+  int level;         // @todo: doc
+  int lev;           // @todo: doc
+  int itmax_s;       // @todo: doc
+  int iters_s;       // @todo: doc
+  int nuuu;          // @todo: doc
+  int mgsmoo_s;      // @todo: doc
+  int iresid;        // @todo: doc
+  int nxf;           // @todo: doc
+  int nyf;           // @todo: doc
+  int nzf;           // @todo: doc
+  int nxc;           // @todo: doc
+  int nyc;           // @todo: doc
+  int nzc;           // @todo: doc
+  int lpv;           // @todo: doc
+  int n;             // @todo: doc
+  int m;             // @todo: doc
+  int iadjoint;      // @todo: doc
   DataType errtol_s; // @todo: doc
   DataType rsden;    // @todo: doc
   DataType rsnrm;    // @todo: doc
@@ -87,10 +90,10 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w
   DataType xnum;     // @todo: doc
   DataType xden;     // @todo: doc
   DataType xdamp;    // @todo: doc
-  int lda;         // @todo: doc
+  int lda;           // @todo: doc
 
   DataType alpha; // A utility variable used to pass a parameter to xaxpy
-  int numlev;   // A utility variable used to pass a parameter to mkcors
+  int numlev;     // A utility variable used to pass a parameter to mkcors
 
   MAT2(iz, 50, 1);
 
@@ -525,3 +528,13 @@ VEXTERNC void Vmvcs(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w
 
   *ierror = *iters < *itmax ? 0 : 1;
 }
+
+template void Vmvcs<DataType>(
+    int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0, DataType *w1,
+    DataType *w2, DataType *w3, int *istop, int *itmax, int *iters, int *ierror,
+    int *nlev, int *ilev, int *nlev_real, int *mgsolv, int *iok, int *iinfo,
+    DataType *epsiln, DataType *errtol, DataType *omega, int *nu1, int *nu2,
+    int *mgsmoo, int *ipc, DataType *rpc, DataType *pc, DataType *ac,
+    DataType *cc, DataType *fc, DataType *tru, sycl::queue &q);
+
+} // namespace pmgc

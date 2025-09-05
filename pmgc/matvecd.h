@@ -54,7 +54,7 @@
 #ifndef _MATVECD_H_
 #define _MATVECD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "mikpckd.h"
 #include "mypdec.h"
@@ -68,6 +68,8 @@
  *
  *  @note    Replaces matvec from matvecd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vmatvec(int *nx,       ///< @todo:  Doc
@@ -573,5 +575,7 @@ void Vextrac(int *nxf,      ///< @todo:  Doc
              DataType *xout,
              sycl::queue &q ///< @todo:  Doc
 );
+
+} // namespace pmgc
 
 #endif /* _MATVECD_H_ */

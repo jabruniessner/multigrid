@@ -59,7 +59,7 @@
 #ifndef _MGDRVD_H_
 #define _MGDRVD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "mgcsd.h"
 #include "mgfasd.h"
@@ -73,6 +73,8 @@
  *
  *  Replaces mgdriv from mgdrvd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vmgdriv(int *iparm,      ///< @todo: Doc
@@ -251,5 +253,7 @@ void Vmgsz(int *mgcoar, ///< @todo: Doc
            int *iretot, ///< @todo: Doc
            int *iintot  ///< @todo: Doc
 );
+
+} // namespace pmgc
 
 #endif /* _MGDRVD_H_ */

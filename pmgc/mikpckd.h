@@ -55,7 +55,7 @@
 #ifndef MIKPCKD_H_
 #define MIKPCKD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include <sycl/sycl.hpp>
 
 /** @brief   Copy operation for a grid function with boundary values.
@@ -65,6 +65,8 @@
  *
  *  @note    Replaces xcopy from mikpckd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vxcopy(int *nx,     ///< The size of the x dimension of the 3d matrix
@@ -316,5 +318,7 @@ void Vlinesearch(int *nx, ///< The size of the x dimension of the 3d matrix
                  DataType *zk,    ///< @todo  Document
                  DataType *zkp1   ///< @todo  Document
 );
+
+} // namespace pmgc
 
 #endif /* MIKPCKD_H_ */

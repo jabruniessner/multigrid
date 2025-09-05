@@ -54,7 +54,7 @@
 #ifndef MLINPCKD_H_
 #define MLINPCKD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 /** @brief   Solves the DataType precision symmetric positive definite band
  * system A*X = B using the factors computed by dpbco or dpbfa
@@ -66,6 +66,8 @@
  *           not occur if the subroutines are called correctly and info == 0
  *  @note    Replaces dpbsl from mgsubd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vdpbsl(DataType *abd, ///< The output from dpbco or dpbfa
@@ -95,5 +97,7 @@ DataType Vddot(int n, DataType *dx, int incx, DataType *dy, int incy);
 
 template <typename DataType>
 void Vdpbfa(DataType *abd, int *lda, int *n, int *m, int *info);
+
+} // namespace pmgc
 
 #endif /* MLINPCKD_H_ */

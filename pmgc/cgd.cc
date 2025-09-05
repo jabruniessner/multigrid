@@ -55,6 +55,8 @@
 #include "cgd.h"
 #include "precision.h"
 
+namespace pmgc {
+
 VPUBLIC void Vcghs(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
                    DataType *ac, DataType *cc, DataType *fc, DataType *x,
                    DataType *p, DataType *ap, DataType *r, int *itmax,
@@ -120,3 +122,4 @@ VPUBLIC void Vcghs(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
     (*iters)++;
   }
 }
+} // namespace pmgc

@@ -55,36 +55,11 @@
 #include "mlinpckd.h"
 #include "precision.h"
 
-VPUBLIC void Vdpbsl(DataType *abd, int *lda, int *n, int *m, DataType *b) {
+namespace pmgc {
 
-  DataType t;
-  int k, kb, la, lb, lm;
-
-  MAT2(abd, *lda, 1);
-
-  for (k = 1; k <= *n; k++) {
-    lm = VMIN2(k - 1, *m);
-    la = *m + 1 - lm;
-    lb = k - lm;
-    t = Vddot(lm, RAT2(abd, la, k), 1, RAT(b, lb), 1);
-    VAT(b, k) = (VAT(b, k) - t) / VAT2(abd, *m + 1, k);
-  }
-
-  // Solve R*X = Y
-  for (kb = 1; kb <= *n; kb++) {
-
-    k = *n + 1 - kb;
-    lm = VMIN2(k - 1, *m);
-    la = *m + 1 - lm;
-    lb = k - lm;
-    VAT(b, k) /= VAT2(abd, *m + 1, k);
-    t = -VAT(b, k);
-    Vdaxpy(lm, t, RAT2(abd, la, k), 1, RAT(b, lb), 1);
-  }
-}
-
-VPUBLIC void Vdaxpy(int n, DataType da, DataType *dx, int incx, DataType *dy,
-                    int incy) {
+template <>
+void Vdaxpy<DataType>(int n, DataType da, DataType *dx, int incx, DataType *dy,
+                      int incy) {
 
   int i, ix, iy, m, mp1;
 
@@ -134,7 +109,9 @@ VPUBLIC void Vdaxpy(int n, DataType da, DataType *dx, int incx, DataType *dy,
   }
 }
 
-VPUBLIC DataType Vddot(int n, DataType *dx, int incx, DataType *dy, int incy) {
+template <>
+DataType Vddot<DataType>(int n, DataType *dx, int incx, DataType *dy,
+                         int incy) {
 
   DataType dtemp;
   int i, ix, iy, m, mp1;
@@ -187,7 +164,8 @@ VPUBLIC DataType Vddot(int n, DataType *dx, int incx, DataType *dy, int incy) {
   return ddot;
 }
 
-VPUBLIC void Vdpbfa(DataType *abd, int *lda, int *n, int *m, int *info) {
+template <>
+void Vdpbfa<DataType>(DataType *abd, int *lda, int *n, int *m, int *info) {
 
   DataType t, s;
   int ik, j, jk, k, mu;
@@ -226,3 +204,34 @@ VPUBLIC void Vdpbfa(DataType *abd, int *lda, int *n, int *m, int *info) {
     VAT2(abd, *m + 1, j) = VSQRT(s);
   }
 }
+
+template <>
+void Vdpbsl<DataType>(DataType *abd, int *lda, int *n, int *m, DataType *b) {
+
+  DataType t;
+  int k, kb, la, lb, lm;
+
+  MAT2(abd, *lda, 1);
+
+  for (k = 1; k <= *n; k++) {
+    lm = VMIN2(k - 1, *m);
+    la = *m + 1 - lm;
+    lb = k - lm;
+    t = Vddot(lm, RAT2(abd, la, k), 1, RAT(b, lb), 1);
+    VAT(b, k) = (VAT(b, k) - t) / VAT2(abd, *m + 1, k);
+  }
+
+  // Solve R*X = Y
+  for (kb = 1; kb <= *n; kb++) {
+
+    k = *n + 1 - kb;
+    lm = VMIN2(k - 1, *m);
+    la = *m + 1 - lm;
+    lb = k - lm;
+    VAT(b, k) /= VAT2(abd, *m + 1, k);
+    t = -VAT(b, k);
+    Vdaxpy(lm, t, RAT2(abd, la, k), 1, RAT(b, lb), 1);
+  }
+}
+
+} // namespace pmgc

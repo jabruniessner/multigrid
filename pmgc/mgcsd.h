@@ -55,7 +55,7 @@
 #ifndef _MGCSD_H_
 #define _MGCSD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "gsd.h"
 #include "hipSYCL/sycl/queue.hpp"
@@ -107,6 +107,8 @@
  *  @note    Replaces mvcs from mgcsd.f
  */
 
+namespace pmgc {
+
 template <typename DataType>
 void Vmvcs(int *nx,          ///< @todo: doc
            int *ny,          ///< @todo: doc
@@ -142,5 +144,7 @@ void Vmvcs(int *nx,          ///< @todo: doc
            DataType *tru,
            sycl::queue &q ///< @todo: doc
 );
+
+} // namespace pmgc
 
 #endif /* _MGCSD_H_ */

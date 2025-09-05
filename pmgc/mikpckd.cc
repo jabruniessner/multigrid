@@ -53,8 +53,10 @@
  */
 
 #include "mikpckd.h"
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include "precision.h"
+
+namespace pmgc {
 
 VPUBLIC void Vxcopy(int *nx, int *ny, int *nz, DataType *x, DataType *y,
                     sycl::queue &q) {
@@ -459,3 +461,5 @@ VPUBLIC void Vlinesearch(int *nx, int *ny, int *nz, DataType *alpha, int *ipc,
   printf("Not translated yet\n");
   exit(-1);
 }
+
+} // namespace pmgc

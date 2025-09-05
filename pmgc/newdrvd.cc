@@ -55,11 +55,14 @@
 #include "newdrvd.h"
 #include <assert.h>
 
+namespace pmgc {
+
 VEXTERNC void Vnewdriv(int *iparm, DataType *rparm, int *iwork, DataType *rwork,
                        DataType *u, DataType *xf, DataType *yf, DataType *zf,
-                       DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
-                       DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
-                       DataType *tcf, sycl::queue &q) {
+                       DataType *gxcf, DataType *gycf, DataType *gzcf,
+                       DataType *a1cf, DataType *a2cf, DataType *a3cf,
+                       DataType *ccf, DataType *fcf, DataType *tcf,
+                       sycl::queue &q) {
 
   int nxc;    /// @todo: Doc
   int nyc;    /// @todo: Doc
@@ -152,34 +155,35 @@ VEXTERNC void Vnewdriv(int *iparm, DataType *rparm, int *iwork, DataType *rwork,
 }
 
 VPUBLIC void Vnewdriv2(int *iparm, DataType *rparm, int *nx, int *ny, int *nz,
-                       DataType *u, int *iz, DataType *w1, DataType *w2, int *ipc,
-                       DataType *rpc, DataType *pc, DataType *ac, DataType *cc,
-                       DataType *fc, DataType *xf, DataType *yf, DataType *zf,
-                       DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
-                       DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
+                       DataType *u, int *iz, DataType *w1, DataType *w2,
+                       int *ipc, DataType *rpc, DataType *pc, DataType *ac,
+                       DataType *cc, DataType *fc, DataType *xf, DataType *yf,
+                       DataType *zf, DataType *gxcf, DataType *gycf,
+                       DataType *gzcf, DataType *a1cf, DataType *a2cf,
+                       DataType *a3cf, DataType *ccf, DataType *fcf,
                        DataType *tcf, sycl::queue &q) {
 
-  int mgkey;      /// @todo:  Doc
-  int nlev;       /// @todo:  Doc
-  int itmax;      /// @todo:  Doc
-  int iok;        /// @todo:  Doc
-  int iinfo;      /// @todo:  Doc
-  int istop;      /// @todo:  Doc
-  int ipkey;      /// @todo:  Doc
-  int nu1;        /// @todo:  Doc
-  int nu2;        /// @todo:  Doc
-  int ilev;       /// @todo:  Doc
-  int ido;        /// @todo:  Doc
-  int iters;      /// @todo:  Doc
-  int ierror;     /// @todo:  Doc
-  int nlev_real;  /// @todo:  Doc
-  int ibound;     /// @todo:  Doc
-  int mgprol;     /// @todo:  Doc
-  int mgcoar;     /// @todo:  Doc
-  int mgsolv;     /// @todo:  Doc
-  int mgdisc;     /// @todo:  Doc
-  int mgsmoo;     /// @todo:  Doc
-  int mode;       /// @todo:  Doc
+  int mgkey;        /// @todo:  Doc
+  int nlev;         /// @todo:  Doc
+  int itmax;        /// @todo:  Doc
+  int iok;          /// @todo:  Doc
+  int iinfo;        /// @todo:  Doc
+  int istop;        /// @todo:  Doc
+  int ipkey;        /// @todo:  Doc
+  int nu1;          /// @todo:  Doc
+  int nu2;          /// @todo:  Doc
+  int ilev;         /// @todo:  Doc
+  int ido;          /// @todo:  Doc
+  int iters;        /// @todo:  Doc
+  int ierror;       /// @todo:  Doc
+  int nlev_real;    /// @todo:  Doc
+  int ibound;       /// @todo:  Doc
+  int mgprol;       /// @todo:  Doc
+  int mgcoar;       /// @todo:  Doc
+  int mgsolv;       /// @todo:  Doc
+  int mgdisc;       /// @todo:  Doc
+  int mgsmoo;       /// @todo:  Doc
+  int mode;         /// @todo:  Doc
   DataType epsiln;  /// @todo:  Doc
   DataType epsmac;  /// @todo:  Doc
   DataType errtol;  /// @todo:  Doc
@@ -297,3 +301,5 @@ VPUBLIC void Vnewdriv2(int *iparm, DataType *rparm, int *nx, int *ny, int *nz,
   ibound = 1;
   VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf, q);
 }
+
+} // namespace pmgc

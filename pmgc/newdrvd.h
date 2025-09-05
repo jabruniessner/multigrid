@@ -55,7 +55,7 @@
 #ifndef _NEWDRVD_H_
 #define _NEWDRVD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "mgdrvd.h"
 #include "mgsubd.h"
@@ -68,6 +68,8 @@
  *
  *  @note    Replaces newdriv from newdrvd.f
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vnewdriv(int *iparm,      ///< @todo:  Doc
@@ -156,5 +158,7 @@ void Vnewdriv2(int *iparm,      ///< @todo:  Doc
                DataType *tcf,
                sycl::queue &q ///< @todo:  Doc
 );
+
+} // namespace pmgc
 
 #endif /* _NEWDRVD_H_ */

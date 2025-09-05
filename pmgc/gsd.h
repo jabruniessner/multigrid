@@ -54,8 +54,8 @@
 #ifndef _GSD_H_
 #define _GSD_H_
 
-#include "abps_macros.h"
-#include "matvecd.h"
+#include "apbs_macros.h"
+// #include "matvecd.h"
 #include <sycl/sycl.hpp>
 
 /** @brief   Call the fast diagonal iterative method.
@@ -65,86 +65,66 @@
  *  @note    Replaces gsrb from gsd.f
  */
 
+namespace pmgc {
+
 template <typename DataType>
-void Vgsrb(int *nx,          ///< @todo:  Doc
-           int *ny,          ///< @todo:  Doc
-           int *nz,          ///< @todo:  Doc
-           int *ipc,         ///< @todo:  Doc
-           DataType *rpc,    ///< @todo:  Doc
-           DataType *ac,     ///< @todo:  Doc
-           DataType *cc,     ///< @todo:  Doc
-           DataType *fc,     ///< @todo:  Doc
-           DataType *x,      ///< @todo:  Doc
-           DataType *w1,     ///< @todo:  Doc
-           DataType *w2,     ///< @todo:  Doc
-           DataType *r,      ///< @todo:  Doc
-           int *itmax,       ///< @todo:  Doc
-           int *iters,       ///< @todo:  Doc
-           DataType *errtol, ///< @todo:  Doc
-           DataType *omega,  ///< @todo:  Doc
-           int *iresid,      ///< @todo:  Doc
-           int *iadjoint,
+void Vgsrb(int *nx,       ///< @todo:  Doc
+           int *ny,       ///< @todo:  Doc
+           int *nz,       ///< @todo:  Doc
+           int *ipc,      ///< @todo:  Doc
+           DataType *rpc, ///< @todo:  Doc
+           DataType *ac,  ///< @todo:  Doc
+           DataType *cc,  ///< @todo:  Doc
+           DataType *fc,  ///< @todo:  Doc
+           DataType *x,   ///< @todo:  Doc
+           int *itmax,    ///< @todo:  Doc
            sycl::queue &q ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vgsrb7x(int *nx,          ///< @todo:  Doc
-             int *ny,          ///< @todo:  Doc
-             int *nz,          ///< @todo:  Doc
-             int *ipc,         ///< @todo:  Doc
-             DataType *rpc,    ///< @todo:  Doc
-             DataType *oC,     ///< @todo:  Doc
-             DataType *cc,     ///< @todo:  Doc
-             DataType *fc,     ///< @todo:  Doc
-             DataType *oE,     ///< @todo:  Doc
-             DataType *oN,     ///< @todo:  Doc
-             DataType *uC,     ///< @todo:  Doc
-             DataType *x,      ///< @todo:  Doc
-             DataType *w1,     ///< @todo:  Doc
-             DataType *w2,     ///< @todo:  Doc
-             DataType *r,      ///< @todo:  Doc
-             int *itmax,       ///< @todo:  Doc
-             int *iters,       ///< @todo:  Doc
-             DataType *errtol, ///< @todo:  Doc
-             DataType *omega,  ///< @todo:  Doc
-             int *iresid,      ///< @todo:  Doc
-             int *iadjoint,
+void Vgsrb7x(int *nx,       ///< @todo:  Doc
+             int *ny,       ///< @todo:  Doc
+             int *nz,       ///< @todo:  Doc
+             int *ipc,      ///< @todo:  Doc
+             DataType *rpc, ///< @todo:  Doc
+             DataType *oC,  ///< @todo:  Doc
+             DataType *cc,  ///< @todo:  Doc
+             DataType *fc,  ///< @todo:  Doc
+             DataType *oE,  ///< @todo:  Doc
+             DataType *oN,  ///< @todo:  Doc
+             DataType *uC,  ///< @todo:  Doc
+             DataType *x,   ///< @todo:  Doc
+             int *itmax,    ///< @todo:  Doc
              sycl::queue &q ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vgsrb27x(int *nx,          ///< @todo:  Doc
-              int *ny,          ///< @todo:  Doc
-              int *nz,          ///< @todo:  Doc
-              int *ipc,         ///< @todo:  Doc
-              DataType *rpc,    ///< @todo:  Doc
-              DataType *oC,     ///< @todo:  Doc
-              DataType *cc,     ///< @todo:  Doc
-              DataType *fc,     ///< @todo:  Doc
-              DataType *oE,     ///< @todo:  Doc
-              DataType *oN,     ///< @todo:  Doc
-              DataType *uC,     ///< @todo:  Doc
-              DataType *oNE,    ///< @todo:  Doc
-              DataType *oNW,    ///< @todo:  Doc
-              DataType *uE,     ///< @todo:  Doc
-              DataType *uW,     ///< @todo:  Doc
-              DataType *uN,     ///< @todo:  Doc
-              DataType *uS,     ///< @todo:  Doc
-              DataType *uNE,    ///< @todo:  Doc
-              DataType *uNW,    ///< @todo:  Doc
-              DataType *uSE,    ///< @todo:  Doc
-              DataType *uSW,    ///< @todo:  Doc
-              DataType *x,      ///< @todo:  Doc
-              DataType *w1,     ///< @todo:  Doc
-              DataType *w2,     ///< @todo:  Doc
-              DataType *r,      ///< @todo:  Doc
-              int *itmax,       ///< @todo:  Doc
-              int *iters,       ///< @todo:  Doc
-              DataType *errtol, ///< @todo:  Doc
-              DataType *omega,  ///< @todo:  Doc
-              int *iresid,      ///< @todo:  Doc
-              int *iadjoint,
+void Vgsrb27x(int *nx,       ///< @todo:  Doc
+              int *ny,       ///< @todo:  Doc
+              int *nz,       ///< @todo:  Doc
+              int *ipc,      ///< @todo:  Doc
+              DataType *rpc, ///< @todo:  Doc
+              DataType *oC,  ///< @todo:  Doc
+              DataType *cc,  ///< @todo:  Doc
+              DataType *fc,  ///< @todo:  Doc
+              DataType *oE,  ///< @todo:  Doc
+              DataType *oN,  ///< @todo:  Doc
+              DataType *uC,  ///< @todo:  Doc
+              DataType *oNE, ///< @todo:  Doc
+              DataType *oNW, ///< @todo:  Doc
+              DataType *uE,  ///< @todo:  Doc
+              DataType *uW,  ///< @todo:  Doc
+              DataType *uN,  ///< @todo:  Doc
+              DataType *uS,  ///< @todo:  Doc
+              DataType *uNE, ///< @todo:  Doc
+              DataType *uNW, ///< @todo:  Doc
+              DataType *uSE, ///< @todo:  Doc
+              DataType *uSW, ///< @todo:  Doc
+              DataType *x,   ///< @todo:  Doc
+              int *itmax,    ///< @todo:  Doc
               sycl::queue &q ///< @todo:  Doc
 );
+
+} // namespace pmgc
 
 #endif /* _GSD_H_ */

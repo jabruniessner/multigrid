@@ -54,12 +54,15 @@
 
 #include "mgfasd.h"
 
-VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
-                     DataType *w1, DataType *w2, DataType *w3, DataType *w4, int *istop,
-                     int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
-                     int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                     DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                     int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+namespace pmgc {
+
+VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz,
+                     DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                     DataType *w4, int *istop, int *itmax, int *iters,
+                     int *ierror, int *nlev, int *ilev, int *nlev_real,
+                     int *mgsolv, int *iok, int *iinfo, DataType *epsiln,
+                     DataType *errtol, DataType *omega, int *nu1, int *nu2,
+                     int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
                      DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                      sycl::queue &q) {
 
@@ -130,12 +133,13 @@ VPUBLIC void Vfmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *
          omega, nu1, nu2, mgsmoo, ipc, rpc, pc, ac, cc, fc, tru, q);
 }
 
-VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w0,
-                    DataType *w1, DataType *w2, DataType *w3, DataType *w4, int *istop,
-                    int *itmax, int *iters, int *ierror, int *nlev, int *ilev,
-                    int *nlev_real, int *mgsolv, int *iok, int *iinfo,
-                    DataType *epsiln, DataType *errtol, DataType *omega, int *nu1,
-                    int *nu2, int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
+VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz,
+                    DataType *w0, DataType *w1, DataType *w2, DataType *w3,
+                    DataType *w4, int *istop, int *itmax, int *iters,
+                    int *ierror, int *nlev, int *ilev, int *nlev_real,
+                    int *mgsolv, int *iok, int *iinfo, DataType *epsiln,
+                    DataType *errtol, DataType *omega, int *nu1, int *nu2,
+                    int *mgsmoo, int *ipc, DataType *rpc, DataType *pc,
                     DataType *ac, DataType *cc, DataType *fc, DataType *tru,
                     sycl::queue &q) {
 
@@ -521,3 +525,4 @@ VPUBLIC void Vmvfas(int *nx, int *ny, int *nz, DataType *x, int *iz, DataType *w
     }
   }
 }
+} // namespace pmgc

@@ -54,6 +54,8 @@
 
 #include "mypdec.h"
 
+namespace pmgc {
+
 DataType v1;
 DataType v2;
 DataType v3;
@@ -125,8 +127,8 @@ VPUBLIC void Vmypdefinitsmpbe(int *tnion, DataType *tcharge, DataType *tsconc,
   relSize = *smsize;
 }
 
-VPUBLIC void Vc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx, int *ny,
-                    int *nz, int *ipkey) {
+VPUBLIC void Vc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx,
+                    int *ny, int *nz, int *ipkey) {
 
   if (*ipkey == -2) {
     Vc_vecsmpbe(coef, uin, uout, nx, ny, nz, ipkey);
@@ -168,8 +170,8 @@ VPUBLIC void Vc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
     if (*ipkey == 0) {
       ichopped = 0;
 
-#pragma omp parallel for default(shared)                                       \
-    private(i, ichopped_neg, ichopped_pos, am_zero, am_neg, am_pos, argument)  \
+#pragma omp parallel for default(shared) private(                              \
+        i, ichopped_neg, ichopped_pos, am_zero, am_neg, am_pos, argument)      \
     reduction(+ : ichopped)
       for (i = 1; i <= n; i++) {
 
@@ -334,8 +336,8 @@ VPUBLIC void Vc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
     printf("Vc_vecsmpbe: trapped exp overflows: %d\n", ichopped);
 }
 
-VPUBLIC void Vdc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx, int *ny,
-                     int *nz, int *ipkey) {
+VPUBLIC void Vdc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx,
+                     int *ny, int *nz, int *ipkey) {
 
   int i;
   int n = *nx * *ny * *nz;
@@ -376,8 +378,8 @@ VPUBLIC void Vdc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
       // Initialize chopped counter
       ichopped = 0;
 
-#pragma omp parallel for default(shared)                                       \
-    private(i, ichopped_neg, ichopped_pos, am_zero, am_neg, am_pos, argument)  \
+#pragma omp parallel for default(shared) private(                              \
+        i, ichopped_neg, ichopped_pos, am_zero, am_neg, am_pos, argument)      \
     reduction(+ : ichopped)
       for (i = 1; i <= n; i++) {
 
@@ -414,8 +416,8 @@ VPUBLIC void Vdc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
   }
 }
 
-VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                          int *ny, int *nz, int *ipkey) {
+VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout,
+                          int *nx, int *ny, int *nz, int *ipkey) {
 
   int ideg, iion;
   DataType zcf2, zu2;
@@ -528,3 +530,4 @@ VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx
   if (ichopped > 0)
     printf("Vdc_vecsmpbe: trapped exp overflows: %d\n", ichopped);
 }
+} // namespace pmgc

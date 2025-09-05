@@ -54,7 +54,7 @@
 #ifndef _MGFASD_H_
 #define _MGFASD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "mgsubd.h"
 #include "smoothd.h"
@@ -72,6 +72,9 @@
  *
  *  Replaces fmvfas from mgfasd.f
  */
+
+namespace pmgc {
+
 template <typename DataType>
 void Vfmvfas(int *nx,          ///< @todo: doc
              int *ny,          ///< @todo: doc
@@ -186,5 +189,7 @@ void Vmvfas(int *nx,          ///< @todo: doc
             DataType *tru,
             sycl::queue &q ///< @todo: doc
 );
+
+} // namespace pmgc
 
 #endif /* _MGFASD_H_ */

@@ -56,7 +56,7 @@
 
 // #include "apbscfg.h"
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include "precision.h"
 #include <sycl/sycl.hpp>
 
@@ -65,6 +65,8 @@
  *  @ingroup PMGC
  *  @author  Tucker Beck [C Translation], Michael Holst [Original]
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void VbuildA(int *nx,                      /**< @todo:Doc */
@@ -303,5 +305,7 @@ void VbuildA_fe(int *nx,        /**< @todo:Doc */
                 DataType *ccf,  /**< @todo:Doc */
                 DataType *fcf   /**< @todo:Doc */
 );
+
+} // namespace pmgc
 
 #endif /* _VBUILDA_H_ */

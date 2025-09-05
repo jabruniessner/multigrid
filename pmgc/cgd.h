@@ -55,11 +55,13 @@
 #ifndef _CGD_H_
 #define _CGD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include <sycl/sycl.hpp>
 
 #include "matvecd.h"
 #include "mikpckd.h"
+
+namespace pmgc {
 
 template <typename DataType>
 void Vcghs(int *nx,          ///< @todo  Document
@@ -82,5 +84,7 @@ void Vcghs(int *nx,          ///< @todo  Document
            int *iadjoint,
            sycl::queue &q ///< @todo  Document
 );
+
+}
 
 #endif /* _CGD_H_ */

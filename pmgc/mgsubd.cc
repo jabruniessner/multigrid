@@ -54,18 +54,20 @@
 
 #include "mgsubd.h"
 
-DataType bf;
-DataType oh;
-DataType cputme;
+namespace pmgc {
+
+static DataType bf;
+static DataType oh;
+static DataType cputme;
 
 VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
                        int *iinfo, int *ido, int *iz, int *mgprol, int *mgcoar,
                        int *mgsolv, int *mgdisc, int *ipc, DataType *rpc,
                        DataType *pc, DataType *ac, DataType *cc, DataType *fc,
                        DataType *xf, DataType *yf, DataType *zf, DataType *gxcf,
-                       DataType *gycf, DataType *gzcf, DataType *a1cf, DataType *a2cf,
-                       DataType *a3cf, DataType *ccf, DataType *fcf, DataType *tcf,
-                       sycl::queue &q) {
+                       DataType *gycf, DataType *gzcf, DataType *a1cf,
+                       DataType *a2cf, DataType *a3cf, DataType *ccf,
+                       DataType *fcf, DataType *tcf, sycl::queue &q) {
 
   // @todo Document this function
   int lev = 0;
@@ -261,7 +263,7 @@ VPUBLIC void Vbuildops(int *nx, int *ny, int *nz, int *nlev, int *ipkey,
   }
 }
 
-VPUBLIC void Vbuildstr(int *nx, int *ny, int *nz, int *nlev, int *iz) {
+inline void Vbuildstr(int *nx, int *ny, int *nz, int *nlev, int *iz) {
 
   int nxold, nyold, nzold;
   int nxnew, nynew, nznew;
@@ -346,9 +348,10 @@ VPUBLIC void Vbuildstr(int *nx, int *ny, int *nz, int *nlev, int *iz) {
 
 VPUBLIC void Vbuildgaler0(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
                           int *nzc, int *ipkey, int *numdia, DataType *pcFF,
-                          int *ipcFF, DataType *rpcFF, DataType *acFF, DataType *ccFF,
-                          DataType *fcFF, int *ipc, DataType *rpc, DataType *ac,
-                          DataType *cc, DataType *fc, sycl::queue &q) {
+                          int *ipcFF, DataType *rpcFF, DataType *acFF,
+                          DataType *ccFF, DataType *fcFF, int *ipc,
+                          DataType *rpc, DataType *ac, DataType *cc,
+                          DataType *fc, sycl::queue &q) {
 
   int numdia_loc;
 
@@ -369,8 +372,8 @@ VPUBLIC void Vbuildgaler0(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   Vrestrc(nxf, nyf, nzf, nxc, nyc, nzc, fcFF, fc, pcFF, q);
 }
 
-VPUBLIC void Vmkcors(int *numlev, int *nxold, int *nyold, int *nzold,
-                     int *nxnew, int *nynew, int *nznew) {
+inline void Vmkcors(int *numlev, int *nxold, int *nyold, int *nzold, int *nxnew,
+                    int *nynew, int *nznew) {
   int nxtmp, nytmp, nztmp; // Temporary variables to hold current x,y,z values
   int i;                   // Index used in for loops
 
@@ -389,7 +392,7 @@ VPUBLIC void Vmkcors(int *numlev, int *nxold, int *nyold, int *nzold,
   }
 }
 
-VPUBLIC void Vcorsr(int *nold, int *nnew) {
+inline void Vcorsr(int *nold, int *nnew) {
 
   // Find the coarser grid size ***
   *nnew = (*nold - 1) / 2 + 1;
@@ -409,8 +412,8 @@ VPUBLIC void Vcorsr(int *nold, int *nnew) {
   }
 }
 
-VPUBLIC void Vmkfine(int *numlev, int *nxold, int *nyold, int *nzold,
-                     int *nxnew, int *nynew, int *nznew) {
+inline void Vmkfine(int *numlev, int *nxold, int *nyold, int *nzold, int *nxnew,
+                    int *nynew, int *nznew) {
 
   int nxtmp, nytmp, nztmp, i;
 
@@ -431,12 +434,12 @@ VPUBLIC void Vmkfine(int *numlev, int *nxold, int *nyold, int *nzold,
   }
 }
 
-VPUBLIC void Vfiner(int *nold, int *nnew) {
+inline void Vfiner(int *nold, int *nnew) {
   // Find the coarser grid size ***
   *nnew = (*nold - 1) * 2 + 1;
 }
 
-VPUBLIC int Vivariv(int *nu, int *level) {
+inline int Vivariv(int *nu, int *level) {
 
   /// @todo:  Determine if the Variable V-cycle will ever be used
   int ivariv;
@@ -450,7 +453,7 @@ VPUBLIC int Vivariv(int *nu, int *level) {
   return ivariv;
 }
 
-VPUBLIC int Vmaxlev(int n1, int n2, int n3) {
+inline int Vmaxlev(int n1, int n2, int n3) {
 
   int n1c;
   int n2c;
@@ -574,12 +577,13 @@ VPUBLIC void Vpackmg(int *iparm, DataType *rparm, size_t *nrwk, int *niwk,
 
 VEXTERNC void Vbuildcopy0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
                           int *nzf, DataType *xc, DataType *yc, DataType *zc,
-                          DataType *gxc, DataType *gyc, DataType *gzc, DataType *a1c,
-                          DataType *a2c, DataType *a3c, DataType *cc, DataType *fc,
-                          DataType *tc, DataType *xf, DataType *yf, DataType *zf,
+                          DataType *gxc, DataType *gyc, DataType *gzc,
+                          DataType *a1c, DataType *a2c, DataType *a3c,
+                          DataType *cc, DataType *fc, DataType *tc,
+                          DataType *xf, DataType *yf, DataType *zf,
                           DataType *gxcf, DataType *gycf, DataType *gzcf,
-                          DataType *a1cf, DataType *a2cf, DataType *a3cf, DataType *ccf,
-                          DataType *fcf, DataType *tcf) {
+                          DataType *a1cf, DataType *a2cf, DataType *a3cf,
+                          DataType *ccf, DataType *fcf, DataType *tcf) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -694,12 +698,13 @@ VEXTERNC void Vbuildcopy0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
 
 VPUBLIC void Vbuildharm0(int *nx, int *ny, int *nz, int *nxf, int *nyf,
                          int *nzf, DataType *xc, DataType *yc, DataType *zc,
-                         DataType *gxc, DataType *gyc, DataType *gzc, DataType *a1c,
-                         DataType *a2c, DataType *a3c, DataType *cc, DataType *fc,
-                         DataType *tc, DataType *xf, DataType *yf, DataType *zf,
-                         DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
-                         DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf,
-                         DataType *tcf) {
+                         DataType *gxc, DataType *gyc, DataType *gzc,
+                         DataType *a1c, DataType *a2c, DataType *a3c,
+                         DataType *cc, DataType *fc, DataType *tc, DataType *xf,
+                         DataType *yf, DataType *zf, DataType *gxcf,
+                         DataType *gycf, DataType *gzcf, DataType *a1cf,
+                         DataType *a2cf, DataType *a3cf, DataType *ccf,
+                         DataType *fcf, DataType *tcf) {
 #if 1
   printf("WARNING:  FUNCTION IS NOT FULLY IMPLEMENTED YET!!!");
 #else
@@ -936,3 +941,5 @@ VPUBLIC void Vbuildalg(int *nx, int *ny, int *nz, int *mode, int *nlev, int *iz,
     }
   }
 }
+
+} // namespace pmgc

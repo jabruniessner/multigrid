@@ -57,7 +57,7 @@
 
 #include "math.h"
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 #include "precision.h"
 
 #define MAXIONS 50
@@ -66,6 +66,8 @@
 #define ZLARGE 1.0e20
 #define SINH_MIN -85.0
 #define SINH_MAX 85.0
+
+namespace pmgc {
 
 /// @todo  Remove dependencies on global variables
 extern DataType v1, v2, v3, conc1, conc2, conc3, vol, relSize;
@@ -216,5 +218,7 @@ void Vc_vecsmpbe(DataType *coef, ///< @todo: Doc
                  int *nz,        ///< @todo: Doc
                  int *ipkey      ///< @todo: Doc
 );
+
+} // namespace pmgc
 
 #endif /* _MYPDE_H_ */

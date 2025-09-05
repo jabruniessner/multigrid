@@ -54,7 +54,7 @@
 #ifndef _POWERD_H_
 #define _POWERD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "mgcsd.h"
 #include "mikpckd.h"
@@ -77,6 +77,8 @@ c*                      - 2*dcos((nz-2)*pi/(nz-1))
  *  @note    Vpower is yet untested as a call stack including it hasn't been
 found
  */
+
+namespace pmgc {
 
 template <typename DataType>
 void Vpower(int *nx,                ///< @todo  Document
@@ -192,5 +194,6 @@ void Vmpower(int *nx,          ///< @todo  Document
              DataType *tru,
              sycl::queue &q ///< @todo  Document
 );
+} // namespace pmgc
 
 #endif /* _POWERD_H_ */

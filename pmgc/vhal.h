@@ -69,6 +69,8 @@
  *  @note  Note that the enumerated values are opposite the standard for FAILURE
  * and SUCCESS
  */
+
+namespace pmgc {
 enum eVrc_Codes {
 
   VRC_WARNING = -1, /** A non-fatal error  */
@@ -954,5 +956,7 @@ char *wrap_text(char *str, int right_margin, int left_padding);
 
 #define VAT(array, i) ((array)[(i) - 1])
 #define RAT(array, i) ((array) + i - 1)
+
+} // namespace pmgc
 
 #endif /* #ifndef _VAPBSHAL_H_ */

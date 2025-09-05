@@ -54,6 +54,8 @@
 
 #include "powerd.h"
 
+namespace pmgc {
+
 VPUBLIC void Vpower(int *nx, int *ny, int *nz, int *iz, int *ilev, int *ipc,
                     DataType *rpc, DataType *ac, DataType *cc, DataType *w1,
                     DataType *w2, DataType *w3, DataType *w4, DataType *eigmax,
@@ -406,3 +408,4 @@ VEXTERNC void Vmpower(int *nx, int *ny, int *nz, DataType *u, int *iz,
 
   *eigmax = rho;
 }
+} // namespace pmgc

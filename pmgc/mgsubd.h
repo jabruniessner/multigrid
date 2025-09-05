@@ -55,7 +55,7 @@
 #ifndef _MGSUBD_H_
 #define _MGSUBD_H_
 
-#include "abps_macros.h"
+#include "apbs_macros.h"
 
 #include "buildAd.h"
 #include "buildBd.h"
@@ -86,6 +86,7 @@
  *  Replaces buildops from mgsubd.f
  */
 
+namespace pmgc {
 template <typename DataType>
 void Vbuildops(int *nx,        ///< @todo: doc
                int *ny,        ///< @todo: doc
@@ -377,5 +378,7 @@ void Vbuildalg(int *nx,       ///< @todo  Document
                DataType *tmp,
                sycl::queue &q ///< @todo  Document
 );
+
+} // namespace pmgc
 
 #endif // _MGSUBD_H_

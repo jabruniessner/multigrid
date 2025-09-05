@@ -55,6 +55,8 @@
 #include "mgdrvd.h"
 #include "vhal.h"
 
+namespace pmgc {
+
 VPUBLIC void Vmgdriv(int *iparm, DataType *rparm, int *iwork, DataType *rwork,
                      DataType *u, DataType *xf, DataType *yf, DataType *zf,
                      DataType *gxcf, DataType *gycf, DataType *gzcf,
@@ -500,10 +502,10 @@ VPUBLIC void Vmgdriv2(int *iparm, DataType *rparm, int *nx, int *ny, int *nz,
   VfboundPMG(&ibound, nx, ny, nz, u, gxcf, gycf, gzcf, q);
 }
 
-VPUBLIC void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv, int *nx, int *ny,
-                   int *nz, int *nlev, int *nxc, int *nyc, int *nzc, int *nf,
-                   int *nc, int *narr, int *narrc, int *n_rpc, int *n_iz,
-                   int *n_ipc, int *iretot, int *iintot) {
+inline void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv, int *nx, int *ny,
+                  int *nz, int *nlev, int *nxc, int *nyc, int *nzc, int *nf,
+                  int *nc, int *narr, int *narrc, int *n_rpc, int *n_iz,
+                  int *n_ipc, int *iretot, int *iintot) {
 
   // Constants: num of different types of arrays in mg code
   int num_nf = 0;
@@ -597,3 +599,4 @@ VPUBLIC void Vmgsz(int *mgcoar, int *mgdisc, int *mgsolv, int *nx, int *ny,
   // Resulting total required integer storage for method
   *iintot = *n_iz + *n_ipc;
 }
+} // namespace pmgc

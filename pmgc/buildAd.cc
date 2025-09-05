@@ -57,47 +57,17 @@
 #include "stdio.h"
 #include <sycl/sycl.hpp>
 
-VPUBLIC void VbuildA(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
-                     int *numdia, int *ipc, DataType *rpc, DataType *ac,
-                     DataType *cc, DataType *fc, DataType *xf, DataType *yf,
-                     DataType *zf, DataType *gxcf, DataType *gycf,
-                     DataType *gzcf, DataType *a1cf, DataType *a2cf,
-                     DataType *a3cf, DataType *ccf, DataType *fcf,
-                     sycl::queue &q) {
+namespace pmgc {
 
-  MAT2(ac, *nx * *ny * *nz, 14);
-
-  if (*mgdisc == 0) {
-
-    VbuildA_fv(nx, ny, nz, ipkey, numdia, ipc, rpc, RAT2(ac, 1, 1), cc, fc,
-               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), xf, yf, zf, gxcf,
-               gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, q);
-
-  } else if (*mgdisc == 1) {
-
-    VbuildA_fe(nx, ny, nz, ipkey, numdia, ipc, rpc, RAT2(ac, 1, 1), cc, fc,
-               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5),
-               RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9),
-               RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-               RAT2(ac, 1, 13), RAT2(ac, 1, 14), xf, yf, zf, gxcf, gycf, gzcf,
-               a1cf, a2cf, a3cf, ccf, fcf);
-
-  } else {
-
-    // Vnm_print(2, "VbuildA:  Invalid discretization requested.\n");
-    printf("VbuildA: Invalid discretization requested");
-    /// @todo: use an APBS/MALOC method to quit/fail
-    exit(EXIT_FAILURE);
-  }
-}
-
-VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
-                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
-                        DataType *fc, DataType *oE, DataType *oN, DataType *uC,
-                        DataType *xf, DataType *yf, DataType *zf,
-                        DataType *gxcf, DataType *gycf, DataType *gzcf,
-                        DataType *a1cf, DataType *a2cf, DataType *a3cf,
-                        DataType *ccf, DataType *fcf, sycl::queue &q) {
+template <>
+void VbuildA_fv<DataType>(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
+                          int *ipc, DataType *rpc, DataType *oC, DataType *cc,
+                          DataType *fc, DataType *oE, DataType *oN,
+                          DataType *uC, DataType *xf, DataType *yf,
+                          DataType *zf, DataType *gxcf, DataType *gycf,
+                          DataType *gzcf, DataType *a1cf, DataType *a2cf,
+                          DataType *a3cf, DataType *ccf, DataType *fcf,
+                          sycl::queue &q) {
 
   int i, j, k; // @todo Document this function
 
@@ -241,15 +211,70 @@ VPUBLIC void VbuildA_fv(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
   });
 }
 
-VPUBLIC void VbuildA_fe(int *nx, int *ny, int *nz, int *ipkey, int *numdia,
-                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
-                        DataType *fc, DataType *oE, DataType *oN, DataType *uC,
-                        DataType *oNE, DataType *oNW, DataType *uE,
-                        DataType *uW, DataType *uN, DataType *uS, DataType *uNE,
-                        DataType *uNW, DataType *uSE, DataType *uSW,
-                        DataType *xf, DataType *yf, DataType *zf,
-                        DataType *gxcf, DataType *gycf, DataType *gzcf,
-                        DataType *a1cf, DataType *a2cf, DataType *a3cf,
-                        DataType *ccf, DataType *fcf) {
+template <typename DataType>
+void VbuildA_fe(int *nx, int *ny, int *nz, int *ipkey, int *numdia, int *ipc,
+                DataType *rpc, DataType *oC, DataType *cc, DataType *fc,
+                DataType *oE, DataType *oN, DataType *uC, DataType *oNE,
+                DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+                DataType *uS, DataType *uNE, DataType *uNW, DataType *uSE,
+                DataType *uSW, DataType *xf, DataType *yf, DataType *zf,
+                DataType *gxcf, DataType *gycf, DataType *gzcf, DataType *a1cf,
+                DataType *a2cf, DataType *a3cf, DataType *ccf, DataType *fcf) {
   printf("Untranslated Component: from buildAd.f\n");
 }
+
+template void VbuildA_fe<float>(int *nx, int *ny, int *nz, int *ipkey,
+                                int *numdia, int *ipc, float *rpc, float *oC,
+                                float *cc, float *fc, float *oE, float *oN,
+                                float *uC, float *oNE, float *oNW, float *uE,
+                                float *uW, float *uN, float *uS, float *uNE,
+                                float *uNW, float *uSE, float *uSW, float *xf,
+                                float *yf, float *zf, float *gxcf, float *gycf,
+                                float *gzcf, float *a1cf, float *a2cf,
+                                float *a3cf, float *ccf, float *fcf);
+
+template void
+VbuildA_fe<double>(int *nx, int *ny, int *nz, int *ipkey, int *numdia, int *ipc,
+                   double *rpc, double *oC, double *cc, double *fc, double *oE,
+                   double *oN, double *uC, double *oNE, double *oNW, double *uE,
+                   double *uW, double *uN, double *uS, double *uNE, double *uNW,
+                   double *uSE, double *uSW, double *xf, double *yf, double *zf,
+                   double *gxcf, double *gycf, double *gzcf, double *a1cf,
+                   double *a2cf, double *a3cf, double *ccf, double *fcf);
+
+template <>
+void VbuildA<DataType>(int *nx, int *ny, int *nz, int *ipkey, int *mgdisc,
+                       int *numdia, int *ipc, DataType *rpc, DataType *ac,
+                       DataType *cc, DataType *fc, DataType *xf, DataType *yf,
+                       DataType *zf, DataType *gxcf, DataType *gycf,
+                       DataType *gzcf, DataType *a1cf, DataType *a2cf,
+                       DataType *a3cf, DataType *ccf, DataType *fcf,
+                       sycl::queue &q) {
+
+  MAT2(ac, *nx * *ny * *nz, 14);
+
+  if (*mgdisc == 0) {
+
+    VbuildA_fv(nx, ny, nz, ipkey, numdia, ipc, rpc, RAT2(ac, 1, 1), cc, fc,
+               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), xf, yf, zf, gxcf,
+               gycf, gzcf, a1cf, a2cf, a3cf, ccf, fcf, q);
+
+  } else if (*mgdisc == 1) {
+
+    VbuildA_fe(nx, ny, nz, ipkey, numdia, ipc, rpc, RAT2(ac, 1, 1), cc, fc,
+               RAT2(ac, 1, 2), RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5),
+               RAT2(ac, 1, 6), RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9),
+               RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+               RAT2(ac, 1, 13), RAT2(ac, 1, 14), xf, yf, zf, gxcf, gycf, gzcf,
+               a1cf, a2cf, a3cf, ccf, fcf);
+
+  } else {
+
+    // Vnm_print(2, "VbuildA:  Invalid discretization requested.\n");
+    printf("VbuildA: Invalid discretization requested");
+    /// @todo: use an APBS/MALOC method to quit/fail
+    exit(EXIT_FAILURE);
+  }
+}
+
+} // namespace pmgc
