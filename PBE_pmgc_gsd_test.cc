@@ -20,7 +20,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 8;
+constexpr std::size_t base_length = 1;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
@@ -123,17 +123,20 @@ int main(int argc, char *argv[]) {
            atoms_vector.size() * sizeof(Atom<DataType>))
       .wait();
 
-  Domain_Type sol(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
+  Domain_Type sol(q), sol2(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
       epsilonx_map(q), epsilony_map(q), epsilonz_map(q), epsilonc_map(q),
       epsx_map(q), epsy_map(q), epsz_map(q), kappa_(q), kappa_second_map(q);
 
-  q.fill(epsilonx_map.get_domain().values_buff, (DataType)epsilon_r,
+  q.fill(epsilonx_map.get_domain().values_buff,
+         (DataType)epsilon_r / (grid_step * grid_step),
          epsilonx_map.get_domain().num_values);
 
-  q.fill(epsilony_map.get_domain().values_buff, (DataType)epsilon_r,
+  q.fill(epsilony_map.get_domain().values_buff,
+         (DataType)epsilon_r / (grid_step * grid_step),
          epsilony_map.get_domain().num_values);
 
-  q.fill(epsilonz_map.get_domain().values_buff, (DataType)epsilon_r,
+  q.fill(epsilonz_map.get_domain().values_buff,
+         (DataType)epsilon_r / (grid_step * grid_step),
          epsilonz_map.get_domain().num_values);
 
   constexpr auto length = Domain_Type::length;
@@ -161,13 +164,35 @@ int main(int argc, char *argv[]) {
          })
         .wait();
 
+    auto &boundary_domain2 = sol2.template get_domain<nlev>();
+    q.parallel_for(
+         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+         [=](sycl::id<2> I) {
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2, I[0], I[1], 0);
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2, I[0], I[1],
+                                         std::get<2>(length) + 1);
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2, 0, I[0], I[1]);
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2,
+                                         std::get<0>(length) + 1, I[0], I[1]);
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2, I[0], 0, I[1]);
+           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+                                         boundary_domain2, I[0],
+                                         std::get<1>(length) + 1, I[1]);
+         })
+        .wait();
+
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
       Atom.Position[0] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonx_domain,
                           static_cast<DataType>(grid_step),
-                          (DataType)epsilon_p);
+                          (DataType)epsilon_p / (grid_step * grid_step));
     });
 
     auto &epsilonx2_domain = epsilonx_map.template get_domain<nlev>();
@@ -187,7 +212,7 @@ int main(int argc, char *argv[]) {
       Atom.Position[1] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilony_domain,
                           static_cast<DataType>(grid_step),
-                          (DataType)epsilon_p);
+                          (DataType)epsilon_p / (grid_step * grid_step));
     });
 
     auto &epsilony2_domain = epsilonx_map.template get_domain<nlev>();
@@ -207,7 +232,7 @@ int main(int argc, char *argv[]) {
       Atom.Position[2] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonz_domain,
                           static_cast<DataType>(grid_step),
-                          (DataType)epsilon_p);
+                          (DataType)epsilon_p / (grid_step * grid_step));
     });
 
     auto &epsilonz2_domain = epsilonx_map.template get_domain<nlev>();
@@ -279,13 +304,12 @@ int main(int argc, char *argv[]) {
            add_charges_to_distribution(
                rhs, atoms_device[I].Position,
                static_cast<DataType>(atoms_device[I].charge / epsilon),
-               spacing<DataType, static_cast<DataType>(1.)>{});
+               spacing<DataType, static_cast<DataType>(grid_step)>{});
        });
      }).wait();
 
     // auto &defect_p = lhs_domain1.get_domain();
     // auto &defect_r = lhs_domain2.get_domain();
-    auto &init_guess = sol.get_domain();
 
     DataType *DT_null = nullptr;
 
@@ -302,6 +326,8 @@ int main(int argc, char *argv[]) {
     cycles::Gauss_Seidel_PBE j_smoother{sol};
     //  auto *a = &sol;
     //  auto *b = &lhs_domain1;
+    std::cout << "Before the iterations: " << std::endl;
+    sol.get_domain().print_domain();
 
     for (int i = 0; i < num_iters; i++) {
 
@@ -319,8 +345,9 @@ int main(int argc, char *argv[]) {
                                epsz_map.template get_domain<nlev>(), kappa_2,
                                grid_step, epsilon_r, delta_epsilon);
 
-      std::cout << "The residual after " << i << " iterations is " << residual
-                << std::endl;
+      //   std::cout << "The residual after " << i << " iterations is " <<
+      //   residual
+      //             << std::endl;
 
       std::index_sequence<1> iter_nums{};
       j_smoother(Integer<nlev>{}, iter_nums, sol, rhs_domain, kappa_second_map,
@@ -330,12 +357,22 @@ int main(int argc, char *argv[]) {
       // std::swap(a, b);
     }
 
-    //  pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
-    //                epsilonc_map.get_domain().values_buff,
-    //                kappa_domain.values_buff, rhs.values_buff,
-    //                epsilonx_domain.values_buff, epsilony_domain.values_buff,
-    //                epsilonz_domain.values_buff, init_guess.values_buff,
-    //                &num_iters, q);
+    std::cout << "After the iterations: " << std::endl;
+    sol.template get_domain<nlev>().print_domain();
+
+    std::cout << "Before the iterations: " << std::endl;
+    auto &init_guess = sol2.get_domain();
+    init_guess.print_domain();
+
+    pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
+                  epsilonc_map.get_domain().values_buff,
+                  kappa_domain.values_buff, rhs.values_buff,
+                  epsilonx_domain.values_buff, epsilony_domain.values_buff,
+                  epsilonz_domain.values_buff, init_guess.values_buff,
+                  &num_iters, q);
+
+    std::cout << "After the iterations: " << std::endl;
+    init_guess.print_domain();
 
     //  cycles::Gauss_Seidel_PBE{sol};
 
