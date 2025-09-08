@@ -24,14 +24,15 @@ template <typename DataType, typename DataType2, Dimension Dim,
 void find_dots_in_sphere_helper(
     Sphere<DataType, Dim> &sphere,
     domain::Grid<DataType2, Dim, strides...> &domain, DataType grid_step,
-    std::index_sequence<directions...>, Positions... positions) {
+    DataType value, std::index_sequence<directions...>,
+    Positions... positions) {
 
   static_assert(sizeof...(directions) <= Dim,
                 "Break condition never satisfied");
 
   if constexpr (sizeof...(directions) == Dim) {
     auto a = std::make_tuple(positions...);
-    domain(positions...) = static_cast<DataType2>(1);
+    domain(positions...) = static_cast<DataType2>(value);
 
   } else if constexpr (sizeof...(directions) == 0) {
 
@@ -42,7 +43,7 @@ void find_dots_in_sphere_helper(
 
     for (int i = lower_bound; i <= upper_bound; ++i) {
       find_dots_in_sphere_helper(
-          sphere, domain, grid_step,
+          sphere, domain, grid_step, value,
           std::make_index_sequence<sizeof...(directions) + 1>{}, i);
     }
 
@@ -69,7 +70,7 @@ void find_dots_in_sphere_helper(
 
     for (int i = lower_bound; i <= upper_bound; i++) {
       find_dots_in_sphere_helper(
-          sphere, domain, grid_step,
+          sphere, domain, grid_step, value,
           std::make_index_sequence<sizeof...(directions) + 1>{}, positions...,
           i);
     }
@@ -80,8 +81,8 @@ template <typename DataType, typename DataType2, Dimension Dim,
           Length... strides>
 void find_dots_in_sphere(Sphere<DataType, Dim> &sphere,
                          domain::Grid<DataType2, Dim, strides...> domain,
-                         const DataType grid_step) {
-  find_dots_in_sphere_helper(sphere, domain, grid_step,
+                         const DataType grid_step, const DataType value = 1) {
+  find_dots_in_sphere_helper(sphere, domain, grid_step, value,
                              std::make_index_sequence<0u>{});
 }
 

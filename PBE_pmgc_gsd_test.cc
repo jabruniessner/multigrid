@@ -20,14 +20,15 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 6;
-constexpr DataType omega = 4. / 5.;
+constexpr std::size_t base_length = 8;
+constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
-constexpr DataType grid_step = 1;
+constexpr DataType grid_step =
+    box_length / (base_length * utils::power_off(2, nlev));
 constexpr DataType delta_epsilon =
     (epsilon_p - epsilon_r); // Difference in epsilon
                              //
@@ -45,9 +46,10 @@ void Set_boundary_conditions(Atom<DataType> *atoms, std::size_t num_atoms,
                              std::size_t y, std::size_t z) {
   DataType buffer_value = 0;
   for (int i = 0; i < num_atoms; i++) {
-    const DataType distance = std::sqrt(sqr(x - atoms[i].Position[0]) +
-                                        sqr(y - atoms[i].Position[1]) +
-                                        sqr(z - atoms[i].Position[2]));
+    const DataType distance =
+        std::sqrt(sqr(x * grid_step - atoms[i].Position[0]) +
+                  sqr(y * grid_step - atoms[i].Position[1]) +
+                  sqr(z * grid_step - atoms[i].Position[2]));
 
     buffer_value +=
         DH_Sphere(atoms[i].radius, atoms[i].charge, distance, kappa);
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
 
   Domain_Type sol(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
       epsilonx_map(q), epsilony_map(q), epsilonz_map(q), epsilonc_map(q),
-      kappa_(q);
+      epsx_map(q), epsy_map(q), epsz_map(q), kappa_(q), kappa_second_map(q);
 
   q.fill(epsilonx_map.get_domain().values_buff, (DataType)epsilon_r,
          epsilonx_map.get_domain().num_values);
@@ -162,26 +164,62 @@ int main(int argc, char *argv[]) {
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5;
+      Atom.Position[0] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonx_domain,
-                          static_cast<DataType>(epsilon_p));
+                          static_cast<DataType>(grid_step),
+                          (DataType)epsilon_p);
     });
+
+    auto &epsilonx2_domain = epsilonx_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[0] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilonx2_domain,
+                          static_cast<DataType>(grid_step));
+    });
+
+    // std::cout << "The x-domain is: " << std::endl;
+    // epsilonx_domain.print_domain();
 
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[1] -= 0.5;
+      Atom.Position[1] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilony_domain,
-                          static_cast<DataType>(epsilon_p));
+                          static_cast<DataType>(grid_step),
+                          (DataType)epsilon_p);
     });
+
+    auto &epsilony2_domain = epsilonx_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[0] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilony2_domain,
+                          static_cast<DataType>(grid_step));
+    });
+
+    // std::cout << "The y-domain is: " << std::endl;
+    // epsilony_domain.print_domain();
 
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[2] -= 0.5;
+      Atom.Position[2] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonz_domain,
-                          static_cast<DataType>(epsilon_p));
+                          static_cast<DataType>(grid_step),
+                          (DataType)epsilon_p);
     });
+
+    auto &epsilonz2_domain = epsilonx_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      Sphere<DataType, Dim> Atom = atoms_device[I];
+      Atom.Position[0] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilonz2_domain,
+                          static_cast<DataType>(grid_step));
+    });
+
+    //  std::cout << "The z-domain is: " << std::endl;
+    //  epsilonz_domain.print_domain();
 
     auto &epsilonc_domain = epsilonc_map.template get_domain<nlev>();
     q.parallel_for(
@@ -198,7 +236,16 @@ int main(int argc, char *argv[]) {
       auto atom = atoms_device[I];
       atom.radius += 1.5;
       //                      diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
+    });
+
+    auto &kappa_domain2 = kappa_second_map.template get_domain<nlev>();
+    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+      auto atom = atoms_device[I];
+      atom.radius += 1.5;
+      //                      diff_operator.get_offsets(), 1e-2);
+      find_dots_in_sphere(atom, kappa_domain2,
+                          static_cast<DataType>(grid_step));
     });
 
     // Inverting the kappa domain because the original functions marks the
@@ -206,8 +253,19 @@ int main(int argc, char *argv[]) {
     q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1> I) {
        kappa_domain.values_buff[I] != 0
            ? kappa_domain.values_buff[I] = 0
-           : kappa_domain.values_buff[I] = kappa_2 * epsilon_r;
+           : kappa_domain.values_buff[I] = -kappa_2 * epsilon_r;
      }).wait();
+
+    std::cout << "The kappa domain is: " << std::endl;
+    // kappa_domain.print_domain();
+
+    q.parallel_for(sycl::range<1>(kappa_domain2.num_values),
+                   [=](sycl::id<1> I) {
+                     kappa_domain2.values_buff[I] != 0
+                         ? kappa_domain2.values_buff[I] = 0
+                         : kappa_domain2.values_buff[I] = 1;
+                   })
+        .wait();
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
     std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
@@ -231,34 +289,73 @@ int main(int argc, char *argv[]) {
 
     DataType *DT_null = nullptr;
 
-    int nx = std::get<0>(length);
-    int ny = std::get<1>(length);
-    int nz = std::get<2>(length);
+    int nx = std::get<0>(length) + 2;
+    int ny = std::get<1>(length) + 2;
+    int nz = std::get<2>(length) + 2;
+
+    std::cout << "nx: " << nx << std::endl;
+    std::cout << "ny: " << ny << std::endl;
+    std::cout << "nz: " << nz << std::endl;
 
     int i = 1;
 
-    pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
-                  epsilonc_map.get_domain().values_buff,
-                  kappa_domain.values_buff, rhs.values_buff,
-                  epsilonx_domain.values_buff, epsilony_domain.values_buff,
-                  epsilonz_domain.values_buff, init_guess.values_buff,
-                  &num_iters, q);
+    cycles::Gauss_Seidel_PBE j_smoother{sol};
+    //  auto *a = &sol;
+    //  auto *b = &lhs_domain1;
 
-    q.wait();
+    for (int i = 0; i < num_iters; i++) {
 
-    DataType const residual = compute_residual_PBE(
-        rhs_domain.template get_domain<nlev>(), sol.template get_domain<nlev>(),
-        lhs_domain2.template get_domain<nlev>(),
-        kappa_.template get_domain<nlev>(),
-        epsilonx_map.template get_domain<nlev>(),
-        epsilony_map.template get_domain<nlev>(),
-        epsilonz_map.template get_domain<nlev>(), kappa_2, grid_step, epsilon_r,
-        delta_epsilon);
+      // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
+      // grid_step,
+      //           epsilon_r, delta_epsilon);
 
-    q.wait();
+      DataType const residual =
+          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+                               sol.template get_domain<nlev>(),
+                               lhs_domain2.template get_domain<nlev>(),
+                               kappa_second_map.template get_domain<nlev>(),
+                               epsx_map.template get_domain<nlev>(),
+                               epsy_map.template get_domain<nlev>(),
+                               epsz_map.template get_domain<nlev>(), kappa_2,
+                               grid_step, epsilon_r, delta_epsilon);
 
-    std::cout << "The residual after " << num_iters << " is " << residual
-              << std::endl;
+      std::cout << "The residual after " << i << " iterations is " << residual
+                << std::endl;
+
+      std::index_sequence<1> iter_nums{};
+      j_smoother(Integer<nlev>{}, iter_nums, sol, rhs_domain, kappa_second_map,
+                 epsx_map, epsy_map, epsz_map, kappa_2, grid_step, epsilon_r,
+                 delta_epsilon, omega);
+
+      // std::swap(a, b);
+    }
+
+    //  pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
+    //                epsilonc_map.get_domain().values_buff,
+    //                kappa_domain.values_buff, rhs.values_buff,
+    //                epsilonx_domain.values_buff, epsilony_domain.values_buff,
+    //                epsilonz_domain.values_buff, init_guess.values_buff,
+    //                &num_iters, q);
+
+    //  cycles::Gauss_Seidel_PBE{sol};
+
+    //  q.wait();
+
+    //  DataType const residual = compute_residual_PBE(
+    //      rhs_domain.template get_domain<nlev>(), sol.template
+    //      get_domain<nlev>(), lhs_domain2.template get_domain<nlev>(),
+    //      kappa_second_map.template get_domain<nlev>(),
+    //      epsx_map.template get_domain<nlev>(),
+    //      epsy_map.template get_domain<nlev>(),
+    //      epsz_map.template get_domain<nlev>(), kappa_2, grid_step, epsilon_r,
+    //      delta_epsilon);
+
+    //  q.wait();
+
+    //  std::cout << "The residual after " << num_iters << " is " << residual
+    //            << std::endl;
+
+    // sol.get_domain().print_domain();
 
     // std::ofstream outfile{filename_out};
     //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);

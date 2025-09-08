@@ -105,6 +105,11 @@ add_executable(PBE_multigrid_simple PBE_multigrid_simple.cc fileio.cc)
 add_executable(PBE_pmgc_gsd_test PBE_pmgc_gsd_test.cc fileio.cc)
 target_link_libraries(PBE_pmgc_gsd_test PRIVATE pmgc_lib)
 
+add_executable(Laplacian_pmgc Laplacian_pmgc.cc fileio.cc)
+target_link_libraries(Laplacian_pmgc PRIVATE pmgc_lib)
+
+
+
 #add_executable(Tetraeda_cut_test cutting_tetrahedra_test.cc)
 add_executable(applying_cuts_test applying_cuts_to_domain.cc fileio.cc)
 add_executable(applying_cuts_test_debug applying_cuts_to_domain_debug.cc fileio.cc)
