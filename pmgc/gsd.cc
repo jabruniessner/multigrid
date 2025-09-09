@@ -53,6 +53,7 @@
  */
 
 #include "gsd.h"
+#include "hipSYCL/sycl/usm.hpp"
 #include "precision.h"
 
 namespace pmgc {
@@ -82,10 +83,8 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
     for (int color = 1; color >= 0; color--)
       q.parallel_for(
           sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
-            const int i = I[0] + 2;
             const int k = I[0] + 2;
             const int j = I[1] + 2;
-            const int k = I[2] + 2;
             const int i = I[2] + 2;
 
             //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2)
