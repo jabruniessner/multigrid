@@ -153,9 +153,9 @@ void Vgsrb27x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
     for (int color = 0; color <= 8; color++)
       q.parallel_for(
           sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
-            const int i = I[0] + 2;
+            const int k = I[0] + 2;
             const int j = I[1] + 2;
-            const int k = I[2] + 2;
+            const int i = I[2] + 2;
 
             if ((i + j + k) % 8 == color) {
 

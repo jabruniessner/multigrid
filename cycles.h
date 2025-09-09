@@ -750,14 +750,14 @@ struct Gauss_Seidel_PBE {
 
   {
 
-    std::cout << "We are doing a Gauss-Seidel smoothing" << std::endl;
+    // std::cout << "We are doing a Gauss-Seidel smoothing" << std::endl;
 
     static_assert(sizeof...(Num_Iters) == 1 ||
                   sizeof...(Num_Iters) == nlev - 1);
 
     constexpr std::size_t num_iters = get_num_iters<level, Num_Iters...>();
 
-    std::cout << "The number of iterations is " << num_iters << std::endl;
+    //  std::cout << "The number of iterations is " << num_iters << std::endl;
 
     auto &src_domain = src.template get_domain<level>();
     auto &rhs_domain = rhs.template get_domain<level>();
