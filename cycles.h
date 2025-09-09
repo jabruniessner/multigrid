@@ -783,12 +783,13 @@ struct Gauss_Seidel_PBE {
 
         auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
+        int color = 0;
+
         for (int color = 0; color < 2; color++)
           src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
             I[0] += src_domain.padding_width;
             I[1] += src_domain.padding_width;
             I[2] += src_domain.padding_width;
-
             if ((I[0] + I[1] + I[2]) % 2 == color) {
 
               auto &intermediate = src_domain;

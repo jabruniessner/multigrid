@@ -20,7 +20,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 1u;
-constexpr std::size_t base_length = 1;
+constexpr std::size_t base_length = 3;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
@@ -28,7 +28,7 @@ constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
 constexpr DataType grid_step =
-    box_length / (base_length * utils::power_off(2, nlev));
+    (DataType)box_length / ((DataType)base_length * utils::power_off(2, nlev));
 constexpr DataType delta_epsilon =
     (epsilon_p - epsilon_r); // Difference in epsilon
                              //
@@ -246,51 +246,61 @@ int main(int argc, char *argv[]) {
     //  std::cout << "The z-domain is: " << std::endl;
     //  epsilonz_domain.print_domain();
 
+    int nx = std::get<0>(length) + 2;
+    int ny = std::get<1>(length) + 2;
+    int nz = std::get<2>(length) + 2;
+
     auto &epsilonc_domain = epsilonc_map.template get_domain<nlev>();
-    q.parallel_for(
-        sycl::range<1>(epsilonc_domain.num_values), [=](sycl::id<1> I) {
-          epsilonc_domain.values_buff[I] = 2 * epsilonx_domain.values_buff[I] +
-                                           2 * epsilony_domain.values_buff[I] +
-                                           2 * epsilonz_domain.values_buff[I];
-        });
+    q.parallel_for(sycl::range<3>(nx, ny, nz), [=](sycl::id<3> I) {
+      epsilonc_domain(I[0], I[1], I[2]) =
+          epsilonx_domain(I[0], I[1], I[2]) +
+          epsilony_domain(I[0], I[1], I[2]) +
+          epsilonz_domain(I[0], I[1], I[2]) +
+          epsilonx_domain(I[0] - 1, I[1], I[2]) +
+          epsilony_domain(I[0], I[1] - 1, I[2]) +
+          epsilonz_domain(I[0], I[1], I[2] - 1);
+    });
 
     q.wait();
 
     auto &kappa_domain = kappa_.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      auto atom = atoms_device[I];
-      atom.radius += 1.5;
-      //                      diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
-    });
+    //  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+    //    auto atom = atoms_device[I];
+    //    atom.radius += 1.5;
+    //    //                      diff_operator.get_offsets(), 1e-2);
+    //    find_dots_in_sphere(atom, kappa_domain,
+    //    static_cast<DataType>(grid_step));
+    //  });
 
     auto &kappa_domain2 = kappa_second_map.template get_domain<nlev>();
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
-      auto atom = atoms_device[I];
-      atom.radius += 1.5;
-      //                      diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain2,
-                          static_cast<DataType>(grid_step));
-    });
+
+    //  q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
+    //    auto atom = atoms_device[I];
+    //    atom.radius += 1.5;
+    //    //                      diff_operator.get_offsets(), 1e-2);
+    //    find_dots_in_sphere(atom, kappa_domain2,
+    //                        static_cast<DataType>(grid_step));
+    //  });
 
     // Inverting the kappa domain because the original functions marks the
     // points inside the protein with 1. And assigning the right value
-    q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1> I) {
-       kappa_domain.values_buff[I] != 0
-           ? kappa_domain.values_buff[I] = 0
-           : kappa_domain.values_buff[I] = -kappa_2 * epsilon_r;
-     }).wait();
+    // q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1>
+    // I) {
+    //    kappa_domain.values_buff[I] != 0
+    //        ? kappa_domain.values_buff[I] = 0
+    //        : kappa_domain.values_buff[I] = kappa_2 * epsilon_r;
+    //  }).wait();
 
-    std::cout << "The kappa domain is: " << std::endl;
-    // kappa_domain.print_domain();
+    //  std::cout << "The kappa domain is: " << std::endl;
+    //  // kappa_domain.print_domain();
 
-    q.parallel_for(sycl::range<1>(kappa_domain2.num_values),
-                   [=](sycl::id<1> I) {
-                     kappa_domain2.values_buff[I] != 0
-                         ? kappa_domain2.values_buff[I] = 0
-                         : kappa_domain2.values_buff[I] = 1;
-                   })
-        .wait();
+    //  q.parallel_for(sycl::range<1>(kappa_domain2.num_values),
+    //                 [=](sycl::id<1> I) {
+    //                   kappa_domain2.values_buff[I] != 0
+    //                       ? kappa_domain2.values_buff[I] = 0
+    //                       : kappa_domain2.values_buff[I] = 1;
+    //                 })
+    //      .wait();
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
     std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
@@ -313,9 +323,9 @@ int main(int argc, char *argv[]) {
 
     DataType *DT_null = nullptr;
 
-    int nx = std::get<0>(length) + 2;
-    int ny = std::get<1>(length) + 2;
-    int nz = std::get<2>(length) + 2;
+    //  int nx = std::get<0>(length) + 2;
+    //  int ny = std::get<1>(length) + 2;
+    //  int nz = std::get<2>(length) + 2;
 
     std::cout << "nx: " << nx << std::endl;
     std::cout << "ny: " << ny << std::endl;
@@ -326,8 +336,8 @@ int main(int argc, char *argv[]) {
     cycles::Gauss_Seidel_PBE j_smoother{sol};
     //  auto *a = &sol;
     //  auto *b = &lhs_domain1;
-    std::cout << "Before the iterations: " << std::endl;
-    sol.get_domain().print_domain();
+    //  std::cout << "Before the iterations: " << std::endl;
+    //  sol.get_domain().print_domain();
 
     for (int i = 0; i < num_iters; i++) {
 
@@ -360,9 +370,9 @@ int main(int argc, char *argv[]) {
     std::cout << "After the iterations: " << std::endl;
     sol.template get_domain<nlev>().print_domain();
 
-    std::cout << "Before the iterations: " << std::endl;
+    //  std::cout << "Before the iterations: " << std::endl;
     auto &init_guess = sol2.get_domain();
-    init_guess.print_domain();
+    //  init_guess.print_domain();
 
     pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
                   epsilonc_map.get_domain().values_buff,
@@ -374,18 +384,35 @@ int main(int argc, char *argv[]) {
     std::cout << "After the iterations: " << std::endl;
     init_guess.print_domain();
 
+    DataType residual = compute_residual_PBE(
+        rhs_domain.template get_domain<nlev>(), sol.template get_domain<nlev>(),
+        lhs_domain2.template get_domain<nlev>(),
+        kappa_second_map.template get_domain<nlev>(),
+        epsx_map.template get_domain<nlev>(),
+        epsy_map.template get_domain<nlev>(),
+        epsz_map.template get_domain<nlev>(), kappa_2, grid_step, epsilon_r,
+        delta_epsilon);
+
+    std::cout << "The residual after " << num_iters
+              << " iterations is for my old version " << residual << std::endl;
+
     //  cycles::Gauss_Seidel_PBE{sol};
 
     //  q.wait();
 
-    //  DataType const residual = compute_residual_PBE(
-    //      rhs_domain.template get_domain<nlev>(), sol.template
-    //      get_domain<nlev>(), lhs_domain2.template get_domain<nlev>(),
-    //      kappa_second_map.template get_domain<nlev>(),
-    //      epsx_map.template get_domain<nlev>(),
-    //      epsy_map.template get_domain<nlev>(),
-    //      epsz_map.template get_domain<nlev>(), kappa_2, grid_step, epsilon_r,
-    //      delta_epsilon);
+    residual =
+        compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
+                             sol2.template get_domain<nlev>(),
+                             lhs_domain2.template get_domain<nlev>(),
+                             kappa_second_map.template get_domain<nlev>(),
+                             epsx_map.template get_domain<nlev>(),
+                             epsy_map.template get_domain<nlev>(),
+                             epsz_map.template get_domain<nlev>(), kappa_2,
+                             grid_step, epsilon_r, delta_epsilon);
+
+    std::cout << "The residual after " << num_iters
+              << " iterations is for  the pmgc version " << residual
+              << std::endl;
 
     //  q.wait();
 

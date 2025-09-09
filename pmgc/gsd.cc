@@ -77,7 +77,9 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 
   for (int iters = 1; iters <= *itmax; iters++) {
 
-    for (int color = 0; color <= 1; color++)
+    int color = 1;
+
+    for (int color = 1; color >= 0; color--)
       q.parallel_for(
           sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
             const int i = I[0] + 2;
@@ -87,7 +89,7 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
             //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
             //                    (*iadjoint) * (1 - (j + k + 2) % 2);
 
-            if ((i + j + k) % 2 == color)
+            if ((i + j + k) % 2 == color) {
               VAT3(x, i, j, k) = (VAT3(fc, i, j, k) +
                                   VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
                                   VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
@@ -96,6 +98,7 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
                                   VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
                                   VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
                                  (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+            }
           });
   }
 }
