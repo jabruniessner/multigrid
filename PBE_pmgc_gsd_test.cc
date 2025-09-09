@@ -340,36 +340,12 @@ int main(int argc, char *argv[]) {
     //  std::cout << "Before the iterations: " << std::endl;
     //  sol.get_domain().print_domain();
 
-    for (int i = 0; i < num_iters; i++) {
 
-      // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-      // grid_step,
-      //           epsilon_r, delta_epsilon);
 
-      DataType const residual =
-          compute_residual_PBE(rhs_domain.template get_domain<nlev>(),
-                               sol.template get_domain<nlev>(),
-                               lhs_domain2.template get_domain<nlev>(),
-                               kappa_second_map.template get_domain<nlev>(),
-                               epsx_map.template get_domain<nlev>(),
-                               epsy_map.template get_domain<nlev>(),
-                               epsz_map.template get_domain<nlev>(), kappa_2,
-                               grid_step, epsilon_r, delta_epsilon);
 
-      //   std::cout << "The residual after " << i << " iterations is " <<
-      //   residual
-      //             << std::endl;
 
-      std::index_sequence<1> iter_nums{};
-      j_smoother(Integer<nlev>{}, iter_nums, sol, rhs_domain, kappa_second_map,
-                 epsx_map, epsy_map, epsz_map, kappa_2, grid_step, epsilon_r,
-                 delta_epsilon, omega);
 
-      // std::swap(a, b);
-    }
 
-    std::cout << "After the iterations: " << std::endl;
-    sol.template get_domain<nlev>().print_domain();
 
     //  std::cout << "Before the iterations: " << std::endl;
     auto &init_guess = sol2.get_domain();
@@ -380,10 +356,14 @@ int main(int argc, char *argv[]) {
                   kappa_domain.values_buff, rhs.values_buff,
                   epsilonx_domain.values_buff, epsilony_domain.values_buff,
                   epsilonz_domain.values_buff, init_guess.values_buff,
+                  epsilonz_domain.values_buff, epsilony_domain.values_buff,
+                  epsilonx_domain.values_buff, init_guess.values_buff,
                   &num_iters, q);
 
     std::cout << "After the iterations: " << std::endl;
     init_guess.print_domain();
+    //  std::cout << "After the iterations: " << std::endl;
+    //  init_guess.print_domain();
 
     DataType residual = compute_residual_PBE(
         rhs_domain.template get_domain<nlev>(), sol.template get_domain<nlev>(),
@@ -466,6 +446,41 @@ int main(int argc, char *argv[]) {
   //            << std::endl;
   //
   //  std::cout << "The length is: " << std::get<0>(length) << std::endl;
+  int i = 3, j = 3, k = 3;
+
+  std::cout << "The value for my own at: " << i << " " << j << " " << " " << k
+            << " is " << sol.get_domain().get_value(i, j, k) << std::endl;
+
+  std::cout << "The value for pmgc at " << i << " " << j << " " << " " << k
+            << " is " << sol2.get_domain().get_value(i, j, k) << std::endl;
+
+  std::cout << "The rhs at " << i << " " << j << " " << " " << k << " is "
+            << rhs_domain.get_domain().get_value(i, j, k) << std::endl;
+
+  std::cout << "The epsilonc_domain at " << i << " " << j << " " << " " << k
+            << " is " << epsilonc_map.get_domain().get_value(i, j, k)
+            << std::endl;
+
+  std::cout << "The kappa_domain at " << i << " " << j << " " << " " << k
+            << " is " << kappa_.get_domain().get_value(i, j, k) << std::endl;
+
+  std::cout << "The kappa_own_domain at " << i << " " << j << " " << " " << k
+            << " is " << kappa_second_map.get_domain().get_value(i, j, k)
+            << std::endl;
+
+  std::cout << "The epsilonx_domain at " << i << " " << j << " " << " " << k
+            << " is " << epsilonx_map.get_domain().get_value(i, j, k)
+            << std::endl;
+
+  std::cout << "The epsilony_domain at " << i << " " << j << " " << " " << k
+            << " is " << epsilony_map.get_domain().get_value(i, j, k)
+            << std::endl;
+
+  std::cout << "The epsilonz_domain at " << i << " " << j << " " << " " << k
+            << " is " << epsilonz_map.get_domain().get_value(i, j, k)
+            << std::endl;
+
+  std::cout << "The length is: " << std::get<0>(length) << std::endl;
 
   //  std::cout << "epsilon as used in pmgc version: " << std::endl;
   //  epsilonz_map.get_domain().print_domain();
