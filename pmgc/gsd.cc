@@ -86,8 +86,10 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
             const int j = I[1] + 2;
             const int k = I[2] + 2;
 
-            //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2) +
-            //                    (*iadjoint) * (1 - (j + k + 2) % 2);
+            //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2)
+            //  +
+            //                    (*iadjoint) * (1 - (j + k + 2) %
+            //                    2);
 
             if ((i + j + k) % 2 == color) {
               VAT3(x, i, j, k) = (VAT3(fc, i, j, k) +

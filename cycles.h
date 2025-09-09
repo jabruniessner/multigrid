@@ -772,7 +772,7 @@ struct Gauss_Seidel_PBE {
         epsilon_maps{epsilon_x_domain, epsilon_y_domain, epsilon_z_domain};
 
     const DataType h = grid_step;
-    const DataType diag_inverse_helper = (h * h);
+    // const DataType diag_inverse_helper = (h * h);
 
     if constexpr (num_iters == 0) {
       return;
@@ -800,6 +800,9 @@ struct Gauss_Seidel_PBE {
                   kappa_domain(I[0], I[1], I[2]) * h * h * kappa_2 * epsilon_r;
 
               // We first need to compute the right diagonal value
+
+              //  DataType epsilons_lower = 0;
+              //  DataType epsilons_upper = 0;
               for (int j = 0; j < Dim; j++) {
                 sycl::id<Dim> I2{I}, I3{I};
                 I2[j] += 1;
@@ -813,6 +816,8 @@ struct Gauss_Seidel_PBE {
                     epsilon_maps[j](I[0], I[1], I[2]) * delta_epsilon;
 
                 diag_inverse_denominator += epsilon_lower + epsilon_upper;
+                //    epsilons_lower += epsilon_lower;
+                //    epsilons_upper += epsilon_upper;
               }
 
               src_domain(I[0], I[1], I[2]) =

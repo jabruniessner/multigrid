@@ -74,6 +74,8 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type domain) {
 
 int main(int argc, char *argv[]) {
 
+  std::cout << "The value of grid_step is: " << grid_step << std::endl;
+
   using OffsetType = std::array<int, Dim>;
 
   if (argc < 3) {
@@ -82,7 +84,6 @@ int main(int argc, char *argv[]) {
         << std::endl;
     return 0;
   }
-  // int num_iters = std::stoi(argv[3]);
 
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
@@ -195,7 +196,7 @@ int main(int argc, char *argv[]) {
                           (DataType)epsilon_p / (grid_step * grid_step));
     });
 
-    auto &epsilonx2_domain = epsilonx_map.template get_domain<nlev>();
+    auto &epsilonx2_domain = epsx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
       Atom.Position[0] -= 0.5 * grid_step;
@@ -215,10 +216,10 @@ int main(int argc, char *argv[]) {
                           (DataType)epsilon_p / (grid_step * grid_step));
     });
 
-    auto &epsilony2_domain = epsilonx_map.template get_domain<nlev>();
+    auto &epsilony2_domain = epsy_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5 * grid_step;
+      Atom.Position[1] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilony2_domain,
                           static_cast<DataType>(grid_step));
     });
@@ -235,10 +236,10 @@ int main(int argc, char *argv[]) {
                           (DataType)epsilon_p / (grid_step * grid_step));
     });
 
-    auto &epsilonz2_domain = epsilonx_map.template get_domain<nlev>();
+    auto &epsilonz2_domain = epsz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5 * grid_step;
+      Atom.Position[2] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonz2_domain,
                           static_cast<DataType>(grid_step));
     });
@@ -425,7 +426,53 @@ int main(int argc, char *argv[]) {
     //  init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);
   }
 
-  std::cout << "The length is: " << std::get<0>(length) << std::endl;
+  //  std::cout << "The right hand side is: " << std::endl;
+  //  rhs_domain.get_domain().print_domain();
+  //  int i = 3, j = 3, k = 3;
+  //
+  //  std::cout << "The value for my own at: " << i << " " << j << " " << " " <<
+  //  k
+  //            << " is " << sol.get_domain().get_value(i, j, k) << std::endl;
+  //
+  //  std::cout << "The value for pmgc at " << i << " " << j << " " << " " << k
+  //            << " is " << sol2.get_domain().get_value(i, j, k) << std::endl;
+  //
+  //  std::cout << "The rhs at " << i << " " << j << " " << " " << k << " is "
+  //            << rhs_domain.get_domain().get_value(i, j, k) << std::endl;
+  //
+  //  std::cout << "The epsilonc_domain at " << i << " " << j << " " << " " << k
+  //            << " is " << epsilonc_map.get_domain().get_value(i, j, k)
+  //            << std::endl;
+  //
+  //  std::cout << "The kappa_domain at " << i << " " << j << " " << " " << k
+  //            << " is " << kappa_.get_domain().get_value(i, j, k) <<
+  //            std::endl;
+  //
+  //  std::cout << "The kappa_own_domain at " << i << " " << j << " " << " " <<
+  //  k
+  //            << " is " << kappa_second_map.get_domain().get_value(i, j, k)
+  //            << std::endl;
+
+  //  std::cout << "The epsilonx_domain at " << i << " " << j << " " << " " << k
+  //            << " is " << epsilonx_map.get_domain().get_value(i, j, k)
+  //            << std::endl;
+  //
+  //  std::cout << "The epsilony_domain at " << i << " " << j << " " << " " << k
+  //            << " is " << epsilony_map.get_domain().get_value(i, j, k)
+  //            << std::endl;
+  //
+  //  std::cout << "The epsilonz_domain at " << i << " " << j << " " << " " << k
+  //            << " is " << epsilonz_map.get_domain().get_value(i, j, k)
+  //            << std::endl;
+  //
+  //  std::cout << "The length is: " << std::get<0>(length) << std::endl;
+
+  //  std::cout << "epsilon as used in pmgc version: " << std::endl;
+  //  epsilonz_map.get_domain().print_domain();
+  //  std::cout << "epsilon as used in my own: " << std::endl;
+  //  epsz_map.get_domain().print_domain();
+  //  epsilony_map.get_domain().print_domain();
+  //  epsilonz_map.get_domain().print_domain();
 
   return 0;
 }
