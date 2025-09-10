@@ -105,6 +105,12 @@ add_executable(PBE_multigrid_simple PBE_multigrid_simple.cc fileio.cc)
 add_executable(PBE_pmgc_gsd_test PBE_pmgc_gsd_test.cc fileio.cc)
 target_link_libraries(PBE_pmgc_gsd_test PRIVATE pmgc_lib)
 
+add_executable(PBE_pmgc_simple_galerkin_multigrid_test 
+  PBE_pmgc_simple_galerkin_multigrid_test.cc fileio.cc)
+target_link_libraries(PBE_pmgc_simple_galerkin_multigrid_test PRIVATE pmgc_lib)
+
+
+
 add_executable(Laplacian_pmgc Laplacian_pmgc.cc fileio.cc)
 target_link_libraries(Laplacian_pmgc PRIVATE pmgc_lib)
 
