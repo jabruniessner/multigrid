@@ -729,7 +729,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   MAT3(dPSW, *nxc, *nyc, *nzc);
 
   // Verify correctness of the input boundary points
-  VfboundPMG00(nxf, nyf, nzf, xin, q);
+  // VfboundPMG00(nxf, nyf, nzf, xin, q);
 
   dimfac = VPOW(2.0, idimenshun);
 
@@ -780,7 +780,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
       });
 
   // Verify correctness of the output boundary points
-  VfboundPMG00(nxc, nyc, nzc, xout, q);
+  // VfboundPMG00(nxc, nyc, nzc, xout, q);
 }
 
 VPUBLIC void VinterpPMG(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,

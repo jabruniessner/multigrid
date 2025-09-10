@@ -282,28 +282,31 @@ VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, double *x,
   MAT3(x, *nx, *ny, *nz);
 
   // The (i=1) and (i=nx) boundaries
+  const auto nx_val = *nx;
   q.parallel_for(sycl::range<2>(*ny, *nz), [=](sycl::id<2> I) {
     const int j = I[0] + 1;
     const int k = I[1] + 1;
     VAT3(x, 1, j, k) = 0.0;
-    VAT3(x, *nx, j, k) = 0.0;
+    VAT3(x, nx_val, j, k) = 0.0;
   });
 
   // The (j=1) and (j=ny) boundaries
+  const auto ny_val = *ny;
   q.parallel_for(sycl::range<2>(*nx, *nz), [=](sycl::id<2> I) {
     const int i = I[0] + 1;
-    const int k = I[0] + 1;
+    const int k = I[1] + 1;
     VAT3(x, i, 1, k) = 0.0;
-    VAT3(x, i, *ny, k) = 0.0;
+    VAT3(x, i, ny_val, k) = 0.0;
   });
 
   // The (k=1) and (k=nz) boundaries
 
+  const auto nz_val = *nz;
   q.parallel_for(sycl::range<2>(*nx, *ny), [=](sycl::id<2> I) {
     const int i = I[0] + 1;
     const int j = I[1] + 1;
     VAT3(x, i, j, 1) = 0.0;
-    VAT3(x, i, j, *nz) = 0.0;
+    VAT3(x, i, j, nz_val) = 0.0;
   });
 }
 

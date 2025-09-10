@@ -62,6 +62,28 @@ add_executable(test_gsd7
   test_gsd7.cc functions.cc
   )
 
+add_executable(test_coarsening
+  test_coarsening.cc functions.cc
+  )
+
+add_executable(test_prolongation
+  test_prolongation.cc functions.cc
+  )
+
+
+target_link_libraries(test_prolongation
+  PRIVATE
+        pmgc
+        pmgf
+  )
+
+
+target_link_libraries(test_coarsening
+  PRIVATE
+        pmgc
+        pmgf
+  )
+
 target_link_libraries(test_gsd7
   PRIVATE
         pmgc
