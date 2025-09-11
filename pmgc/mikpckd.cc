@@ -231,9 +231,40 @@ VPUBLIC void Vazeros(int *nx, int *ny, int *nz, DataType *x, sycl::queue &q) {
   q.memset(&VAT(x, 1), 0, sizeof(DataType) * n).wait();
 }
 
-VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, DataType *x,
-                        DataType *gxc, DataType *gyc, DataType *gzc,
-                        sycl::queue &q) {
+template <>
+void VfboundPMG00<DataType>(int *nx, int *ny, int *nz, DataType *x,
+                            sycl::queue &q) {
+
+  MAT3(x, *nx, *ny, *nz);
+
+  // The (i=1) and (i=nx) boundaries
+  q.parallel_for(sycl::range<2>(*ny, *nz), [=](sycl::id<2> I) {
+    const int j = I[0] + 1;
+    const int k = I[1] + 1;
+    VAT3(x, 1, j, k) = 0.0;
+    VAT3(x, *nx, j, k) = 0.0;
+  });
+
+  // The (j=1) and (j=ny) boundaries
+  q.parallel_for(sycl::range<2>(*nx, *nz), [=](sycl::id<2> I) {
+    const int i = I[0] + 1;
+    const int k = I[0] + 1;
+    VAT3(x, i, 1, k) = 0.0;
+    VAT3(x, i, *ny, k) = 0.0;
+  });
+
+  // The (k=1) and (k=nz) boundaries
+
+  q.parallel_for(sycl::range<2>(*nx, *ny), [=](sycl::id<2> I) {
+    const int i = I[0] + 1;
+    const int j = I[1] + 1;
+    VAT3(x, i, j, 1) = 0.0;
+    VAT3(x, i, j, *nz) = 0.0;
+  });
+}
+
+void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, DataType *x,
+                DataType *gxc, DataType *gyc, DataType *gzc, sycl::queue &q) {
 
   // Create and bind the wrappers for the source data
   MAT3(x, *nx, *ny, *nz);
@@ -278,37 +309,6 @@ VPUBLIC void VfboundPMG(int *ibound, int *nx, int *ny, int *nz, DataType *x,
       VAT3(x, i, j, *nz) = VAT3(gzc, i, j, 2);
     });
   }
-}
-
-VPUBLIC void VfboundPMG00(int *nx, int *ny, int *nz, DataType *x,
-                          sycl::queue &q) {
-
-  MAT3(x, *nx, *ny, *nz);
-
-  // The (i=1) and (i=nx) boundaries
-  q.parallel_for(sycl::range<2>(*ny, *nz), [=](sycl::id<2> I) {
-    const int j = I[0] + 1;
-    const int k = I[1] + 1;
-    VAT3(x, 1, j, k) = 0.0;
-    VAT3(x, *nx, j, k) = 0.0;
-  });
-
-  // The (j=1) and (j=ny) boundaries
-  q.parallel_for(sycl::range<2>(*nx, *nz), [=](sycl::id<2> I) {
-    const int i = I[0] + 1;
-    const int k = I[0] + 1;
-    VAT3(x, i, 1, k) = 0.0;
-    VAT3(x, i, *ny, k) = 0.0;
-  });
-
-  // The (k=1) and (k=nz) boundaries
-
-  q.parallel_for(sycl::range<2>(*nx, *ny), [=](sycl::id<2> I) {
-    const int i = I[0] + 1;
-    const int j = I[1] + 1;
-    VAT3(x, i, j, 1) = 0.0;
-    VAT3(x, i, j, *nz) = 0.0;
-  });
 }
 
 VPUBLIC void Vaxrand(int *nx, int *ny, int *nz, DataType *x) {

@@ -54,41 +54,15 @@
 
 #include "matvecd.h"
 #include "hipSYCL/sycl/queue.hpp"
+#include "precision.h"
 
 namespace pmgc {
 
-VPUBLIC void Vmatvec(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                     DataType *ac, DataType *cc, DataType *x, DataType *y,
-                     sycl::queue &q) {
-
-  int numdia;
-
-  // Do in one step
-  numdia = VAT(ipc, 11);
-
-  if (numdia == 7) {
-    Vmatvec7(nx, ny, nz, ipc, rpc, ac, cc, x, y, q);
-  } else if (numdia == 27) {
-    Vmatvec27(nx, ny, nz, ipc, rpc, ac, cc, x, y, q);
-  } else {
-    printf("MATVEC: invalid stencil type given...");
-  }
-}
-
-VPUBLIC void Vmatvec7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                      DataType *ac, DataType *cc, DataType *x, DataType *y,
-                      sycl::queue &q) {
-
-  MAT2(ac, *nx * *ny * *nz, 1);
-
-  Vmatvec7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
-              RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, q);
-}
-
-VEXTERNC void Vmatvec7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                          DataType *oC, DataType *cc, DataType *oE,
-                          DataType *oN, DataType *uC, DataType *x, DataType *y,
-                          sycl::queue &q) {
+template <>
+void Vmatvec7_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                           DataType *oC, DataType *cc, DataType *oE,
+                           DataType *oN, DataType *uC, DataType *x, DataType *y,
+                           sycl::queue &q) {
 
   MAT3(oE, *nx, *ny, *nz);
   MAT3(oN, *nx, *ny, *nz);
@@ -115,26 +89,25 @@ VEXTERNC void Vmatvec7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vmatvec27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *ac, DataType *cc, DataType *x, DataType *y,
-                       sycl::queue &q) {
+template <>
+void Vmatvec7<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *x, DataType *y,
+                        sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
-  Vmatvec27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
-               RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
-               RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
-               RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
-               RAT2(ac, 1, 14), x, y, q);
+  Vmatvec7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
+              RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, q);
 }
 
-VPUBLIC void Vmatvec27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                          DataType *oC, DataType *cc, DataType *oE,
-                          DataType *oN, DataType *uC, DataType *oNE,
-                          DataType *oNW, DataType *uE, DataType *uW,
-                          DataType *uN, DataType *uS, DataType *uNE,
-                          DataType *uNW, DataType *uSE, DataType *uSW,
-                          DataType *x, DataType *y, sycl::queue &q) {
+template <>
+void Vmatvec27_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                            DataType *oC, DataType *cc, DataType *oE,
+                            DataType *oN, DataType *uC, DataType *oNE,
+                            DataType *oNW, DataType *uE, DataType *uW,
+                            DataType *uN, DataType *uS, DataType *uNE,
+                            DataType *uNW, DataType *uSE, DataType *uSW,
+                            DataType *x, DataType *y, sycl::queue &q) {
 
   int i, j, k;
 
@@ -202,40 +175,25 @@ VPUBLIC void Vmatvec27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VEXTERNC void Vnmatvec(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *ac, DataType *cc, DataType *x, DataType *y,
-                       DataType *w1, sycl::queue &q) {
-
-  int numdia;
-
-  // Do in one step
-  numdia = VAT(ipc, 11);
-
-  if (numdia == 7) {
-    Vnmatvec7(nx, ny, nz, ipc, rpc, ac, cc, x, y, w1, q);
-  } else if (numdia == 27) {
-    Vnmatvec27(nx, ny, nz, ipc, rpc, ac, cc, x, y, w1, q);
-  } else {
-    printf("MATVEC: invalid stencil type given...");
-  }
-}
-
-VPUBLIC void Vnmatvec7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *ac, DataType *cc, DataType *x, DataType *y,
-                       DataType *w1, sycl::queue &q) {
+template <>
+void Vmatvec27<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *ac, DataType *cc, DataType *x, DataType *y,
+                         sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
-  WARN_UNTESTED;
-
-  Vnmatvecd7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
-                RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, w1, q);
+  Vmatvec27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
+               RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
+               RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
+               RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
+               RAT2(ac, 1, 14), x, y, q);
 }
 
-VPUBLIC void Vnmatvecd7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                           DataType *oC, DataType *cc, DataType *oE,
-                           DataType *oN, DataType *uC, DataType *x, DataType *y,
-                           DataType *w1, sycl::queue &q) {
+template <>
+void Vnmatvecd7_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                             DataType *oC, DataType *cc, DataType *oE,
+                             DataType *oN, DataType *uC, DataType *x,
+                             DataType *y, DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
@@ -270,30 +228,47 @@ VPUBLIC void Vnmatvecd7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vnmatvec27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                        DataType *ac, DataType *cc, DataType *x, DataType *y,
-                        DataType *w1, sycl::queue &q) {
+template <>
+void Vnmatvec7<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *ac, DataType *cc, DataType *x, DataType *y,
+                         DataType *w1, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
   WARN_UNTESTED;
 
-  // Do in one step
-  Vnmatvecd27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
-                 RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
-                 RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9),
-                 RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
-                 RAT2(ac, 1, 13), RAT2(ac, 1, 14), x, y, w1, q);
+  Vnmatvecd7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
+                RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, y, w1, q);
 }
 
-VPUBLIC void Vnmatvecd27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                            DataType *oC, DataType *cc, DataType *oE,
-                            DataType *oN, DataType *uC, DataType *oNE,
-                            DataType *oNW, DataType *uE, DataType *uW,
-                            DataType *uN, DataType *uS, DataType *uNE,
-                            DataType *uNW, DataType *uSE, DataType *uSW,
-                            DataType *x, DataType *y, DataType *w1,
-                            sycl::queue &q) {
+template <>
+void Vmatvec<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *x, DataType *y,
+                       sycl::queue &q) {
+
+  int numdia;
+
+  // Do in one step
+  numdia = VAT(ipc, 11);
+
+  if (numdia == 7) {
+    Vmatvec7(nx, ny, nz, ipc, rpc, ac, cc, x, y, q);
+  } else if (numdia == 27) {
+    Vmatvec27(nx, ny, nz, ipc, rpc, ac, cc, x, y, q);
+  } else {
+    printf("MATVEC: invalid stencil type given...");
+  }
+}
+
+template <>
+void Vnmatvecd27_1s<DataType>(int *nx, int *ny, int *nz, int *ipc,
+                              DataType *rpc, DataType *oC, DataType *cc,
+                              DataType *oE, DataType *oN, DataType *uC,
+                              DataType *oNE, DataType *oNW, DataType *uE,
+                              DataType *uW, DataType *uN, DataType *uS,
+                              DataType *uNE, DataType *uNW, DataType *uSE,
+                              DataType *uSW, DataType *x, DataType *y,
+                              DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
@@ -367,38 +342,47 @@ VPUBLIC void Vnmatvecd27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vmresid(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                     DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                     DataType *r, sycl::queue &q) {
+template <>
+void Vnmatvec27<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *ac, DataType *cc, DataType *x, DataType *y,
+                          DataType *w1, sycl::queue &q) {
+
+  MAT2(ac, *nx * *ny * *nz, 1);
+
+  WARN_UNTESTED;
+
+  // Do in one step
+  Vnmatvecd27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, RAT2(ac, 1, 2),
+                 RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
+                 RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9),
+                 RAT2(ac, 1, 10), RAT2(ac, 1, 11), RAT2(ac, 1, 12),
+                 RAT2(ac, 1, 13), RAT2(ac, 1, 14), x, y, w1, q);
+}
+
+template <>
+void Vnmatvec<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *x, DataType *y,
+                        DataType *w1, sycl::queue &q) {
 
   int numdia;
 
   // Do in one step
   numdia = VAT(ipc, 11);
+
   if (numdia == 7) {
-    Vmresid7(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, q);
+    Vnmatvec7(nx, ny, nz, ipc, rpc, ac, cc, x, y, w1, q);
   } else if (numdia == 27) {
-    Vmresid27(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, q);
+    Vnmatvec27(nx, ny, nz, ipc, rpc, ac, cc, x, y, w1, q);
   } else {
-    printf("Vmresid: invalid stencil type given...\n");
+    printf("MATVEC: invalid stencil type given...");
   }
 }
 
-VPUBLIC void Vmresid7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                      DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                      DataType *r, sycl::queue &q) {
-
-  MAT2(ac, *nx * *ny * *nz, 1);
-
-  // Do in one step
-  Vmresid7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-              RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, q);
-}
-
-VPUBLIC void Vmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                         DataType *oC, DataType *cc, DataType *fc, DataType *oE,
-                         DataType *oN, DataType *uC, DataType *x, DataType *r,
-                         sycl::queue &q) {
+template <>
+void Vmresid7_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                           DataType *oC, DataType *cc, DataType *fc,
+                           DataType *oE, DataType *oN, DataType *uC,
+                           DataType *x, DataType *r, sycl::queue &q) {
 
   MAT3(oE, *nx, *ny, *nz);
   MAT3(oN, *nx, *ny, *nz);
@@ -426,28 +410,27 @@ VPUBLIC void Vmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vmresid27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                       DataType *r, sycl::queue &q) {
+template <>
+void Vmresid7<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                        DataType *r, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
   // Do in one step
-  Vmresid27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-               RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
-               RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
-               RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
-               RAT2(ac, 1, 14), x, r, q);
+  Vmresid7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+              RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, q);
 }
 
-VPUBLIC void Vmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                          DataType *oC, DataType *cc, DataType *fc,
-                          DataType *oE, DataType *oN, DataType *uC,
-                          DataType *oNE, DataType *oNW, DataType *uE,
-                          DataType *uW, DataType *uN, DataType *uS,
-                          DataType *uNE, DataType *uNW, DataType *uSE,
-                          DataType *uSW, DataType *x, DataType *r,
-                          sycl::queue &q) {
+template <>
+void Vmresid27_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                            DataType *oC, DataType *cc, DataType *fc,
+                            DataType *oE, DataType *oN, DataType *uC,
+                            DataType *oNE, DataType *oNW, DataType *uE,
+                            DataType *uW, DataType *uN, DataType *uS,
+                            DataType *uNE, DataType *uNW, DataType *uSE,
+                            DataType *uSW, DataType *x, DataType *r,
+                            sycl::queue &q) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(fc, *nx, *ny, *nz);
@@ -511,38 +494,45 @@ VPUBLIC void Vmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vnmresid(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                      DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                      DataType *r, DataType *w1, sycl::queue &q) {
-
-  int numdia;
-
-  // Do in oNe step ***
-  numdia = VAT(ipc, 11);
-  if (numdia == 7) {
-    Vnmresid7(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, w1, q);
-  } else if (numdia == 27) {
-    Vnmresid27(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, w1, q);
-  } else {
-    printf("Vnmresid: invalid stencil type given...\n");
-  }
-}
-
-VPUBLIC void Vnmresid7(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                       DataType *r, DataType *w1, sycl::queue &q) {
+template <>
+void Vmresid27<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                         DataType *r, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
-  // Do in oNe step
-  Vnmresid7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-               RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, w1, q);
+  // Do in one step
+  Vmresid27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+               RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
+               RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
+               RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
+               RAT2(ac, 1, 14), x, r, q);
 }
 
-VPUBLIC void Vnmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                          DataType *oC, DataType *cc, DataType *fc,
-                          DataType *oE, DataType *oN, DataType *uC, DataType *x,
-                          DataType *r, DataType *w1, sycl::queue &q) {
+template <>
+void Vmresid<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                       DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                       DataType *r, sycl::queue &q) {
+
+  int numdia;
+
+  // Do in one step
+  numdia = VAT(ipc, 11);
+  if (numdia == 7) {
+    Vmresid7(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, q);
+  } else if (numdia == 27) {
+    Vmresid27(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, q);
+  } else {
+    printf("Vmresid: invalid stencil type given...\n");
+  }
+}
+
+template <>
+void Vnmresid7_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                            DataType *oC, DataType *cc, DataType *fc,
+                            DataType *oE, DataType *oN, DataType *uC,
+                            DataType *x, DataType *r, DataType *w1,
+                            sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
@@ -578,28 +568,27 @@ VPUBLIC void Vnmresid7_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vnmresid27(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                        DataType *ac, DataType *cc, DataType *fc, DataType *x,
-                        DataType *r, DataType *w1, sycl::queue &q) {
+template <>
+void Vnmresid7<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                         DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                         DataType *r, DataType *w1, sycl::queue &q) {
 
   MAT2(ac, *nx * *ny * *nz, 1);
 
   // Do in oNe step
-  Vnmresid27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
-                RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
-                RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
-                RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
-                RAT2(ac, 1, 14), x, r, w1, q);
+  Vnmresid7_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+               RAT2(ac, 1, 3), RAT2(ac, 1, 4), x, r, w1, q);
 }
 
-VPUBLIC void Vnmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                           DataType *oC, DataType *cc, DataType *fc,
-                           DataType *oE, DataType *oN, DataType *uC,
-                           DataType *oNE, DataType *oNW, DataType *uE,
-                           DataType *uW, DataType *uN, DataType *uS,
-                           DataType *uNE, DataType *uNW, DataType *uSE,
-                           DataType *uSW, DataType *x, DataType *r,
-                           DataType *w1, sycl::queue &q) {
+template <>
+void Vnmresid27_1s<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                             DataType *oC, DataType *cc, DataType *fc,
+                             DataType *oE, DataType *oN, DataType *uC,
+                             DataType *oNE, DataType *oNW, DataType *uE,
+                             DataType *uW, DataType *uN, DataType *uS,
+                             DataType *uNE, DataType *uNW, DataType *uSE,
+                             DataType *uSW, DataType *x, DataType *r,
+                             DataType *w1, sycl::queue &q) {
 
   int i, j, k;
   int ipkey;
@@ -670,33 +659,51 @@ VPUBLIC void Vnmresid27_1s(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
   });
 }
 
-VPUBLIC void Vrestrc(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     DataType *xin, DataType *xout, DataType *pc,
-                     sycl::queue &q) {
+template <>
+void Vnmresid27<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                          DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                          DataType *r, DataType *w1, sycl::queue &q) {
 
-  MAT2(pc, *nxc * *nyc * *nzc, 1);
+  MAT2(ac, *nx * *ny * *nz, 1);
 
-  Vrestrc2(nxf, nyf, nzf, nxc, nyc, nzc, xin, xout, RAT2(pc, 1, 1),
-           RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
-           RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
-           RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13),
-           RAT2(pc, 1, 14), RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17),
-           RAT2(pc, 1, 18), RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
-           RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25),
-           RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
+  // Do in oNe step
+  Vnmresid27_1s(nx, ny, nz, ipc, rpc, RAT2(ac, 1, 1), cc, fc, RAT2(ac, 1, 2),
+                RAT2(ac, 1, 3), RAT2(ac, 1, 4), RAT2(ac, 1, 5), RAT2(ac, 1, 6),
+                RAT2(ac, 1, 7), RAT2(ac, 1, 8), RAT2(ac, 1, 9), RAT2(ac, 1, 10),
+                RAT2(ac, 1, 11), RAT2(ac, 1, 12), RAT2(ac, 1, 13),
+                RAT2(ac, 1, 14), x, r, w1, q);
 }
 
-VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                       int *nzc, DataType *xin, DataType *xout, DataType *oPC,
-                       DataType *oPN, DataType *oPS, DataType *oPE,
-                       DataType *oPW, DataType *oPNE, DataType *oPNW,
-                       DataType *oPSE, DataType *oPSW, DataType *uPC,
-                       DataType *uPN, DataType *uPS, DataType *uPE,
-                       DataType *uPW, DataType *uPNE, DataType *uPNW,
-                       DataType *uPSE, DataType *uPSW, DataType *dPC,
-                       DataType *dPN, DataType *dPS, DataType *dPE,
-                       DataType *dPW, DataType *dPNE, DataType *dPNW,
-                       DataType *dPSE, DataType *dPSW, sycl::queue &q) {
+template <>
+void Vnmresid<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
+                        DataType *ac, DataType *cc, DataType *fc, DataType *x,
+                        DataType *r, DataType *w1, sycl::queue &q) {
+
+  int numdia;
+
+  // Do in oNe step ***
+  numdia = VAT(ipc, 11);
+  if (numdia == 7) {
+    Vnmresid7(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, w1, q);
+  } else if (numdia == 27) {
+    Vnmresid27(nx, ny, nz, ipc, rpc, ac, cc, fc, x, r, w1, q);
+  } else {
+    printf("Vnmresid: invalid stencil type given...\n");
+  }
+}
+
+template <>
+void Vrestrc2<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                        int *nzc, DataType *xin, DataType *xout, DataType *oPC,
+                        DataType *oPN, DataType *oPS, DataType *oPE,
+                        DataType *oPW, DataType *oPNE, DataType *oPNW,
+                        DataType *oPSE, DataType *oPSW, DataType *uPC,
+                        DataType *uPN, DataType *uPS, DataType *uPE,
+                        DataType *uPW, DataType *uPNE, DataType *uPNW,
+                        DataType *uPSE, DataType *uPSW, DataType *dPC,
+                        DataType *dPN, DataType *dPS, DataType *dPE,
+                        DataType *dPW, DataType *dPNE, DataType *dPNW,
+                        DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -742,7 +749,7 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   MAT3(dPSW, *nxc, *nyc, *nzc);
 
   // Verify correctness of the input boundary points
-  VfboundPMG00(nxf, nyf, nzf, xin, q);
+  // VfboundPMG00(nxf, nyf, nzf, xin, q);
 
   dimfac = VPOW(2.0, idimenshun);
 
@@ -793,37 +800,36 @@ VEXTERNC void Vrestrc2(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
       });
 
   // Verify correctness of the output boundary points
-  VfboundPMG00(nxc, nyc, nzc, xout, q);
+  // VfboundPMG00(nxc, nyc, nzc, xout, q);
 }
 
-VPUBLIC void VinterpPMG(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
-                        int *nzf, DataType *xin, DataType *xout, DataType *pc,
-                        sycl::queue &q) {
+template <>
+void Vrestrc<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                       int *nzc, DataType *xin, DataType *xout, DataType *pc,
+                       sycl::queue &q) {
 
   MAT2(pc, *nxc * *nyc * *nzc, 1);
 
-  VinterpPMG2(nxc, nyc, nzc, nxf, nyf, nzf, xin, xout, RAT2(pc, 1, 1),
-              RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
-              RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
-              RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12),
-              RAT2(pc, 1, 13), RAT2(pc, 1, 14), RAT2(pc, 1, 15),
-              RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
-              RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
-              RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24),
-              RAT2(pc, 1, 25), RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
+  Vrestrc2(nxf, nyf, nzf, nxc, nyc, nzc, xin, xout, RAT2(pc, 1, 1),
+           RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
+           RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
+           RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12), RAT2(pc, 1, 13),
+           RAT2(pc, 1, 14), RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17),
+           RAT2(pc, 1, 18), RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
+           RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25),
+           RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
 }
 
-VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
-                         int *nzf, DataType *xin, DataType *xout, DataType *oPC,
-                         DataType *oPN, DataType *oPS, DataType *oPE,
-                         DataType *oPW, DataType *oPNE, DataType *oPNW,
-                         DataType *oPSE, DataType *oPSW, DataType *uPC,
-                         DataType *uPN, DataType *uPS, DataType *uPE,
-                         DataType *uPW, DataType *uPNE, DataType *uPNW,
-                         DataType *uPSE, DataType *uPSW, DataType *dPC,
-                         DataType *dPN, DataType *dPS, DataType *dPE,
-                         DataType *dPW, DataType *dPNE, DataType *dPNW,
-                         DataType *dPSE, DataType *dPSW, sycl::queue &q) {
+template <>
+void VinterpPMG2<DataType>(
+    int *nxc, int *nyc, int *nzc, int *nxf, int *nyf, int *nzf, DataType *xin,
+    DataType *xout, DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
+    DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
+    DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
+    DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
+    DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE,
+    DataType *dPW, DataType *dPNE, DataType *dPNW, DataType *dPSE,
+    DataType *dPSW, sycl::queue &q) {
 
   MAT3(xin, *nxc, *nyc, *nzc);
   MAT3(xout, *nxf, *nyf, *nzf);
@@ -866,7 +872,7 @@ VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
    * *********************************************************************/
 
   // Verify correctness of the input boundary points ***
-  VfboundPMG00(nxc, nyc, nzc, xin, q);
+  // VfboundPMG00(nxc, nyc, nzc, xin, q);
 
   // Do it
 
@@ -962,17 +968,37 @@ VPUBLIC void VinterpPMG2(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
       });
 
   // Verify correctness of the output boundary points ***
-  VfboundPMG00(nxf, nyf, nzf, xout, q);
+  // VfboundPMG00(nxf, nyf, nzf, xout, q);
 }
 
-VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     DataType *xin, DataType *xout, sycl::queue &q) {
+template <>
+void VinterpPMG<DataType>(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
+                          int *nzf, DataType *xin, DataType *xout, DataType *pc,
+                          sycl::queue &q) {
+
+  MAT2(pc, *nxc * *nyc * *nzc, 1);
+
+  VinterpPMG2(nxc, nyc, nzc, nxf, nyf, nzf, xin, xout, RAT2(pc, 1, 1),
+              RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
+              RAT2(pc, 1, 6), RAT2(pc, 1, 7), RAT2(pc, 1, 8), RAT2(pc, 1, 9),
+              RAT2(pc, 1, 10), RAT2(pc, 1, 11), RAT2(pc, 1, 12),
+              RAT2(pc, 1, 13), RAT2(pc, 1, 14), RAT2(pc, 1, 15),
+              RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
+              RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21),
+              RAT2(pc, 1, 22), RAT2(pc, 1, 23), RAT2(pc, 1, 24),
+              RAT2(pc, 1, 25), RAT2(pc, 1, 26), RAT2(pc, 1, 27), q);
+}
+
+template <>
+void Vextrac<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
+                       int *nzc, DataType *xin, DataType *xout,
+                       sycl::queue &q) {
 
   MAT3(xin, *nxf, *nyf, *nzf);
   MAT3(xout, *nxc, *nyc, *nzc);
 
   // Verify correctness of the input boundary points
-  VfboundPMG00(nxf, nyf, nzf, xin, q);
+  // VfboundPMG00(nxf, nyf, nzf, xin, q);
 
   // Do it
   q.parallel_for(sycl::range<3>(*nxc - 2, *nyc - 2, *nzc - 2),
@@ -989,7 +1015,7 @@ VPUBLIC void Vextrac(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
                  });
 
   // Verify correctness of the output boundary points
-  VfboundPMG00(nxc, nyc, nzc, xout, q);
+  // VfboundPMG00(nxc, nyc, nzc, xout, q);
 }
 
 } // namespace pmgc

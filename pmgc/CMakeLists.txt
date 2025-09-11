@@ -14,13 +14,13 @@ set(SOURCES
     buildPd.cc
 #  cgd.cc
     gsd.cc
-  #  matvecd.cc
+    matvecd.cc
   #  mgcsd.cc
   #  mgdrvd.cc
   #  mgsubd.cc
   #  mikpckd.cc
     mlinpckd.cc
-    #mypdec.cc
+    mypdec.cc
     #   newtond.cc
     #   newdrvd.cc
     #   powerd.cc

@@ -70,10 +70,10 @@
 namespace pmgc {
 
 /// @todo  Remove dependencies on global variables
-extern DataType v1, v2, v3, conc1, conc2, conc3, vol, relSize;
-extern int nion;
-extern DataType charge[MAXIONS];
-extern DataType sconc[MAXIONS];
+// extern DataType v1, v2, v3, conc1, conc2, conc3, vol, relSize;
+// extern int nion;
+// extern DataType charge[MAXIONS];
+// extern DataType sconc[MAXIONS];
 
 #define Na 6.022045000e-04
 

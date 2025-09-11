@@ -53,38 +53,25 @@
  */
 
 #include "mypdec.h"
+#include "precision.h"
 
 namespace pmgc {
 
-DataType v1;
-DataType v2;
-DataType v3;
-DataType conc1;
-DataType conc2;
-DataType conc3;
-DataType vol;
-DataType relSize;
-int nion;
-DataType charge[MAXIONS];
-DataType sconc[MAXIONS];
+static DataType v1;
+static DataType v2;
+static DataType v3;
+static DataType conc1;
+static DataType conc2;
+static DataType conc3;
+static DataType vol;
+static DataType relSize;
+static int nion;
+static DataType charge[MAXIONS];
+static DataType sconc[MAXIONS];
 
-VPUBLIC void Vmypdefinitlpbe(int *tnion, DataType *tcharge, DataType *tsconc) {
-
-  int i;
-
-  nion = *tnion;
-  if (nion > MAXIONS) {
-    printf("Vmypde: Warning: Ignoring extra ion species\n");
-    nion = MAXIONS;
-  }
-
-  for (i = 1; i <= nion; i++) {
-    VAT(charge, i) = VAT(tcharge, i);
-    VAT(sconc, i) = VAT(tsconc, i);
-  }
-}
-
-VPUBLIC void Vmypdefinitnpbe(int *tnion, DataType *tcharge, DataType *tsconc) {
+template <>
+void Vmypdefinitlpbe<DataType>(int *tnion, DataType *tcharge,
+                               DataType *tsconc) {
 
   int i;
 
@@ -100,8 +87,27 @@ VPUBLIC void Vmypdefinitnpbe(int *tnion, DataType *tcharge, DataType *tsconc) {
   }
 }
 
-VPUBLIC void Vmypdefinitsmpbe(int *tnion, DataType *tcharge, DataType *tsconc,
-                              DataType *smvolume, DataType *smsize) {
+template <>
+void Vmypdefinitnpbe<DataType>(int *tnion, DataType *tcharge,
+                               DataType *tsconc) {
+
+  int i;
+
+  nion = *tnion;
+  if (nion > MAXIONS) {
+    printf("Vmypde: Warning: Ignoring extra ion species\n");
+    nion = MAXIONS;
+  }
+
+  for (i = 1; i <= nion; i++) {
+    VAT(charge, i) = VAT(tcharge, i);
+    VAT(sconc, i) = VAT(tsconc, i);
+  }
+}
+
+template <>
+void Vmypdefinitsmpbe<DataType>(int *tnion, DataType *tcharge, DataType *tsconc,
+                                DataType *smvolume, DataType *smsize) {
 
   int i;
 
@@ -127,18 +133,9 @@ VPUBLIC void Vmypdefinitsmpbe(int *tnion, DataType *tcharge, DataType *tsconc,
   relSize = *smsize;
 }
 
-VPUBLIC void Vc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                    int *ny, int *nz, int *ipkey) {
-
-  if (*ipkey == -2) {
-    Vc_vecsmpbe(coef, uin, uout, nx, ny, nz, ipkey);
-  } else {
-    Vc_vecpmg(coef, uin, uout, nx, ny, nz, ipkey);
-  }
-}
-
-VPUBLIC void Vc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                       int *ny, int *nz, int *ipkey) {
+template <>
+void Vc_vecpmg<DataType>(DataType *coef, DataType *uin, DataType *uout, int *nx,
+                         int *ny, int *nz, int *ipkey) {
 
   DataType zcf2; /// @todo  Document this function!
   DataType zu2;
@@ -214,8 +211,9 @@ VPUBLIC void Vc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
   }
 }
 
-VPUBLIC void Vc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                         int *ny, int *nz, int *ipkey) {
+template <>
+void Vc_vecsmpbe<DataType>(DataType *coef, DataType *uin, DataType *uout,
+                           int *nx, int *ny, int *nz, int *ipkey) {
 
   int ideg;
   DataType zcf2, zu2;
@@ -336,21 +334,20 @@ VPUBLIC void Vc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout, int *nx,
     printf("Vc_vecsmpbe: trapped exp overflows: %d\n", ichopped);
 }
 
-VPUBLIC void Vdc_vec(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                     int *ny, int *nz, int *ipkey) {
-
-  int i;
-  int n = *nx * *ny * *nz;
+template <>
+void Vc_vec<DataType>(DataType *coef, DataType *uin, DataType *uout, int *nx,
+                      int *ny, int *nz, int *ipkey) {
 
   if (*ipkey == -2) {
-    Vdc_vecsmpbe(coef, uin, uout, nx, ny, nz, ipkey);
+    Vc_vecsmpbe(coef, uin, uout, nx, ny, nz, ipkey);
   } else {
-    Vdc_vecpmg(coef, uin, uout, nx, ny, nz, ipkey);
+    Vc_vecpmg(coef, uin, uout, nx, ny, nz, ipkey);
   }
 }
 
-VPUBLIC void Vdc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
-                        int *ny, int *nz, int *ipkey) {
+template <>
+void Vdc_vecpmg<DataType>(DataType *coef, DataType *uin, DataType *uout,
+                          int *nx, int *ny, int *nz, int *ipkey) {
 
   int ideg, iion;
   DataType zcf2, zu2;
@@ -416,8 +413,9 @@ VPUBLIC void Vdc_vecpmg(DataType *coef, DataType *uin, DataType *uout, int *nx,
   }
 }
 
-VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout,
-                          int *nx, int *ny, int *nz, int *ipkey) {
+template <>
+void Vdc_vecsmpbe<DataType>(DataType *coef, DataType *uin, DataType *uout,
+                            int *nx, int *ny, int *nz, int *ipkey) {
 
   int ideg, iion;
   DataType zcf2, zu2;
@@ -530,4 +528,19 @@ VPUBLIC void Vdc_vecsmpbe(DataType *coef, DataType *uin, DataType *uout,
   if (ichopped > 0)
     printf("Vdc_vecsmpbe: trapped exp overflows: %d\n", ichopped);
 }
+
+template <>
+void Vdc_vec<DataType>(DataType *coef, DataType *uin, DataType *uout, int *nx,
+                       int *ny, int *nz, int *ipkey) {
+
+  int i;
+  int n = *nx * *ny * *nz;
+
+  if (*ipkey == -2) {
+    Vdc_vecsmpbe(coef, uin, uout, nx, ny, nz, ipkey);
+  } else {
+    Vdc_vecpmg(coef, uin, uout, nx, ny, nz, ipkey);
+  }
+}
+
 } // namespace pmgc

@@ -300,9 +300,9 @@ int main(int argc, char *argv[]) {
     auto &defect_r = lhs_domain2.get_domain();
     auto &init_guess = sol.get_domain();
 
-    //    cg_solver::PBE_Solver_CG cg_solver(Float<(DataType)1e-5>{},
-    //                                       sol.template get_domain<1>(),
-    //                                       values_op, offsets_op);
+    //  cg_solver::PBE_Solver_CG solver(Float<(DataType)1e-5>{},
+    //                                     sol.template get_domain<1>(),
+    //                                     values_op, offsets_op);
 
     Gauss_Seidel_PBE j_smoother(rhs_domain);
 
