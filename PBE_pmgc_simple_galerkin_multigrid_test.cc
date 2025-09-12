@@ -77,6 +77,10 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type<> domain) {
 
 int main(int argc, char *argv[]) {
 
+  constexpr DataType epsilon_p = 78.4;
+  constexpr DataType epsilon_r = 78.4;
+  constexpr DataType delta_epsilon = 0;
+
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
   using OffsetType = std::array<int, Dim>;
@@ -178,27 +182,28 @@ int main(int argc, char *argv[]) {
          })
         .wait();
 
-    auto &boundary_domain2 = sol2.template get_domain<nlev>();
-    q.parallel_for(
-         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
-         [=](sycl::id<2> I) {
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2, I[0], I[1], 0);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2, I[0], I[1],
-                                         std::get<2>(length) + 1);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2, 0, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2,
-                                         std::get<0>(length) + 1, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2, I[0], 0, I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain2, I[0],
-                                         std::get<1>(length) + 1, I[1]);
-         })
-        .wait();
+    //  auto &boundary_domain2 = sol2.template get_domain<nlev>();
+    //  q.parallel_for(
+    //       sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+    //       [=](sycl::id<2> I) {
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2, I[0], I[1], 0);
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2, I[0], I[1],
+    //                                       std::get<2>(length) + 1);
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2, 0, I[0], I[1]);
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2,
+    //                                       std::get<0>(length) + 1, I[0],
+    //                                       I[1]);
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2, I[0], 0, I[1]);
+    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
+    //                                       boundary_domain2, I[0],
+    //                                       std::get<1>(length) + 1, I[1]);
+    //       })
+    //      .wait();
 
     auto &epsilonuC_domain = epsilon_uC_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
@@ -426,6 +431,10 @@ int main(int argc, char *argv[]) {
     std::cout << "ny: " << ny << std::endl;
     std::cout << "nz: " << nz << std::endl;
 
+    std::cout << "nxc: " << nxc << std::endl;
+    std::cout << "nyc: " << nyc << std::endl;
+    std::cout << "nzc: " << nzc << std::endl;
+
     int i = 1;
 
     cycles::Gauss_Seidel_PBE j_smoother{sol};
@@ -471,17 +480,33 @@ int main(int argc, char *argv[]) {
                     epsilonuC_domain.values_buff, sol.get_domain().values_buff,
                     &smoothing_iters, q);
 
-      // Defect computation
-      // This computes -A, in this case
+      // std::cout << "The sol domain after the gsb is: " << std::endl;
+      // sol.get_domain().print_domain();
+
+      //   // Defect computation
+      //   // This computes -A, in this case
+      // std::cout << "Before the convolve the sol2 domain is: " << std::endl;
+      // sol2.get_domain().print_domain();
       convolution::PBE_Convolve(sol2.get_domain(), sol.get_domain(),
                                 kappa_.get_domain(), epsilon_domains, kappa_2,
                                 grid_step, epsilon_r, delta_epsilon);
 
-      // this needs to be add, because the convolve returns the negative
+      std::cout << "After the convolution the sol2 domain is: " << std::endl;
+
+      // sol2.get_domain().print_domain();
+
+      //   //   // this needs to be add, because the convolve returns the
+      //   negative
       add_domains(sol2.get_domain(), sol2.get_domain(),
                   rhs_domain.get_domain());
 
-      // Restriction
+      //   std::cout << "The right hand side domain is: " << std::endl;
+      //   rhs_domain.template get_domain<nlev>().print_domain();
+
+      //   std::cout << "After the addition the sol2 domain is: " << std::endl;
+      //   sol2.template get_domain<nlev>().print_domain();
+
+      //   // Restriction
       pmgc::Vrestrc2(&nx, &ny, &nz, &nxc, &nyc, &nzc,
                      sol2.get_domain().values_buff,
                      rhs_domain.template get_domain<nlev - 1>().values_buff,
@@ -513,10 +538,34 @@ int main(int argc, char *argv[]) {
                      dPSE.template get_domain<nlev - 1>().values_buff,
                      dPSW.template get_domain<nlev - 1>().values_buff, q);
 
-      int itmax = 100;
+      q.wait();
+      //   // rhs_domain.template get_domain<nlev - 1>().print_domain();
+
+      int itmax = 1000;
 
       q.memset(sol2.template get_domain<nlev - 1>().values_buff, 0,
-               sol2.template get_domain<nlev - 1>().num_values);
+               sol2.template get_domain<nlev - 1>().num_values *
+                   sizeof(DataType));
+
+      //   //  std::cout << "After setting coarse sol2 to zero: " << std::endl;
+      //   //  sol2.template get_domain<nlev - 1>().print_domain();
+
+      //   //  std::cout << "The epsilon maps are: " << std::endl;
+      //   //  epsilon_oC_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_oE_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_oN_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uC_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_oNE_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_oNW_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uE_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uW_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uN_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uS_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uNE_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uNW_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uSE_map.template get_domain<nlev - 1>().print_domain();
+      //   //  epsilon_uSW_map.template get_domain<nlev - 1>().print_domain();
+      //   //  std::cout << "End of epsilon maps" << std::endl;
 
       // Coarse grid
       pmgc::Vgsrb27x(
@@ -538,6 +587,15 @@ int main(int argc, char *argv[]) {
           epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
           epsilon_uSW_map.template get_domain<nlev - 1>().values_buff,
           sol2.template get_domain<nlev - 1>().values_buff, &itmax, q);
+
+      //  std::cout << "After the 27x Gauss-Seidel: " << std::endl;
+      //  sol2.template get_domain<nlev - 1>().print_domain();
+
+      q.memset(sol2.template get_domain<nlev>().values_buff, 0,
+               sol2.template get_domain<nlev>().num_values * sizeof(DataType));
+
+      //  std::cout << "Before the interpolate the sol2 is: " << std::endl;
+      //  sol2.template get_domain<nlev>().print_domain();
 
       pmgc::VinterpPMG2(&nxc, &nxc, &nxc, &nx, &ny, &nz,
                         sol2.get_domain<nlev - 1>().values_buff,
@@ -570,10 +628,13 @@ int main(int argc, char *argv[]) {
                         dPSE.template get_domain<nlev - 1>().values_buff,
                         dPSW.template get_domain<nlev - 1>().values_buff, q);
 
-      // Adding correction to the current guess
+      //  std::cout << "After the prolongation the domain is: " << std::endl;
+      //  sol2.template get_domain<nlev>().print_domain();
+
+      //   // Adding correction to the current guess
       add_domains(sol.get_domain(), sol2.get_domain(), sol.get_domain());
 
-      // Postsmoothing
+      //   // Postsmoothing
       pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
                     epsilon_oC_map.get_domain().values_buff,
                     kappa_domain.values_buff, rhs.values_buff,

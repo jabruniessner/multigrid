@@ -880,16 +880,14 @@ void VinterpPMG2<DataType>(
   //
   // Might have to reconsider indices
   q.parallel_for(
-      sycl::range<3>((*nxf - 2) / 2 + (*nxf) % 2, (*nyf - 2) / 2 + (*nyf) % 2,
-                     (*nzf - 2) / 2 + (*nyf) % 2),
-      [=](sycl::id<3> I) {
-        const int i = 2 * I[0] + 1;
-        const int j = 2 * I[1] + 1;
-        const int k = 2 * I[2] + 1;
-        const int kk = (k - 1) / 2 + 1;
-        const int jj = (j - 1) / 2 + 1;
+      sycl::range<3>(*nxc - 1, *nyc - 1, *nzc - 1), [=](sycl::id<3> I) {
+        const int ii = I[0] + 1;
+        const int jj = I[1] + 1;
+        const int kk = I[2] + 1;
 
-        const int ii = (i - 1) / 2 + 1;
+        const int i = 2 * ii - 1;
+        const int j = 2 * jj - 1;
+        const int k = 2 * kk - 1;
 
         /* ******************************************************** *
          * Type 1 -- Fine grid points common to a coarse grid point *
