@@ -9,7 +9,7 @@
 #echo "The number of input arguments is: $#"
 
 if [ $# -ne 1 ]; then
-  echo "script requires exactly one input parameter, omega"
+  echo "script requires exactly one input parameter, number of iterations"
   exit 1
 fi
 

@@ -58,6 +58,7 @@
 
 #include "mikpckd.h"
 #include "mypdec.h"
+#include "precision.h"
 
 #include <sycl/sycl.hpp>
 
@@ -114,6 +115,30 @@ void Vmatvec7_1s(int *nx,       ///< @todo:  Doc
 );
 
 template <typename DataType>
+DataType matveckernel7(int i, int j, int k, int *nx, int *ny, int *nz, int *ipc,
+                       DataType *rpc, DataType *oC, DataType *cc, DataType *oE,
+                       DataType *oN, DataType *uC, DataType *x) {
+
+  MAT3(oE, *nx, *ny, *nz);
+  MAT3(oN, *nx, *ny, *nz);
+  MAT3(uC, *nx, *ny, *nz);
+  MAT3(cc, *nx, *ny, *nz);
+  MAT3(oC, *nx, *ny, *nz);
+  MAT3(x, *nx, *ny, *nz);
+  MAT3(y, *nx, *ny, *nz);
+
+  // Do it
+
+  return -VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) -
+         VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) -
+         VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) -
+         VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) -
+         VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) -
+         VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) +
+         (VAT3(oC, i, j, k) + VAT3(cc, i, j, k)) * VAT3(x, i, j, k);
+}
+
+template <typename DataType>
 void Vmatvec27(int *nx,       ///< @todo:  Doc
                int *ny,       ///< @todo:  Doc
                int *nz,       ///< @todo:  Doc
@@ -151,6 +176,70 @@ void Vmatvec27_1s(int *nx,       ///< @todo:  Doc
                   DataType *y,
                   sycl::queue &q ///< @todo:  Doc
 );
+
+template <typename DataType>
+DataType matveckernel27(int i, int j, int k, int *nx, int *ny, int *nz,
+                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
+                        DataType *oE, DataType *oN, DataType *uC, DataType *oNE,
+                        DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+                        DataType *uS, DataType *uNE, DataType *uNW,
+                        DataType *uSE, DataType *uSW, DataType *x) {
+
+  MAT3(cc, *nx, *ny, *nz);
+  MAT3(x, *nx, *ny, *nz);
+  MAT3(y, *nx, *ny, *nz);
+
+  MAT3(oC, *nx, *ny, *nz);
+  MAT3(oE, *nx, *ny, *nz);
+  MAT3(oN, *nx, *ny, *nz);
+  MAT3(oNE, *nx, *ny, *nz);
+  MAT3(oNW, *nx, *ny, *nz);
+
+  MAT3(uC, *nx, *ny, *nz);
+  MAT3(uE, *nx, *ny, *nz);
+  MAT3(uW, *nx, *ny, *nz);
+  MAT3(uN, *nx, *ny, *nz);
+  MAT3(uS, *nx, *ny, *nz);
+  MAT3(uNE, *nx, *ny, *nz);
+  MAT3(uNW, *nx, *ny, *nz);
+  MAT3(uSE, *nx, *ny, *nz);
+  MAT3(uSW, *nx, *ny, *nz);
+
+  // Do it
+
+  const auto tmpO = -VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) -
+                    VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) -
+                    VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) -
+                    VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) -
+                    VAT3(oNE, i, j, k) * VAT3(x, i + 1, j + 1, k) -
+                    VAT3(oNW, i, j, k) * VAT3(x, i - 1, j + 1, k) -
+                    VAT3(oNW, i + 1, j - 1, k) * VAT3(x, i + 1, j - 1, k) -
+                    VAT3(oNE, i - 1, j - 1, k) * VAT3(x, i - 1, j - 1, k);
+
+  const auto tmpU = -VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1) -
+                    VAT3(uN, i, j, k) * VAT3(x, i, j + 1, k + 1) -
+                    VAT3(uS, i, j, k) * VAT3(x, i, j - 1, k + 1) -
+                    VAT3(uE, i, j, k) * VAT3(x, i + 1, j, k + 1) -
+                    VAT3(uW, i, j, k) * VAT3(x, i - 1, j, k + 1) -
+                    VAT3(uNE, i, j, k) * VAT3(x, i + 1, j + 1, k + 1) -
+                    VAT3(uNW, i, j, k) * VAT3(x, i - 1, j + 1, k + 1) -
+                    VAT3(uSE, i, j, k) * VAT3(x, i + 1, j - 1, k + 1) -
+                    VAT3(uSW, i, j, k) * VAT3(x, i - 1, j - 1, k + 1);
+
+  const auto tmpD =
+      -VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) -
+      VAT3(uS, i, j + 1, k - 1) * VAT3(x, i, j + 1, k - 1) -
+      VAT3(uN, i, j - 1, k - 1) * VAT3(x, i, j - 1, k - 1) -
+      VAT3(uW, i + 1, j, k - 1) * VAT3(x, i + 1, j, k - 1) -
+      VAT3(uE, i - 1, j, k - 1) * VAT3(x, i - 1, j, k - 1) -
+      VAT3(uSW, i + 1, j + 1, k - 1) * VAT3(x, i + 1, j + 1, k - 1) -
+      VAT3(uSE, i - 1, j + 1, k - 1) * VAT3(x, i - 1, j + 1, k - 1) -
+      VAT3(uNW, i + 1, j - 1, k - 1) * VAT3(x, i + 1, j - 1, k - 1) -
+      VAT3(uNE, i - 1, j - 1, k - 1) * VAT3(x, i - 1, j - 1, k - 1);
+
+  return tmpO + tmpU + tmpD +
+         (VAT3(oC, i, j, k) + VAT3(cc, i, j, k)) * VAT3(x, i, j, k);
+}
 
 /** @brief   Break the matrix data-structure into diagonals and
  *           then call the matrix-vector routine.
