@@ -183,6 +183,8 @@ void VbuildPb_op7<DataType>(
 
   // DataType won, half, quarter, eighth;
 
+  std::cout << "Using operator based prolongation" << std::endl;
+
   MAT3(oC, *nxf, *nyf, *nzf);
   MAT3(oE, *nxf, *nyf, *nzf);
   MAT3(oN, *nxf, *nyf, *nzf);
@@ -219,9 +221,9 @@ void VbuildPb_op7<DataType>(
 
   // interpolation stencil ***
   constexpr DataType won = 1.0;
-  constexpr DataType half = 1.0 / 2.0;
-  constexpr DataType quarter = 1.0 / 4.0;
-  constexpr DataType eighth = 1.0 / 8.0;
+  // constexpr DataType half = 1.0 / 2.0;
+  // constexpr DataType quarter = 1.0 / 4.0;
+  // constexpr DataType eighth = 1.0 / 8.0;
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 

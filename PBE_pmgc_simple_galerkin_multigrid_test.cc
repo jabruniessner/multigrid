@@ -24,7 +24,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 1;
+constexpr std::size_t base_length = 8;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
@@ -330,36 +330,37 @@ int main(int argc, char *argv[]) {
        });
      }).wait();
 
-    pmgc::VbuildPb_trilin(&nx, &ny, &nz, &nxc, &nyc, &nzc,
-                          oPC.template get_domain<nlev - 1>().values_buff,
-                          oPN.template get_domain<nlev - 1>().values_buff,
-                          oPS.template get_domain<nlev - 1>().values_buff,
-                          oPE.template get_domain<nlev - 1>().values_buff,
-                          oPW.template get_domain<nlev - 1>().values_buff,
-                          oPNE.template get_domain<nlev - 1>().values_buff,
-                          oPNW.template get_domain<nlev - 1>().values_buff,
-                          oPSE.template get_domain<nlev - 1>().values_buff,
-                          oPSW.template get_domain<nlev - 1>().values_buff,
-                          uPC.template get_domain<nlev - 1>().values_buff,
-                          uPN.template get_domain<nlev - 1>().values_buff,
-                          uPS.template get_domain<nlev - 1>().values_buff,
-                          uPE.template get_domain<nlev - 1>().values_buff,
-                          uPW.template get_domain<nlev - 1>().values_buff,
-                          uPNE.template get_domain<nlev - 1>().values_buff,
-                          uPNW.template get_domain<nlev - 1>().values_buff,
-                          uPSE.template get_domain<nlev - 1>().values_buff,
-                          uPSW.template get_domain<nlev - 1>().values_buff,
-                          dPC.template get_domain<nlev - 1>().values_buff,
-                          dPN.template get_domain<nlev - 1>().values_buff,
-                          dPS.template get_domain<nlev - 1>().values_buff,
-                          dPE.template get_domain<nlev - 1>().values_buff,
-                          dPW.template get_domain<nlev - 1>().values_buff,
-                          dPNE.template get_domain<nlev - 1>().values_buff,
-                          dPNW.template get_domain<nlev - 1>().values_buff,
-                          dPSE.template get_domain<nlev - 1>().values_buff,
-                          dPSW.template get_domain<nlev - 1>().values_buff,
-                          (DataType *)nullptr, (DataType *)nullptr,
-                          (DataType *)nullptr, q);
+    pmgc::VbuildPb_op7(
+        &nx, &ny, &nz, &nxc, &nyc, &nzc, (int *)nullptr, (DataType *)nullptr,
+        epsilonc_domain.values_buff, epsilonoE_domain.values_buff,
+        epsilonoN_domain.values_buff, epsilonuC_domain.values_buff,
+        oPC.template get_domain<nlev - 1>().values_buff,
+        oPN.template get_domain<nlev - 1>().values_buff,
+        oPS.template get_domain<nlev - 1>().values_buff,
+        oPE.template get_domain<nlev - 1>().values_buff,
+        oPW.template get_domain<nlev - 1>().values_buff,
+        oPNE.template get_domain<nlev - 1>().values_buff,
+        oPNW.template get_domain<nlev - 1>().values_buff,
+        oPSE.template get_domain<nlev - 1>().values_buff,
+        oPSW.template get_domain<nlev - 1>().values_buff,
+        uPC.template get_domain<nlev - 1>().values_buff,
+        uPN.template get_domain<nlev - 1>().values_buff,
+        uPS.template get_domain<nlev - 1>().values_buff,
+        uPE.template get_domain<nlev - 1>().values_buff,
+        uPW.template get_domain<nlev - 1>().values_buff,
+        uPNE.template get_domain<nlev - 1>().values_buff,
+        uPNW.template get_domain<nlev - 1>().values_buff,
+        uPSE.template get_domain<nlev - 1>().values_buff,
+        uPSW.template get_domain<nlev - 1>().values_buff,
+        dPC.template get_domain<nlev - 1>().values_buff,
+        dPN.template get_domain<nlev - 1>().values_buff,
+        dPS.template get_domain<nlev - 1>().values_buff,
+        dPE.template get_domain<nlev - 1>().values_buff,
+        dPW.template get_domain<nlev - 1>().values_buff,
+        dPNE.template get_domain<nlev - 1>().values_buff,
+        dPNW.template get_domain<nlev - 1>().values_buff,
+        dPSE.template get_domain<nlev - 1>().values_buff,
+        dPSW.template get_domain<nlev - 1>().values_buff, q);
 
     pmgc::VbuildG_7(&nx, &ny, &nz, &nxc, &nyc, &nzc,
                     oPC.template get_domain<nlev - 1>().values_buff,
@@ -470,8 +471,8 @@ int main(int argc, char *argv[]) {
                     epsilonuC_domain.values_buff, sol.get_domain().values_buff,
                     &smoothing_iters, q);
 
-      std::cout << "The sol domain after the gsb is: " << std::endl;
-      sol.get_domain().print_domain();
+      //  std::cout << "The sol domain after the gsb is: " << std::endl;
+      //  sol.get_domain().print_domain();
 
       auto *values_buff = sol.get_domain().values_buff;
 
