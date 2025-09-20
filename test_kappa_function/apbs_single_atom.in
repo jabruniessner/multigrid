@@ -4,14 +4,15 @@ end
 
 elec name viz
 mg-manual
-dime 33 33 33
-grid .5 .5 .5
+dime 9 9 9
+grid 2 2 2
+nlev 2
 gcent  mol 1
 mol 1
 lpbe
 bcfl mdh
-ion charge 1 conc 0.15 radius 1.500
-ion charge -1 conc 0.15 radius 1.500
+ion charge 1 conc 0.0 radius 1.500
+ion charge -1 conc 0.0 radius 1.500
 pdie 4.0
 sdie 78.4
 chgm spl0

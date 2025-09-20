@@ -70,6 +70,8 @@ void VbuildPb_trilin<DataType>(
     DataType *dPNW, DataType *dPSE, DataType *dPSW, DataType *xf, DataType *yf,
     DataType *zf, sycl::queue &q) {
 
+  std::cout << "Using trilinear interpolation" << std::endl;
+
   // int i, j, k;
 
   /// @todo Document this function

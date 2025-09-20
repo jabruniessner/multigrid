@@ -6,6 +6,7 @@
 #include "cycles.h"
 #include "dot_finder.h"
 #include "fileio.h"
+#include "hipSYCL/sycl/info/device.hpp"
 #include "level_transition.h"
 #include "pmgc/buildGd.h"
 #include "pmgc/buildPd.h"
@@ -15,6 +16,7 @@
 #include <array>
 #include <cstddef>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace cycles;
@@ -22,7 +24,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 8;
+constexpr std::size_t base_length = 1;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0.15;
@@ -38,6 +40,13 @@ constexpr DataType delta_epsilon =
 template <std::size_t nlev = nlev>
 using Domain_Type =
     Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
+
+template <std::size_t N>
+using MemFnPtrd_type = decltype(&Domain_Type<nlev>::template get_domain<N>);
+
+template <std::size_t N>
+using d_type = std::remove_reference_t<
+    std::invoke_result_t<MemFnPtrd_type<N>, Domain_Type<nlev>>>;
 
 using Domain_Type_upper = decltype(Domain_Type<>::domain_t_v)::domain_t;
 
@@ -77,9 +86,9 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type<> domain) {
 
 int main(int argc, char *argv[]) {
 
-  constexpr DataType epsilon_p = 78.4;
-  constexpr DataType epsilon_r = 78.4;
-  constexpr DataType delta_epsilon = 0;
+  //  constexpr DataType epsilon_p = 78.4;
+  //  constexpr DataType epsilon_r = 78.4;
+  // constexpr DataType delta_epsilon = 0;
 
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
@@ -100,6 +109,11 @@ int main(int argc, char *argv[]) {
 
   sycl::queue q{selector,
                 sycl::property_list{sycl::property::queue::in_order{}}};
+
+  auto dev = q.get_device();
+
+  std::cout << "Running on " << dev.get_info<sycl::info::device::name>()
+            << std::endl;
 
   std::string filename_in{argv[1]};
   std::string filename_out{argv[2]};
@@ -144,6 +158,8 @@ int main(int argc, char *argv[]) {
       uPW(q), uPNE(q), uPNW(q), uPSE(q), uPSW(q), dPC(q), dPN(q), dPS(q),
       dPE(q), dPW(q), dPNE(q), dPNW(q), dPSE(q), dPSW(q);
 
+  d_type<nlev> boundary_domain(Paddings::PERIODIC, q, 1);
+
   q.fill(epsilon_uC_map.get_domain().values_buff,
          (DataType)epsilon_r / (grid_step * grid_step),
          epsilon_uC_map.get_domain().num_values);
@@ -160,7 +176,7 @@ int main(int argc, char *argv[]) {
   constexpr auto length_coarse = Domain_Type<nlev - 1>::length;
 
   {
-    auto &boundary_domain = sol.template get_domain<nlev>();
+    // auto &boundary_domain = sol.template get_domain<nlev>();
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
@@ -181,29 +197,6 @@ int main(int argc, char *argv[]) {
                                          std::get<1>(length) + 1, I[1]);
          })
         .wait();
-
-    //  auto &boundary_domain2 = sol2.template get_domain<nlev>();
-    //  q.parallel_for(
-    //       sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
-    //       [=](sycl::id<2> I) {
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2, I[0], I[1], 0);
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2, I[0], I[1],
-    //                                       std::get<2>(length) + 1);
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2, 0, I[0], I[1]);
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2,
-    //                                       std::get<0>(length) + 1, I[0],
-    //                                       I[1]);
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2, I[0], 0, I[1]);
-    //         Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-    //                                       boundary_domain2, I[0],
-    //                                       std::get<1>(length) + 1, I[1]);
-    //       })
-    //      .wait();
 
     auto &epsilonuC_domain = epsilon_uC_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
@@ -337,39 +330,36 @@ int main(int argc, char *argv[]) {
        });
      }).wait();
 
-    pmgc::VbuildPb_op7(&nx, &ny, &nz, &nxc, &nyc, &nzc, (int *)nullptr,
-                       (DataType *)nullptr,
-                       epsilon_oC_map.get_domain().values_buff,
-                       epsilon_oE_map.get_domain().values_buff,
-                       epsilon_oN_map.get_domain().values_buff,
-                       epsilon_uC_map.get_domain().values_buff,
-                       oPC.template get_domain<nlev - 1>().values_buff,
-                       oPN.template get_domain<nlev - 1>().values_buff,
-                       oPS.template get_domain<nlev - 1>().values_buff,
-                       oPE.template get_domain<nlev - 1>().values_buff,
-                       oPW.template get_domain<nlev - 1>().values_buff,
-                       oPNE.template get_domain<nlev - 1>().values_buff,
-                       oPNW.template get_domain<nlev - 1>().values_buff,
-                       oPSE.template get_domain<nlev - 1>().values_buff,
-                       oPSW.template get_domain<nlev - 1>().values_buff,
-                       uPC.template get_domain<nlev - 1>().values_buff,
-                       uPN.template get_domain<nlev - 1>().values_buff,
-                       uPS.template get_domain<nlev - 1>().values_buff,
-                       uPE.template get_domain<nlev - 1>().values_buff,
-                       uPW.template get_domain<nlev - 1>().values_buff,
-                       uPNE.template get_domain<nlev - 1>().values_buff,
-                       uPNW.template get_domain<nlev - 1>().values_buff,
-                       uPSE.template get_domain<nlev - 1>().values_buff,
-                       uPSW.template get_domain<nlev - 1>().values_buff,
-                       dPC.template get_domain<nlev - 1>().values_buff,
-                       dPN.template get_domain<nlev - 1>().values_buff,
-                       dPS.template get_domain<nlev - 1>().values_buff,
-                       dPE.template get_domain<nlev - 1>().values_buff,
-                       dPW.template get_domain<nlev - 1>().values_buff,
-                       dPNE.template get_domain<nlev - 1>().values_buff,
-                       dPNW.template get_domain<nlev - 1>().values_buff,
-                       dPSE.template get_domain<nlev - 1>().values_buff,
-                       dPSW.template get_domain<nlev - 1>().values_buff, q);
+    pmgc::VbuildPb_trilin(&nx, &ny, &nz, &nxc, &nyc, &nzc,
+                          oPC.template get_domain<nlev - 1>().values_buff,
+                          oPN.template get_domain<nlev - 1>().values_buff,
+                          oPS.template get_domain<nlev - 1>().values_buff,
+                          oPE.template get_domain<nlev - 1>().values_buff,
+                          oPW.template get_domain<nlev - 1>().values_buff,
+                          oPNE.template get_domain<nlev - 1>().values_buff,
+                          oPNW.template get_domain<nlev - 1>().values_buff,
+                          oPSE.template get_domain<nlev - 1>().values_buff,
+                          oPSW.template get_domain<nlev - 1>().values_buff,
+                          uPC.template get_domain<nlev - 1>().values_buff,
+                          uPN.template get_domain<nlev - 1>().values_buff,
+                          uPS.template get_domain<nlev - 1>().values_buff,
+                          uPE.template get_domain<nlev - 1>().values_buff,
+                          uPW.template get_domain<nlev - 1>().values_buff,
+                          uPNE.template get_domain<nlev - 1>().values_buff,
+                          uPNW.template get_domain<nlev - 1>().values_buff,
+                          uPSE.template get_domain<nlev - 1>().values_buff,
+                          uPSW.template get_domain<nlev - 1>().values_buff,
+                          dPC.template get_domain<nlev - 1>().values_buff,
+                          dPN.template get_domain<nlev - 1>().values_buff,
+                          dPS.template get_domain<nlev - 1>().values_buff,
+                          dPE.template get_domain<nlev - 1>().values_buff,
+                          dPW.template get_domain<nlev - 1>().values_buff,
+                          dPNE.template get_domain<nlev - 1>().values_buff,
+                          dPNW.template get_domain<nlev - 1>().values_buff,
+                          dPSE.template get_domain<nlev - 1>().values_buff,
+                          dPSW.template get_domain<nlev - 1>().values_buff,
+                          (DataType *)nullptr, (DataType *)nullptr,
+                          (DataType *)nullptr, q);
 
     pmgc::VbuildG_7(&nx, &ny, &nz, &nxc, &nyc, &nzc,
                     oPC.template get_domain<nlev - 1>().values_buff,
@@ -446,7 +436,7 @@ int main(int argc, char *argv[]) {
     std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
                       std::get<2>(length)>,
                Dim>
-        epsilon_domains{epsilonuC_domain, epsilonoN_domain, epsilonoE_domain};
+        epsilon_domains{epsilonx2_domain, epsilony2_domain, epsilonz2_domain};
 
     for (int i = 0; i < num_iters + 1; i++) {
 
@@ -480,8 +470,10 @@ int main(int argc, char *argv[]) {
                     epsilonuC_domain.values_buff, sol.get_domain().values_buff,
                     &smoothing_iters, q);
 
-      // std::cout << "The sol domain after the gsb is: " << std::endl;
-      // sol.get_domain().print_domain();
+      std::cout << "The sol domain after the gsb is: " << std::endl;
+      sol.get_domain().print_domain();
+
+      auto *values_buff = sol.get_domain().values_buff;
 
       //   // Defect computation
       //   // This computes -A, in this case
