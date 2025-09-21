@@ -15,6 +15,7 @@
 #include "scientific_quantities.h"
 #include <array>
 #include <cstddef>
+#include <fstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -28,7 +29,7 @@ constexpr std::size_t nlev = 2u;
 constexpr std::size_t base_length = 8;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
-constexpr DataType ionic_strength = 0.15;
+constexpr DataType ionic_strength = 0;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
@@ -698,6 +699,10 @@ int main(int argc, char *argv[]) {
                     &smoothing_iters, q);
     }
   }
+
+  std::ofstream outfile{"single_atom_potential.dx"};
+
+  sol.get_domain().print_dx_to_stream(outfile, x_min, y_min, z_min, box_length);
 
   return 0;
 }

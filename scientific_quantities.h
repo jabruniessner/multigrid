@@ -16,7 +16,11 @@ constexpr DataType epsilon_p = 4.0; // 4.0;
 constexpr double n_a = 6.0221408e23;
 
 constexpr double const_sqrt(double x, double guess = 1.0) {
-  return std::abs(guess * guess - x) < x * 1e-13
+
+  if (x == 0)
+    return 0;
+
+  return std::abs(guess * guess - x) <= x * 1e-13
              ? guess
              : const_sqrt(x, (guess + x / guess) / 2);
 }
