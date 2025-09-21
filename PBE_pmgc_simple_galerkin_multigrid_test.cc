@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 using namespace cycles;
@@ -82,6 +83,46 @@ template <std::size_t level = nlev> void coarsen_domains(Domain_Type<> domain) {
     level_transition::coarsening(dest, src, values, offsets);
     coarsen_domains<level - 1>(domain);
   }
+}
+
+template <Dimension Dim, Length... strides_all, typename... domains,
+          std::size_t... Directions>
+void compute_center_domain(std::index_sequence<Directions...>,
+                           domain::Domain<Dim, strides_all...> &center_domain,
+                           domains &...other_domains) {
+  static_assert(
+      (std::is_same_v<domain::Domain<Dim, strides_all...>, domains> && ...),
+      "One of the other domains is not of the right type");
+
+  static_assert(sizeof...(Directions) == sizeof...(other_domains));
+
+  center_domain.q.parallel_for(
+      sycl::range<Dim>(strides_all...), [=](sycl::id<Dim> I) {
+        ((I[Directions] += center_domain.padding_width), ...);
+
+        auto domain_offset = [=](auto domain, int dir) {
+          auto I2 = I;
+          I2[dir] -= 1;
+          return domain(I2[Directions]...);
+        };
+
+        auto domain_no_offset = [=](auto domain, int dir) {
+          return (domain(I[Directions]...));
+        };
+
+        center_domain(I[Directions]...) = 0;
+        center_domain(I[Directions]...) =
+            ((domain_no_offset(other_domains, Directions) +
+              domain_offset(other_domains, Directions)) +
+             ...);
+      });
+}
+
+template <Dimension Dim, Length... strides_all, typename... domains>
+void compute_center_domain(domain::Domain<Dim, strides_all...> &center_domain,
+                           domains &...other_domains) {
+  compute_center_domain(std::make_index_sequence<Dim>{}, center_domain,
+                        other_domains...);
 }
 
 int main(int argc, char *argv[]) {
@@ -158,8 +199,6 @@ int main(int argc, char *argv[]) {
       uPW(q), uPNE(q), uPNW(q), uPSE(q), uPSW(q), dPC(q), dPN(q), dPS(q),
       dPE(q), dPW(q), dPNE(q), dPNW(q), dPSE(q), dPSW(q);
 
-  d_type<nlev> boundary_domain(Paddings::PERIODIC, q, 1);
-
   q.fill(epsilon_uC_map.get_domain().values_buff,
          (DataType)epsilon_r / (grid_step * grid_step),
          epsilon_uC_map.get_domain().num_values);
@@ -176,7 +215,7 @@ int main(int argc, char *argv[]) {
   constexpr auto length_coarse = Domain_Type<nlev - 1>::length;
 
   {
-    // auto &boundary_domain = sol.template get_domain<nlev>();
+    auto &boundary_domain = sol.template get_domain<nlev>();
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
@@ -266,16 +305,21 @@ int main(int argc, char *argv[]) {
     int nyc = std::get<1>(length_coarse) + 2;
     int nzc = std::get<2>(length_coarse) + 2;
 
+    // This is the problematic position
+
     auto &epsilonc_domain = epsilon_oC_map.template get_domain<nlev>();
-    q.parallel_for(sycl::range<3>(nx, ny, nz), [=](sycl::id<3> I) {
-      epsilonc_domain(I[0], I[1], I[2]) =
-          epsilonuC_domain(I[0], I[1], I[2]) +
-          epsilonoN_domain(I[0], I[1], I[2]) +
-          epsilonoE_domain(I[0], I[1], I[2]) +
-          epsilonuC_domain(I[0] - 1, I[1], I[2]) +
-          epsilonoN_domain(I[0], I[1] - 1, I[2]) +
-          epsilonoE_domain(I[0], I[1], I[2] - 1);
-    });
+    // q.parallel_for(sycl::range<3>(nx, ny, nz), [=](sycl::id<3> I) {
+    //   epsilonc_domain(I[0], I[1], I[2]) =
+    //       epsilonuC_domain(I[0], I[1], I[2]) +
+    //       epsilonoN_domain(I[0], I[1], I[2]) +
+    //       epsilonoE_domain(I[0], I[1], I[2]) +
+    //       epsilonuC_domain(I[0] - 1, I[1], I[2]) +
+    //       epsilonoN_domain(I[0], I[1] - 1, I[2]) +
+    //       epsilonoE_domain(I[0], I[1], I[2] - 1);
+    // });
+
+    compute_center_domain(epsilonc_domain, epsilonuC_domain, epsilonoN_domain,
+                          epsilonoE_domain);
 
     q.wait();
 
@@ -426,7 +470,7 @@ int main(int argc, char *argv[]) {
     std::cout << "nyc: " << nyc << std::endl;
     std::cout << "nzc: " << nzc << std::endl;
 
-    int i = 1;
+    //  int i = 1;
 
     cycles::Gauss_Seidel_PBE j_smoother{sol};
     //  auto *a = &sol;
@@ -478,7 +522,8 @@ int main(int argc, char *argv[]) {
 
       //   // Defect computation
       //   // This computes -A, in this case
-      // std::cout << "Before the convolve the sol2 domain is: " << std::endl;
+      // std::cout << "Before the convolve the sol2 domain is: " <<
+      // std::endl;
       // sol2.get_domain().print_domain();
       convolution::PBE_Convolve(sol2.get_domain(), sol.get_domain(),
                                 kappa_.get_domain(), epsilon_domains, kappa_2,
@@ -496,7 +541,8 @@ int main(int argc, char *argv[]) {
       //   std::cout << "The right hand side domain is: " << std::endl;
       //   rhs_domain.template get_domain<nlev>().print_domain();
 
-      //   std::cout << "After the addition the sol2 domain is: " << std::endl;
+      //   std::cout << "After the addition the sol2 domain is: " <<
+      // std::endl;
       //   sol2.template get_domain<nlev>().print_domain();
 
       //   // Restriction
@@ -540,25 +586,40 @@ int main(int argc, char *argv[]) {
                sol2.template get_domain<nlev - 1>().num_values *
                    sizeof(DataType));
 
-      //   //  std::cout << "After setting coarse sol2 to zero: " << std::endl;
-      //   //  sol2.template get_domain<nlev - 1>().print_domain();
+      //  //   //  std::cout << "After setting coarse sol2 to zero: " <<
+      //  std::endl;
+      //  //   //  sol2.template get_domain<nlev - 1>().print_domain();
 
-      //   //  std::cout << "The epsilon maps are: " << std::endl;
-      //   //  epsilon_oC_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_oE_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_oN_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uC_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_oNE_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_oNW_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uE_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uW_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uN_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uS_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uNE_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uNW_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uSE_map.template get_domain<nlev - 1>().print_domain();
-      //   //  epsilon_uSW_map.template get_domain<nlev - 1>().print_domain();
-      //   //  std::cout << "End of epsilon maps" << std::endl;
+      //  //   //  std::cout << "The epsilon maps are: " << std::endl;
+      //  //   //  epsilon_oC_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_oE_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_oN_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uC_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_oNE_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_oNW_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uE_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uW_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uN_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uS_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uNE_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uNW_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uSE_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  epsilon_uSW_map.template get_domain<nlev -
+      //  1>().print_domain();
+      //  //   //  std::cout << "End of epsilon maps" << std::endl;
 
       // Coarse grid
       pmgc::Vgsrb27x(
@@ -587,7 +648,8 @@ int main(int argc, char *argv[]) {
       q.memset(sol2.template get_domain<nlev>().values_buff, 0,
                sol2.template get_domain<nlev>().num_values * sizeof(DataType));
 
-      //  std::cout << "Before the interpolate the sol2 is: " << std::endl;
+      //  std::cout << "Before the interpolate the sol2 is: " <<
+      // std::endl;
       //  sol2.template get_domain<nlev>().print_domain();
 
       pmgc::VinterpPMG2(&nxc, &nxc, &nxc, &nx, &ny, &nz,
@@ -621,8 +683,8 @@ int main(int argc, char *argv[]) {
                         dPSE.template get_domain<nlev - 1>().values_buff,
                         dPSW.template get_domain<nlev - 1>().values_buff, q);
 
-      //  std::cout << "After the prolongation the domain is: " << std::endl;
-      //  sol2.template get_domain<nlev>().print_domain();
+      // std::cout << "After the prolongation the domain is: " << std::endl;
+      //   sol2.template get_domain<nlev>().print_domain();
 
       //   // Adding correction to the current guess
       add_domains(sol.get_domain(), sol2.get_domain(), sol.get_domain());
