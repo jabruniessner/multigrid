@@ -48,10 +48,18 @@ struct Multigrid_domain_t
         .set_value(val, i...);
   }
 
-  template <std::size_t lev = nlev>
+  template <std::size_t lev = nlev, std::size_t dummy = 0>
   decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
                               base_length...>::domain) &
   get_domain() {
+    return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                              base_length...>::domain;
+  }
+
+  template <std::size_t lev = nlev>
+  const decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                                    base_length...>::domain) &
+  get_domain() const {
     return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
                               base_length...>::domain;
   }

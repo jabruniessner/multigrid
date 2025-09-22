@@ -26,7 +26,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 8;
+constexpr std::size_t base_length = 1;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0;
@@ -44,7 +44,7 @@ using Domain_Type =
     Multigrid_domain<Dim, nlev, base_length, base_length, base_length>;
 
 template <std::size_t N>
-using MemFnPtrd_type = decltype(&Domain_Type<nlev>::template get_domain<N>);
+using MemFnPtrd_type = decltype(&Domain_Type<nlev>::template get_domain<N, 0>);
 
 template <std::size_t N>
 using d_type = std::remove_reference_t<
@@ -128,9 +128,9 @@ void compute_center_domain(domain::Domain<Dim, strides_all...> &center_domain,
 
 int main(int argc, char *argv[]) {
 
-  //  constexpr DataType epsilon_p = 78.4;
-  //  constexpr DataType epsilon_r = 78.4;
-  // constexpr DataType delta_epsilon = 0;
+  constexpr DataType epsilon_p = 1.0;
+  constexpr DataType epsilon_r = 1.0;
+  constexpr DataType delta_epsilon = 0;
 
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
@@ -199,6 +199,8 @@ int main(int argc, char *argv[]) {
       oPNE(q), oPNW(q), oPSE(q), oPSW(q), uPC(q), uPN(q), uPS(q), uPE(q),
       uPW(q), uPNE(q), uPNW(q), uPSE(q), uPSW(q), dPC(q), dPN(q), dPS(q),
       dPE(q), dPW(q), dPNE(q), dPNW(q), dPSE(q), dPSW(q);
+
+  // d_type<nlev> boundary_domain(Paddings::PERIODIC, q, 1);
 
   q.fill(epsilon_uC_map.get_domain().values_buff,
          (DataType)epsilon_r / (grid_step * grid_step),
@@ -309,16 +311,6 @@ int main(int argc, char *argv[]) {
     // This is the problematic position
 
     auto &epsilonc_domain = epsilon_oC_map.template get_domain<nlev>();
-    // q.parallel_for(sycl::range<3>(nx, ny, nz), [=](sycl::id<3> I) {
-    //   epsilonc_domain(I[0], I[1], I[2]) =
-    //       epsilonuC_domain(I[0], I[1], I[2]) +
-    //       epsilonoN_domain(I[0], I[1], I[2]) +
-    //       epsilonoE_domain(I[0], I[1], I[2]) +
-    //       epsilonuC_domain(I[0] - 1, I[1], I[2]) +
-    //       epsilonoN_domain(I[0], I[1] - 1, I[2]) +
-    //       epsilonoE_domain(I[0], I[1], I[2] - 1);
-    // });
-
     compute_center_domain(epsilonc_domain, epsilonuC_domain, epsilonoN_domain,
                           epsilonoE_domain);
 
@@ -362,6 +354,17 @@ int main(int argc, char *argv[]) {
     //                       : kappa_domain2.values_buff[I] = 1;
     //                 })
     //      .wait();
+
+    std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
+                      std::get<2>(length)>,
+               Dim>
+        epsilon_domains{epsilonx2_domain, epsilony2_domain, epsilonz2_domain};
+
+    //  convolution::PBE_Convolve(rhs_domain.get_domain(), boundary_domain,
+    //                            kappa_.get_domain(), epsilon_domains, kappa_2,
+    //                            grid_step, epsilon_r, delta_epsilon);
+
+    rhs_domain.get_domain().print_domain();
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
 
@@ -477,19 +480,43 @@ int main(int argc, char *argv[]) {
     //  auto *a = &sol;
     //  auto *b = &lhs_domain1;
     //  std::cout << "Before the iterations: " << std::endl;
-    //  sol.get_domain().print_domain();
+    // sol.get_domain().print_domain();
 
-    std::array<Domain<Dim, std::get<0>(length), std::get<1>(length),
-                      std::get<2>(length)>,
-               Dim>
-        epsilon_domains{epsilonx2_domain, epsilony2_domain, epsilonz2_domain};
+    auto solver =
+        cg_solver::make_solver(Float<1e-5>{}, sol.template get_domain<nlev>());
+
+    auto cg_map = [=](const d_type<nlev> domain, sycl::id<Dim> I) {
+      auto nxc_i = nx, nyc_i = ny, nzc_i = nz;
+
+      return pmgc::matveckernel7(
+          I[0] + 1, I[1] + 1, I[2] + 1, &nxc_i, &nyc_i, &nzc_i,
+          epsilon_oC_map.template get_domain<nlev>().values_buff,
+          kappa_.template get_domain<nlev>().values_buff,
+          epsilon_oE_map.template get_domain<nlev>().values_buff,
+          epsilon_oN_map.template get_domain<nlev>().values_buff,
+          epsilon_uC_map.template get_domain<nlev>().values_buff,
+          //  epsilon_oNE_map.template get_domain<nlev>().values_buff,
+          //  epsilon_oNW_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uE_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uW_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uN_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uS_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uNE_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uNW_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uSE_map.template get_domain<nlev>().values_buff,
+          //  epsilon_uSW_map.template get_domain<nlev>().values_buff,
+          domain.values_buff);
+    };
+
+    //  convolution::Convolve_map(sol2.get_domain(), boundary_domain, cg_map);
+    //  sol2.get_domain().print_domain();
 
     for (int i = 0; i < num_iters + 1; i++) {
 
       int smoothing_iters = 2;
 
       // cg_solver(init_guess, rhs, kappa_map, epsilon_domains, kappa_2,
-      // grid_step,
+      // m grid_step,
       //           epsilon_r, delta_epsilon);
 
       DataType const residual =
@@ -509,35 +536,38 @@ int main(int argc, char *argv[]) {
         break;
 
       // Presmoothing
-      pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
-                    epsilon_oC_map.get_domain().values_buff,
-                    kappa_domain.values_buff, rhs.values_buff,
-                    epsilonoE_domain.values_buff, epsilonoN_domain.values_buff,
-                    epsilonuC_domain.values_buff, sol.get_domain().values_buff,
-                    &smoothing_iters, q);
+      // pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
+      //               epsilon_oC_map.get_domain().values_buff,
+      //               kappa_domain.values_buff, rhs.values_buff,
+      //               epsilonoE_domain.values_buff,
+      //               epsilonoN_domain.values_buff,
+      //               epsilonuC_domain.values_buff,
+      //               sol.get_domain().values_buff, &smoothing_iters, q);
 
       //  std::cout << "The sol domain after the gsb is: " << std::endl;
       //  sol.get_domain().print_domain();
 
-      auto *values_buff = sol.get_domain().values_buff;
+      //  auto *values_buff = sol.get_domain().values_buff;
 
-      //   // Defect computation
-      //   // This computes -A, in this case
-      // std::cout << "Before the convolve the sol2 domain is: " <<
-      // std::endl;
-      // sol2.get_domain().print_domain();
-      convolution::PBE_Convolve(sol2.get_domain(), sol.get_domain(),
-                                kappa_.get_domain(), epsilon_domains, kappa_2,
-                                grid_step, epsilon_r, delta_epsilon);
+      //  //   // Defect computation
+      //  //   // This computes -A, in this case
+      //  // std::cout << "Before the convolve the sol2 domain is: " <<
+      //  // std::endl;
+      //  // sol2.get_domain().print_domain();
+      //  convolution::PBE_Convolve(sol2.get_domain(), sol.get_domain(),
+      //                            kappa_.get_domain(), epsilon_domains,
+      //                            kappa_2, grid_step, epsilon_r,
+      //                            delta_epsilon);
 
-      std::cout << "After the convolution the sol2 domain is: " << std::endl;
+      //  std::cout << "After the convolution the sol2 domain is: " <<
+      //  std::endl;
 
-      // sol2.get_domain().print_domain();
+      //  // sol2.get_domain().print_domain();
 
-      //   //   // this needs to be add, because the convolve returns the
-      //   negative
-      add_domains(sol2.get_domain(), sol2.get_domain(),
-                  rhs_domain.get_domain());
+      //  //   //   // this needs to be add, because the convolve returns the
+      //  //   negative
+      //  add_domains(sol2.get_domain(), sol2.get_domain(),
+      //              rhs_domain.get_domain());
 
       //   std::cout << "The right hand side domain is: " << std::endl;
       //   rhs_domain.template get_domain<nlev>().print_domain();
@@ -547,156 +577,127 @@ int main(int argc, char *argv[]) {
       //   sol2.template get_domain<nlev>().print_domain();
 
       //   // Restriction
-      pmgc::Vrestrc2(&nx, &ny, &nz, &nxc, &nyc, &nzc,
-                     sol2.get_domain().values_buff,
-                     rhs_domain.template get_domain<nlev - 1>().values_buff,
-                     oPC.template get_domain<nlev - 1>().values_buff,
-                     oPN.template get_domain<nlev - 1>().values_buff,
-                     oPS.template get_domain<nlev - 1>().values_buff,
-                     oPE.template get_domain<nlev - 1>().values_buff,
-                     oPW.template get_domain<nlev - 1>().values_buff,
-                     oPNE.template get_domain<nlev - 1>().values_buff,
-                     oPNW.template get_domain<nlev - 1>().values_buff,
-                     oPSE.template get_domain<nlev - 1>().values_buff,
-                     oPSW.template get_domain<nlev - 1>().values_buff,
-                     uPC.template get_domain<nlev - 1>().values_buff,
-                     uPN.template get_domain<nlev - 1>().values_buff,
-                     uPS.template get_domain<nlev - 1>().values_buff,
-                     uPE.template get_domain<nlev - 1>().values_buff,
-                     uPW.template get_domain<nlev - 1>().values_buff,
-                     uPNE.template get_domain<nlev - 1>().values_buff,
-                     uPNW.template get_domain<nlev - 1>().values_buff,
-                     uPSE.template get_domain<nlev - 1>().values_buff,
-                     uPSW.template get_domain<nlev - 1>().values_buff,
-                     dPC.template get_domain<nlev - 1>().values_buff,
-                     dPN.template get_domain<nlev - 1>().values_buff,
-                     dPS.template get_domain<nlev - 1>().values_buff,
-                     dPE.template get_domain<nlev - 1>().values_buff,
-                     dPW.template get_domain<nlev - 1>().values_buff,
-                     dPNE.template get_domain<nlev - 1>().values_buff,
-                     dPNW.template get_domain<nlev - 1>().values_buff,
-                     dPSE.template get_domain<nlev - 1>().values_buff,
-                     dPSW.template get_domain<nlev - 1>().values_buff, q);
+      //  pmgc::Vrestrc2(&nx, &ny, &nz, &nxc, &nyc, &nzc,
+      //                 sol2.get_domain().values_buff,
+      //                 rhs_domain.template get_domain<nlev - 1>().values_buff,
+      //                 oPC.template get_domain<nlev - 1>().values_buff,
+      //                 oPN.template get_domain<nlev - 1>().values_buff,
+      //                 oPS.template get_domain<nlev - 1>().values_buff,
+      //                 oPE.template get_domain<nlev - 1>().values_buff,
+      //                 oPW.template get_domain<nlev - 1>().values_buff,
+      //                 oPNE.template get_domain<nlev - 1>().values_buff,
+      //                 oPNW.template get_domain<nlev - 1>().values_buff,
+      //                 oPSE.template get_domain<nlev - 1>().values_buff,
+      //                 oPSW.template get_domain<nlev - 1>().values_buff,
+      //                 uPC.template get_domain<nlev - 1>().values_buff,
+      //                 uPN.template get_domain<nlev - 1>().values_buff,
+      //                 uPS.template get_domain<nlev - 1>().values_buff,
+      //                 uPE.template get_domain<nlev - 1>().values_buff,
+      //                 uPW.template get_domain<nlev - 1>().values_buff,
+      //                 uPNE.template get_domain<nlev - 1>().values_buff,
+      //                 uPNW.template get_domain<nlev - 1>().values_buff,
+      //                 uPSE.template get_domain<nlev - 1>().values_buff,
+      //                 uPSW.template get_domain<nlev - 1>().values_buff,
+      //                 dPC.template get_domain<nlev - 1>().values_buff,
+      //                 dPN.template get_domain<nlev - 1>().values_buff,
+      //                 dPS.template get_domain<nlev - 1>().values_buff,
+      //                 dPE.template get_domain<nlev - 1>().values_buff,
+      //                 dPW.template get_domain<nlev - 1>().values_buff,
+      //                 dPNE.template get_domain<nlev - 1>().values_buff,
+      //                 dPNW.template get_domain<nlev - 1>().values_buff,
+      //                 dPSE.template get_domain<nlev - 1>().values_buff,
+      //                 dPSW.template get_domain<nlev - 1>().values_buff, q);
 
-      q.wait();
+      // q.wait();
       //   // rhs_domain.template get_domain<nlev - 1>().print_domain();
 
       int itmax = 1000;
 
-      q.memset(sol2.template get_domain<nlev - 1>().values_buff, 0,
-               sol2.template get_domain<nlev - 1>().num_values *
-                   sizeof(DataType));
+      //  q.memset(sol2.template get_domain<nlev - 1>().values_buff, 0,
+      //           sol2.template get_domain<nlev - 1>().num_values *
+      //               sizeof(DataType));
 
-      //  //   //  std::cout << "After setting coarse sol2 to zero: " <<
-      //  std::endl;
-      //  //   //  sol2.template get_domain<nlev - 1>().print_domain();
-
-      //  //   //  std::cout << "The epsilon maps are: " << std::endl;
-      //  //   //  epsilon_oC_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_oE_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_oN_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uC_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_oNE_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_oNW_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uE_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uW_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uN_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uS_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uNE_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uNW_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uSE_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  epsilon_uSW_map.template get_domain<nlev -
-      //  1>().print_domain();
-      //  //   //  std::cout << "End of epsilon maps" << std::endl;
-
-      // Coarse grid
-      pmgc::Vgsrb27x(
-          &nxc, &nyc, &nzc, (int *)nullptr, (DataType *)nullptr,
-          epsilon_oC_map.template get_domain<nlev - 1>().values_buff,
-          kappa_.template get_domain<nlev - 1>().values_buff,
-          rhs_domain.template get_domain<nlev - 1>().values_buff,
-          epsilon_oE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oN_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uC_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oNE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oNW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uN_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uS_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uNE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uNW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uSW_map.template get_domain<nlev - 1>().values_buff,
-          sol2.template get_domain<nlev - 1>().values_buff, &itmax, q);
+      //  // Coarse grid
+      //  pmgc::Vgsrb27x(
+      //      &nxc, &nyc, &nzc, (int *)nullptr, (DataType *)nullptr,
+      //      epsilon_oC_map.template get_domain<nlev - 1>().values_buff,
+      //      kappa_.template get_domain<nlev - 1>().values_buff,
+      //      rhs_domain.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_oE_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_oN_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uC_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_oNE_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_oNW_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uE_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uW_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uN_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uS_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uNE_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uNW_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
+      //      epsilon_uSW_map.template get_domain<nlev - 1>().values_buff,
+      //      sol2.template get_domain<nlev - 1>().values_buff, &itmax, q);
 
       //  std::cout << "After the 27x Gauss-Seidel: " << std::endl;
       //  sol2.template get_domain<nlev - 1>().print_domain();
 
-      q.memset(sol2.template get_domain<nlev>().values_buff, 0,
-               sol2.template get_domain<nlev>().num_values * sizeof(DataType));
+      solver(sol.template get_domain<nlev>(),
+             rhs_domain.template get_domain<nlev>(), cg_map);
 
-      //  std::cout << "Before the interpolate the sol2 is: " <<
-      // std::endl;
-      //  sol2.template get_domain<nlev>().print_domain();
+      //  q.memset(sol2.template get_domain<nlev>().values_buff, 0,
+      //           sol2.template get_domain<nlev>().num_values *
+      //           sizeof(DataType));
 
-      pmgc::VinterpPMG2(&nxc, &nxc, &nxc, &nx, &ny, &nz,
-                        sol2.get_domain<nlev - 1>().values_buff,
-                        sol2.get_domain().values_buff,
-                        oPC.template get_domain<nlev - 1>().values_buff,
-                        oPN.template get_domain<nlev - 1>().values_buff,
-                        oPS.template get_domain<nlev - 1>().values_buff,
-                        oPE.template get_domain<nlev - 1>().values_buff,
-                        oPW.template get_domain<nlev - 1>().values_buff,
-                        oPNE.template get_domain<nlev - 1>().values_buff,
-                        oPNW.template get_domain<nlev - 1>().values_buff,
-                        oPSE.template get_domain<nlev - 1>().values_buff,
-                        oPSW.template get_domain<nlev - 1>().values_buff,
-                        uPC.template get_domain<nlev - 1>().values_buff,
-                        uPN.template get_domain<nlev - 1>().values_buff,
-                        uPS.template get_domain<nlev - 1>().values_buff,
-                        uPE.template get_domain<nlev - 1>().values_buff,
-                        uPW.template get_domain<nlev - 1>().values_buff,
-                        uPNE.template get_domain<nlev - 1>().values_buff,
-                        uPNW.template get_domain<nlev - 1>().values_buff,
-                        uPSE.template get_domain<nlev - 1>().values_buff,
-                        uPSW.template get_domain<nlev - 1>().values_buff,
-                        dPC.template get_domain<nlev - 1>().values_buff,
-                        dPN.template get_domain<nlev - 1>().values_buff,
-                        dPS.template get_domain<nlev - 1>().values_buff,
-                        dPE.template get_domain<nlev - 1>().values_buff,
-                        dPW.template get_domain<nlev - 1>().values_buff,
-                        dPNE.template get_domain<nlev - 1>().values_buff,
-                        dPNW.template get_domain<nlev - 1>().values_buff,
-                        dPSE.template get_domain<nlev - 1>().values_buff,
-                        dPSW.template get_domain<nlev - 1>().values_buff, q);
+      //  //  std::cout << "Before the interpolate the sol2 is: " <<
+      //  // std::endl;
+      //  //  sol2.template get_domain<nlev>().print_domain();
+
+      //  pmgc::VinterpPMG2(&nxc, &nxc, &nxc, &nx, &ny, &nz,
+      //                    sol2.get_domain<nlev - 1>().values_buff,
+      //                    sol2.get_domain().values_buff,
+      //                    oPC.template get_domain<nlev - 1>().values_buff,
+      //                    oPN.template get_domain<nlev - 1>().values_buff,
+      //                    oPS.template get_domain<nlev - 1>().values_buff,
+      //                    oPE.template get_domain<nlev - 1>().values_buff,
+      //                    oPW.template get_domain<nlev - 1>().values_buff,
+      //                    oPNE.template get_domain<nlev - 1>().values_buff,
+      //                    oPNW.template get_domain<nlev - 1>().values_buff,
+      //                    oPSE.template get_domain<nlev - 1>().values_buff,
+      //                    oPSW.template get_domain<nlev - 1>().values_buff,
+      //                    uPC.template get_domain<nlev - 1>().values_buff,
+      //                    uPN.template get_domain<nlev - 1>().values_buff,
+      //                    uPS.template get_domain<nlev - 1>().values_buff,
+      //                    uPE.template get_domain<nlev - 1>().values_buff,
+      //                    uPW.template get_domain<nlev - 1>().values_buff,
+      //                    uPNE.template get_domain<nlev - 1>().values_buff,
+      //                    uPNW.template get_domain<nlev - 1>().values_buff,
+      //                    uPSE.template get_domain<nlev - 1>().values_buff,
+      //                    uPSW.template get_domain<nlev - 1>().values_buff,
+      //                    dPC.template get_domain<nlev - 1>().values_buff,
+      //                    dPN.template get_domain<nlev - 1>().values_buff,
+      //                    dPS.template get_domain<nlev - 1>().values_buff,
+      //                    dPE.template get_domain<nlev - 1>().values_buff,
+      //                    dPW.template get_domain<nlev - 1>().values_buff,
+      //                    dPNE.template get_domain<nlev - 1>().values_buff,
+      //                    dPNW.template get_domain<nlev - 1>().values_buff,
+      //                    dPSE.template get_domain<nlev - 1>().values_buff,
+      //                    dPSW.template get_domain<nlev - 1>().values_buff,
+      //                    q);
 
       // std::cout << "After the prolongation the domain is: " << std::endl;
       //   sol2.template get_domain<nlev>().print_domain();
 
       //   // Adding correction to the current guess
-      add_domains(sol.get_domain(), sol2.get_domain(), sol.get_domain());
+      //  add_domains(sol.get_domain(), sol2.get_domain(), sol.get_domain());
 
-      //   // Postsmoothing
-      pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
-                    epsilon_oC_map.get_domain().values_buff,
-                    kappa_domain.values_buff, rhs.values_buff,
-                    epsilonoE_domain.values_buff, epsilonoN_domain.values_buff,
-                    epsilonuC_domain.values_buff, sol.get_domain().values_buff,
-                    &smoothing_iters, q);
+      //  //   // Postsmoothing
+      //  pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, DT_null,
+      //                epsilon_oC_map.get_domain().values_buff,
+      //                kappa_domain.values_buff, rhs.values_buff,
+      //                epsilonoE_domain.values_buff,
+      //                epsilonoN_domain.values_buff,
+      //                epsilonuC_domain.values_buff,
+      //                sol.get_domain().values_buff, &smoothing_iters, q);
     }
   }
 

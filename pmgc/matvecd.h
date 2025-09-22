@@ -115,9 +115,9 @@ void Vmatvec7_1s(int *nx,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-DataType matveckernel7(int i, int j, int k, int *nx, int *ny, int *nz, int *ipc,
-                       DataType *rpc, DataType *oC, DataType *cc, DataType *oE,
-                       DataType *oN, DataType *uC, DataType *x) {
+DataType matveckernel7(int i, int j, int k, int *nx, int *ny, int *nz,
+                       DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                       DataType *uC, DataType *x) {
 
   MAT3(oE, *nx, *ny, *nz);
   MAT3(oN, *nx, *ny, *nz);
@@ -179,11 +179,11 @@ void Vmatvec27_1s(int *nx,       ///< @todo:  Doc
 
 template <typename DataType>
 DataType matveckernel27(int i, int j, int k, int *nx, int *ny, int *nz,
-                        int *ipc, DataType *rpc, DataType *oC, DataType *cc,
-                        DataType *oE, DataType *oN, DataType *uC, DataType *oNE,
-                        DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
-                        DataType *uS, DataType *uNE, DataType *uNW,
-                        DataType *uSE, DataType *uSW, DataType *x) {
+                        DataType *oC, DataType *cc, DataType *oE, DataType *oN,
+                        DataType *uC, DataType *oNE, DataType *oNW,
+                        DataType *uE, DataType *uW, DataType *uN, DataType *uS,
+                        DataType *uNE, DataType *uNW, DataType *uSE,
+                        DataType *uSW, DataType *x) {
 
   MAT3(cc, *nx, *ny, *nz);
   MAT3(x, *nx, *ny, *nz);
