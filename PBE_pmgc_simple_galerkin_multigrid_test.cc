@@ -26,7 +26,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 1;
+constexpr std::size_t base_length = 8;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0;
@@ -128,9 +128,9 @@ void compute_center_domain(domain::Domain<Dim, strides_all...> &center_domain,
 
 int main(int argc, char *argv[]) {
 
-  constexpr DataType epsilon_p = 1.0;
-  constexpr DataType epsilon_r = 1.0;
-  constexpr DataType delta_epsilon = 0;
+  //  constexpr DataType epsilon_p = 1.0;
+  //  constexpr DataType epsilon_r = 1.0;
+  //  constexpr DataType delta_epsilon = 0;
 
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
     //                            kappa_.get_domain(), epsilon_domains, kappa_2,
     //                            grid_step, epsilon_r, delta_epsilon);
 
-    rhs_domain.get_domain().print_domain();
+    // rhs_domain.get_domain().print_domain();
 
     auto &rhs = rhs_domain.template get_domain<nlev>();
 
@@ -482,7 +482,7 @@ int main(int argc, char *argv[]) {
     //  std::cout << "Before the iterations: " << std::endl;
     // sol.get_domain().print_domain();
 
-    auto solver = cg_solver::make_solver(Float<1e-5>{},
+    auto solver = cg_solver::make_solver(Float<1e-8>{},
                                          sol.template get_domain<nlev - 1>());
 
     auto cg_map = [=](const d_type<nlev - 1> domain, sycl::id<Dim> I) {
