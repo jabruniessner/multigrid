@@ -2,8 +2,11 @@
 #include "Debye_Hueckel_functions.h"
 #include "MultigridDomain.h"
 #include "create_charge_distribution.h"
+#include "cycles.h"
 #include "dot_finder.h"
+#include "pmgc/buildGd.h"
 #include "pmgc/buildPd.h"
+#include "pmgc/gsd.h"
 #include "predefinitions.h"
 #include "scientific_quantities.h"
 #include "utils.h"
@@ -12,6 +15,8 @@
 
 #ifndef PBE_PMGC_CLASS_H
 #define PBE_PMGC_CLASS_H
+
+namespace pmgc_solver {
 
 template <Dimension Dim, Length... strides_all, typename... domains,
           std::size_t... Directions>
@@ -238,7 +243,7 @@ class PBE_linear_problem {
     });
   }
 
-  template <std::size_t level = nlev> void buildmultilevelprolop() {
+  template <std::size_t level = nlev> void buildmultilevelops() {
     if constexpr (level == 1) {
       return;
     } else if constexpr (level == nlev) {
@@ -278,7 +283,55 @@ class PBE_linear_problem {
                          dPSE.template get_domain<nlev - 1>().values_buff,
                          dPSW.template get_domain<nlev - 1>().values_buff, q);
 
-      buildmultilevelprolop<level - 1>();
+      pmgc::VbuildG_7(
+          &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
+          &nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
+          oPN.template get_domain<nlev - 1>().values_buff,
+          oPS.template get_domain<nlev - 1>().values_buff,
+          oPE.template get_domain<nlev - 1>().values_buff,
+          oPW.template get_domain<nlev - 1>().values_buff,
+          oPNE.template get_domain<nlev - 1>().values_buff,
+          oPNW.template get_domain<nlev - 1>().values_buff,
+          oPSE.template get_domain<nlev - 1>().values_buff,
+          oPSW.template get_domain<nlev - 1>().values_buff,
+          uPC.template get_domain<nlev - 1>().values_buff,
+          uPN.template get_domain<nlev - 1>().values_buff,
+          uPS.template get_domain<nlev - 1>().values_buff,
+          uPE.template get_domain<nlev - 1>().values_buff,
+          uPW.template get_domain<nlev - 1>().values_buff,
+          uPNE.template get_domain<nlev - 1>().values_buff,
+          uPNW.template get_domain<nlev - 1>().values_buff,
+          uPSE.template get_domain<nlev - 1>().values_buff,
+          uPSW.template get_domain<nlev - 1>().values_buff,
+          dPC.template get_domain<nlev - 1>().values_buff,
+          dPN.template get_domain<nlev - 1>().values_buff,
+          dPS.template get_domain<nlev - 1>().values_buff,
+          dPE.template get_domain<nlev - 1>().values_buff,
+          dPW.template get_domain<nlev - 1>().values_buff,
+          dPNE.template get_domain<nlev - 1>().values_buff,
+          dPNW.template get_domain<nlev - 1>().values_buff,
+          dPSE.template get_domain<nlev - 1>().values_buff,
+          dPSW.template get_domain<nlev - 1>().values_buff,
+          epsilon_oC_map.template get_domain<nlev>().values_buff,
+          epsilon_oE_map.template get_domain<nlev>().values_buff,
+          epsilon_oN_map.template get_domain<nlev>().values_buff,
+          epsilon_uC_map.template get_domain<nlev>().values_buff,
+          epsilon_oC_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oN_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uC_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oNE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oNW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uN_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uS_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uNE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uNW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uSW_map.template get_domain<nlev - 1>().values_buff, q);
+
+      buildmultilevelops<level - 1>();
     } else {
 
       pmgc::VbuildPb_op27(
@@ -326,7 +379,65 @@ class PBE_linear_problem {
           dPSE.template get_domain<level - 1>().values_buff,
           dPSW.template get_domain<level - 1>().values_buff, q);
 
-      buildmultilevelprolop<level - 1>();
+      pmgc::VbuildG_27(
+          &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
+          &nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
+          oPN.template get_domain<nlev - 1>().values_buff,
+          oPS.template get_domain<nlev - 1>().values_buff,
+          oPE.template get_domain<nlev - 1>().values_buff,
+          oPW.template get_domain<nlev - 1>().values_buff,
+          oPNE.template get_domain<nlev - 1>().values_buff,
+          oPNW.template get_domain<nlev - 1>().values_buff,
+          oPSE.template get_domain<nlev - 1>().values_buff,
+          oPSW.template get_domain<nlev - 1>().values_buff,
+          uPC.template get_domain<nlev - 1>().values_buff,
+          uPN.template get_domain<nlev - 1>().values_buff,
+          uPS.template get_domain<nlev - 1>().values_buff,
+          uPE.template get_domain<nlev - 1>().values_buff,
+          uPW.template get_domain<nlev - 1>().values_buff,
+          uPNE.template get_domain<nlev - 1>().values_buff,
+          uPNW.template get_domain<nlev - 1>().values_buff,
+          uPSE.template get_domain<nlev - 1>().values_buff,
+          uPSW.template get_domain<nlev - 1>().values_buff,
+          dPC.template get_domain<nlev - 1>().values_buff,
+          dPN.template get_domain<nlev - 1>().values_buff,
+          dPS.template get_domain<nlev - 1>().values_buff,
+          dPE.template get_domain<nlev - 1>().values_buff,
+          dPW.template get_domain<nlev - 1>().values_buff,
+          dPNE.template get_domain<nlev - 1>().values_buff,
+          dPNW.template get_domain<nlev - 1>().values_buff,
+          dPSE.template get_domain<nlev - 1>().values_buff,
+          dPSW.template get_domain<nlev - 1>().values_buff,
+          epsilon_oC_map.template get_domain<nlev>().values_buff,
+          epsilon_oE_map.template get_domain<nlev>().values_buff,
+          epsilon_oN_map.template get_domain<nlev>().values_buff,
+          epsilon_uC_map.template get_domain<nlev>().values_buff,
+          epsilon_oNE_map.template get_domain<nlev>().values_buff,
+          epsilon_oNW_map.template get_domain<nlev>().values_buff,
+          epsilon_uE_map.template get_domain<nlev>().values_buff,
+          epsilon_uW_map.template get_domain<nlev>().values_buff,
+          epsilon_uN_map.template get_domain<nlev>().values_buff,
+          epsilon_uS_map.template get_domain<nlev>().values_buff,
+          epsilon_uNE_map.template get_domain<nlev>().values_buff,
+          epsilon_uNW_map.template get_domain<nlev>().values_buff,
+          epsilon_uSE_map.template get_domain<nlev>().values_buff,
+          epsilon_uSW_map.template get_domain<nlev>().values_buff,
+          epsilon_oC_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oN_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uC_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oNE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_oNW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uN_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uS_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uNE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uNW_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
+          epsilon_uSW_map.template get_domain<nlev - 1>().values_buff, q);
+
+      buildmultilevelops<level - 1>();
     }
   }
 
@@ -368,5 +479,62 @@ class PBE_linear_problem {
   template <std::size_t level = nlev>
   static const int nz = std::get<2>(strides<level>) + 2;
 };
+
+template <std::size_t nlev, Length base_length, DataType box_length>
+struct GS_smoother {
+  GS_smoother(PBE_linear_problem<base_length, nlev, box_length> &pbe_problem)
+      : pbe_problem(pbe_problem) {};
+
+  template <std::size_t level, std::size_t... Num_iters>
+  void operator()(
+      Integer<level>,
+      multigrid_domain::Multigrid_domain<3, nlev, base_length, base_length,
+                                         base_length> &dest,
+      multigrid_domain::Multigrid_domain<3, nlev, base_length, base_length,
+                                         base_length> &src,
+      multigrid_domain::Multigrid_domain<3, nlev, base_length, base_length,
+                                         base_length> &rhs) {
+
+    std::size_t num_iters = cycles::get_num_iters<level, Num_iters...>();
+
+    int nx =
+        PBE_linear_problem<base_length, nlev, box_length>::template nx<level>;
+    int ny =
+        PBE_linear_problem<base_length, nlev, box_length>::template ny<level>;
+    int nz =
+        PBE_linear_problem<base_length, nlev, box_length>::template nz<level>;
+
+#define VAL_BUF_EPSILON(x)                                                     \
+  pbe_problem.epsilon_##x_map.template get_domain<level>().values_buff
+
+    auto &kappa_domain = pbe_problem.kappa_.template get_domain<level>();
+
+    if constexpr (level == nlev) {
+      pmgc::Vgsrb7x(&nx, &ny, &nz, (int *)nullptr, (DataType *)nullptr,
+                    VAL_BUF_EPSILON(oC), kappa_domain.values_buff,
+                    rhs.template get_domain<level>().values_buff,
+                    VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN),
+                    VAL_BUF_EPSILON(uC),
+                    src.template get_domain<level>().values_buff, &num_iters,
+                    pbe_problem.q);
+    } else if constexpr (level < 1) {
+      std::cout << "Level to low" << std::endl;
+    } else {
+      pmgc::Vgsrb27x(
+          &nx, &ny, &nz, (int *)nullptr, (DataType *)nullptr,
+          VAL_BUF_EPSILON(oC), kappa_domain, kappa_domain.values_buff,
+          VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN), VAL_BUF_EPSILON(uC),
+          VAL_BUF_EPSILON(oNE), VAL_BUF_EPSILON(oNW), VAL_BUF_EPSILON(uE),
+          VAL_BUF_EPSILON(uW), VAL_BUF_EPSILON(uN), VAL_BUF_EPSILON(uS),
+          VAL_BUF_EPSILON(uNE), VAL_BUF_EPSILON(uNW), VAL_BUF_EPSILON(uSE),
+          VAL_BUF_EPSILON(uSW), src.template get_domain<level>().values_buff,
+          &num_iters, pbe_problem.q);
+    }
+  }
+
+  PBE_linear_problem<nlev, base_length, box_length> &pbe_problem;
+};
+
+} // namespace pmgc_solver
 
 #endif
