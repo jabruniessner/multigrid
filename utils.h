@@ -102,7 +102,7 @@ constexpr auto tuple_map(const std::tuple<Ts...> &t, Func f) {
       [&](const Ts &...elems) { return std::make_tuple(f(elems)...); }, t);
 }
 
-template <Arithmetic T> consteval T power_off(T t, std::size_t n) {
+template <Arithmetic T> constexpr T power_off(T t, std::size_t n) {
   if (n == 0) {
     return 1;
   } else {

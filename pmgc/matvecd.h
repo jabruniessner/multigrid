@@ -114,18 +114,17 @@ void Vmatvec7_1s(int *nx,       ///< @todo:  Doc
                  sycl::queue &q ///< @todo:  Doc
 );
 
-template <typename DataType>
-DataType matveckernel7(int i, int j, int k, int *nx, int *ny, int *nz,
-                       DataType *oC, DataType *cc, DataType *oE, DataType *oN,
-                       DataType *uC, DataType *x) {
+template <std::size_t nx, std::size_t ny, std::size_t nz, typename DataType>
+DataType matveckernel7(int i, int j, int k, DataType *oC, DataType *cc,
+                       DataType *oE, DataType *oN, DataType *uC, DataType *x) {
 
-  MAT3(oE, *nx, *ny, *nz);
-  MAT3(oN, *nx, *ny, *nz);
-  MAT3(uC, *nx, *ny, *nz);
-  MAT3(cc, *nx, *ny, *nz);
-  MAT3(oC, *nx, *ny, *nz);
-  MAT3(x, *nx, *ny, *nz);
-  MAT3(y, *nx, *ny, *nz);
+  MAT3(oE, nx, ny, nz);
+  MAT3(oN, nx, ny, nz);
+  MAT3(uC, nx, ny, nz);
+  MAT3(cc, nx, ny, nz);
+  MAT3(oC, nx, ny, nz);
+  MAT3(x, nx, ny, nz);
+  MAT3(y, nx, ny, nz);
 
   // Do it
 
@@ -177,33 +176,32 @@ void Vmatvec27_1s(int *nx,       ///< @todo:  Doc
                   sycl::queue &q ///< @todo:  Doc
 );
 
-template <typename DataType>
-DataType matveckernel27(int i, int j, int k, int *nx, int *ny, int *nz,
-                        DataType *oC, DataType *cc, DataType *oE, DataType *oN,
-                        DataType *uC, DataType *oNE, DataType *oNW,
-                        DataType *uE, DataType *uW, DataType *uN, DataType *uS,
-                        DataType *uNE, DataType *uNW, DataType *uSE,
-                        DataType *uSW, DataType *x) {
+template <std::size_t nx, std::size_t ny, std::size_t nz, typename DataType>
+DataType matveckernel27(int i, int j, int k, DataType *oC, DataType *cc,
+                        DataType *oE, DataType *oN, DataType *uC, DataType *oNE,
+                        DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
+                        DataType *uS, DataType *uNE, DataType *uNW,
+                        DataType *uSE, DataType *uSW, DataType *x) {
 
-  MAT3(cc, *nx, *ny, *nz);
-  MAT3(x, *nx, *ny, *nz);
-  MAT3(y, *nx, *ny, *nz);
+  MAT3(cc, nx, ny, nz);
+  MAT3(x, nx, ny, nz);
+  MAT3(y, nx, ny, nz);
 
-  MAT3(oC, *nx, *ny, *nz);
-  MAT3(oE, *nx, *ny, *nz);
-  MAT3(oN, *nx, *ny, *nz);
-  MAT3(oNE, *nx, *ny, *nz);
-  MAT3(oNW, *nx, *ny, *nz);
+  MAT3(oC, nx, ny, nz);
+  MAT3(oE, nx, ny, nz);
+  MAT3(oN, nx, ny, nz);
+  MAT3(oNE, nx, ny, nz);
+  MAT3(oNW, nx, ny, nz);
 
-  MAT3(uC, *nx, *ny, *nz);
-  MAT3(uE, *nx, *ny, *nz);
-  MAT3(uW, *nx, *ny, *nz);
-  MAT3(uN, *nx, *ny, *nz);
-  MAT3(uS, *nx, *ny, *nz);
-  MAT3(uNE, *nx, *ny, *nz);
-  MAT3(uNW, *nx, *ny, *nz);
-  MAT3(uSE, *nx, *ny, *nz);
-  MAT3(uSW, *nx, *ny, *nz);
+  MAT3(uC, nx, ny, nz);
+  MAT3(uE, nx, ny, nz);
+  MAT3(uW, nx, ny, nz);
+  MAT3(uN, nx, ny, nz);
+  MAT3(uS, nx, ny, nz);
+  MAT3(uNE, nx, ny, nz);
+  MAT3(uNW, nx, ny, nz);
+  MAT3(uSE, nx, ny, nz);
+  MAT3(uSW, nx, ny, nz);
 
   // Do it
 
