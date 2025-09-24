@@ -10,6 +10,18 @@
 
 namespace utils {
 
+constexpr std::size_t ilog2(std::size_t x) { return std::bit_width(x) - 1; }
+
+constexpr std::size_t level_from_length(std::size_t length,
+                                        std::size_t problem_length,
+                                        std::size_t nlev) {
+
+  std::size_t fac = problem_length / length;
+  std::size_t x = ilog2(fac);
+
+  return nlev - x;
+};
+
 template <typename First, typename... Rest> struct First_struct {
   using Type = First;
 };

@@ -7,6 +7,7 @@
 #include "pmgc/buildGd.h"
 #include "pmgc/buildPd.h"
 #include "pmgc/gsd.h"
+#include "pmgc/matvecd.h"
 #include "predefinitions.h"
 #include "scientific_quantities.h"
 #include "utils.h"
@@ -17,6 +18,8 @@
 #define PBE_PMGC_CLASS_H
 
 namespace pmgc_solver {
+
+template <typename T> struct TD;
 
 template <Dimension Dim, Length... strides_all, typename... domains,
           std::size_t... Directions>
@@ -78,6 +81,7 @@ class PBE_linear_problem {
 
   using Domain_Type_upper = decltype(Domain_Type<>::domain_t_v)::domain_t;
 
+public:
   PBE_linear_problem(DataType ionic_strength, DataType ion_radius,
                      sycl::queue &q)
       : ion_radius(ion_radius), ionic_strength(ionic_strength), q{q}, sol(q),
@@ -109,11 +113,11 @@ class PBE_linear_problem {
            epsilon_oE_map.get_domain().num_values);
   }
 
-  inline void Set_boundary_conditions(Atom<DataType> *atoms,
-                                      std::size_t num_atoms,
-                                      const Domain_Type_upper &domain,
-                                      std::size_t x, std::size_t y,
-                                      std::size_t z) {
+  inline static void Set_boundary_conditions(Atom<DataType> *atoms,
+                                             std::size_t num_atoms,
+                                             const Domain_Type_upper &domain,
+                                             std::size_t x, std::size_t y,
+                                             std::size_t z, DataType kappa) {
     DataType buffer_value = 0;
     for (int i = 0; i < num_atoms; i++) {
       const DataType distance =
@@ -140,26 +144,27 @@ class PBE_linear_problem {
     q.memcpy(atoms_device, atom_list.data(),
              atom_list.size() * sizeof(Atom<DataType>));
 
+    DataType kappa = this->kappa;
+
     q.parallel_for(
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1], 0);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1],
-                                         std::get<2>(length) + 1);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, 0, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain,
-                                         std::get<0>(length) + 1, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], 0, I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0],
-                                         std::get<1>(length) + 1, I[1]);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain,
+                                   I[0], I[1], 0, kappa);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain,
+                                   I[0], I[1], std::get<2>(length) + 1, kappa);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain, 0,
+                                   I[0], I[1], kappa);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain,
+                                   std::get<0>(length) + 1, I[0], I[1], kappa);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain,
+                                   I[0], 0, I[1], kappa);
+           Set_boundary_conditions(atoms_device, num_atoms, boundary_domain,
+                                   I[0], std::get<1>(length) + 1, I[1], kappa);
          })
         .wait();
+
+    sycl::free(atoms_device, q);
   }
 
   void initialize_epsilons(std::vector<Atom<DataType>> atom_list) {
@@ -219,6 +224,8 @@ class PBE_linear_problem {
           ? kappa_domain.values_buff[I] = 0
           : kappa_domain.values_buff[I] = kappa_2 * epsilon_r;
     });
+
+    sycl::free(atoms_device, q);
   }
 
   void set_up_rhs(std::vector<Atom<DataType>> atom_list) {
@@ -241,6 +248,8 @@ class PBE_linear_problem {
               spacing<DataType, static_cast<DataType>(grid_step)>{});
       });
     });
+
+    sycl::free(atoms_device, q);
   }
 
   template <std::size_t level = nlev> void buildmultilevelops() {
@@ -248,9 +257,8 @@ class PBE_linear_problem {
       return;
     } else if constexpr (level == nlev) {
 
-      pmgc::VbuildPb_op7(&nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>,
-                         &ny<nlev - 1>, &nz<nlev - 1>, (int *)nullptr,
-                         (DataType *)nullptr,
+      pmgc::VbuildPb_op7(nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>,
+                         ny<nlev - 1>, nz<nlev - 1>,
                          epsilon_oC_map.template get_domain<nlev>().values_buff,
                          epsilon_oE_map.template get_domain<nlev>().values_buff,
                          epsilon_oN_map.template get_domain<nlev>().values_buff,
@@ -284,8 +292,8 @@ class PBE_linear_problem {
                          dPSW.template get_domain<nlev - 1>().values_buff, q);
 
       pmgc::VbuildG_7(
-          &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
-          &nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
+          nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
+          nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
           oPN.template get_domain<nlev - 1>().values_buff,
           oPS.template get_domain<nlev - 1>().values_buff,
           oPE.template get_domain<nlev - 1>().values_buff,
@@ -335,8 +343,8 @@ class PBE_linear_problem {
     } else {
 
       pmgc::VbuildPb_op27(
-          &nx<level>, &ny<level>, &nz<level>, &nx<level - 1>, &ny<level - 1>,
-          &nz<level - 1>, (int *)nullptr, (DataType *)nullptr,
+          nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
+          nz<level - 1>,
           epsilon_oC_map.template get_domain<level>().values_buff,
           epsilon_oE_map.template get_domain<level>().values_buff,
           epsilon_oN_map.template get_domain<level>().values_buff,
@@ -380,65 +388,120 @@ class PBE_linear_problem {
           dPSW.template get_domain<level - 1>().values_buff, q);
 
       pmgc::VbuildG_27(
-          &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
-          &nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
-          oPN.template get_domain<nlev - 1>().values_buff,
-          oPS.template get_domain<nlev - 1>().values_buff,
-          oPE.template get_domain<nlev - 1>().values_buff,
-          oPW.template get_domain<nlev - 1>().values_buff,
-          oPNE.template get_domain<nlev - 1>().values_buff,
-          oPNW.template get_domain<nlev - 1>().values_buff,
-          oPSE.template get_domain<nlev - 1>().values_buff,
-          oPSW.template get_domain<nlev - 1>().values_buff,
-          uPC.template get_domain<nlev - 1>().values_buff,
-          uPN.template get_domain<nlev - 1>().values_buff,
-          uPS.template get_domain<nlev - 1>().values_buff,
-          uPE.template get_domain<nlev - 1>().values_buff,
-          uPW.template get_domain<nlev - 1>().values_buff,
-          uPNE.template get_domain<nlev - 1>().values_buff,
-          uPNW.template get_domain<nlev - 1>().values_buff,
-          uPSE.template get_domain<nlev - 1>().values_buff,
-          uPSW.template get_domain<nlev - 1>().values_buff,
-          dPC.template get_domain<nlev - 1>().values_buff,
-          dPN.template get_domain<nlev - 1>().values_buff,
-          dPS.template get_domain<nlev - 1>().values_buff,
-          dPE.template get_domain<nlev - 1>().values_buff,
-          dPW.template get_domain<nlev - 1>().values_buff,
-          dPNE.template get_domain<nlev - 1>().values_buff,
-          dPNW.template get_domain<nlev - 1>().values_buff,
-          dPSE.template get_domain<nlev - 1>().values_buff,
-          dPSW.template get_domain<nlev - 1>().values_buff,
-          epsilon_oC_map.template get_domain<nlev>().values_buff,
-          epsilon_oE_map.template get_domain<nlev>().values_buff,
-          epsilon_oN_map.template get_domain<nlev>().values_buff,
-          epsilon_uC_map.template get_domain<nlev>().values_buff,
-          epsilon_oNE_map.template get_domain<nlev>().values_buff,
-          epsilon_oNW_map.template get_domain<nlev>().values_buff,
-          epsilon_uE_map.template get_domain<nlev>().values_buff,
-          epsilon_uW_map.template get_domain<nlev>().values_buff,
-          epsilon_uN_map.template get_domain<nlev>().values_buff,
-          epsilon_uS_map.template get_domain<nlev>().values_buff,
-          epsilon_uNE_map.template get_domain<nlev>().values_buff,
-          epsilon_uNW_map.template get_domain<nlev>().values_buff,
-          epsilon_uSE_map.template get_domain<nlev>().values_buff,
-          epsilon_uSW_map.template get_domain<nlev>().values_buff,
-          epsilon_oC_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oN_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uC_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oNE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_oNW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uN_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uS_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uNE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uNW_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
-          epsilon_uSW_map.template get_domain<nlev - 1>().values_buff, q);
+          nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
+          nz<level - 1>, oPC.template get_domain<level - 1>().values_buff,
+          oPN.template get_domain<level - 1>().values_buff,
+          oPS.template get_domain<level - 1>().values_buff,
+          oPE.template get_domain<level - 1>().values_buff,
+          oPW.template get_domain<level - 1>().values_buff,
+          oPNE.template get_domain<level - 1>().values_buff,
+          oPNW.template get_domain<level - 1>().values_buff,
+          oPSE.template get_domain<level - 1>().values_buff,
+          oPSW.template get_domain<level - 1>().values_buff,
+          uPC.template get_domain<level - 1>().values_buff,
+          uPN.template get_domain<level - 1>().values_buff,
+          uPS.template get_domain<level - 1>().values_buff,
+          uPE.template get_domain<level - 1>().values_buff,
+          uPW.template get_domain<level - 1>().values_buff,
+          uPNE.template get_domain<level - 1>().values_buff,
+          uPNW.template get_domain<level - 1>().values_buff,
+          uPSE.template get_domain<level - 1>().values_buff,
+          uPSW.template get_domain<level - 1>().values_buff,
+          dPC.template get_domain<level - 1>().values_buff,
+          dPN.template get_domain<level - 1>().values_buff,
+          dPS.template get_domain<level - 1>().values_buff,
+          dPE.template get_domain<level - 1>().values_buff,
+          dPW.template get_domain<level - 1>().values_buff,
+          dPNE.template get_domain<level - 1>().values_buff,
+          dPNW.template get_domain<level - 1>().values_buff,
+          dPSE.template get_domain<level - 1>().values_buff,
+          dPSW.template get_domain<level - 1>().values_buff,
+          epsilon_oC_map.template get_domain<level>().values_buff,
+          epsilon_oE_map.template get_domain<level>().values_buff,
+          epsilon_oN_map.template get_domain<level>().values_buff,
+          epsilon_uC_map.template get_domain<level>().values_buff,
+          epsilon_oNE_map.template get_domain<level>().values_buff,
+          epsilon_oNW_map.template get_domain<level>().values_buff,
+          epsilon_uE_map.template get_domain<level>().values_buff,
+          epsilon_uW_map.template get_domain<level>().values_buff,
+          epsilon_uN_map.template get_domain<level>().values_buff,
+          epsilon_uS_map.template get_domain<level>().values_buff,
+          epsilon_uNE_map.template get_domain<level>().values_buff,
+          epsilon_uNW_map.template get_domain<level>().values_buff,
+          epsilon_uSE_map.template get_domain<level>().values_buff,
+          epsilon_uSW_map.template get_domain<level>().values_buff,
+          epsilon_oC_map.template get_domain<level - 1>().values_buff,
+          epsilon_oE_map.template get_domain<level - 1>().values_buff,
+          epsilon_oN_map.template get_domain<level - 1>().values_buff,
+          epsilon_uC_map.template get_domain<level - 1>().values_buff,
+          epsilon_oNE_map.template get_domain<level - 1>().values_buff,
+          epsilon_oNW_map.template get_domain<level - 1>().values_buff,
+          epsilon_uE_map.template get_domain<level - 1>().values_buff,
+          epsilon_uW_map.template get_domain<level - 1>().values_buff,
+          epsilon_uN_map.template get_domain<level - 1>().values_buff,
+          epsilon_uS_map.template get_domain<level - 1>().values_buff,
+          epsilon_uNE_map.template get_domain<level - 1>().values_buff,
+          epsilon_uNW_map.template get_domain<level - 1>().values_buff,
+          epsilon_uSE_map.template get_domain<level - 1>().values_buff,
+          epsilon_uSW_map.template get_domain<level - 1>().values_buff, q);
 
       buildmultilevelops<level - 1>();
     }
+  }
+
+  auto get_map() {
+
+    auto cg_map = [=, this](const auto domain, sycl::id<Dim> I) {
+      using d_type_inner = decltype(domain);
+      constexpr std::size_t nxc_i = std::get<0>(d_type_inner::length) + 2;
+      constexpr std::size_t nyc_i = std::get<1>(d_type_inner::length) + 2;
+      constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
+
+      constexpr std::size_t level =
+          utils::level_from_length(std::get<0>(d_type_inner::length),
+                                   std::get<0>(d_type<nlev>::length), nlev);
+
+      if constexpr (level == nlev) {
+
+        return
+
+            pmgc::matveckernel7<nxc_i, nyc_i, nzc_i>(
+                I[0] + 1, I[1] + 1, I[2] + 1,
+                epsilon_oC_map.template get_domain<level>().values_buff,
+                kappa_.template get_domain<level>().values_buff,
+                epsilon_oE_map.template get_domain<level>().values_buff,
+                epsilon_oN_map.template get_domain<level>().values_buff,
+                epsilon_uC_map.template get_domain<level>().values_buff,
+                domain.values_buff);
+      } else {
+
+        return pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
+            I[0] + 1, I[1] + 1, I[2] + 1,
+            epsilon_oC_map.template get_domain<level>().values_buff,
+            kappa_.template get_domain<level>().values_buff,
+            epsilon_oE_map.template get_domain<level>().values_buff,
+            epsilon_oN_map.template get_domain<level>().values_buff,
+            epsilon_uC_map.template get_domain<level>().values_buff,
+            epsilon_oNE_map.template get_domain<level>().values_buff,
+            epsilon_oNW_map.template get_domain<level>().values_buff,
+            epsilon_uE_map.template get_domain<level>().values_buff,
+            epsilon_uW_map.template get_domain<level>().values_buff,
+            epsilon_uN_map.template get_domain<level>().values_buff,
+            epsilon_uS_map.template get_domain<level>().values_buff,
+            epsilon_uNE_map.template get_domain<level>().values_buff,
+            epsilon_uNW_map.template get_domain<level>().values_buff,
+            epsilon_uSE_map.template get_domain<level>().values_buff,
+            epsilon_uSW_map.template get_domain<level>().values_buff,
+            domain.values_buff);
+      }
+    };
+
+    return cg_map;
+  }
+
+  DataType compute_residual() {
+    return convolution::compute_residual_map(
+        sol.get_domain(), rhs_domain.get_domain(), get_map());
   }
 
   static DataType sqr(DataType val) { return val * val; }
@@ -471,13 +534,13 @@ class PBE_linear_problem {
 
   // Defining the pmgc length of the level
   template <std::size_t level = nlev>
-  static const int nx = std::get<0>(strides<level>) + 2;
+  static constexpr int nx = std::get<0>(strides<level>) + 2;
 
   template <std::size_t level = nlev>
-  static const int ny = std::get<1>(strides<level>) + 2;
+  static constexpr int ny = std::get<1>(strides<level>) + 2;
 
   template <std::size_t level = nlev>
-  static const int nz = std::get<2>(strides<level>) + 2;
+  static constexpr int nz = std::get<2>(strides<level>) + 2;
 };
 
 template <std::size_t nlev, Length base_length, DataType box_length>

@@ -27,7 +27,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 8;
+constexpr std::size_t base_length = 2;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0;
@@ -73,11 +73,14 @@ template <std::size_t level = nlev>
 constexpr auto strides = Domain_Type<level>::length;
 
 // Defining the pmgc length of the level
-template <std::size_t level = nlev> int nx = std::get<0>(strides<level>) + 2;
+template <std::size_t level = nlev>
+constexpr int nx = std::get<0>(strides<level>) + 2;
 
-template <std::size_t level = nlev> int ny = std::get<1>(strides<level>) + 2;
+template <std::size_t level = nlev>
+constexpr int ny = std::get<1>(strides<level>) + 2;
 
-template <std::size_t level = nlev> int nz = std::get<2>(strides<level>) + 2;
+template <std::size_t level = nlev>
+constexpr int nz = std::get<2>(strides<level>) + 2;
 
 DataType sqr(double val) { return val * val; }
 
@@ -155,9 +158,8 @@ void compute_center_domain(domain::Domain<Dim, strides_all...> &center_domain,
 
 int main(int argc, char *argv[]) {
 
-  //  constexpr DataType epsilon_p = 1.0;
-  //  constexpr DataType epsilon_r = 1.0;
-  //  constexpr DataType delta_epsilon = 0;
+  std::cout << "epsilon_p is given by: " << epsilon_p << std::endl;
+  std::cout << "epsilon_r is given by: " << epsilon_r << std::endl;
 
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
@@ -267,6 +269,8 @@ int main(int argc, char *argv[]) {
          })
         .wait();
 
+    // boundary_domain.print_domain();
+
     auto &epsilonuC_domain = epsilon_uC_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
@@ -341,6 +345,15 @@ int main(int argc, char *argv[]) {
     compute_center_domain(epsilonc_domain, epsilonuC_domain, epsilonoN_domain,
                           epsilonoE_domain);
 
+    //  std::cout << "oC epsilon" << std::endl;
+    //  epsilonc_domain.print_domain();
+    //  std::cout << "oE epsilon" << std::endl;
+    //  epsilonoE_domain.print_domain();
+    //  std::cout << "oN epsilon" << std::endl;
+    //  epsilonoN_domain.print_domain();
+    //  std::cout << "uC epsilon" << std::endl;
+    //  epsilonuC_domain.print_domain();
+
     q.wait();
 
     auto &kappa_domain = kappa_.template get_domain<nlev>();
@@ -404,6 +417,8 @@ int main(int argc, char *argv[]) {
                spacing<DataType, static_cast<DataType>(grid_step)>{});
        });
      }).wait();
+
+    // rhs.print_domain();
 
     pmgc::VbuildPb_op7(
         nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>, nz<nlev - 1>,

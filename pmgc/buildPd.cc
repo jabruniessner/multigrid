@@ -590,6 +590,8 @@ void VbuildPb_op27<DataType>(
     DataType *dPNE, DataType *dPNW, DataType *dPSE, DataType *dPSW,
     sycl::queue &q) {
 
+  std::cout << "Using operator base prolongation 27x" << std::endl;
+
   int i, j, k;
 
   MAT3(oC, nxf, nyf, nzf);
