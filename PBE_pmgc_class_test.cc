@@ -1,7 +1,7 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
 
-constexpr std::size_t base_length = 2;
+constexpr std::size_t base_length = 1;
 constexpr std::size_t nlev = 2;
 constexpr DataType box_length = 16;
 
@@ -70,12 +70,17 @@ int main(int argc, char *argv[]) {
   std::cout << "The initial residual is:" << mg_solver.compute_residual()
             << std::endl;
 
-  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
-
-  std::cout << "After the cg_method on top level, the residual is: "
-            << mg_solver.compute_residual() << std::endl;
+  //  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
+  //
+  //  std::cout << "After the cg_method on top level, the residual is: "
+  //            << mg_solver.compute_residual() << std::endl;
 
   q.wait();
+
+  mg_solver.smooth_domain_sol(2);
+
+  std::cout << "After 2 iterations the sol domain is: " << std::endl;
+  mg_solver.sol.get_domain().print_domain();
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;

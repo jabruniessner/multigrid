@@ -13,6 +13,7 @@
 #include "utils.h"
 #include <iostream>
 #include <sycl/sycl.hpp>
+#include <type_traits>
 
 #ifndef PBE_PMGC_CLASS_H
 #define PBE_PMGC_CLASS_H
@@ -560,6 +561,49 @@ public:
     auto solver = get_solver<level>(floatnum);
     solver(sol2.template get_domain<level>(),
            rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  void smooth_domain(auto &domain, int num_iters) {
+
+    using d_type_inner = std::remove_reference_t<decltype(domain)>;
+
+    constexpr std::size_t level =
+        utils::level_from_length(std::get<0>(d_type_inner::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+#define VAL_BUF_EPSILON(x)                                                     \
+  epsilon_##x##_map.template get_domain<level>().values_buff
+
+    auto &kappa_domain = kappa_.template get_domain<level>();
+
+    if constexpr (level == nlev) {
+      pmgc::Vgsrb7x(nx<level>, ny<level>, nz<level>, VAL_BUF_EPSILON(oC),
+                    kappa_domain.values_buff,
+                    rhs_domain.template get_domain<level>().values_buff,
+                    VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN),
+                    VAL_BUF_EPSILON(uC), domain.values_buff, &num_iters, q);
+    } else {
+      pmgc::Vgsrb27x(
+          nx<level>, ny<level>, nz<level>, VAL_BUF_EPSILON(oC), kappa_domain,
+          kappa_domain.values_buff, VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN),
+          VAL_BUF_EPSILON(uC), VAL_BUF_EPSILON(oNE), VAL_BUF_EPSILON(oNW),
+          VAL_BUF_EPSILON(uE), VAL_BUF_EPSILON(uW), VAL_BUF_EPSILON(uN),
+          VAL_BUF_EPSILON(uS), VAL_BUF_EPSILON(uNE), VAL_BUF_EPSILON(uNW),
+          VAL_BUF_EPSILON(uSE), VAL_BUF_EPSILON(uSW), domain.values_buff,
+          &num_iters, q);
+    }
+
+#undef VAL_BUF_EPSILON
+  }
+
+  template <std::size_t level = nlev>
+  void smooth_domain_sol(std::size_t num_iters = 2) {
+    smooth_domain(sol.template get_domain<level>(), num_iters);
+  }
+
+  template <std::size_t level = nlev>
+  void smooth_domain_sol2(std::size_t num_iters = 2) {
+    smooth_domain(sol2.template get_domain<level>(), num_iters);
   }
 
   static DataType sqr(DataType val) { return val * val; }

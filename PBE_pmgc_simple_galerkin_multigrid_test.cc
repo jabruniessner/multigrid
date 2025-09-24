@@ -27,7 +27,7 @@ using namespace convolution;
 
 constexpr Dimension Dim = 3;
 constexpr std::size_t nlev = 2u;
-constexpr std::size_t base_length = 2;
+constexpr std::size_t base_length = 1;
 constexpr DataType omega = 1.;
 constexpr DataType box_length = 16;
 constexpr DataType ionic_strength = 0;
@@ -614,6 +614,11 @@ int main(int argc, char *argv[]) {
                     epsilonoE_domain.values_buff, epsilonoN_domain.values_buff,
                     epsilonuC_domain.values_buff, sol.get_domain().values_buff,
                     &smoothing_iters, q);
+
+      std::cout << "After 2 smoothing iterations the sol domain is: "
+                << std::endl;
+
+      sol.get_domain().print_domain();
 
       //  std::cout << "The sol domain after the gsb is: " << std::endl;
       //  sol.get_domain().print_domain();
