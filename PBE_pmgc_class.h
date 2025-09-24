@@ -530,6 +530,8 @@ struct GS_smoother {
           VAL_BUF_EPSILON(uSW), src.template get_domain<level>().values_buff,
           &num_iters, pbe_problem.q);
     }
+
+#undef VAL_BUF_EPSILON
   }
 
   PBE_linear_problem<nlev, base_length, box_length> &pbe_problem;
