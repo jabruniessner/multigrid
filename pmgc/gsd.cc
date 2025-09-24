@@ -59,22 +59,21 @@
 namespace pmgc {
 
 template <>
-void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                       DataType *oC, DataType *cc, DataType *fc, DataType *oE,
-                       DataType *oN, DataType *uC, DataType *x, int *itmax,
-                       sycl::queue &q) {
+void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
+                       DataType *cc, DataType *fc, DataType *oE, DataType *oN,
+                       DataType *uC, DataType *x, int *itmax, sycl::queue &q) {
 
-  MAT3(cc, *nx, *ny, *nz);
-  MAT3(fc, *nx, *ny, *nz);
-  MAT3(x, *nx, *ny, *nz);
-  MAT3(w1, *nx, *ny, *nz);
-  MAT3(w2, *nx, *ny, *nz);
-  MAT3(r, *nx, *ny, *nz);
+  MAT3(cc, nx, ny, nz);
+  MAT3(fc, nx, ny, nz);
+  MAT3(x, nx, ny, nz);
+  MAT3(w1, nx, ny, nz);
+  MAT3(w2, nx, ny, nz);
+  MAT3(r, nx, ny, nz);
 
-  MAT3(oE, *nx, *ny, *nz);
-  MAT3(oN, *nx, *ny, *nz);
-  MAT3(uC, *nx, *ny, *nz);
-  MAT3(oC, *nx, *ny, *nz);
+  MAT3(oE, nx, ny, nz);
+  MAT3(oN, nx, ny, nz);
+  MAT3(uC, nx, ny, nz);
+  MAT3(oC, nx, ny, nz);
 
   for (int iters = 1; iters <= *itmax; iters++) {
 
@@ -82,7 +81,7 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 
     for (int color = 1; color >= 0; color--)
       q.parallel_for(
-          sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+          sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
             const int j = I[1] + 2;
             const int i = I[2] + 2;
@@ -109,12 +108,12 @@ void Vgsrb7x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 }
 
 template <>
-void Vgsrb27x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
-                        DataType *oC, DataType *cc, DataType *fc, DataType *oE,
-                        DataType *oN, DataType *uC, DataType *oNE,
-                        DataType *oNW, DataType *uE, DataType *uW, DataType *uN,
-                        DataType *uS, DataType *uNE, DataType *uNW,
-                        DataType *uSE, DataType *uSW, DataType *x, int *itmax,
+void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
+                        DataType *cc, DataType *fc, DataType *oE, DataType *oN,
+                        DataType *uC, DataType *oNE, DataType *oNW,
+                        DataType *uE, DataType *uW, DataType *uN, DataType *uS,
+                        DataType *uNE, DataType *uNW, DataType *uSE,
+                        DataType *uSW, DataType *x, int *itmax,
                         sycl::queue &q) {
 
   int i, j, k;
@@ -125,34 +124,34 @@ void Vgsrb27x<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 
   DataType tmpO, tmpU, tmpD;
 
-  MAT3(cc, *nx, *ny, *nz);
-  MAT3(fc, *nx, *ny, *nz);
-  MAT3(x, *nx, *ny, *nz);
-  MAT3(w1, *nx, *ny, *nz);
-  MAT3(w2, *nx, *ny, *nz);
-  MAT3(r, *nx, *ny, *nz);
+  MAT3(cc, nx, ny, nz);
+  MAT3(fc, nx, ny, nz);
+  MAT3(x, nx, ny, nz);
+  MAT3(w1, nx, ny, nz);
+  MAT3(w2, nx, ny, nz);
+  MAT3(r, nx, ny, nz);
 
-  MAT3(oE, *nx, *ny, *nz);
-  MAT3(oN, *nx, *ny, *nz);
-  MAT3(uC, *nx, *ny, *nz);
-  MAT3(oC, *nx, *ny, *nz);
+  MAT3(oE, nx, ny, nz);
+  MAT3(oN, nx, ny, nz);
+  MAT3(uC, nx, ny, nz);
+  MAT3(oC, nx, ny, nz);
 
-  MAT3(oNE, *nx, *ny, *nz);
-  MAT3(oNW, *nx, *ny, *nz);
+  MAT3(oNE, nx, ny, nz);
+  MAT3(oNW, nx, ny, nz);
 
-  MAT3(uE, *nx, *ny, *nz);
-  MAT3(uW, *nx, *ny, *nz);
-  MAT3(uN, *nx, *ny, *nz);
-  MAT3(uS, *nx, *ny, *nz);
-  MAT3(uNE, *nx, *ny, *nz);
-  MAT3(uNW, *nx, *ny, *nz);
-  MAT3(uSE, *nx, *ny, *nz);
-  MAT3(uSW, *nx, *ny, *nz);
+  MAT3(uE, nx, ny, nz);
+  MAT3(uW, nx, ny, nz);
+  MAT3(uN, nx, ny, nz);
+  MAT3(uS, nx, ny, nz);
+  MAT3(uNE, nx, ny, nz);
+  MAT3(uNW, nx, ny, nz);
+  MAT3(uSE, nx, ny, nz);
+  MAT3(uSW, nx, ny, nz);
 
   for (int iters = 1; iters <= *itmax; iters++) {
     for (int color = 0; color <= 8; color++)
       q.parallel_for(
-          sycl::range<3>((*nx - 2), *ny - 2, *nz - 2), [=](sycl::id<3> I) {
+          sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
             const int j = I[1] + 2;
             const int i = I[2] + 2;

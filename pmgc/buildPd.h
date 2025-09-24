@@ -61,15 +61,14 @@
 namespace pmgc {
 
 template <typename DataType>
-void VbuildP(int *nxf,      ///< @todo: doc
-             int *nyf,      ///< @todo: doc
-             int *nzf,      ///< @todo: doc
-             int *nxc,      ///< @todo: doc
-             int *nyc,      ///< @todo: doc
-             int *nzc,      ///< @todo: doc
+void VbuildP(const int nxf, ///< @todo: doc
+             const int nyf, ///< @todo: doc
+             const int nzf, ///< @todo: doc
+             const int nxc, ///< @todo: doc
+             const int nyc, ///< @todo: doc
+             const int nzc, ///< @todo: doc
              int *mgprol,   ///< @todo: doc
              int *ipc,      ///< @todo: doc
-             DataType *rpc, ///< @todo: doc
              DataType *pc,  ///< @todo: doc
              DataType *ac,  ///< @todo: doc
              DataType *xf,  ///< @todo: doc
@@ -78,12 +77,12 @@ void VbuildP(int *nxf,      ///< @todo: doc
              sycl::queue &q);
 
 template <typename DataType>
-void VbuildP_trilin(int *nxf,      ///< @todo: doc
-                    int *nyf,      ///< @todo: doc
-                    int *nzf,      ///< @todo: doc
-                    int *nxc,      ///< @todo: doc
-                    int *nyc,      ///< @todo: doc
-                    int *nzc,      ///< @todo: doc
+void VbuildP_trilin(const int nxf, ///< @todo: doc
+                    const int nyf, ///< @todo: doc
+                    const int nzf, ///< @todo: doc
+                    const int nxc, ///< @todo: doc
+                    const int nyc, ///< @todo: doc
+                    const int nzc, ///< @todo: doc
                     DataType *pc,  ///< @todo: doc
                     DataType *xf,  ///< @todo: doc
                     DataType *yf,  ///< @todo: doc
@@ -92,12 +91,12 @@ void VbuildP_trilin(int *nxf,      ///< @todo: doc
 );
 
 template <typename DataType>
-void VbuildPb_trilin(int *nxf,       ///< @todo: doc
-                     int *nyf,       ///< @todo: doc
-                     int *nzf,       ///< @todo: doc
-                     int *nxc,       ///< @todo: doc
-                     int *nyc,       ///< @todo: doc
-                     int *nzc,       ///< @todo: doc
+void VbuildPb_trilin(const int nxf,  ///< @todo: doc
+                     const int nyf,  ///< @todo: doc
+                     const int nzf,  ///< @todo: doc
+                     const int nxc,  ///< @todo: doc
+                     const int nyc,  ///< @todo: doc
+                     const int nzc,  ///< @todo: doc
                      DataType *oPC,  ///< @todo: doc
                      DataType *oPN,  ///< @todo: doc
                      DataType *oPS,  ///< @todo: doc
@@ -132,28 +131,24 @@ void VbuildPb_trilin(int *nxf,       ///< @todo: doc
 );
 
 template <typename DataType>
-void VbuildP_op7(int *nxf,      ///< @todo: doc
-                 int *nyf,      ///< @todo: doc
-                 int *nzf,      ///< @todo: doc
-                 int *nxc,      ///< @todo: doc
-                 int *nyc,      ///< @todo: doc
-                 int *nzc,      ///< @todo: doc
-                 int *ipc,      ///< @todo: doc
-                 DataType *rpc, ///< @todo: doc
+void VbuildP_op7(const int nxf, ///< @todo: doc
+                 const int nyf, ///< @todo: doc
+                 const int nzf, ///< @todo: doc
+                 const int nxc, ///< @todo: doc
+                 const int nyc, ///< @todo: doc
+                 const int nzc, ///< @todo: doc
                  DataType *ac,  ///< @todo: doc
                  DataType *pc,
                  sycl::queue &q ///< @todo: doc
 );
 
 template <typename DataType>
-void VbuildPb_op7(int *nxf,       ///< @todo: doc
-                  int *nyf,       ///< @todo: doc
-                  int *nzf,       ///< @todo: doc
-                  int *nxc,       ///< @todo: doc
-                  int *nyc,       ///< @todo: doc
-                  int *nzc,       ///< @todo: doc
-                  int *ipc,       ///< @todo: doc
-                  DataType *rpc,  ///< @todo: doc
+void VbuildPb_op7(const int nxf,  ///< @todo: doc
+                  const int nyf,  ///< @todo: doc
+                  const int nzf,  ///< @todo: doc
+                  const int nxc,  ///< @todo: doc
+                  const int nyc,  ///< @todo: doc
+                  const int nzc,  ///< @todo: doc
                   DataType *oC,   ///< @todo: doc
                   DataType *oE,   ///< @todo: doc
                   DataType *oN,   ///< @todo: doc
@@ -189,28 +184,24 @@ void VbuildPb_op7(int *nxf,       ///< @todo: doc
 );
 
 template <typename DataType>
-void VbuildP_op27(int *nxf,      ///< @todo: doc
-                  int *nyf,      ///< @todo: doc
-                  int *nzf,      ///< @todo: doc
-                  int *nxc,      ///< @todo: doc
-                  int *nyc,      ///< @todo: doc
-                  int *nzc,      ///< @todo: doc
-                  int *ipc,      ///< @todo: doc
-                  DataType *rpc, ///< @todo: doc
+void VbuildP_op27(const int nxf, ///< @todo: doc
+                  const int nyf, ///< @todo: doc
+                  const int nzf, ///< @todo: doc
+                  const int nxc, ///< @todo: doc
+                  const int nyc, ///< @todo: doc
+                  const int nzc, ///< @todo: doc
                   DataType *ac,  ///< @todo: doc
                   DataType *pc,
                   sycl::queue &q ///< @todo: doc
 );
 
 template <typename DataType>
-void VbuildPb_op27(int *nxf,       ///< @todo: doc
-                   int *nyf,       ///< @todo: doc
-                   int *nzf,       ///< @todo: doc
-                   int *nxc,       ///< @todo: doc
-                   int *nyc,       ///< @todo: doc
-                   int *nzc,       ///< @todo: doc
-                   int *ipc,       ///< @todo: doc
-                   DataType *rpc,  ///< @todo: doc
+void VbuildPb_op27(const int nxf,  ///< @todo: doc
+                   const int nyf,  ///< @todo: doc
+                   const int nzf,  ///< @todo: doc
+                   const int nxc,  ///< @todo: doc
+                   const int nyc,  ///< @todo: doc
+                   const int nzc,  ///< @todo: doc
                    DataType *oC,   ///< @todo: doc
                    DataType *oE,   ///< @todo: doc
                    DataType *oN,   ///< @todo: doc

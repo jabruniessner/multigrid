@@ -406,8 +406,7 @@ int main(int argc, char *argv[]) {
      }).wait();
 
     pmgc::VbuildPb_op7(
-        &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
-        &nz<nlev - 1>, (int *)nullptr, (DataType *)nullptr,
+        nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>, nz<nlev - 1>,
         epsilonc_domain.values_buff, epsilonoE_domain.values_buff,
         epsilonoN_domain.values_buff, epsilonuC_domain.values_buff,
         oPC.template get_domain<nlev - 1>().values_buff,
@@ -439,8 +438,8 @@ int main(int argc, char *argv[]) {
         dPSW.template get_domain<nlev - 1>().values_buff, q);
 
     pmgc::VbuildG_7(
-        &nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>, &ny<nlev - 1>,
-        &nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
+        nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>, nz<nlev - 1>,
+        oPC.template get_domain<nlev - 1>().values_buff,
         oPN.template get_domain<nlev - 1>().values_buff,
         oPS.template get_domain<nlev - 1>().values_buff,
         oPE.template get_domain<nlev - 1>().values_buff,
@@ -594,7 +593,7 @@ int main(int argc, char *argv[]) {
         break;
 
       // Presmoothing
-      pmgc::Vgsrb7x(&nx<nlev>, &ny<nlev>, &nz<nlev>, (int *)nullptr, DT_null,
+      pmgc::Vgsrb7x(nx<nlev>, ny<nlev>, nz<nlev>,
                     epsilon_oC_map.get_domain().values_buff,
                     kappa_domain.values_buff, rhs.values_buff,
                     epsilonoE_domain.values_buff, epsilonoN_domain.values_buff,
@@ -633,9 +632,8 @@ int main(int argc, char *argv[]) {
       //   sol2.template get_domain<nlev>().print_domain();
 
       // Restriction
-      pmgc::Vrestrc2(&nx<nlev>, &ny<nlev>, &nz<nlev>, &nx<nlev - 1>,
-                     &ny<nlev - 1>, &nz<nlev - 1>,
-                     sol2.get_domain().values_buff,
+      pmgc::Vrestrc2(nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
+                     nz<nlev - 1>, sol2.get_domain().values_buff,
                      rhs_domain.template get_domain<nlev - 1>().values_buff,
                      oPC.template get_domain<nlev - 1>().values_buff,
                      oPN.template get_domain<nlev - 1>().values_buff,
@@ -708,8 +706,8 @@ int main(int argc, char *argv[]) {
       //  // std::endl;
       //  //  sol2.template get_domain<nlev>().print_domain();
 
-      pmgc::VinterpPMG2(&nx<nlev - 1>, &nx<nlev - 1>, &nx<nlev - 1>, &nx<nlev>,
-                        &ny<nlev>, &nz<nlev>,
+      pmgc::VinterpPMG2(nx<nlev - 1>, nx<nlev - 1>, nx<nlev - 1>, nx<nlev>,
+                        ny<nlev>, nz<nlev>,
                         sol2.get_domain<nlev - 1>().values_buff,
                         sol2.get_domain().values_buff,
                         oPC.template get_domain<nlev - 1>().values_buff,
@@ -747,7 +745,7 @@ int main(int argc, char *argv[]) {
       add_domains(sol.get_domain(), sol2.get_domain(), sol.get_domain());
 
       //  //   // Postsmoothing
-      pmgc::Vgsrb7x(&nx<nlev>, &ny<nlev>, &nz<nlev>, (int *)nullptr, DT_null,
+      pmgc::Vgsrb7x(nx<nlev>, ny<nlev>, nz<nlev>,
                     epsilon_oC_map.get_domain().values_buff,
                     kappa_domain.values_buff, rhs.values_buff,
                     epsilonoE_domain.values_buff, epsilonoN_domain.values_buff,

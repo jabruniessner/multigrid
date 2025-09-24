@@ -62,7 +62,8 @@ namespace pmgc {
 
 
 template<>
-void VbuildG_1<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz,
+void VbuildG_1<DataType>(const int nxf, const int nyf, const int nzf, const int nx, 
+                         const int ny, const int nz,
                        DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
                        DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
                        DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
@@ -82,65 +83,65 @@ void VbuildG_1<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz
 
   DataType TMP1_XOC, TMP2_XOC, TMP3_XOC;
 
-  MAT3(oC, *nxf, *nyf, *nzf);
+  MAT3(oC, nxf, nyf, nzf);
 
-  MAT3(XoC, *nx, *ny, *nz);
-  MAT3(XoE, *nx, *ny, *nz);
-  MAT3(XoN, *nx, *ny, *nz);
+  MAT3(XoC, nx, ny, nz);
+  MAT3(XoE, nx, ny, nz);
+  MAT3(XoN, nx, ny, nz);
 
-  MAT3(XuC, *nx, *ny, *nz);
+  MAT3(XuC, nx, ny, nz);
 
-  MAT3(XoNE, *nx, *ny, *nz);
-  MAT3(XoNW, *nx, *ny, *nz);
+  MAT3(XoNE, nx, ny, nz);
+  MAT3(XoNW, nx, ny, nz);
 
-  MAT3(XuE, *nx, *ny, *nz);
-  MAT3(XuW, *nx, *ny, *nz);
-  MAT3(XuN, *nx, *ny, *nz);
-  MAT3(XuS, *nx, *ny, *nz);
-  MAT3(XuNE, *nx, *ny, *nz);
-  MAT3(XuNW, *nx, *ny, *nz);
-  MAT3(XuSE, *nx, *ny, *nz);
-  MAT3(XuSW, *nx, *ny, *nz);
+  MAT3(XuE, nx, ny, nz);
+  MAT3(XuW, nx, ny, nz);
+  MAT3(XuN, nx, ny, nz);
+  MAT3(XuS, nx, ny, nz);
+  MAT3(XuNE, nx, ny, nz);
+  MAT3(XuNW, nx, ny, nz);
+  MAT3(XuSE, nx, ny, nz);
+  MAT3(XuSW, nx, ny, nz);
 
-  MAT3(oPC, *nx, *ny, *nz);
-  MAT3(oPN, *nx, *ny, *nz);
-  MAT3(oPS, *nx, *ny, *nz);
-  MAT3(oPE, *nx, *ny, *nz);
-  MAT3(oPW, *nx, *ny, *nz);
-  MAT3(oPNE, *nx, *ny, *nz);
-  MAT3(oPNW, *nx, *ny, *nz);
-  MAT3(oPSE, *nx, *ny, *nz);
-  MAT3(oPSW, *nx, *ny, *nz);
+  MAT3(oPC, nx, ny, nz);
+  MAT3(oPN, nx, ny, nz);
+  MAT3(oPS, nx, ny, nz);
+  MAT3(oPE, nx, ny, nz);
+  MAT3(oPW, nx, ny, nz);
+  MAT3(oPNE, nx, ny, nz);
+  MAT3(oPNW, nx, ny, nz);
+  MAT3(oPSE, nx, ny, nz);
+  MAT3(oPSW, nx, ny, nz);
 
-  MAT3(uPC, *nx, *ny, *nz);
-  MAT3(uPN, *nx, *ny, *nz);
-  MAT3(uPS, *nx, *ny, *nz);
-  MAT3(uPE, *nx, *ny, *nz);
-  MAT3(uPW, *nx, *ny, *nz);
-  MAT3(uPNE, *nx, *ny, *nz);
-  MAT3(uPNW, *nx, *ny, *nz);
-  MAT3(uPSE, *nx, *ny, *nz);
-  MAT3(uPSW, *nx, *ny, *nz);
+  MAT3(uPC, nx, ny, nz);
+  MAT3(uPN, nx, ny, nz);
+  MAT3(uPS, nx, ny, nz);
+  MAT3(uPE, nx, ny, nz);
+  MAT3(uPW, nx, ny, nz);
+  MAT3(uPNE, nx, ny, nz);
+  MAT3(uPNW, nx, ny, nz);
+  MAT3(uPSE, nx, ny, nz);
+  MAT3(uPSW, nx, ny, nz);
 
-  MAT3(dPC, *nx, *ny, *nz);
-  MAT3(dPN, *nx, *ny, *nz);
-  MAT3(dPS, *nx, *ny, *nz);
-  MAT3(dPE, *nx, *ny, *nz);
-  MAT3(dPW, *nx, *ny, *nz);
-  MAT3(dPNE, *nx, *ny, *nz);
-  MAT3(dPNW, *nx, *ny, *nz);
-  MAT3(dPSE, *nx, *ny, *nz);
-  MAT3(dPSW, *nx, *ny, *nz);
+  MAT3(dPC, nx, ny, nz);
+  MAT3(dPN, nx, ny, nz);
+  MAT3(dPS, nx, ny, nz);
+  MAT3(dPE, nx, ny, nz);
+  MAT3(dPW, nx, ny, nz);
+  MAT3(dPNE, nx, ny, nz);
+  MAT3(dPNW, nx, ny, nz);
+  MAT3(dPSE, nx, ny, nz);
+  MAT3(dPSW, nx, ny, nz);
 
   // Define n and determine number of mesh points
-  nxm1 = *nx - 1;
-  nym1 = *ny - 1;
-  nzm1 = *nz - 1;
+  nxm1 = nx - 1;
+  nym1 = ny - 1;
+  nzm1 = nz - 1;
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 
   // Build the operator
-      q.parallel_for(sycl::range<3>(*nx - 2, *ny - 2, *nz - 2), [=](sycl::id<3> I) { 
+      q.parallel_for(sycl::range<3>(nx - 2, ny - 2, nz - 2), [=](sycl::id<3> I) { 
         const int ii = I[0] + 2; // Adjust for 1-based indexing
         const int jj = I[1] + 2; // Adjust for 1-based indexing
         const int kk = I[2] + 2; // Adjust for 1-based indexing
@@ -434,7 +435,8 @@ void VbuildG_1<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz
 }
 
 template<> void
-VbuildG_7<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
+VbuildG_7<DataType>(const int nxf, const int nyf, const int nzf, const int nx, 
+          const int ny, const int nz,  DataType *oPC,
           DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
           DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
           DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
@@ -462,67 +464,67 @@ VbuildG_7<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, Dat
   DataType TMP1_XON, TMP2_XON, TMP3_XON, TMP4_XON;
   DataType TMP1_XUC, TMP2_XUC, TMP3_XUC, TMP4_XUC;
 
-  MAT3(oC, *nxf, *nyf, *nzf);
-  MAT3(oE, *nxf, *nyf, *nzf);
-  MAT3(oN, *nxf, *nyf, *nzf);
+  MAT3(oC, nxf, nyf, nzf);
+  MAT3(oE, nxf, nyf, nzf);
+  MAT3(oN, nxf, nyf, nzf);
 
-  MAT3(uC, *nxf, *nyf, *nzf);
+  MAT3(uC, nxf, nyf, nzf);
 
-  MAT3(XoC, *nx, *ny, *nz);
-  MAT3(XoE, *nx, *ny, *nz);
-  MAT3(XoN, *nx, *ny, *nz);
-  MAT3(XoNE, *nx, *ny, *nz);
-  MAT3(XoNW, *nx, *ny, *nz);
+  MAT3(XoC, nx, ny, nz);
+  MAT3(XoE, nx, ny, nz);
+  MAT3(XoN, nx, ny, nz);
+  MAT3(XoNE, nx, ny, nz);
+  MAT3(XoNW, nx, ny, nz);
 
-  MAT3(XuC, *nx, *ny, *nz);
-  MAT3(XuE, *nx, *ny, *nz);
-  MAT3(XuW, *nx, *ny, *nz);
-  MAT3(XuN, *nx, *ny, *nz);
-  MAT3(XuS, *nx, *ny, *nz);
-  MAT3(XuNE, *nx, *ny, *nz);
-  MAT3(XuNW, *nx, *ny, *nz);
-  MAT3(XuSE, *nx, *ny, *nz);
-  MAT3(XuSW, *nx, *ny, *nz);
+  MAT3(XuC, nx, ny, nz);
+  MAT3(XuE, nx, ny, nz);
+  MAT3(XuW, nx, ny, nz);
+  MAT3(XuN, nx, ny, nz);
+  MAT3(XuS, nx, ny, nz);
+  MAT3(XuNE, nx, ny, nz);
+  MAT3(XuNW, nx, ny, nz);
+  MAT3(XuSE, nx, ny, nz);
+  MAT3(XuSW, nx, ny, nz);
 
-  MAT3(oPC, *nx, *ny, *nz);
-  MAT3(oPN, *nx, *ny, *nz);
-  MAT3(oPS, *nx, *ny, *nz);
-  MAT3(oPE, *nx, *ny, *nz);
-  MAT3(oPW, *nx, *ny, *nz);
-  MAT3(oPNE, *nx, *ny, *nz);
-  MAT3(oPNW, *nx, *ny, *nz);
-  MAT3(oPSE, *nx, *ny, *nz);
-  MAT3(oPSW, *nx, *ny, *nz);
+  MAT3(oPC, nx, ny, nz);
+  MAT3(oPN, nx, ny, nz);
+  MAT3(oPS, nx, ny, nz);
+  MAT3(oPE, nx, ny, nz);
+  MAT3(oPW, nx, ny, nz);
+  MAT3(oPNE, nx, ny, nz);
+  MAT3(oPNW, nx, ny, nz);
+  MAT3(oPSE, nx, ny, nz);
+  MAT3(oPSW, nx, ny, nz);
 
-  MAT3(uPC, *nx, *ny, *nz);
-  MAT3(uPN, *nx, *ny, *nz);
-  MAT3(uPS, *nx, *ny, *nz);
-  MAT3(uPE, *nx, *ny, *nz);
-  MAT3(uPW, *nx, *ny, *nz);
-  MAT3(uPNE, *nx, *ny, *nz);
-  MAT3(uPNW, *nx, *ny, *nz);
-  MAT3(uPSE, *nx, *ny, *nz);
-  MAT3(uPSW, *nx, *ny, *nz);
+  MAT3(uPC, nx, ny, nz);
+  MAT3(uPN, nx, ny, nz);
+  MAT3(uPS, nx, ny, nz);
+  MAT3(uPE, nx, ny, nz);
+  MAT3(uPW, nx, ny, nz);
+  MAT3(uPNE, nx, ny, nz);
+  MAT3(uPNW, nx, ny, nz);
+  MAT3(uPSE, nx, ny, nz);
+  MAT3(uPSW, nx, ny, nz);
 
-  MAT3(dPC, *nx, *ny, *nz);
-  MAT3(dPN, *nx, *ny, *nz);
-  MAT3(dPS, *nx, *ny, *nz);
-  MAT3(dPE, *nx, *ny, *nz);
-  MAT3(dPW, *nx, *ny, *nz);
-  MAT3(dPNE, *nx, *ny, *nz);
-  MAT3(dPNW, *nx, *ny, *nz);
-  MAT3(dPSE, *nx, *ny, *nz);
-  MAT3(dPSW, *nx, *ny, *nz);
+  MAT3(dPC, nx, ny, nz);
+  MAT3(dPN, nx, ny, nz);
+  MAT3(dPS, nx, ny, nz);
+  MAT3(dPE, nx, ny, nz);
+  MAT3(dPW, nx, ny, nz);
+  MAT3(dPNE, nx, ny, nz);
+  MAT3(dPNW, nx, ny, nz);
+  MAT3(dPSE, nx, ny, nz);
+  MAT3(dPSW, nx, ny, nz);
 
   // Define n and determine number of mesh points
-  nxm1 = *nx - 1;
-  nym1 = *ny - 1;
-  nzm1 = *nz - 1;
+  nxm1 = nx - 1;
+  nym1 = ny - 1;
+  nzm1 = nz - 1;
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 
   // Build the operator ***
-      q.parallel_for(sycl::range<3>(*nx-2, *ny-2, *nz-2), [=](sycl::id<3> I) {
+      q.parallel_for(sycl::range<3>(nx-2, ny-2, nz-2), [=](sycl::id<3> I) {
         const int ii = I[0] + 2; // Adjust for 1-based indexing
         const int jj = I[1] + 2; // Adjust for 1-based indexing
         const int kk = I[2] + 2; // Adjust for 1-based indexing
@@ -1359,8 +1361,9 @@ VbuildG_7<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, Dat
 }
 
 template<> void
-VbuildG_27<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, DataType *oPC,
-           DataType *oPN, DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE,
+VbuildG_27<DataType>(const int nxf, const int nyf, const int nzf, const int nx, 
+           const int ny, const int nz, DataType *oPC,DataType *oPN, DataType *oPS, 
+           DataType *oPE, DataType *oPW, DataType *oPNE,
            DataType *oPNW, DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN,
            DataType *uPS, DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
            DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
@@ -1373,77 +1376,77 @@ VbuildG_27<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, Da
            DataType *XuNE, DataType *XuNW, DataType *XuSE, DataType *XuSW, sycl::queue &q) {
 
 
-  MAT3(oC, *nxf, *nyf, *nzf);
-  MAT3(oE, *nxf, *nyf, *nzf);
-  MAT3(oN, *nxf, *nyf, *nzf);
-  MAT3(oNE, *nxf, *nyf, *nzf);
-  MAT3(oNW, *nxf, *nyf, *nzf);
+  MAT3(oC, nxf, nyf, nzf);
+  MAT3(oE, nxf, nyf, nzf);
+  MAT3(oN, nxf, nyf, nzf);
+  MAT3(oNE, nxf, nyf, nzf);
+  MAT3(oNW, nxf, nyf, nzf);
 
-  MAT3(uC, *nxf, *nyf, *nzf);
-  MAT3(uE, *nxf, *nyf, *nzf);
-  MAT3(uW, *nxf, *nyf, *nzf);
-  MAT3(uN, *nxf, *nyf, *nzf);
-  MAT3(uS, *nxf, *nyf, *nzf);
-  MAT3(uNE, *nxf, *nyf, *nzf);
-  MAT3(uNW, *nxf, *nyf, *nzf);
-  MAT3(uSE, *nxf, *nyf, *nzf);
-  MAT3(uSW, *nxf, *nyf, *nzf);
+  MAT3(uC, nxf, nyf, nzf);
+  MAT3(uE, nxf, nyf, nzf);
+  MAT3(uW, nxf, nyf, nzf);
+  MAT3(uN, nxf, nyf, nzf);
+  MAT3(uS, nxf, nyf, nzf);
+  MAT3(uNE, nxf, nyf, nzf);
+  MAT3(uNW, nxf, nyf, nzf);
+  MAT3(uSE, nxf, nyf, nzf);
+  MAT3(uSW, nxf, nyf, nzf);
 
-  MAT3(XoC, *nx, *ny, *nz);
-  MAT3(XoE, *nx, *ny, *nz);
-  MAT3(XoN, *nx, *ny, *nz);
-  MAT3(XoNE, *nx, *ny, *nz);
-  MAT3(XoNW, *nx, *ny, *nz);
+  MAT3(XoC, nx, ny, nz);
+  MAT3(XoE, nx, ny, nz);
+  MAT3(XoN, nx, ny, nz);
+  MAT3(XoNE, nx, ny, nz);
+  MAT3(XoNW, nx, ny, nz);
 
-  MAT3(XuC, *nx, *ny, *nz);
-  MAT3(XuE, *nx, *ny, *nz);
-  MAT3(XuW, *nx, *ny, *nz);
-  MAT3(XuN, *nx, *ny, *nz);
-  MAT3(XuS, *nx, *ny, *nz);
-  MAT3(XuNE, *nx, *ny, *nz);
-  MAT3(XuNW, *nx, *ny, *nz);
-  MAT3(XuSE, *nx, *ny, *nz);
-  MAT3(XuSW, *nx, *ny, *nz);
+  MAT3(XuC, nx, ny, nz);
+  MAT3(XuE, nx, ny, nz);
+  MAT3(XuW, nx, ny, nz);
+  MAT3(XuN, nx, ny, nz);
+  MAT3(XuS, nx, ny, nz);
+  MAT3(XuNE, nx, ny, nz);
+  MAT3(XuNW, nx, ny, nz);
+  MAT3(XuSE, nx, ny, nz);
+  MAT3(XuSW, nx, ny, nz);
 
-  MAT3(oPC, *nx, *ny, *nz);
-  MAT3(oPN, *nx, *ny, *nz);
-  MAT3(oPS, *nx, *ny, *nz);
-  MAT3(oPE, *nx, *ny, *nz);
-  MAT3(oPW, *nx, *ny, *nz);
-  MAT3(oPNE, *nx, *ny, *nz);
-  MAT3(oPNW, *nx, *ny, *nz);
-  MAT3(oPSE, *nx, *ny, *nz);
-  MAT3(oPSW, *nx, *ny, *nz);
+  MAT3(oPC, nx, ny, nz);
+  MAT3(oPN, nx, ny, nz);
+  MAT3(oPS, nx, ny, nz);
+  MAT3(oPE, nx, ny, nz);
+  MAT3(oPW, nx, ny, nz);
+  MAT3(oPNE, nx, ny, nz);
+  MAT3(oPNW, nx, ny, nz);
+  MAT3(oPSE, nx, ny, nz);
+  MAT3(oPSW, nx, ny, nz);
 
-  MAT3(uPC, *nx, *ny, *nz);
-  MAT3(uPN, *nx, *ny, *nz);
-  MAT3(uPS, *nx, *ny, *nz);
-  MAT3(uPE, *nx, *ny, *nz);
-  MAT3(uPW, *nx, *ny, *nz);
-  MAT3(uPNE, *nx, *ny, *nz);
-  MAT3(uPNW, *nx, *ny, *nz);
-  MAT3(uPSE, *nx, *ny, *nz);
-  MAT3(uPSW, *nx, *ny, *nz);
+  MAT3(uPC, nx, ny, nz);
+  MAT3(uPN, nx, ny, nz);
+  MAT3(uPS, nx, ny, nz);
+  MAT3(uPE, nx, ny, nz);
+  MAT3(uPW, nx, ny, nz);
+  MAT3(uPNE, nx, ny, nz);
+  MAT3(uPNW, nx, ny, nz);
+  MAT3(uPSE, nx, ny, nz);
+  MAT3(uPSW, nx, ny, nz);
 
-  MAT3(dPC, *nx, *ny, *nz);
-  MAT3(dPN, *nx, *ny, *nz);
-  MAT3(dPS, *nx, *ny, *nz);
-  MAT3(dPE, *nx, *ny, *nz);
-  MAT3(dPW, *nx, *ny, *nz);
-  MAT3(dPNE, *nx, *ny, *nz);
-  MAT3(dPNW, *nx, *ny, *nz);
-  MAT3(dPSE, *nx, *ny, *nz);
-  MAT3(dPSW, *nx, *ny, *nz);
+  MAT3(dPC, nx, ny, nz);
+  MAT3(dPN, nx, ny, nz);
+  MAT3(dPS, nx, ny, nz);
+  MAT3(dPE, nx, ny, nz);
+  MAT3(dPW, nx, ny, nz);
+  MAT3(dPNE, nx, ny, nz);
+  MAT3(dPNW, nx, ny, nz);
+  MAT3(dPSE, nx, ny, nz);
+  MAT3(dPSW, nx, ny, nz);
 
   // define n and determine number of mesh points ***
-  const auto nxm1 = *nx - 1;
-  const auto nym1 = *ny - 1;
-  const auto nzm1 = *nz - 1;
+  const auto nxm1 = nx - 1;
+  const auto nym1 = ny - 1;
+  const auto nzm1 = nz - 1;
 
   // fprintf(data, "%s\n", PRINT_FUNC);
 
   // Build the operator ***
-      q.parallel_for(sycl::range<3>(*nx-2, *ny-2, *nz-2), [=](sycl::id<3> idx) {
+      q.parallel_for(sycl::range<3>(nx-2, ny-2, nz-2), [=](sycl::id<3> idx) {
         const auto ii = idx[0] + 2; // offset by 2 to account for boundary conditions
         const auto jj = idx[1] + 2;
         const auto kk = idx[2] + 2;
@@ -3271,12 +3274,14 @@ VbuildG_27<DataType>(int *nxf, int *nyf, int *nzf, int *nx, int *ny, int *nz, Da
 }
 
 template<>
-void VbuildG<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc, int *nzc,
-                     int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, sycl::queue& q) {
+void VbuildG<DataType>(
+  const int nxf, const int nyf, const int nzf, const int nxc, const int nyc, 
+  const int nzc, int *numdia, DataType *pcFF, DataType *acFF, DataType *ac, 
+  sycl::queue& q) {
 
-  MAT2(pcFF, *nxc * *nyc * *nzc, 27);
-  MAT2(acFF, *nxf * *nyf * *nzf, 27);
-  MAT2(ac, *nxc * *nyc * *nzc, 27);
+  MAT2(pcFF, nxc * nyc * nzc, 27);
+  MAT2(acFF, nxf * nyf * nzf, 27);
+  MAT2(ac, nxc * nyc * nzc, 27);
 
   // Call the build routine ***
   if (*numdia == 1) {

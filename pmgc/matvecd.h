@@ -534,12 +534,12 @@ void Vnmresid27_1s(int *nx,       ///< @todo:  Doc
  */
 
 template <typename DataType>
-void Vrestrc(int *nxf,       ///< @todo:  Doc
-             int *nyf,       ///< @todo:  Doc
-             int *nzf,       ///< @todo:  Doc
-             int *nxc,       ///< @todo:  Doc
-             int *nyc,       ///< @todo:  Doc
-             int *nzc,       ///< @todo:  Doc
+void Vrestrc(const int nxf,  ///< @todo:  Doc
+             const int nyf,  ///< @todo:  Doc
+             const int nzf,  ///< @todo:  Doc
+             const int nxc,  ///< @todo:  Doc
+             const int nyc,  ///< @todo:  Doc
+             const int nzc,  ///< @todo:  Doc
              DataType *xin,  ///< @todo:  Doc
              DataType *xout, ///< @todo:  Doc
              DataType *pc,
@@ -547,12 +547,12 @@ void Vrestrc(int *nxf,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vrestrc2(int *nxf,       ///< @todo:  Doc
-              int *nyf,       ///< @todo:  Doc
-              int *nzf,       ///< @todo:  Doc
-              int *nxc,       ///< @todo:  Doc
-              int *nyc,       ///< @todo:  Doc
-              int *nzc,       ///< @todo:  Doc
+void Vrestrc2(int nxf,        ///< @todo:  Doc
+              int nyf,        ///< @todo:  Doc
+              int nzf,        ///< @todo:  Doc
+              int nxc,        ///< @todo:  Doc
+              int nyc,        ///< @todo:  Doc
+              int nzc,        ///< @todo:  Doc
               DataType *xin,  ///< @todo:  Doc
               DataType *xout, ///< @todo:  Doc
               DataType *oPC,  ///< @todo:  Doc
@@ -593,12 +593,12 @@ void Vrestrc2(int *nxf,       ///< @todo:  Doc
  */
 
 template <typename DataType>
-void VinterpPMG(int *nxc,       ///< @todo:  Doc
-                int *nyc,       ///< @todo:  Doc
-                int *nzc,       ///< @todo:  Doc
-                int *nxf,       ///< @todo:  Doc
-                int *nyf,       ///< @todo:  Doc
-                int *nzf,       ///< @todo:  Doc
+void VinterpPMG(const int nxc,  ///< @todo:  Doc
+                const int nyc,  ///< @todo:  Doc
+                const int nzc,  ///< @todo:  Doc
+                const int nxf,  ///< @todo:  Doc
+                const int nyf,  ///< @todo:  Doc
+                const int nzf,  ///< @todo:  Doc
                 DataType *xin,  ///< @todo:  Doc
                 DataType *xout, ///< @todo:  Doc
                 DataType *pc,
@@ -606,12 +606,12 @@ void VinterpPMG(int *nxc,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-void VinterpPMG2(int *nxc,       ///< @todo:  Doc
-                 int *nyc,       ///< @todo:  Doc
-                 int *nzc,       ///< @todo:  Doc
-                 int *nxf,       ///< @todo:  Doc
-                 int *nyf,       ///< @todo:  Doc
-                 int *nzf,       ///< @todo:  Doc
+void VinterpPMG2(const int nxc,  ///< @todo:  Doc
+                 const int nyc,  ///< @todo:  Doc
+                 const int nzc,  ///< @todo:  Doc
+                 const int nxf,  ///< @todo:  Doc
+                 const int nyf,  ///< @todo:  Doc
+                 const int nzf,  ///< @todo:  Doc
                  DataType *xin,  ///< @todo:  Doc
                  DataType *xout, ///< @todo:  Doc
                  DataType *oPC,  ///< @todo:  Doc

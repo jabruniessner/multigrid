@@ -693,17 +693,15 @@ void Vnmresid<DataType>(int *nx, int *ny, int *nz, int *ipc, DataType *rpc,
 }
 
 template <>
-void Vrestrc2<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                        int *nzc, DataType *xin, DataType *xout, DataType *oPC,
-                        DataType *oPN, DataType *oPS, DataType *oPE,
-                        DataType *oPW, DataType *oPNE, DataType *oPNW,
-                        DataType *oPSE, DataType *oPSW, DataType *uPC,
-                        DataType *uPN, DataType *uPS, DataType *uPE,
-                        DataType *uPW, DataType *uPNE, DataType *uPNW,
-                        DataType *uPSE, DataType *uPSW, DataType *dPC,
-                        DataType *dPN, DataType *dPS, DataType *dPE,
-                        DataType *dPW, DataType *dPNE, DataType *dPNW,
-                        DataType *dPSE, DataType *dPSW, sycl::queue &q) {
+void Vrestrc2<DataType>(
+    const int nxf, const int nyf, const int nzf, const int nxc, const int nyc,
+    const int nzc, DataType *xin, DataType *xout, DataType *oPC, DataType *oPN,
+    DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE, DataType *oPNW,
+    DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
+    DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+    DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+    DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
+    DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
   int i, j, k;
   int ii, jj, kk;
@@ -712,41 +710,41 @@ void Vrestrc2<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   DataType tmpO, tmpU, tmpD;
   DataType dimfac;
 
-  MAT3(xin, *nxf, *nyf, *nzf);
-  MAT3(xout, *nxc, *nyc, *nzc);
+  MAT3(xin, nxf, nyf, nzf);
+  MAT3(xout, nxc, nyc, nzc);
 
-  MAT3(oPC, *nxc, *nyc, *nzc);
-  MAT3(oPN, *nxc, *nyc, *nzc);
-  MAT3(oPS, *nxc, *nyc, *nzc);
-  MAT3(oPE, *nxc, *nyc, *nzc);
-  MAT3(oPW, *nxc, *nyc, *nzc);
+  MAT3(oPC, nxc, nyc, nzc);
+  MAT3(oPN, nxc, nyc, nzc);
+  MAT3(oPS, nxc, nyc, nzc);
+  MAT3(oPE, nxc, nyc, nzc);
+  MAT3(oPW, nxc, nyc, nzc);
 
-  MAT3(oPNE, *nxc, *nyc, *nzc);
-  MAT3(oPNW, *nxc, *nyc, *nzc);
-  MAT3(oPSE, *nxc, *nyc, *nzc);
-  MAT3(oPSW, *nxc, *nyc, *nzc);
+  MAT3(oPNE, nxc, nyc, nzc);
+  MAT3(oPNW, nxc, nyc, nzc);
+  MAT3(oPSE, nxc, nyc, nzc);
+  MAT3(oPSW, nxc, nyc, nzc);
 
-  MAT3(uPC, *nxc, *nyc, *nzc);
-  MAT3(uPN, *nxc, *nyc, *nzc);
-  MAT3(uPS, *nxc, *nyc, *nzc);
-  MAT3(uPE, *nxc, *nyc, *nzc);
-  MAT3(uPW, *nxc, *nyc, *nzc);
+  MAT3(uPC, nxc, nyc, nzc);
+  MAT3(uPN, nxc, nyc, nzc);
+  MAT3(uPS, nxc, nyc, nzc);
+  MAT3(uPE, nxc, nyc, nzc);
+  MAT3(uPW, nxc, nyc, nzc);
 
-  MAT3(uPNE, *nxc, *nyc, *nzc);
-  MAT3(uPNW, *nxc, *nyc, *nzc);
-  MAT3(uPSE, *nxc, *nyc, *nzc);
-  MAT3(uPSW, *nxc, *nyc, *nzc);
+  MAT3(uPNE, nxc, nyc, nzc);
+  MAT3(uPNW, nxc, nyc, nzc);
+  MAT3(uPSE, nxc, nyc, nzc);
+  MAT3(uPSW, nxc, nyc, nzc);
 
-  MAT3(dPC, *nxc, *nyc, *nzc);
-  MAT3(dPN, *nxc, *nyc, *nzc);
-  MAT3(dPS, *nxc, *nyc, *nzc);
-  MAT3(dPE, *nxc, *nyc, *nzc);
-  MAT3(dPW, *nxc, *nyc, *nzc);
+  MAT3(dPC, nxc, nyc, nzc);
+  MAT3(dPN, nxc, nyc, nzc);
+  MAT3(dPS, nxc, nyc, nzc);
+  MAT3(dPE, nxc, nyc, nzc);
+  MAT3(dPW, nxc, nyc, nzc);
 
-  MAT3(dPNE, *nxc, *nyc, *nzc);
-  MAT3(dPNW, *nxc, *nyc, *nzc);
-  MAT3(dPSE, *nxc, *nyc, *nzc);
-  MAT3(dPSW, *nxc, *nyc, *nzc);
+  MAT3(dPNE, nxc, nyc, nzc);
+  MAT3(dPNW, nxc, nyc, nzc);
+  MAT3(dPSE, nxc, nyc, nzc);
+  MAT3(dPSW, nxc, nyc, nzc);
 
   // Verify correctness of the input boundary points
   // VfboundPMG00(nxf, nyf, nzf, xin, q);
@@ -754,61 +752,59 @@ void Vrestrc2<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
   dimfac = VPOW(2.0, idimenshun);
 
   // Handle the interior points as average of 5 finer grid pts ***
-  q.parallel_for(
-      sycl::range<3>(*nxc - 2, *nyc - 2, *nzc - 2), [=](sycl::id<3> I) {
-        const int i = I[0] + 2;
-        const int j = I[1] + 2;
-        const int k = I[2] + 2;
-        const int kk = (k - 1) * 2 + 1;
-        const int jj = (j - 1) * 2 + 1;
-        const int ii = (i - 1) * 2 + 1;
+  q.parallel_for(sycl::range<3>(nxc - 2, nyc - 2, nzc - 2), [=](sycl::id<3> I) {
+    const int i = I[0] + 2;
+    const int j = I[1] + 2;
+    const int k = I[2] + 2;
+    const int kk = (k - 1) * 2 + 1;
+    const int jj = (j - 1) * 2 + 1;
+    const int ii = (i - 1) * 2 + 1;
 
-        // Compute the restriction
-        const auto tmpO = +VAT3(oPC, i, j, k) * VAT3(xin, ii, jj, kk) +
-                          VAT3(oPN, i, j, k) * VAT3(xin, ii, jj + 1, kk) +
-                          VAT3(oPS, i, j, k) * VAT3(xin, ii, jj - 1, kk) +
-                          VAT3(oPE, i, j, k) * VAT3(xin, ii + 1, jj, kk) +
-                          VAT3(oPW, i, j, k) * VAT3(xin, ii - 1, jj, kk) +
-                          VAT3(oPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk) +
-                          VAT3(oPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk) +
-                          VAT3(oPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk) +
-                          VAT3(oPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk);
+    // Compute the restriction
+    const auto tmpO = +VAT3(oPC, i, j, k) * VAT3(xin, ii, jj, kk) +
+                      VAT3(oPN, i, j, k) * VAT3(xin, ii, jj + 1, kk) +
+                      VAT3(oPS, i, j, k) * VAT3(xin, ii, jj - 1, kk) +
+                      VAT3(oPE, i, j, k) * VAT3(xin, ii + 1, jj, kk) +
+                      VAT3(oPW, i, j, k) * VAT3(xin, ii - 1, jj, kk) +
+                      VAT3(oPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk) +
+                      VAT3(oPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk) +
+                      VAT3(oPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk) +
+                      VAT3(oPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk);
 
-        const auto tmpU =
-            +VAT3(uPC, i, j, k) * VAT3(xin, ii, jj, kk + 1) +
-            VAT3(uPN, i, j, k) * VAT3(xin, ii, jj + 1, kk + 1) +
-            VAT3(uPS, i, j, k) * VAT3(xin, ii, jj - 1, kk + 1) +
-            VAT3(uPE, i, j, k) * VAT3(xin, ii + 1, jj, kk + 1) +
-            VAT3(uPW, i, j, k) * VAT3(xin, ii - 1, jj, kk + 1) +
-            VAT3(uPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk + 1) +
-            VAT3(uPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk + 1) +
-            VAT3(uPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk + 1) +
-            VAT3(uPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk + 1);
+    const auto tmpU = +VAT3(uPC, i, j, k) * VAT3(xin, ii, jj, kk + 1) +
+                      VAT3(uPN, i, j, k) * VAT3(xin, ii, jj + 1, kk + 1) +
+                      VAT3(uPS, i, j, k) * VAT3(xin, ii, jj - 1, kk + 1) +
+                      VAT3(uPE, i, j, k) * VAT3(xin, ii + 1, jj, kk + 1) +
+                      VAT3(uPW, i, j, k) * VAT3(xin, ii - 1, jj, kk + 1) +
+                      VAT3(uPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk + 1) +
+                      VAT3(uPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk + 1) +
+                      VAT3(uPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk + 1) +
+                      VAT3(uPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk + 1);
 
-        const auto tmpD =
-            +VAT3(dPC, i, j, k) * VAT3(xin, ii, jj, kk - 1) +
-            VAT3(dPN, i, j, k) * VAT3(xin, ii, jj + 1, kk - 1) +
-            VAT3(dPS, i, j, k) * VAT3(xin, ii, jj - 1, kk - 1) +
-            VAT3(dPE, i, j, k) * VAT3(xin, ii + 1, jj, kk - 1) +
-            VAT3(dPW, i, j, k) * VAT3(xin, ii - 1, jj, kk - 1) +
-            VAT3(dPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk - 1) +
-            VAT3(dPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk - 1) +
-            VAT3(dPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk - 1) +
-            VAT3(dPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk - 1);
+    const auto tmpD = +VAT3(dPC, i, j, k) * VAT3(xin, ii, jj, kk - 1) +
+                      VAT3(dPN, i, j, k) * VAT3(xin, ii, jj + 1, kk - 1) +
+                      VAT3(dPS, i, j, k) * VAT3(xin, ii, jj - 1, kk - 1) +
+                      VAT3(dPE, i, j, k) * VAT3(xin, ii + 1, jj, kk - 1) +
+                      VAT3(dPW, i, j, k) * VAT3(xin, ii - 1, jj, kk - 1) +
+                      VAT3(dPNE, i, j, k) * VAT3(xin, ii + 1, jj + 1, kk - 1) +
+                      VAT3(dPNW, i, j, k) * VAT3(xin, ii - 1, jj + 1, kk - 1) +
+                      VAT3(dPSE, i, j, k) * VAT3(xin, ii + 1, jj - 1, kk - 1) +
+                      VAT3(dPSW, i, j, k) * VAT3(xin, ii - 1, jj - 1, kk - 1);
 
-        VAT3(xout, i, j, k) = tmpO + tmpU + tmpD;
-      });
+    VAT3(xout, i, j, k) = tmpO + tmpU + tmpD;
+  });
 
   // Verify correctness of the output boundary points
   // VfboundPMG00(nxc, nyc, nzc, xout, q);
 }
 
 template <>
-void Vrestrc<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
-                       int *nzc, DataType *xin, DataType *xout, DataType *pc,
+void Vrestrc<DataType>(const int nxf, const int nyf, const int nzf,
+                       const int nxc, const int nyc, const int nzc,
+                       DataType *xin, DataType *xout, DataType *pc,
                        sycl::queue &q) {
 
-  MAT2(pc, *nxc * *nyc * *nzc, 1);
+  MAT2(pc, nxc * nyc * nzc, 1);
 
   Vrestrc2(nxf, nyf, nzf, nxc, nyc, nzc, xin, xout, RAT2(pc, 1, 1),
            RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),
@@ -822,50 +818,50 @@ void Vrestrc<DataType>(int *nxf, int *nyf, int *nzf, int *nxc, int *nyc,
 
 template <>
 void VinterpPMG2<DataType>(
-    int *nxc, int *nyc, int *nzc, int *nxf, int *nyf, int *nzf, DataType *xin,
-    DataType *xout, DataType *oPC, DataType *oPN, DataType *oPS, DataType *oPE,
-    DataType *oPW, DataType *oPNE, DataType *oPNW, DataType *oPSE,
-    DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS, DataType *uPE,
-    DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
-    DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE,
-    DataType *dPW, DataType *dPNE, DataType *dPNW, DataType *dPSE,
-    DataType *dPSW, sycl::queue &q) {
+    const int nxc, const int nyc, const int nzc, const int nxf, const int nyf,
+    const int nzf, DataType *xin, DataType *xout, DataType *oPC, DataType *oPN,
+    DataType *oPS, DataType *oPE, DataType *oPW, DataType *oPNE, DataType *oPNW,
+    DataType *oPSE, DataType *oPSW, DataType *uPC, DataType *uPN, DataType *uPS,
+    DataType *uPE, DataType *uPW, DataType *uPNE, DataType *uPNW,
+    DataType *uPSE, DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS,
+    DataType *dPE, DataType *dPW, DataType *dPNE, DataType *dPNW,
+    DataType *dPSE, DataType *dPSW, sycl::queue &q) {
 
-  MAT3(xin, *nxc, *nyc, *nzc);
-  MAT3(xout, *nxf, *nyf, *nzf);
+  MAT3(xin, nxc, nyc, nzc);
+  MAT3(xout, nxf, nyf, nzf);
 
-  MAT3(oPC, *nxc, *nyc, *nzc);
-  MAT3(oPN, *nxc, *nyc, *nzc);
-  MAT3(oPS, *nxc, *nyc, *nzc);
-  MAT3(oPE, *nxc, *nyc, *nzc);
-  MAT3(oPW, *nxc, *nyc, *nzc);
+  MAT3(oPC, nxc, nyc, nzc);
+  MAT3(oPN, nxc, nyc, nzc);
+  MAT3(oPS, nxc, nyc, nzc);
+  MAT3(oPE, nxc, nyc, nzc);
+  MAT3(oPW, nxc, nyc, nzc);
 
-  MAT3(oPNE, *nxc, *nyc, *nzc);
-  MAT3(oPNW, *nxc, *nyc, *nzc);
-  MAT3(oPSE, *nxc, *nyc, *nzc);
-  MAT3(oPSW, *nxc, *nyc, *nzc);
+  MAT3(oPNE, nxc, nyc, nzc);
+  MAT3(oPNW, nxc, nyc, nzc);
+  MAT3(oPSE, nxc, nyc, nzc);
+  MAT3(oPSW, nxc, nyc, nzc);
 
-  MAT3(uPC, *nxc, *nyc, *nzc);
-  MAT3(uPN, *nxc, *nyc, *nzc);
-  MAT3(uPS, *nxc, *nyc, *nzc);
-  MAT3(uPE, *nxc, *nyc, *nzc);
-  MAT3(uPW, *nxc, *nyc, *nzc);
+  MAT3(uPC, nxc, nyc, nzc);
+  MAT3(uPN, nxc, nyc, nzc);
+  MAT3(uPS, nxc, nyc, nzc);
+  MAT3(uPE, nxc, nyc, nzc);
+  MAT3(uPW, nxc, nyc, nzc);
 
-  MAT3(uPNE, *nxc, *nyc, *nzc);
-  MAT3(uPNW, *nxc, *nyc, *nzc);
-  MAT3(uPSE, *nxc, *nyc, *nzc);
-  MAT3(uPSW, *nxc, *nyc, *nzc);
+  MAT3(uPNE, nxc, nyc, nzc);
+  MAT3(uPNW, nxc, nyc, nzc);
+  MAT3(uPSE, nxc, nyc, nzc);
+  MAT3(uPSW, nxc, nyc, nzc);
 
-  MAT3(dPC, *nxc, *nyc, *nzc);
-  MAT3(dPN, *nxc, *nyc, *nzc);
-  MAT3(dPS, *nxc, *nyc, *nzc);
-  MAT3(dPE, *nxc, *nyc, *nzc);
-  MAT3(dPW, *nxc, *nyc, *nzc);
+  MAT3(dPC, nxc, nyc, nzc);
+  MAT3(dPN, nxc, nyc, nzc);
+  MAT3(dPS, nxc, nyc, nzc);
+  MAT3(dPE, nxc, nyc, nzc);
+  MAT3(dPW, nxc, nyc, nzc);
 
-  MAT3(dPNE, *nxc, *nyc, *nzc);
-  MAT3(dPNW, *nxc, *nyc, *nzc);
-  MAT3(dPSE, *nxc, *nyc, *nzc);
-  MAT3(dPSW, *nxc, *nyc, *nzc);
+  MAT3(dPNE, nxc, nyc, nzc);
+  MAT3(dPNW, nxc, nyc, nzc);
+  MAT3(dPSE, nxc, nyc, nzc);
+  MAT3(dPSW, nxc, nyc, nzc);
 
   /* *********************************************************************
    * Setup
@@ -879,102 +875,101 @@ void VinterpPMG2<DataType>(
   // Take extra care of this function
   //
   // Might have to reconsider indices
-  q.parallel_for(
-      sycl::range<3>(*nxc - 1, *nyc - 1, *nzc - 1), [=](sycl::id<3> I) {
-        const int ii = I[0] + 1;
-        const int jj = I[1] + 1;
-        const int kk = I[2] + 1;
+  q.parallel_for(sycl::range<3>(nxc - 1, nyc - 1, nzc - 1), [=](sycl::id<3> I) {
+    const int ii = I[0] + 1;
+    const int jj = I[1] + 1;
+    const int kk = I[2] + 1;
 
-        const int i = 2 * ii - 1;
-        const int j = 2 * jj - 1;
-        const int k = 2 * kk - 1;
+    const int i = 2 * ii - 1;
+    const int j = 2 * jj - 1;
+    const int k = 2 * kk - 1;
 
-        /* ******************************************************** *
-         * Type 1 -- Fine grid points common to a coarse grid point *
-         * ******************************************************** */
+    /* ******************************************************** *
+     * Type 1 -- Fine grid points common to a coarse grid point *
+     * ******************************************************** */
 
-        // Copy coinciding points from coarse grid to fine grid
-        VAT3(xout, i, j, k) = VAT3(xin, ii, jj, kk);
+    // Copy coinciding points from coarse grid to fine grid
+    VAT3(xout, i, j, k) = VAT3(xin, ii, jj, kk);
 
-        /* ******************************************************** *
-         * type 2 -- fine grid points common to a coarse grid plane *
-         * ******************************************************** */
+    /* ******************************************************** *
+     * type 2 -- fine grid points common to a coarse grid plane *
+     * ******************************************************** */
 
-        // Fine grid pts common only to y-z planes on coarse grid
-        // (intermediate pts between 2 grid points on x-row)
-        VAT3(xout, i + 1, j, k) =
-            VAT3(oPE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(oPW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk);
+    // Fine grid pts common only to y-z planes on coarse grid
+    // (intermediate pts between 2 grid points on x-row)
+    VAT3(xout, i + 1, j, k) =
+        VAT3(oPE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(oPW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk);
 
-        // Fine grid pts common only to x-z planes on coarse grid
-        // (intermediate pts between 2 grid points on a y-row)
-        VAT3(xout, i, j + 1, k) =
-            VAT3(oPN, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(oPS, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk);
+    // Fine grid pts common only to x-z planes on coarse grid
+    // (intermediate pts between 2 grid points on a y-row)
+    VAT3(xout, i, j + 1, k) =
+        VAT3(oPN, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(oPS, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk);
 
-        // Fine grid pts common only to x-y planes on coarse grid
-        // (intermediate pts between 2 grid points on a z-row)
-        VAT3(xout, i, j, k + 1) =
-            VAT3(uPC, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(dPC, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1);
+    // Fine grid pts common only to x-y planes on coarse grid
+    // (intermediate pts between 2 grid points on a z-row)
+    VAT3(xout, i, j, k + 1) =
+        VAT3(uPC, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(dPC, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1);
 
-        /* ******************************************************* *
-         * type 3 -- fine grid points common to a coarse grid line *
-         * ******************************************************* */
+    /* ******************************************************* *
+     * type 3 -- fine grid points common to a coarse grid line *
+     * ******************************************************* */
 
-        // Fine grid pts common only to z planes on coarse grid
-        // (intermediate pts between 4 grid pts on the xy-plane
+    // Fine grid pts common only to z planes on coarse grid
+    // (intermediate pts between 4 grid pts on the xy-plane
 
-        VAT3(xout, i + 1, j + 1, k) =
-            VAT3(oPNE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(oPNW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
-            VAT3(oPSE, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
-            VAT3(oPSW, ii + 1, jj + 1, kk) * VAT3(xin, ii + 1, jj + 1, kk);
+    VAT3(xout, i + 1, j + 1, k) =
+        VAT3(oPNE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(oPNW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
+        VAT3(oPSE, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
+        VAT3(oPSW, ii + 1, jj + 1, kk) * VAT3(xin, ii + 1, jj + 1, kk);
 
-        // Fine grid pts common only to y planes on coarse grid
-        // (intermediate pts between 4 grid pts on the xz-plane
-        VAT3(xout, i + 1, j, k + 1) =
-            VAT3(uPE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(uPW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
-            VAT3(dPE, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
-            VAT3(dPW, ii + 1, jj, kk + 1) * VAT3(xin, ii + 1, jj, kk + 1);
+    // Fine grid pts common only to y planes on coarse grid
+    // (intermediate pts between 4 grid pts on the xz-plane
+    VAT3(xout, i + 1, j, k + 1) =
+        VAT3(uPE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(uPW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
+        VAT3(dPE, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
+        VAT3(dPW, ii + 1, jj, kk + 1) * VAT3(xin, ii + 1, jj, kk + 1);
 
-        // Fine grid pts common only to x planes on coarse grid
-        // (intermediate pts between 4 grid pts on the yz-plane***
-        VAT3(xout, i, j + 1, k + 1) =
-            VAT3(uPN, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(uPS, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
-            VAT3(dPN, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
-            VAT3(dPS, ii, jj + 1, kk + 1) * VAT3(xin, ii, jj + 1, kk + 1);
+    // Fine grid pts common only to x planes on coarse grid
+    // (intermediate pts between 4 grid pts on the yz-plane***
+    VAT3(xout, i, j + 1, k + 1) =
+        VAT3(uPN, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(uPS, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
+        VAT3(dPN, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
+        VAT3(dPS, ii, jj + 1, kk + 1) * VAT3(xin, ii, jj + 1, kk + 1);
 
-        /* **************************************** *
-         * type 4 -- fine grid points not common to *
-         *           coarse grid pts/lines/planes   *
-         * **************************************** */
+    /* **************************************** *
+     * type 4 -- fine grid points not common to *
+     *           coarse grid pts/lines/planes   *
+     * **************************************** */
 
-        // Completely interior points
-        VAT3(xout, i + 1, j + 1, k + 1) =
-            +VAT3(uPNE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
-            VAT3(uPNW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
-            VAT3(uPSE, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
-            VAT3(uPSW, ii + 1, jj + 1, kk) * VAT3(xin, ii + 1, jj + 1, kk) +
-            VAT3(dPNE, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
-            VAT3(dPNW, ii + 1, jj, kk + 1) * VAT3(xin, ii + 1, jj, kk + 1) +
-            VAT3(dPSE, ii, jj + 1, kk + 1) * VAT3(xin, ii, jj + 1, kk + 1) +
-            VAT3(dPSW, ii + 1, jj + 1, kk + 1) *
-                VAT3(xin, ii + 1, jj + 1, kk + 1);
-      });
+    // Completely interior points
+    VAT3(xout, i + 1, j + 1, k + 1) =
+        +VAT3(uPNE, ii, jj, kk) * VAT3(xin, ii, jj, kk) +
+        VAT3(uPNW, ii + 1, jj, kk) * VAT3(xin, ii + 1, jj, kk) +
+        VAT3(uPSE, ii, jj + 1, kk) * VAT3(xin, ii, jj + 1, kk) +
+        VAT3(uPSW, ii + 1, jj + 1, kk) * VAT3(xin, ii + 1, jj + 1, kk) +
+        VAT3(dPNE, ii, jj, kk + 1) * VAT3(xin, ii, jj, kk + 1) +
+        VAT3(dPNW, ii + 1, jj, kk + 1) * VAT3(xin, ii + 1, jj, kk + 1) +
+        VAT3(dPSE, ii, jj + 1, kk + 1) * VAT3(xin, ii, jj + 1, kk + 1) +
+        VAT3(dPSW, ii + 1, jj + 1, kk + 1) * VAT3(xin, ii + 1, jj + 1, kk + 1);
+  });
 
   // Verify correctness of the output boundary points ***
   // VfboundPMG00(nxf, nyf, nzf, xout, q);
 }
 
 template <>
-void VinterpPMG<DataType>(int *nxc, int *nyc, int *nzc, int *nxf, int *nyf,
-                          int *nzf, DataType *xin, DataType *xout, DataType *pc,
+void VinterpPMG<DataType>(const int nxc, const int nyc, const int nzc,
+                          const int nxf, const int nyf, const int nzf,
+                          DataType *xin, DataType *xout, DataType *pc,
                           sycl::queue &q) {
 
-  MAT2(pc, *nxc * *nyc * *nzc, 1);
+  MAT2(pc, nxc * nyc * nzc, 1);
 
   VinterpPMG2(nxc, nyc, nzc, nxf, nyf, nzf, xin, xout, RAT2(pc, 1, 1),
               RAT2(pc, 1, 2), RAT2(pc, 1, 3), RAT2(pc, 1, 4), RAT2(pc, 1, 5),

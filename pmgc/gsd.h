@@ -82,11 +82,9 @@ void Vgsrb(int *nx,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vgsrb7x(int *nx,       ///< @todo:  Doc
-             int *ny,       ///< @todo:  Doc
-             int *nz,       ///< @todo:  Doc
-             int *ipc,      ///< @todo:  Doc
-             DataType *rpc, ///< @todo:  Doc
+void Vgsrb7x(int nx,        ///< @todo:  Doc
+             int ny,        ///< @todo:  Doc
+             int nz,        ///< @todo:  Doc
              DataType *oC,  ///< @todo:  Doc
              DataType *cc,  ///< @todo:  Doc
              DataType *fc,  ///< @todo:  Doc
@@ -99,11 +97,9 @@ void Vgsrb7x(int *nx,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vgsrb27x(int *nx,       ///< @todo:  Doc
-              int *ny,       ///< @todo:  Doc
-              int *nz,       ///< @todo:  Doc
-              int *ipc,      ///< @todo:  Doc
-              DataType *rpc, ///< @todo:  Doc
+void Vgsrb27x(int nx,        ///< @todo:  Doc
+              int ny,        ///< @todo:  Doc
+              int nz,        ///< @todo:  Doc
               DataType *oC,  ///< @todo:  Doc
               DataType *cc,  ///< @todo:  Doc
               DataType *fc,  ///< @todo:  Doc

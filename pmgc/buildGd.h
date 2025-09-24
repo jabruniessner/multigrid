@@ -60,12 +60,12 @@
 namespace pmgc {
 
 template <typename DataType>
-void VbuildG(int *nxf,       ///< @todo: doc
-             int *nyf,       ///< @todo: doc
-             int *nzf,       ///< @todo: doc
-             int *nxc,       ///< @todo: doc
-             int *nyc,       ///< @todo: doc
-             int *nzc,       ///< @todo: doc
+void VbuildG(const int nxf,  ///< @todo: doc
+             const int nyf,  ///< @todo: doc
+             const int nzf,  ///< @todo: doc
+             const int nxc,  ///< @todo: doc
+             const int nyc,  ///< @todo: doc
+             const int nzc,  ///< @todo: doc
              int *numdia,    ///< @todo: doc
              DataType *pcFF, ///< @todo: doc
              DataType *acFF, ///< @todo: doc
@@ -147,12 +147,12 @@ void VbuildG(int *nxf,       ///< @todo: doc
  */
 
 template <typename DataType>
-void VbuildG_1(int *nxf,       ///< @todo: doc
-               int *nyf,       ///< @todo: doc
-               int *nzf,       ///< @todo: doc
-               int *nx,        ///< @todo: doc
-               int *ny,        ///< @todo: doc
-               int *nz,        ///< @todo: doc
+void VbuildG_1(const int nxf,  ///< @todo: doc
+               const int nyf,  ///< @todo: doc
+               const int nzf,  ///< @todo: doc
+               const int nx,   ///< @todo: doc
+               const int ny,   ///< @todo: doc
+               const int nz,   ///< @todo: doc
                DataType *oPC,  ///< @todo: doc
                DataType *oPN,  ///< @todo: doc
                DataType *oPS,  ///< @todo: doc
@@ -279,12 +279,12 @@ void VbuildG_1(int *nxf,       ///< @todo: doc
  */
 
 template <typename DataType>
-void VbuildG_7(int *nxf,       ///< @todo: doc
-               int *nyf,       ///< @todo: doc
-               int *nzf,       ///< @todo: doc
-               int *nx,        ///< @todo: doc
-               int *ny,        ///< @todo: doc
-               int *nz,        ///< @todo: doc
+void VbuildG_7(const int nxf,  ///< @todo: doc
+               const int nyf,  ///< @todo: doc
+               const int nzf,  ///< @todo: doc
+               const int nx,   ///< @todo: doc
+               const int ny,   ///< @todo: doc
+               const int nz,   ///< @todo: doc
                DataType *oPC,  ///< @todo: doc
                DataType *oPN,  ///< @todo: doc
                DataType *oPS,  ///< @todo: doc
@@ -427,12 +427,12 @@ void VbuildG_7(int *nxf,       ///< @todo: doc
  */
 
 template <typename DataType>
-void VbuildG_27(int *nxf,       ///< @todo: doc
-                int *nyf,       ///< @todo: doc
-                int *nzf,       ///< @todo: doc
-                int *nx,        ///< @todo: doc
-                int *ny,        ///< @todo: doc
-                int *nz,        ///< @todo: doc
+void VbuildG_27(const int nxf,  ///< @todo: doc
+                const int nyf,  ///< @todo: doc
+                const int nzf,  ///< @todo: doc
+                const int nx,   ///< @todo: doc
+                const int ny,   ///< @todo: doc
+                const int nz,   ///< @todo: doc
                 DataType *oPC,  ///< @todo: doc
                 DataType *oPN,  ///< @todo: doc
                 DataType *oPS,  ///< @todo: doc
