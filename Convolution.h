@@ -180,10 +180,10 @@ DataType compute_residual_map(Domain<Dim, strides_all...> &src,
 
   src.q.wait();
 
-  // DataType residual_device = *residual;
-  // sycl::free(residual, src.q);
+  DataType residual_device = *residual;
+  sycl::free(residual, src.q);
 
-  return 0; // std::sqrt(residual_device / src.num_values);
+  return std::sqrt(residual_device / src.num_values);
 }
 
 template <typename FuncType, Dimension Dim, Length... strides_all>

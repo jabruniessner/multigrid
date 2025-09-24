@@ -449,59 +449,117 @@ public:
     }
   }
 
-  auto get_map() {
+  template <std::size_t level = nlev> auto get_map() {
 
-    auto cg_map = [=, this](const auto domain, sycl::id<Dim> I) {
-      using d_type_inner = decltype(domain);
-      constexpr std::size_t nxc_i = std::get<0>(d_type_inner::length) + 2;
-      constexpr std::size_t nyc_i = std::get<1>(d_type_inner::length) + 2;
-      constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
+    if constexpr (level == nlev) {
 
-      constexpr std::size_t level =
-          utils::level_from_length(std::get<0>(d_type_inner::length),
-                                   std::get<0>(d_type<nlev>::length), nlev);
+      auto *epsilon_oC_pointer =
+          epsilon_oC_map.template get_domain<level>().values_buff;
+      auto *kappa_pointer = kappa_.template get_domain<level>().values_buff;
 
-      if constexpr (level == nlev) {
+      auto *epsilon_oE_pointer =
+          epsilon_oE_map.template get_domain<level>().values_buff;
+      auto *epsilon_oN_pointer =
+          epsilon_oN_map.template get_domain<level>().values_buff;
+      auto *epsilon_uC_pointer =
+          epsilon_uC_map.template get_domain<level>().values_buff;
 
-        return
+      return [=](const auto domain, sycl::id<Dim> I) {
+        using d_type_inner = decltype(domain);
+        constexpr std::size_t nxc_i = std::get<0>(d_type_inner::length) + 2;
+        constexpr std::size_t nyc_i = std::get<1>(d_type_inner::length) + 2;
+        constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
 
-            pmgc::matveckernel7<nxc_i, nyc_i, nzc_i>(
-                I[0] + 1, I[1] + 1, I[2] + 1,
-                epsilon_oC_map.template get_domain<level>().values_buff,
-                kappa_.template get_domain<level>().values_buff,
-                epsilon_oE_map.template get_domain<level>().values_buff,
-                epsilon_oN_map.template get_domain<level>().values_buff,
-                epsilon_uC_map.template get_domain<level>().values_buff,
-                domain.values_buff);
-      } else {
+        //  constexpr std::size_t level =
+        //      level_from_length(std::get<0>(d_type_inner::length),
+        //                        std::get<0>(d_type<nlev>::length), nlev);
 
-        return pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
-            I[0] + 1, I[1] + 1, I[2] + 1,
-            epsilon_oC_map.template get_domain<level>().values_buff,
-            kappa_.template get_domain<level>().values_buff,
-            epsilon_oE_map.template get_domain<level>().values_buff,
-            epsilon_oN_map.template get_domain<level>().values_buff,
-            epsilon_uC_map.template get_domain<level>().values_buff,
-            epsilon_oNE_map.template get_domain<level>().values_buff,
-            epsilon_oNW_map.template get_domain<level>().values_buff,
-            epsilon_uE_map.template get_domain<level>().values_buff,
-            epsilon_uW_map.template get_domain<level>().values_buff,
-            epsilon_uN_map.template get_domain<level>().values_buff,
-            epsilon_uS_map.template get_domain<level>().values_buff,
-            epsilon_uNE_map.template get_domain<level>().values_buff,
-            epsilon_uNW_map.template get_domain<level>().values_buff,
-            epsilon_uSE_map.template get_domain<level>().values_buff,
-            epsilon_uSW_map.template get_domain<level>().values_buff,
+        return pmgc::matveckernel7<nxc_i, nyc_i, nzc_i>(
+            I[0] + 1, I[1] + 1, I[2] + 1, epsilon_oC_pointer, kappa_pointer,
+            epsilon_oE_pointer, epsilon_oN_pointer, epsilon_uC_pointer,
             domain.values_buff);
-      }
-    };
+      };
 
-    return cg_map;
+    } else {
+
+      DataType *epsilon_oC_pointer =
+          epsilon_oC_map.template get_domain<level>().values_buff;
+      DataType *kappa_pointer = kappa_.template get_domain<level>().values_buff;
+      DataType *epsilon_oE_pointer =
+          epsilon_oE_map.template get_domain<level>().values_buff;
+      DataType *epsilon_oN_pointer =
+          epsilon_oN_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uC_pointer =
+          epsilon_uC_map.template get_domain<level>().values_buff;
+      DataType *epsilon_oNE_pointer =
+          epsilon_oNE_map.template get_domain<level>().values_buff;
+      DataType *epsilon_oNW_pointer =
+          epsilon_oNW_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uE_pointer =
+          epsilon_uE_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uW_pointer =
+          epsilon_uW_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uN_pointer =
+          epsilon_uN_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uS_pointer =
+          epsilon_uS_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uNE_pointer =
+          epsilon_uNE_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uNW_pointer =
+          epsilon_uNW_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uSE_pointer =
+          epsilon_uSE_map.template get_domain<level>().values_buff;
+      DataType *epsilon_uSW_pointer =
+          epsilon_uSW_map.template get_domain<level>().values_buff;
+
+      return [=](const auto domain, sycl::id<Dim> I) {
+        using d_type_inner = decltype(domain);
+
+        constexpr std::size_t nxc_i = std::get<0>(d_type_inner::length) + 2;
+        constexpr std::size_t nyc_i = std::get<1>(d_type_inner::length) + 2;
+        constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
+
+        //  constexpr std::size_t level =
+        //      level_from_length(std::get<0>(d_type_inner::length),
+        //                        std::get<0>(d_type<nlev>::length), nlev);
+
+        pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
+            I[0] + 1, I[1] + 1, I[2] + 1, epsilon_oC_pointer, kappa_pointer,
+            epsilon_oE_pointer, epsilon_oN_pointer, epsilon_uC_pointer,
+            epsilon_oNE_pointer, epsilon_oNW_pointer, epsilon_uE_pointer,
+            epsilon_uW_pointer, epsilon_uN_pointer, epsilon_uS_pointer,
+            epsilon_uNE_pointer, epsilon_uNW_pointer, epsilon_uSE_pointer,
+            epsilon_uSW_pointer, domain.values_buff);
+      };
+    }
   }
 
-  DataType compute_residual() {
+  template <std::size_t level = nlev> DataType compute_residual() {
     return convolution::compute_residual_map(
-        sol.get_domain(), rhs_domain.get_domain(), get_map());
+        sol.template get_domain<level>(),
+        rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = nlev> DataType compute_residual_sol2() {
+    return convolution::compute_residual_map(
+        sol2.template get_domain<level>(),
+        rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = 1> auto get_solver(auto floatnum) {
+    return cg_solver::make_solver(floatnum, sol.template get_domain<level>());
+  }
+
+  template <std::size_t level = 1> auto solve_by_cg(auto floatnum) {
+    auto solver = get_solver<level>(floatnum);
+    solver(sol.template get_domain<level>(),
+           rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = 1> auto solve_by_cg_sol2(auto floatnum) {
+    auto solver = get_solver<level>(floatnum);
+    solver(sol2.template get_domain<level>(),
+           rhs_domain.template get_domain<level>(), get_map<level>());
   }
 
   static DataType sqr(DataType val) { return val * val; }

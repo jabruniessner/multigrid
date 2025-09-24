@@ -70,6 +70,11 @@ int main(int argc, char *argv[]) {
   std::cout << "The initial residual is:" << mg_solver.compute_residual()
             << std::endl;
 
+  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
+
+  std::cout << "After the cg_method on top level, the residual is: "
+            << mg_solver.compute_residual() << std::endl;
+
   q.wait();
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
