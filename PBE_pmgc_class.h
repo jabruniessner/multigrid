@@ -602,7 +602,10 @@ public:
                    sol2.template get_domain<level>());
   }
 
-  template <std::size_t level = nlev> void compute_defect_sol2_2_sol() {}
+  template <std::size_t level = nlev> void compute_defect_sol2_2_sol() {
+    compute_defect(sol2.template get_domain<level>(),
+                   sol.template get_domain<level>());
+  }
 
   template <std::size_t level = 1> auto get_solver(auto floatnum) {
     return cg_solver::make_solver(floatnum, sol.template get_domain<level>());
@@ -620,7 +623,8 @@ public:
            rhs_domain.template get_domain<level>(), get_map<level>());
   }
 
-  void smooth_domain(auto &domain, int num_iters) {
+  void smooth_domain(auto &domain, int num_iters,
+                     bool zero_initialize = false) {
 
     using d_type_inner = std::remove_reference_t<decltype(domain)>;
 
@@ -638,7 +642,8 @@ public:
                     kappa_domain.values_buff,
                     rhs_domain.template get_domain<level>().values_buff,
                     VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN),
-                    VAL_BUF_EPSILON(uC), domain.values_buff, &num_iters, q);
+                    VAL_BUF_EPSILON(uC), domain.values_buff, &num_iters, q,
+                    zero_initialize);
     } else {
       pmgc::Vgsrb27x(
           nx<level>, ny<level>, nz<level>, VAL_BUF_EPSILON(oC), kappa_domain,
@@ -647,20 +652,23 @@ public:
           VAL_BUF_EPSILON(uE), VAL_BUF_EPSILON(uW), VAL_BUF_EPSILON(uN),
           VAL_BUF_EPSILON(uS), VAL_BUF_EPSILON(uNE), VAL_BUF_EPSILON(uNW),
           VAL_BUF_EPSILON(uSE), VAL_BUF_EPSILON(uSW), domain.values_buff,
-          &num_iters, q);
+          &num_iters, q, zero_initialize);
     }
 
 #undef VAL_BUF_EPSILON
   }
 
   template <std::size_t level = nlev>
-  void smooth_domain_sol(std::size_t num_iters = 2) {
-    smooth_domain(sol.template get_domain<level>(), num_iters);
+  void smooth_domain_sol(std::size_t num_iters = 2,
+                         bool zero_initialize = false) {
+    smooth_domain(sol.template get_domain<level>(), num_iters, zero_initialize);
   }
 
   template <std::size_t level = nlev>
-  void smooth_domain_sol2(std::size_t num_iters = 2) {
-    smooth_domain(sol2.template get_domain<level>(), num_iters);
+  void smooth_domain_sol2(std::size_t num_iters = 2,
+                          bool zero_initialize = false) {
+    smooth_domain(sol2.template get_domain<level>(), num_iters,
+                  zero_initialize);
   }
 
   void restrict_domain(auto src_domain, auto dest_domain) {
@@ -796,6 +804,22 @@ public:
     prolong_domain(sol2.template get_domain<dest_level - 1>(),
                    rhs_domain.template get_domain<dest_level>());
   }
+
+  template <std::size_t level = nlev> void v_cycle() {
+    if constexpr (level == 1) {
+      solve_by_cg<level>(Float<1e-5>{});
+    } else {
+      smooth_domain_sol<level>(2, level != nlev);
+      compute_defect_sol_2_sol2<level>();
+      restrict_domain_sol2_2_rhs<level - 1>();
+      v_cycle<level - 1>();
+      prolong_sol_2_sol2<level>();
+      add_domain_sol_sol_sol2<level>();
+      smooth_domain_sol<level>(2);
+    }
+  }
+
+  void cycle(std::size_t num_iters) {}
 
   static DataType sqr(DataType val) { return val * val; }
 

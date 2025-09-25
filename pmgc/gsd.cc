@@ -53,7 +53,6 @@
  */
 
 #include "gsd.h"
-#include "hipSYCL/sycl/usm.hpp"
 #include "precision.h"
 
 namespace pmgc {
@@ -61,7 +60,8 @@ namespace pmgc {
 template <>
 void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
                        DataType *cc, DataType *fc, DataType *oE, DataType *oN,
-                       DataType *uC, DataType *x, int *itmax, sycl::queue &q) {
+                       DataType *uC, DataType *x, int *itmax, sycl::queue &q,
+                       bool zero_initialize) {
 
   MAT3(cc, nx, ny, nz);
   MAT3(fc, nx, ny, nz);
@@ -79,31 +79,30 @@ void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
 
     int color = 1;
 
-    for (int color = 1; color >= 0; color--)
+    for (int color = 1; color >= 0; color--) {
       q.parallel_for(
           sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
             const int j = I[1] + 2;
             const int i = I[2] + 2;
 
-            //  const auto ioff = (1 - *iadjoint) * ((j + k + 2) % 2)
-            //  +
-            //                    (*iadjoint) * (1 - (j + k + 2) %
-            //                    2);
-
             if ((i + j + k) % 2 == color) {
-              VAT3(x, i, j, k) = (VAT3(fc, i, j, k) +
-                                  VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
-                                  VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
-                                  VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
-                                  VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
-                                  VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
-                                  VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1)) /
-                                 (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
+              VAT3(x, i, j, k) =
+                  (VAT3(fc, i, j, k) +
+
+                   (!zero_initialize) *
+                       (VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +
+                        VAT3(oN, i, j - 1, k) * VAT3(x, i, j - 1, k) +
+                        VAT3(oE, i, j, k) * VAT3(x, i + 1, j, k) +
+                        VAT3(oE, i - 1, j, k) * VAT3(x, i - 1, j, k) +
+                        VAT3(uC, i, j, k - 1) * VAT3(x, i, j, k - 1) +
+                        VAT3(uC, i, j, k) * VAT3(x, i, j, k + 1))) /
+
+                  (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
             }
           });
-
-    q.wait();
+      zero_initialize = false;
+    }
   }
 }
 
@@ -113,8 +112,8 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
                         DataType *uC, DataType *oNE, DataType *oNW,
                         DataType *uE, DataType *uW, DataType *uN, DataType *uS,
                         DataType *uNE, DataType *uNW, DataType *uSE,
-                        DataType *uSW, DataType *x, int *itmax,
-                        sycl::queue &q) {
+                        DataType *uSW, DataType *x, int *itmax, sycl::queue &q,
+                        bool zero_initialize) {
 
   int i, j, k;
   int i1, j1, k1;
@@ -148,8 +147,12 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
   MAT3(uSE, nx, ny, nz);
   MAT3(uSW, nx, ny, nz);
 
+  if (zero_initialize) {
+    q.memset(x, 0, sizeof(DataType) * nx * ny * nz);
+  }
+
   for (int iters = 1; iters <= *itmax; iters++) {
-    for (int color = 0; color <= 8; color++)
+    for (int color = 0; color <= 8; color++) {
       q.parallel_for(
           sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
@@ -197,6 +200,7 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
                                  (VAT3(oC, i, j, k) + VAT3(cc, i, j, k));
             }
           });
+    }
   }
 }
 

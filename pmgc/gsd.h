@@ -82,43 +82,45 @@ void Vgsrb(int *nx,       ///< @todo:  Doc
 );
 
 template <typename DataType>
-void Vgsrb7x(int nx,        ///< @todo:  Doc
-             int ny,        ///< @todo:  Doc
-             int nz,        ///< @todo:  Doc
-             DataType *oC,  ///< @todo:  Doc
-             DataType *cc,  ///< @todo:  Doc
-             DataType *fc,  ///< @todo:  Doc
-             DataType *oE,  ///< @todo:  Doc
-             DataType *oN,  ///< @todo:  Doc
-             DataType *uC,  ///< @todo:  Doc
-             DataType *x,   ///< @todo:  Doc
-             int *itmax,    ///< @todo:  Doc
-             sycl::queue &q ///< @todo:  Doc
-);
+void Vgsrb7x(int nx,         ///< @todo:  Doc
+             int ny,         ///< @todo:  Doc
+             int nz,         ///< @todo:  Doc
+             DataType *oC,   ///< @todo:  Doc
+             DataType *cc,   ///< @todo:  Doc
+             DataType *fc,   ///< @todo:  Doc
+             DataType *oE,   ///< @todo:  Doc
+             DataType *oN,   ///< @todo:  Doc
+             DataType *uC,   ///< @todo:  Doc
+             DataType *x,    ///< @todo:  Doc
+             int *itmax,     ///< @todo:  Doc
+             sycl::queue &q, ///< @todo:  Doc
+             bool zero_initialize = false);
 
 template <typename DataType>
-void Vgsrb27x(int nx,        ///< @todo:  Doc
-              int ny,        ///< @todo:  Doc
-              int nz,        ///< @todo:  Doc
-              DataType *oC,  ///< @todo:  Doc
-              DataType *cc,  ///< @todo:  Doc
-              DataType *fc,  ///< @todo:  Doc
-              DataType *oE,  ///< @todo:  Doc
-              DataType *oN,  ///< @todo:  Doc
-              DataType *uC,  ///< @todo:  Doc
-              DataType *oNE, ///< @todo:  Doc
-              DataType *oNW, ///< @todo:  Doc
-              DataType *uE,  ///< @todo:  Doc
-              DataType *uW,  ///< @todo:  Doc
-              DataType *uN,  ///< @todo:  Doc
-              DataType *uS,  ///< @todo:  Doc
-              DataType *uNE, ///< @todo:  Doc
-              DataType *uNW, ///< @todo:  Doc
-              DataType *uSE, ///< @todo:  Doc
-              DataType *uSW, ///< @todo:  Doc
-              DataType *x,   ///< @todo:  Doc
-              int *itmax,    ///< @todo:  Doc
-              sycl::queue &q ///< @todo:  Doc
+void Vgsrb27x(int nx,         ///< @todo:  Doc
+              int ny,         ///< @todo:  Doc
+              int nz,         ///< @todo:  Doc
+              DataType *oC,   ///< @todo:  Doc
+              DataType *cc,   ///< @todo:  Doc
+              DataType *fc,   ///< @todo:  Doc
+              DataType *oE,   ///< @todo:  Doc
+              DataType *oN,   ///< @todo:  Doc
+              DataType *uC,   ///< @todo:  Doc
+              DataType *oNE,  ///< @todo:  Doc
+              DataType *oNW,  ///< @todo:  Doc
+              DataType *uE,   ///< @todo:  Doc
+              DataType *uW,   ///< @todo:  Doc
+              DataType *uN,   ///< @todo:  Doc
+              DataType *uS,   ///< @todo:  Doc
+              DataType *uNE,  ///< @todo:  Doc
+              DataType *uNW,  ///< @todo:  Doc
+              DataType *uSE,  ///< @todo:  Doc
+              DataType *uSW,  ///< @todo:  Doc
+              DataType *x,    ///< @todo:  Doc
+              int *itmax,     ///< @todo:  Doc
+              sycl::queue &q, ///< @todo:  Doc
+              bool zero_initialize = false
+
 );
 
 } // namespace pmgc
