@@ -1,7 +1,7 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
 
-constexpr std::size_t base_length = 1;
+constexpr std::size_t base_length = 2;
 constexpr std::size_t nlev = 6;
 constexpr DataType box_length = 16;
 
