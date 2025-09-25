@@ -68,7 +68,7 @@ void VbuildPb_trilin<DataType>(
     DataType *uPW, DataType *uPNE, DataType *uPNW, DataType *uPSE,
     DataType *uPSW, DataType *dPC, DataType *dPN, DataType *dPS, DataType *dPE,
     DataType *dPW, DataType *dPNE, DataType *dPNW, DataType *dPSE,
-    DataType *dPSW, DataType *xf, DataType *yf, DataType *zf, sycl::queue &q) {
+    DataType *dPSW, sycl::queue &q) {
 
   std::cout << "Using trilinear interpolation" << std::endl;
 
@@ -154,8 +154,7 @@ void VbuildPb_trilin<DataType>(
 template <>
 void VbuildP_trilin<DataType>(const int nxf, const int nyf, const int nzf,
                               const int nxc, const int nyc, const int nzc,
-                              DataType *pc, DataType *xf, DataType *yf,
-                              DataType *zf, sycl::queue &q) {
+                              DataType *pc, sycl::queue &q) {
 
   MAT2(pc, nxc * nyc * nzc, 1);
 
@@ -167,7 +166,7 @@ void VbuildP_trilin<DataType>(const int nxf, const int nyf, const int nzf,
       RAT2(pc, 1, 15), RAT2(pc, 1, 16), RAT2(pc, 1, 17), RAT2(pc, 1, 18),
       RAT2(pc, 1, 19), RAT2(pc, 1, 20), RAT2(pc, 1, 21), RAT2(pc, 1, 22),
       RAT2(pc, 1, 23), RAT2(pc, 1, 24), RAT2(pc, 1, 25), RAT2(pc, 1, 26),
-      RAT2(pc, 1, 27), xf, yf, zf, q);
+      RAT2(pc, 1, 27), q);
 }
 
 template <>
@@ -1129,7 +1128,7 @@ void VbuildP<DataType>(const int nxf, const int nyf, const int nzf,
 
   if (*mgprol == 0) {
 
-    VbuildP_trilin(nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), xf, yf, zf, q);
+    VbuildP_trilin(nxf, nyf, nzf, nxc, nyc, nzc, RAT2(pc, 1, 1), q);
 
   } else if (*mgprol == 1) {
 

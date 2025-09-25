@@ -2,7 +2,7 @@
 #include "fileio.h"
 
 constexpr std::size_t base_length = 1;
-constexpr std::size_t nlev = 2;
+constexpr std::size_t nlev = 6;
 constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
@@ -90,10 +90,12 @@ int main(int argc, char *argv[]) {
   //             << mg_solver.compute_residual() << std::endl;
   // }
 
-  mg_solver.v_cycle();
+  for (int i = 0; i < num_iters; i++) {
+    mg_solver.v_cycle();
 
-  std::cout << "The residual after 1 iteration is: "
-            << mg_solver.compute_residual() << std::endl;
+    std::cout << "The residual after 1 iteration is: "
+              << mg_solver.compute_residual() << std::endl;
+  }
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;

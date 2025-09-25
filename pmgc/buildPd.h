@@ -84,9 +84,6 @@ void VbuildP_trilin(const int nxf, ///< @todo: doc
                     const int nyc, ///< @todo: doc
                     const int nzc, ///< @todo: doc
                     DataType *pc,  ///< @todo: doc
-                    DataType *xf,  ///< @todo: doc
-                    DataType *yf,  ///< @todo: doc
-                    DataType *zf,  ///< @todo: doc
                     sycl::queue &q ///
 );
 
@@ -124,10 +121,7 @@ void VbuildPb_trilin(const int nxf,  ///< @todo: doc
                      DataType *dPNW, ///< @todo: doc
                      DataType *dPSE, ///< @todo: doc
                      DataType *dPSW, ///< @todo: doc
-                     DataType *xf,   ///< @todo: doc
-                     DataType *yf,   ///< @todo: doc
-                     DataType *zf,
-                     sycl::queue &q ///< @todo: doc
+                     sycl::queue &q  ///< @todo: doc
 );
 
 template <typename DataType>
