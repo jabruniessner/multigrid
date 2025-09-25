@@ -606,6 +606,140 @@ public:
     smooth_domain(sol2.template get_domain<level>(), num_iters);
   }
 
+  void restrict_domain(auto src_domain, auto dest_domain) {
+    using src_domain_t = decltype(src_domain);
+    using dest_domain_t = decltype(dest_domain);
+
+    constexpr auto src_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr auto dest_level =
+        utils::level_from_length(std::get<0>(dest_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    if constexpr (src_level == dest_level + 1) {
+
+#define GET_VALUES_BUF(x) x.template get_domain<dest_level>().values_buff
+      pmgc::Vrestrc2(
+          nx<src_level>, ny<src_level>, nz<src_level>, nx<dest_level>,
+          ny<dest_level>, nz<dest_level>, src_domain.values_buff,
+          dest_domain.values_buff, GET_VALUES_BUF(oPC), GET_VALUES_BUF(oPN),
+          GET_VALUES_BUF(oPS), GET_VALUES_BUF(oPE), GET_VALUES_BUF(oPW),
+          GET_VALUES_BUF(oPNE), GET_VALUES_BUF(oPNW), GET_VALUES_BUF(oPSE),
+          GET_VALUES_BUF(oPSW), GET_VALUES_BUF(uPC), GET_VALUES_BUF(uPN),
+          GET_VALUES_BUF(uPS), GET_VALUES_BUF(uPE), GET_VALUES_BUF(uPW),
+          GET_VALUES_BUF(uPNE), GET_VALUES_BUF(uPNW), GET_VALUES_BUF(uPSE),
+          GET_VALUES_BUF(uPSW), GET_VALUES_BUF(dPC), GET_VALUES_BUF(dPN),
+          GET_VALUES_BUF(dPS), GET_VALUES_BUF(dPE), GET_VALUES_BUF(dPW),
+          GET_VALUES_BUF(dPNE), GET_VALUES_BUF(dPNW), GET_VALUES_BUF(dPSE),
+          GET_VALUES_BUF(dPSW), q);
+#undef GET_VALUES_BUF
+
+    } else {
+      static_assert(false,
+                    "The sourvce level and the destination level are too far "
+                    "apart \n dest_level == src_level-1 required");
+    }
+  }
+
+  template <std::size_t dest_level = nlev - 1>
+  void restrict_domain_sol_2_sol2() {
+    static_assert(dest_level <= nlev,
+                  "The destination level is to high greater or equal to nlev ");
+    restrict_domain(sol.template get_domain<dest_level + 1>(),
+                    sol2.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev - 1>
+  void restrict_domain_sol2_2_sol() {
+    static_assert(dest_level <= nlev,
+                  "The destination level is to high greater or equal to nlev ");
+    restrict_domain(sol2.template get_domain<dest_level + 1>(),
+                    sol.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev - 1>
+  void restrict_domain_sol2_2_rhs() {
+    static_assert(dest_level <= nlev,
+                  "The destination level is to high greater or equal to nlev ");
+    restrict_domain(sol2.template get_domain<dest_level + 1>(),
+                    rhs_domain.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev - 1>
+  void restrict_domain_sol_2_rhs() {
+    static_assert(dest_level <= nlev,
+                  "The destination level is to high greater or equal to nlev ");
+    restrict_domain(sol.template get_domain<dest_level + 1>(),
+                    rhs_domain.template get_domain<dest_level>());
+  }
+
+  void prolong_domain(auto src_domain, auto dest_domain) {
+    using src_domain_t = decltype(src_domain);
+    using dest_domain_t = decltype(dest_domain);
+
+    constexpr auto src_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr auto dest_level =
+        utils::level_from_length(std::get<0>(dest_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    static_assert(dest_level == src_level + 1,
+                  "The source level needs to be exaclty 1 greater than the "
+                  "destination level");
+
+#define GET_VALUES_BUF(x) x.template get_domain<src_level>().values_buff
+    pmgc::VinterpPMG2(
+        nx<src_level>, ny<src_level>, nz<src_level>, nx<dest_level>,
+        ny<dest_level>, nz<dest_level>, src_domain.values_buff,
+        dest_domain.values_buff, GET_VALUES_BUF(oPC), GET_VALUES_BUF(oPN),
+        GET_VALUES_BUF(oPS), GET_VALUES_BUF(oPE), GET_VALUES_BUF(oPW),
+        GET_VALUES_BUF(oPNE), GET_VALUES_BUF(oPNW), GET_VALUES_BUF(oPSE),
+        GET_VALUES_BUF(oPSW), GET_VALUES_BUF(uPC), GET_VALUES_BUF(uPN),
+        GET_VALUES_BUF(uPS), GET_VALUES_BUF(uPE), GET_VALUES_BUF(uPW),
+        GET_VALUES_BUF(uPNE), GET_VALUES_BUF(uPNW), GET_VALUES_BUF(uPSE),
+        GET_VALUES_BUF(uPSW), GET_VALUES_BUF(dPC), GET_VALUES_BUF(dPN),
+        GET_VALUES_BUF(dPS), GET_VALUES_BUF(dPE), GET_VALUES_BUF(dPW),
+        GET_VALUES_BUF(dPNE), GET_VALUES_BUF(dPNW), GET_VALUES_BUF(dPSE),
+        GET_VALUES_BUF(dPSW), q);
+#undef GET_VALUES_BUF
+  }
+
+  template <std::size_t dest_level = nlev> void prolong_sol_2_sol2() {
+    static_assert(dest_level >= 2 && dest_level <= nlev,
+                  "dest_level not between 2 and nlev.");
+
+    prolong_domain(sol.template get_domain<dest_level - 1>(),
+                   sol2.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev> void prolong_sol2_2_sol() {
+    static_assert(dest_level >= 2 && dest_level <= nlev,
+                  "dest_level not between 2 and nlev.");
+
+    prolong_domain(sol2.template get_domain<dest_level - 1>(),
+                   sol.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev> void prolong_sol_2_rhs() {
+    static_assert(dest_level >= 2 && dest_level <= nlev,
+                  "dest_level not between 2 and nlev.");
+
+    prolong_domain(sol.template get_domain<dest_level - 1>(),
+                   rhs_domain.template get_domain<dest_level>());
+  }
+
+  template <std::size_t dest_level = nlev> void prolong_sol2_2_rhs() {
+    static_assert(dest_level >= 2 && dest_level <= nlev,
+                  "dest_level not between 2 and nlev.");
+
+    prolong_domain(sol2.template get_domain<dest_level - 1>(),
+                   rhs_domain.template get_domain<dest_level>());
+  }
+
   static DataType sqr(DataType val) { return val * val; }
 
   sycl::queue &q;
@@ -670,7 +804,7 @@ struct GS_smoother {
         PBE_linear_problem<base_length, nlev, box_length>::template nz<level>;
 
 #define VAL_BUF_EPSILON(x)                                                     \
-  pbe_problem.epsilon_##x_map.template get_domain<level>().values_buff
+  pbe_problem.epsilon_##x##_map.template get_domain<level>().values_buff
 
     auto &kappa_domain = pbe_problem.kappa_.template get_domain<level>();
 

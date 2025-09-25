@@ -78,9 +78,10 @@ int main(int argc, char *argv[]) {
   q.wait();
 
   mg_solver.smooth_domain_sol(2);
+  mg_solver.smooth_domain_sol2(2);
 
   std::cout << "After 2 iterations the sol domain is: " << std::endl;
-  mg_solver.sol.get_domain().print_domain();
+  mg_solver.sol2.get_domain().print_domain();
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;
