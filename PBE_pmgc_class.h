@@ -535,6 +535,39 @@ public:
     }
   }
 
+  void add_domains(auto result, auto a, auto b) {
+    using result_domain_t = decltype(result);
+    using a_t = decltype(a);
+    using b_t = decltype(b);
+
+    constexpr std::size_t result_level =
+        utils::level_from_length(std::get<0>(result_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t a_level = utils::level_from_length(
+        std::get<0>(a_t::length), std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t b_level = utils::level_from_length(
+        std::get<0>(b_t::length), std::get<0>(d_type<nlev>::length), nlev);
+
+    static_assert(a_level == b_level && result_level == a_level,
+                  "All domains do are not on the same level");
+
+    domain::add_domains(result, a, b);
+  }
+
+  template <std::size_t level = nlev> void add_domain_sol_sol_sol2() {
+    add_domains(sol.template get_domain<level>(),
+                sol2.template get_domain<level>(),
+                sol.template get_domain<level>());
+  }
+
+  template <std::size_t level = nlev> void add_domain_sol2_sol_sol2() {
+    add_domains(sol2.template get_domain<level>(),
+                sol2.template get_domain<level>(),
+                sol.template get_domain<level>());
+  }
+
   template <std::size_t level = nlev> DataType compute_residual() {
     return convolution::compute_residual_map(
         sol.template get_domain<level>(),
@@ -546,6 +579,33 @@ public:
         sol2.template get_domain<level>(),
         rhs_domain.template get_domain<level>(), get_map<level>());
   }
+
+  void compute_defect(auto src_domain, auto dest_domain) {
+    using src_domain_t = decltype(src_domain);
+    using dest_domain_t = decltype(dest_domain);
+
+    constexpr std::size_t src_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t dest_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    static_assert(
+        dest_level == src_level,
+        "The level of source domain and dest domain are not the same");
+
+    convolution::Subtract_Convolve_map(dest_domain, src_domain,
+                                       get_map<dest_level>());
+  }
+
+  template <std::size_t level = nlev> void compute_defect_sol_2_sol2() {
+    compute_defect(sol.template get_domain<level>(),
+                   sol2.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = nlev> void compute_defect_sol2_2_sol() {}
 
   template <std::size_t level = 1> auto get_solver(auto floatnum) {
     return cg_solver::make_solver(floatnum, sol.template get_domain<level>());

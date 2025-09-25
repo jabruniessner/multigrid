@@ -77,8 +77,13 @@ int main(int argc, char *argv[]) {
 
   q.wait();
 
-  mg_solver.smooth_domain_sol(2);
-  mg_solver.smooth_domain_sol2(2);
+  for (int i = 0; i < num_iters; i++) {
+    mg_solver.smooth_domain_sol(2);
+    mg_solver.compute_defect_sol_2_sol2();
+    mg_solver.restrict_domain_sol2_2_rhs();
+    mg_solver.solve_by_cg(Float<1e-5>{});
+    mg_solver.prolong_sol_2_sol2();
+  }
 
   std::cout << "After 2 iterations the sol domain is: " << std::endl;
   mg_solver.sol2.get_domain().print_domain();
