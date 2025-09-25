@@ -83,10 +83,12 @@ int main(int argc, char *argv[]) {
     mg_solver.restrict_domain_sol2_2_rhs();
     mg_solver.solve_by_cg(Float<1e-5>{});
     mg_solver.prolong_sol_2_sol2();
-  }
+    mg_solver.add_domain_sol_sol_sol2();
+    mg_solver.smooth_domain_sol(2);
 
-  std::cout << "After 2 iterations the sol domain is: " << std::endl;
-  mg_solver.sol2.get_domain().print_domain();
+    std::cout << "The residual after " << i + 1 << " iterations is "
+              << mg_solver.compute_residual() << std::endl;
+  }
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;

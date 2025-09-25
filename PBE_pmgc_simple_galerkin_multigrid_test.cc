@@ -615,10 +615,10 @@ int main(int argc, char *argv[]) {
                     epsilonuC_domain.values_buff, sol.get_domain().values_buff,
                     &smoothing_iters, q);
 
-      std::cout << "After 2 smoothing iterations the sol domain is: "
-                << std::endl;
+      // std::cout << "After 2 smoothing iterations the sol domain is: "
+      //           << std::endl;
 
-      sol.get_domain().print_domain();
+      // sol.get_domain().print_domain();
 
       //  std::cout << "The sol domain after the gsb is: " << std::endl;
       //  sol.get_domain().print_domain();

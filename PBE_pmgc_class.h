@@ -520,11 +520,7 @@ public:
         constexpr std::size_t nyc_i = std::get<1>(d_type_inner::length) + 2;
         constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
 
-        //  constexpr std::size_t level =
-        //      level_from_length(std::get<0>(d_type_inner::length),
-        //                        std::get<0>(d_type<nlev>::length), nlev);
-
-        pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
+        return pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
             I[0] + 1, I[1] + 1, I[2] + 1, epsilon_oC_pointer, kappa_pointer,
             epsilon_oE_pointer, epsilon_oN_pointer, epsilon_uC_pointer,
             epsilon_oNE_pointer, epsilon_oNW_pointer, epsilon_uE_pointer,
@@ -596,13 +592,14 @@ public:
         dest_level == src_level,
         "The level of source domain and dest domain are not the same");
 
-    convolution::Subtract_Convolve_map(dest_domain, src_domain,
-                                       get_map<dest_level>());
+    convolution::Subtract_Convolve_map(
+        dest_domain, src_domain, rhs_domain.template get_domain<dest_level>(),
+        get_map<dest_level>());
   }
 
   template <std::size_t level = nlev> void compute_defect_sol_2_sol2() {
     compute_defect(sol.template get_domain<level>(),
-                   sol2.template get_domain<level>(), get_map<level>());
+                   sol2.template get_domain<level>());
   }
 
   template <std::size_t level = nlev> void compute_defect_sol2_2_sol() {}
