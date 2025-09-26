@@ -159,7 +159,7 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
             const int j = I[1] + 2;
             const int i = I[2] + 2;
 
-            if ((i + j + k) % 8 == color) {
+            if ((i % 2) + 2 * (j % 2) + 4 * (k % 2) == color) {
 
               const auto tmpO =
                   +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +

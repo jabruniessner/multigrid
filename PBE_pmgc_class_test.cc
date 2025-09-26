@@ -1,8 +1,8 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
 
-constexpr std::size_t base_length = 2;
-constexpr std::size_t nlev = 6;
+constexpr std::size_t base_length = 16;
+constexpr std::size_t nlev = 3;
 constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
@@ -10,7 +10,7 @@ template <std::size_t nlev> struct TD2;
 
 int main(int argc, char *argv[]) {
 
-  std::size_t grid_step =
+  DataType grid_step =
       pmgc_solver::PBE_linear_problem<base_length, nlev, box_length>::grid_step;
 
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < num_iters; i++) {
     mg_solver.v_cycle();
 
-    std::cout << "The residual after 1 iteration is: "
+    std::cout << "The residual after " << i + 1 << " iterations is "
               << mg_solver.compute_residual() << std::endl;
   }
 
