@@ -253,44 +253,80 @@ public:
     sycl::free(atoms_device, q);
   }
 
-  template <std::size_t level = nlev> void buildmultilevelops() {
+  template <typename vanilla_prolongation = std::false_type,
+            std::size_t level = nlev>
+  void buildmultilevelops() {
     if constexpr (level == 1) {
       return;
     } else if constexpr (level == nlev) {
 
-      pmgc::VbuildPb_op7(nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>,
-                         ny<nlev - 1>, nz<nlev - 1>,
-                         epsilon_oC_map.template get_domain<nlev>().values_buff,
-                         epsilon_oE_map.template get_domain<nlev>().values_buff,
-                         epsilon_oN_map.template get_domain<nlev>().values_buff,
-                         epsilon_uC_map.template get_domain<nlev>().values_buff,
-                         oPC.template get_domain<nlev - 1>().values_buff,
-                         oPN.template get_domain<nlev - 1>().values_buff,
-                         oPS.template get_domain<nlev - 1>().values_buff,
-                         oPE.template get_domain<nlev - 1>().values_buff,
-                         oPW.template get_domain<nlev - 1>().values_buff,
-                         oPNE.template get_domain<nlev - 1>().values_buff,
-                         oPNW.template get_domain<nlev - 1>().values_buff,
-                         oPSE.template get_domain<nlev - 1>().values_buff,
-                         oPSW.template get_domain<nlev - 1>().values_buff,
-                         uPC.template get_domain<nlev - 1>().values_buff,
-                         uPN.template get_domain<nlev - 1>().values_buff,
-                         uPS.template get_domain<nlev - 1>().values_buff,
-                         uPE.template get_domain<nlev - 1>().values_buff,
-                         uPW.template get_domain<nlev - 1>().values_buff,
-                         uPNE.template get_domain<nlev - 1>().values_buff,
-                         uPNW.template get_domain<nlev - 1>().values_buff,
-                         uPSE.template get_domain<nlev - 1>().values_buff,
-                         uPSW.template get_domain<nlev - 1>().values_buff,
-                         dPC.template get_domain<nlev - 1>().values_buff,
-                         dPN.template get_domain<nlev - 1>().values_buff,
-                         dPS.template get_domain<nlev - 1>().values_buff,
-                         dPE.template get_domain<nlev - 1>().values_buff,
-                         dPW.template get_domain<nlev - 1>().values_buff,
-                         dPNE.template get_domain<nlev - 1>().values_buff,
-                         dPNW.template get_domain<nlev - 1>().values_buff,
-                         dPSE.template get_domain<nlev - 1>().values_buff,
-                         dPSW.template get_domain<nlev - 1>().values_buff, q);
+      if constexpr (vanilla_prolongation{}()) {
+        pmgc::VbuildPb_trilin(
+            nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
+            nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
+            oPN.template get_domain<nlev - 1>().values_buff,
+            oPS.template get_domain<nlev - 1>().values_buff,
+            oPE.template get_domain<nlev - 1>().values_buff,
+            oPW.template get_domain<nlev - 1>().values_buff,
+            oPNE.template get_domain<nlev - 1>().values_buff,
+            oPNW.template get_domain<nlev - 1>().values_buff,
+            oPSE.template get_domain<nlev - 1>().values_buff,
+            oPSW.template get_domain<nlev - 1>().values_buff,
+            uPC.template get_domain<nlev - 1>().values_buff,
+            uPN.template get_domain<nlev - 1>().values_buff,
+            uPS.template get_domain<nlev - 1>().values_buff,
+            uPE.template get_domain<nlev - 1>().values_buff,
+            uPW.template get_domain<nlev - 1>().values_buff,
+            uPNE.template get_domain<nlev - 1>().values_buff,
+            uPNW.template get_domain<nlev - 1>().values_buff,
+            uPSE.template get_domain<nlev - 1>().values_buff,
+            uPSW.template get_domain<nlev - 1>().values_buff,
+            dPC.template get_domain<nlev - 1>().values_buff,
+            dPN.template get_domain<nlev - 1>().values_buff,
+            dPS.template get_domain<nlev - 1>().values_buff,
+            dPE.template get_domain<nlev - 1>().values_buff,
+            dPW.template get_domain<nlev - 1>().values_buff,
+            dPNE.template get_domain<nlev - 1>().values_buff,
+            dPNW.template get_domain<nlev - 1>().values_buff,
+            dPSE.template get_domain<nlev - 1>().values_buff,
+            dPSW.template get_domain<nlev - 1>().values_buff, q);
+
+      } else {
+        pmgc::VbuildPb_op7(
+            nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
+            nz<nlev - 1>,
+            epsilon_oC_map.template get_domain<nlev>().values_buff,
+            epsilon_oE_map.template get_domain<nlev>().values_buff,
+            epsilon_oN_map.template get_domain<nlev>().values_buff,
+            epsilon_uC_map.template get_domain<nlev>().values_buff,
+            oPC.template get_domain<nlev - 1>().values_buff,
+            oPN.template get_domain<nlev - 1>().values_buff,
+            oPS.template get_domain<nlev - 1>().values_buff,
+            oPE.template get_domain<nlev - 1>().values_buff,
+            oPW.template get_domain<nlev - 1>().values_buff,
+            oPNE.template get_domain<nlev - 1>().values_buff,
+            oPNW.template get_domain<nlev - 1>().values_buff,
+            oPSE.template get_domain<nlev - 1>().values_buff,
+            oPSW.template get_domain<nlev - 1>().values_buff,
+            uPC.template get_domain<nlev - 1>().values_buff,
+            uPN.template get_domain<nlev - 1>().values_buff,
+            uPS.template get_domain<nlev - 1>().values_buff,
+            uPE.template get_domain<nlev - 1>().values_buff,
+            uPW.template get_domain<nlev - 1>().values_buff,
+            uPNE.template get_domain<nlev - 1>().values_buff,
+            uPNW.template get_domain<nlev - 1>().values_buff,
+            uPSE.template get_domain<nlev - 1>().values_buff,
+            uPSW.template get_domain<nlev - 1>().values_buff,
+            dPC.template get_domain<nlev - 1>().values_buff,
+            dPN.template get_domain<nlev - 1>().values_buff,
+            dPS.template get_domain<nlev - 1>().values_buff,
+            dPE.template get_domain<nlev - 1>().values_buff,
+            dPW.template get_domain<nlev - 1>().values_buff,
+            dPNE.template get_domain<nlev - 1>().values_buff,
+            dPNW.template get_domain<nlev - 1>().values_buff,
+            dPSE.template get_domain<nlev - 1>().values_buff,
+            dPSW.template get_domain<nlev - 1>().values_buff, q);
+      }
 
       pmgc::VbuildG_7(
           nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
@@ -340,53 +376,87 @@ public:
           epsilon_uSE_map.template get_domain<nlev - 1>().values_buff,
           epsilon_uSW_map.template get_domain<nlev - 1>().values_buff, q);
 
-      buildmultilevelops<level - 1>();
+      buildmultilevelops<vanilla_prolongation, level - 1>();
     } else {
 
-      pmgc::VbuildPb_op27(
-          nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
-          nz<level - 1>,
-          epsilon_oC_map.template get_domain<level>().values_buff,
-          epsilon_oE_map.template get_domain<level>().values_buff,
-          epsilon_oN_map.template get_domain<level>().values_buff,
-          epsilon_uC_map.template get_domain<level>().values_buff,
-          epsilon_oNE_map.template get_domain<level>().values_buff,
-          epsilon_oNW_map.template get_domain<level>().values_buff,
-          epsilon_uE_map.template get_domain<level>().values_buff,
-          epsilon_uW_map.template get_domain<level>().values_buff,
-          epsilon_uN_map.template get_domain<level>().values_buff,
-          epsilon_uS_map.template get_domain<level>().values_buff,
-          epsilon_uNE_map.template get_domain<level>().values_buff,
-          epsilon_uNW_map.template get_domain<level>().values_buff,
-          epsilon_uSE_map.template get_domain<level>().values_buff,
-          epsilon_uSW_map.template get_domain<level>().values_buff,
-          oPC.template get_domain<level - 1>().values_buff,
-          oPN.template get_domain<level - 1>().values_buff,
-          oPS.template get_domain<level - 1>().values_buff,
-          oPE.template get_domain<level - 1>().values_buff,
-          oPW.template get_domain<level - 1>().values_buff,
-          oPNE.template get_domain<level - 1>().values_buff,
-          oPNW.template get_domain<level - 1>().values_buff,
-          oPSE.template get_domain<level - 1>().values_buff,
-          oPSW.template get_domain<level - 1>().values_buff,
-          uPC.template get_domain<level - 1>().values_buff,
-          uPN.template get_domain<level - 1>().values_buff,
-          uPS.template get_domain<level - 1>().values_buff,
-          uPE.template get_domain<level - 1>().values_buff,
-          uPW.template get_domain<level - 1>().values_buff,
-          uPNE.template get_domain<level - 1>().values_buff,
-          uPNW.template get_domain<level - 1>().values_buff,
-          uPSE.template get_domain<level - 1>().values_buff,
-          uPSW.template get_domain<level - 1>().values_buff,
-          dPC.template get_domain<level - 1>().values_buff,
-          dPN.template get_domain<level - 1>().values_buff,
-          dPS.template get_domain<level - 1>().values_buff,
-          dPE.template get_domain<level - 1>().values_buff,
-          dPW.template get_domain<level - 1>().values_buff,
-          dPNE.template get_domain<level - 1>().values_buff,
-          dPNW.template get_domain<level - 1>().values_buff,
-          dPSE.template get_domain<level - 1>().values_buff,
-          dPSW.template get_domain<level - 1>().values_buff, q);
+      if constexpr (vanilla_prolongation{}()) {
+        pmgc::VbuildPb_trilin(
+            nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
+            nz<level - 1>, oPC.template get_domain<level - 1>().values_buff,
+            oPN.template get_domain<level - 1>().values_buff,
+            oPS.template get_domain<level - 1>().values_buff,
+            oPE.template get_domain<level - 1>().values_buff,
+            oPW.template get_domain<level - 1>().values_buff,
+            oPNE.template get_domain<level - 1>().values_buff,
+            oPNW.template get_domain<level - 1>().values_buff,
+            oPSE.template get_domain<level - 1>().values_buff,
+            oPSW.template get_domain<level - 1>().values_buff,
+            uPC.template get_domain<level - 1>().values_buff,
+            uPN.template get_domain<level - 1>().values_buff,
+            uPS.template get_domain<level - 1>().values_buff,
+            uPE.template get_domain<level - 1>().values_buff,
+            uPW.template get_domain<level - 1>().values_buff,
+            uPNE.template get_domain<level - 1>().values_buff,
+            uPNW.template get_domain<level - 1>().values_buff,
+            uPSE.template get_domain<level - 1>().values_buff,
+            uPSW.template get_domain<level - 1>().values_buff,
+            dPC.template get_domain<level - 1>().values_buff,
+            dPN.template get_domain<level - 1>().values_buff,
+            dPS.template get_domain<level - 1>().values_buff,
+            dPE.template get_domain<level - 1>().values_buff,
+            dPW.template get_domain<level - 1>().values_buff,
+            dPNE.template get_domain<level - 1>().values_buff,
+            dPNW.template get_domain<level - 1>().values_buff,
+            dPSE.template get_domain<level - 1>().values_buff,
+            dPSW.template get_domain<level - 1>().values_buff, q);
+
+      } else {
+
+        pmgc::VbuildPb_op27(
+            nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
+            nz<level - 1>,
+            epsilon_oC_map.template get_domain<level>().values_buff,
+            epsilon_oE_map.template get_domain<level>().values_buff,
+            epsilon_oN_map.template get_domain<level>().values_buff,
+            epsilon_uC_map.template get_domain<level>().values_buff,
+            epsilon_oNE_map.template get_domain<level>().values_buff,
+            epsilon_oNW_map.template get_domain<level>().values_buff,
+            epsilon_uE_map.template get_domain<level>().values_buff,
+            epsilon_uW_map.template get_domain<level>().values_buff,
+            epsilon_uN_map.template get_domain<level>().values_buff,
+            epsilon_uS_map.template get_domain<level>().values_buff,
+            epsilon_uNE_map.template get_domain<level>().values_buff,
+            epsilon_uNW_map.template get_domain<level>().values_buff,
+            epsilon_uSE_map.template get_domain<level>().values_buff,
+            epsilon_uSW_map.template get_domain<level>().values_buff,
+            oPC.template get_domain<level - 1>().values_buff,
+            oPN.template get_domain<level - 1>().values_buff,
+            oPS.template get_domain<level - 1>().values_buff,
+            oPE.template get_domain<level - 1>().values_buff,
+            oPW.template get_domain<level - 1>().values_buff,
+            oPNE.template get_domain<level - 1>().values_buff,
+            oPNW.template get_domain<level - 1>().values_buff,
+            oPSE.template get_domain<level - 1>().values_buff,
+            oPSW.template get_domain<level - 1>().values_buff,
+            uPC.template get_domain<level - 1>().values_buff,
+            uPN.template get_domain<level - 1>().values_buff,
+            uPS.template get_domain<level - 1>().values_buff,
+            uPE.template get_domain<level - 1>().values_buff,
+            uPW.template get_domain<level - 1>().values_buff,
+            uPNE.template get_domain<level - 1>().values_buff,
+            uPNW.template get_domain<level - 1>().values_buff,
+            uPSE.template get_domain<level - 1>().values_buff,
+            uPSW.template get_domain<level - 1>().values_buff,
+            dPC.template get_domain<level - 1>().values_buff,
+            dPN.template get_domain<level - 1>().values_buff,
+            dPS.template get_domain<level - 1>().values_buff,
+            dPE.template get_domain<level - 1>().values_buff,
+            dPW.template get_domain<level - 1>().values_buff,
+            dPNE.template get_domain<level - 1>().values_buff,
+            dPNW.template get_domain<level - 1>().values_buff,
+            dPSE.template get_domain<level - 1>().values_buff,
+            dPSW.template get_domain<level - 1>().values_buff, q);
+      }
 
       pmgc::VbuildG_27(
           nx<level>, ny<level>, nz<level>, nx<level - 1>, ny<level - 1>,
@@ -446,7 +516,7 @@ public:
           epsilon_uSE_map.template get_domain<level - 1>().values_buff,
           epsilon_uSW_map.template get_domain<level - 1>().values_buff, q);
 
-      buildmultilevelops<level - 1>();
+      buildmultilevelops<vanilla_prolongation, level - 1>();
     }
   }
 
@@ -821,18 +891,20 @@ public:
                    rhs_domain.template get_domain<dest_level>());
   }
 
-  template <std::size_t level = nlev> void v_cycle() {
+  template <typename sequential_smooth = std::false_type,
+            std::size_t level = nlev>
+  void v_cycle() {
     if constexpr (level == 1) {
       solve_by_cg<level>(Float<1e-5>{});
     } else {
 
-      smooth_domain_sol<std::true_type, level>(2, level != nlev);
+      smooth_domain_sol<sequential_smooth, level>(2, level != nlev);
       compute_defect_sol_2_sol2<level>();
       restrict_domain_sol2_2_rhs<level - 1>();
-      v_cycle<level - 1>();
+      v_cycle<sequential_smooth, level - 1>();
       prolong_sol_2_sol2<level>();
       add_domain_sol_sol_sol2<level>();
-      smooth_domain_sol<std::true_type, level>(2);
+      smooth_domain_sol<sequential_smooth, level>(2);
     }
   }
 

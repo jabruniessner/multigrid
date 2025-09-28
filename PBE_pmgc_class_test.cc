@@ -1,5 +1,6 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
+#include <type_traits>
 
 constexpr std::size_t base_length = 2;
 constexpr std::size_t nlev = 3;
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
   mg_solver.initialize_boundary(atoms_vector);
   mg_solver.initialize_epsilons(atoms_vector);
   mg_solver.set_up_rhs(atoms_vector);
-  mg_solver.buildmultilevelops();
+  mg_solver.buildmultilevelops<std::true_type>();
 
   std::cout << "The initial residual is:" << mg_solver.compute_residual()
             << std::endl;
