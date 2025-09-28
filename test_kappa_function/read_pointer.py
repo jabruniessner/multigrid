@@ -42,15 +42,17 @@ class PrintArray(gdb.Command):
         for indices in itertools.product(*[range(length) for length in lengths]):
 
             #Flatten multi-dimensional indices to single index
-            flat_index = indices[-1]
+            #flat_index = indices[-1]
+            flat_index = indices[0]
 
 
 
-            reverse_lengths = tuple(reversed(lengths))
+           # reverse_lengths = tuple(reversed(lengths))
 
-            for idx, stride in enumerate(reverse_lengths[1:], start=2):
+#            for idx, stride in enumerate(reverse_lengths[1:], start=2):
+            for idx, stride in enumerate(lengths[1:], start=1):
                 flat_index *= stride
-                flat_index = flat_index + indices[-idx]
+                flat_index = flat_index + indices[idx]
 
             try:
                 

@@ -1,7 +1,7 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
 
-constexpr std::size_t base_length = 16;
+constexpr std::size_t base_length = 2;
 constexpr std::size_t nlev = 3;
 constexpr DataType box_length = 16;
 
@@ -89,6 +89,13 @@ int main(int argc, char *argv[]) {
   //   std::cout << "The residual after " << i + 1 << " iterations is "
   //             << mg_solver.compute_residual() << std::endl;
   // }
+
+  // std::cout << "oE map" << std::endl;
+  // mg_solver.epsilon_oE_map.get_domain().print_domain();
+  // std::cout << "oN map" << std::endl;
+  // mg_solver.epsilon_oN_map.get_domain().print_domain();
+  // std::cout << "uC map" << std::endl;
+  // mg_solver.epsilon_uC_map.get_domain().print_domain();
 
   for (int i = 0; i < num_iters; i++) {
     mg_solver.v_cycle();
