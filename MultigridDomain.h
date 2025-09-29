@@ -7,6 +7,7 @@
 #include "utils.h"
 #include <format>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #ifndef MULTIGRIDDOMAIN_H
@@ -24,6 +25,22 @@ template <typename DataType, Dimension Dim, Dimension Type_dim,
 struct Multigrid_domain_t
     : public Multigrid_domain_t<DataType, Dim, Type_dim, nlev - 1,
                                 base_length...> {
+
+  template <std::size_t... indices> struct Domain_Type;
+
+  template <std::size_t... indices>
+  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
+
+  constexpr static std::array<DataType, 1> coarse_filter_values{1};
+  constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
+  constexpr static Domain_Type domain_t_v{
+      std::make_index_sequence<Dim + Type_dim>{}};
+
+  template <std::size_t lev = nlev>
+  using domain_type = decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                                                  base_length...>::domain_t_v);
+
+  constexpr static auto &length = decltype(domain_t_v)::length;
 
   using ValueType = DataType;
 
@@ -49,17 +66,25 @@ struct Multigrid_domain_t
   }
 
   template <std::size_t lev = nlev, std::size_t dummy = 0>
-  decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
-                              base_length...>::domain) &
-  get_domain() {
+  domain_type<lev>::domain_t &get_domain() {
     return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
                               base_length...>::domain;
   }
 
   template <std::size_t lev = nlev>
-  const decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
-                                    base_length...>::domain) &
-  get_domain() const {
+  const domain_type<lev>::domain_t &get_domain() const {
+    return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                              base_length...>::domain;
+  }
+
+  template <std::size_t lev = nlev, std::size_t dummy = 0>
+  domain_type<lev>::domain_t_wrapper &get_domain_wrapper() {
+    return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                              base_length...>::domain;
+  }
+
+  template <std::size_t lev = nlev>
+  const domain_type<lev>::domain_t_wrapper &get_domain_wrapper() const {
     return Multigrid_domain_t<DataType, Dim, Type_dim, lev,
                               base_length...>::domain;
   }
@@ -81,6 +106,16 @@ struct Multigrid_domain_t
   template <std::size_t level = nlev> auto get_length() {
     return Multigrid_domain_t<DataType, Dim, Type_dim, level,
                               base_length...>::length;
+  }
+
+  template <typename DataType2>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                       std::is_same_v<DataType, DataType2>,
+                   void>
+  set_zero() {
+    this->get_domain().template set_zero<DataType2>();
+    this->Multigrid_domain_t<DataType, Dim, Type_dim, nlev - 1,
+                             base_length...>::template set_zero<DataType2>();
   }
 
   template <std::size_t... indices> struct Domain_Type {
@@ -110,18 +145,15 @@ struct Multigrid_domain_t
 
     using domain_t =
         Grid<DataType, Dim + Type_dim, std::get<indices>(length_all)...>;
+
+    using domain_t_wrapper = Grid_wrapper<DataType, Dim + Type_dim,
+                                          std::get<indices>(length_all)...>;
   };
 
-  template <std::size_t... indices>
-  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
+  // template <std::size_t... indices>
+  // Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
 
-  constexpr static std::array<DataType, 1> coarse_filter_values{1};
-  constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
-  constexpr static Domain_Type domain_t_v{
-      std::make_index_sequence<Dim + Type_dim>{}};
-  constexpr static auto &length = decltype(domain_t_v)::length;
-
-  decltype(domain_t_v)::domain_t domain;
+  decltype(domain_t_v)::domain_t_wrapper domain;
 };
 
 template <typename DataType, Dimension Dim, Dimension Type_dim,
@@ -130,16 +162,28 @@ struct Multigrid_domain_t<DataType, Dim, Type_dim, 0u, base_length...> {
 
   using ValueType = DataType;
 
-  Multigrid_domain_t(sycl::queue &q) : domain(Paddings::PERIODIC, q, 1) {}
+  template <std::size_t... indices> struct Domain_Type;
+
+  template <std::size_t... indices>
+  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
+
+  constexpr static std::array<DataType, 1> coarse_filter_values{1};
+  constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
+  constexpr static Domain_Type domain_t_v{
+      std::make_index_sequence<Dim + Type_dim>{}};
+
+  template <std::size_t lev = 0>
+  using domain_type = decltype(Multigrid_domain_t<DataType, Dim, Type_dim, lev,
+                                                  base_length...>::domain_t_v);
+
+  Multigrid_domain_t(sycl::queue &q) {}
 
   template <typename... Position1D> DataType get_value(Position1D... i) {
-    return domain.get_value(i...);
+    return 0;
   }
 
   template <typename... Position1D>
-  void set_value(DataType val, Position1D... i) {
-    domain.set_value(val, i...);
-  }
+  void set_value(DataType val, Position1D... i) {}
 
   void print_level() { std::cout << 0u << std::endl; }
 
@@ -172,17 +216,18 @@ struct Multigrid_domain_t<DataType, Dim, Type_dim, 0u, base_length...> {
 
     using domain_t =
         Grid<DataType, Dim + Type_dim, std::get<indices>(length_all)...>;
+
+    using domain_t_wrapper = Grid_wrapper<DataType, Dim + Type_dim,
+                                          std::get<indices>(length_all)...>;
   };
 
-  template <std::size_t... indices>
-  Domain_Type(std::index_sequence<indices...>) -> Domain_Type<indices...>;
+  template <typename DataType2>
+  std::enable_if_t<std::is_arithmetic_v<DataType> &&
+                       std::is_same_v<DataType, DataType2>,
+                   void>
+  set_zero() {}
 
-  constexpr static std::array<DataType, 1> coarse_filter_values{1};
-  constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
-  constexpr static Domain_Type domain_t_v{
-      std::make_index_sequence<Dim + Type_dim>{}};
-
-  decltype(domain_t_v)::domain_t domain;
+  // decltype(domain_t_v)::domain_t domain;
 };
 
 template <Dimension Dim, std::size_t nlev, std::size_t... base_length>

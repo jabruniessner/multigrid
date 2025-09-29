@@ -140,7 +140,10 @@ public:
         sycl::malloc_device<Atom<DataType>>(atom_list.size(), q);
 
     auto num_atoms = atom_list.size();
-    auto &boundary_domain = sol.template get_domain<nlev>();
+
+    // d_type<nlev> boundary_domain(Paddings::PERIODIC, q, 1);
+
+    auto &boundary_domain = sol.get_domain();
 
     q.memcpy(atoms_device, atom_list.data(),
              atom_list.size() * sizeof(Atom<DataType>));
@@ -165,7 +168,12 @@ public:
          })
         .wait();
 
-    sycl::free(atoms_device, q);
+    //  sycl::free(atoms_device, q);
+
+    //  convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
+    //                            this->get_map());
+
+    q.wait();
   }
 
   void initialize_epsilons(std::vector<Atom<DataType>> atom_list) {
@@ -895,9 +903,8 @@ public:
             std::size_t level = nlev>
   void v_cycle() {
     if constexpr (level == 1) {
-      solve_by_cg<level>(Float<1e-5>{});
+      solve_by_cg<level>(Float<1e-8>{});
     } else {
-
       smooth_domain_sol<sequential_smooth, level>(2, level != nlev);
       compute_defect_sol_2_sol2<level>();
       restrict_domain_sol2_2_rhs<level - 1>();

@@ -1,5 +1,6 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
+#include <cstdlib>
 #include <type_traits>
 
 constexpr std::size_t base_length = 2;
@@ -8,6 +9,14 @@ constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
+
+// struct dummy_struct {
+//   ~dummy_struct() {
+//     std::cout << "The final value of i is: " << domain::i << std::endl;
+//   }
+// };
+//
+// dummy_struct d{};
 
 int main(int argc, char *argv[]) {
 
@@ -59,51 +68,74 @@ int main(int argc, char *argv[]) {
     // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
+  {
+    pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
+        (DataType)0, DataType(0.15), q);
 
-  pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
-      (DataType)0, DataType(0.15), q);
+    using d_type = std::remove_reference_t<
+        decltype(mg_solver.sol.template get_domain<nlev>())>;
 
-  mg_solver.initialize_boundary(atoms_vector);
-  mg_solver.initialize_epsilons(atoms_vector);
-  mg_solver.set_up_rhs(atoms_vector);
-  mg_solver.buildmultilevelops<std::true_type>();
+    mg_solver.initialize_boundary(atoms_vector);
+    mg_solver.initialize_epsilons(atoms_vector);
+    mg_solver.set_up_rhs(atoms_vector);
+    mg_solver.buildmultilevelops<std::true_type>();
 
-  std::cout << "The initial residual is:" << mg_solver.compute_residual()
-            << std::endl;
+    // std::cout << "The initial residual is:" << mg_solver.compute_residual()
+    //           << std::endl;
 
-  //  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
-  //
-  //  std::cout << "After the cg_method on top level, the residual is: "
-  //            << mg_solver.compute_residual() << std::endl;
+    const auto initial_res = mg_solver.compute_residual();
 
-  q.wait();
+    //  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
+    //
+    //  std::cout << "After the cg_method on top level, the residual is: "
+    //            << mg_solver.compute_residual() << std::endl;
 
-  // for (int i = 0; i < num_iters; i++) {
-  //   mg_solver.smooth_domain_sol(2);
-  //   mg_solver.compute_defect_sol_2_sol2();
-  //   mg_solver.restrict_domain_sol2_2_rhs();
-  //   mg_solver.solve_by_cg(Float<1e-5>{});
-  //   mg_solver.prolong_sol_2_sol2();
-  //   mg_solver.add_domain_sol_sol_sol2();
-  //   mg_solver.smooth_domain_sol(2);
+    q.wait();
 
-  //   std::cout << "The residual after " << i + 1 << " iterations is "
-  //             << mg_solver.compute_residual() << std::endl;
-  // }
+    // for (int i = 0; i < num_iters; i++) {
+    //   mg_solver.smooth_domain_sol(2);
+    //   mg_solver.compute_defect_sol_2_sol2();
+    //   mg_solver.restrict_domain_sol2_2_rhs();
+    //   mg_solver.solve_by_cg(Float<1e-5>{});
+    //   mg_solver.prolong_sol_2_sol2();
+    //   mg_solver.add_domain_sol_sol_sol2();
+    //   mg_solver.smooth_domain_sol(2);
 
-  // std::cout << "oE map" << std::endl;
-  // mg_solver.epsilon_oE_map.get_domain().print_domain();
-  // std::cout << "oN map" << std::endl;
-  // mg_solver.epsilon_oN_map.get_domain().print_domain();
-  // std::cout << "uC map" << std::endl;
-  // mg_solver.epsilon_uC_map.get_domain().print_domain();
+    //   std::cout << "The residual after " << i + 1 << " iterations is "
+    //             << mg_solver.compute_residual() << std::endl;
+    // }
 
-  for (int i = 0; i < num_iters; i++) {
-    mg_solver.v_cycle();
+    //  std::cout << "oE map" << std::endl;
+    //  mg_solver.epsilon_oE_map.get_domain().print_domain();
+    //  std::cout << "oN map" << std::endl;
+    //  mg_solver.epsilon_oN_map.get_domain().print_domain();
+    //  std::cout << "uC map" << std::endl;
+    //  mg_solver.epsilon_uC_map.get_domain().print_domain();
+    //
+    //
 
-    std::cout << "The residual after " << i + 1 << " iterations is "
-              << mg_solver.compute_residual() << std::endl;
+    //  mg_solver.sol.set_zero<DataType>();
+    //  q.wait();
+
+    DataType current_res = 0;
+    DataType previous_res = initial_res;
+
+    for (int i = 0; i < num_iters; i++) {
+      mg_solver.v_cycle<std::true_type>();
+
+      current_res = mg_solver.compute_residual();
+
+      std::cout << "The residual after " << i + 1 << " iterations is "
+                << current_res / initial_res << std::endl;
+
+      std::cout << "contraction number " << current_res / previous_res
+                << std::endl;
+
+      previous_res = current_res;
+    }
   }
+
+  std::cout << "The final value of domain::i is " << domain::i << std::endl;
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;

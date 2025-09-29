@@ -25,6 +25,8 @@
 
 namespace domain {
 
+static int i = 0;
+
 template <Length FirstStride, Length... RestStrides, typename Padding,
           typename Position, typename... PositionRest>
 size_t flatten_index(Padding padding, Position i,
@@ -71,13 +73,18 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
 
   using ValueType = DataType;
 
-  template <typename... Length>
   Grid(Paddings padding, sycl::queue &q, int padding_width)
       : strides{strides_all...}, padding(padding), padding_width(padding_width),
         q(q)
 
   {
+
     static_assert(sizeof...(strides_all) == Dim);
+
+    ::domain::i++;
+
+    std::cout << "Grid constructor " << ::domain::i << " times called"
+              << std::endl;
 
     num_values = 1;
     ((num_values *= strides_all + 2 * padding_width), ...);
@@ -86,6 +93,8 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     ((num_dofs *= strides_all), ...);
 
     values_buff = sycl::malloc_device<DataType>(num_values, q);
+    // values_buff_shared = std::shared_ptr<DataType>(
+    //     values_buff, [&q](DataType *p) { sycl::free(p, q); });
 
     if constexpr (std::is_arithmetic_v<DataType>) {
       q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
@@ -115,6 +124,14 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     q.memcpy(&k, &values_buff[flat_index], sizeof(DataType)).wait();
 
     return k;
+  }
+
+  template <typename DataType2 = DataType>
+  std::enable_if_t<std::is_arithmetic_v<DataType2> &&
+                       std::is_same_v<DataType2, DataType>,
+                   void>
+  set_zero() {
+    q.memset(this->values_buff, 0, this->num_values * sizeof(DataType));
   }
 
   template <typename DataType2>
@@ -220,6 +237,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
       for (Position1D i = 0;
            i < this->strides[sizeof...(Indices)] + 2 * this->padding_width; i++)
         print_domain(indices..., i);
+      // ~Grid() { std::cout << "The destructor is being called" << std::endl; }
       std::cout << std::endl;
     } else {
       if constexpr (std::is_floating_point_v<DataType>) {
@@ -274,6 +292,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     print_domain_to_stream(output);
   }
 
+  // std::shared_ptr<DataType> values_buff_shared;
   DataType *values_buff;
   Length strides[Dim];
   Length num_values;
@@ -283,6 +302,20 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   sycl::queue &q;
 
   static constexpr std::array<Length, Dim> length{strides_all...};
+};
+
+template <typename DataType, Dimension Dim, Length... strides_all>
+struct Grid_wrapper : Grid<DataType, Dim, strides_all...> {
+  Grid_wrapper(Paddings padding, sycl::queue &q, int padding_width)
+      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {
+    values_buff_shared =
+        std::shared_ptr<DataType>(this->values_buff, [&q](DataType *p) {
+          ::domain::i--;
+          sycl::free(p, q);
+        });
+  };
+
+  std::shared_ptr<DataType> values_buff_shared;
 };
 
 template <typename DataType, UnsignedIntegral Num_Type, Dimension Dim,
@@ -620,7 +653,7 @@ struct Subdomain<Domain<Dim, strides_all...>, Ranges...> {
   }
 
   template <typename... Positions>
-  DataType &operator()(const Positions &...positions) const {
+  inline DataType &operator()(const Positions &...positions) const {
     static_assert(sizeof...(Positions) == Dim);
     return values_buff[flatten_index<strides_all...>(
         padding_width, (positions + RangeProps<Ranges>::start_v)...)];

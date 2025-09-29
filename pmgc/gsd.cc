@@ -212,6 +212,8 @@ void Vgsrb27x_sequential<DataType>(
     DataType *uNE, DataType *uNW, DataType *uSE, DataType *uSW, DataType *x,
     int *itmax, int iadjoint, sycl::queue &q, bool zero_initialize) {
 
+  std::cout << "Using sequential smoothing" << std::endl;
+
   int i1, j1, k1;
   int i2, j2, k2;
   int istep;
