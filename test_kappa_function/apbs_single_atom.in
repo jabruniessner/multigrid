@@ -4,8 +4,8 @@ end
 
 elec name viz
 mg-manual
-dime 17 17 17
-grid 1. 1. 1.
+dime 129 129 129
+grid .125 .125 .125
 nlev 2
 gcent  mol 1
 mol 1
