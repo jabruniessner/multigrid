@@ -81,11 +81,6 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
 
     static_assert(sizeof...(strides_all) == Dim);
 
-    ::domain::i++;
-
-    std::cout << "Grid constructor " << ::domain::i << " times called"
-              << std::endl;
-
     num_values = 1;
     ((num_values *= strides_all + 2 * padding_width), ...);
 
@@ -308,11 +303,8 @@ template <typename DataType, Dimension Dim, Length... strides_all>
 struct Grid_wrapper : Grid<DataType, Dim, strides_all...> {
   Grid_wrapper(Paddings padding, sycl::queue &q, int padding_width)
       : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {
-    values_buff_shared =
-        std::shared_ptr<DataType>(this->values_buff, [&q](DataType *p) {
-          ::domain::i--;
-          sycl::free(p, q);
-        });
+    values_buff_shared = std::shared_ptr<DataType>(
+        this->values_buff, [&q](DataType *p) { sycl::free(p, q); });
   };
 
   std::shared_ptr<DataType> values_buff_shared;

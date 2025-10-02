@@ -80,6 +80,14 @@ class PBE_linear_problem {
   using d_type = std::remove_reference_t<
       std::invoke_result_t<MemFnPtrd_type<N>, Domain_Type<nlev>>>;
 
+  template <std::size_t N>
+  using MemFnPtrdWrapper_type =
+      decltype(&Domain_Type<nlev>::template get_domain_wrapper<N, 0>);
+
+  template <std::size_t N>
+  using d_type_wrapper = std::remove_reference_t<
+      std::invoke_result_t<MemFnPtrdWrapper_type<N>, Domain_Type<nlev>>>;
+
   using Domain_Type_upper = decltype(Domain_Type<>::domain_t_v)::domain_t;
 
 public:
@@ -141,9 +149,8 @@ public:
 
     auto num_atoms = atom_list.size();
 
-    // d_type<nlev> boundary_domain(Paddings::PERIODIC, q, 1);
-
-    auto &boundary_domain = sol.get_domain();
+    d_type_wrapper<nlev> boundary_domain_wrapper(Paddings::PERIODIC, q, 1);
+    d_type<nlev> boundary_domain = boundary_domain_wrapper;
 
     q.memcpy(atoms_device, atom_list.data(),
              atom_list.size() * sizeof(Atom<DataType>));
@@ -170,8 +177,15 @@ public:
 
     //  sycl::free(atoms_device, q);
 
-    //  convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
-    //                            this->get_map());
+    convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
+                              this->get_map());
+
+    // Inverting the sign for values inside the domain
+    d_type<nlev> rhs = rhs_domain.get_domain();
+
+    q.parallel_for(sycl::range<1>{rhs.num_values}, [=](sycl::id<1> I) {
+      rhs.values_buff[I] = -rhs.values_buff[I];
+    });
 
     q.wait();
   }
@@ -554,7 +568,7 @@ public:
         //                        std::get<0>(d_type<nlev>::length), nlev);
 
         return pmgc::matveckernel7<nxc_i, nyc_i, nzc_i>(
-            I[0] + 1, I[1] + 1, I[2] + 1, epsilon_oC_pointer, kappa_pointer,
+            I[2] + 1, I[1] + 1, I[0] + 1, epsilon_oC_pointer, kappa_pointer,
             epsilon_oE_pointer, epsilon_oN_pointer, epsilon_uC_pointer,
             domain.values_buff);
       };
@@ -599,7 +613,7 @@ public:
         constexpr std::size_t nzc_i = std::get<2>(d_type_inner::length) + 2;
 
         return pmgc::matveckernel27<nxc_i, nyc_i, nzc_i>(
-            I[0] + 1, I[1] + 1, I[2] + 1, epsilon_oC_pointer, kappa_pointer,
+            I[2] + 1, I[1] + 1, I[0] + 1, epsilon_oC_pointer, kappa_pointer,
             epsilon_oE_pointer, epsilon_oN_pointer, epsilon_uC_pointer,
             epsilon_oNE_pointer, epsilon_oNW_pointer, epsilon_uE_pointer,
             epsilon_uW_pointer, epsilon_uN_pointer, epsilon_uS_pointer,
@@ -642,14 +656,26 @@ public:
                 sol.template get_domain<level>());
   }
 
-  template <std::size_t level = nlev> DataType compute_residual() {
+  template <std::size_t level = nlev> DataType compute_residual_2() {
     return convolution::compute_residual_map(
         sol.template get_domain<level>(),
         rhs_domain.template get_domain<level>(), get_map<level>());
   }
 
-  template <std::size_t level = nlev> DataType compute_residual_sol2() {
+  template <std::size_t level = nlev> DataType compute_residual_2_sol2() {
     return convolution::compute_residual_map(
+        sol2.template get_domain<level>(),
+        rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = nlev> DataType compute_residual_1() {
+    return convolution::compute_residual_1_map(
+        sol.template get_domain<level>(),
+        rhs_domain.template get_domain<level>(), get_map<level>());
+  }
+
+  template <std::size_t level = nlev> DataType compute_residual_1_sol2() {
+    return convolution::compute_residual_1_map(
         sol2.template get_domain<level>(),
         rhs_domain.template get_domain<level>(), get_map<level>());
   }
@@ -685,6 +711,35 @@ public:
                    sol.template get_domain<level>());
   }
 
+  void convolve(auto src_domain, auto dest_domain) {
+    using src_domain_t = decltype(src_domain);
+    using dest_domain_t = decltype(dest_domain);
+
+    constexpr std::size_t src_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t dest_level =
+        utils::level_from_length(std::get<0>(src_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    static_assert(
+        dest_level == src_level,
+        "The level of source domain and dest domain are not the same");
+
+    convolution::Convolve_map(dest_domain, src_domain, get_map<dest_level>());
+  }
+
+  template <std::size_t level = nlev> void convolve_sol_2_sol2() {
+    convolve(sol.template get_domain<level>(),
+             sol2.template get_domain<level>());
+  }
+
+  template <std::size_t level = nlev> void convolve_sol2_2_sol() {
+    convolve(sol2.template get_domain<level>(),
+             sol.template get_domain<level>());
+  }
+
   template <std::size_t level = 1> auto get_solver(auto floatnum) {
     return cg_solver::make_solver(floatnum, sol.template get_domain<level>());
   }
@@ -702,7 +757,7 @@ public:
   }
 
   template <typename sequential = std::false_type>
-  void smooth_domain(auto &domain, int num_iters,
+  void smooth_domain(auto &domain, int num_iters, const int iadjoint = 0,
                      bool zero_initialize = false) {
 
     using d_type_inner = std::remove_reference_t<decltype(domain)>;
@@ -722,10 +777,11 @@ public:
                     kappa_domain.values_buff,
                     rhs_domain.template get_domain<level>().values_buff,
                     VAL_BUF_EPSILON(oE), VAL_BUF_EPSILON(oN),
-                    VAL_BUF_EPSILON(uC), domain.values_buff, &num_iters, q,
-                    zero_initialize);
+                    VAL_BUF_EPSILON(uC), domain.values_buff, &num_iters,
+                    iadjoint, q, zero_initialize);
     } else {
       if constexpr (sequential{}()) {
+
         pmgc::Vgsrb27x_sequential(
             nx<level>, ny<level>, nz<level>, VAL_BUF_EPSILON(oC),
             kappa_domain.values_buff, rhs.values_buff, VAL_BUF_EPSILON(oE),
@@ -733,7 +789,7 @@ public:
             VAL_BUF_EPSILON(oNW), VAL_BUF_EPSILON(uE), VAL_BUF_EPSILON(uW),
             VAL_BUF_EPSILON(uN), VAL_BUF_EPSILON(uS), VAL_BUF_EPSILON(uNE),
             VAL_BUF_EPSILON(uNW), VAL_BUF_EPSILON(uSE), VAL_BUF_EPSILON(uSW),
-            domain.values_buff, &num_iters, 0, q, zero_initialize);
+            domain.values_buff, &num_iters, iadjoint, q, zero_initialize);
 
       } else {
 
@@ -752,17 +808,17 @@ public:
   }
 
   template <typename sequential = std::false_type, std::size_t level = nlev>
-  void smooth_domain_sol(std::size_t num_iters = 2,
+  void smooth_domain_sol(std::size_t num_iters = 2, const int iadjoint = 0,
                          bool zero_initialize = false) {
     smooth_domain<sequential>(sol.template get_domain<level>(), num_iters,
-                              zero_initialize);
+                              iadjoint, zero_initialize);
   }
 
   template <typename sequential = std::false_type, std::size_t level = nlev>
-  void smooth_domain_sol2(std::size_t num_iters = 2,
+  void smooth_domain_sol2(std::size_t num_iters = 2, const int iadjoint = 0,
                           bool zero_initialize = false) {
     smooth_domain<sequential>(sol2.template get_domain<level>(), num_iters,
-                              zero_initialize);
+                              iadjoint, zero_initialize);
   }
 
   void restrict_domain(auto src_domain, auto dest_domain) {
@@ -905,13 +961,13 @@ public:
     if constexpr (level == 1) {
       solve_by_cg<level>(Float<1e-8>{});
     } else {
-      smooth_domain_sol<sequential_smooth, level>(2, level != nlev);
+      smooth_domain_sol<sequential_smooth, level>(2, 0, level != nlev);
       compute_defect_sol_2_sol2<level>();
       restrict_domain_sol2_2_rhs<level - 1>();
       v_cycle<sequential_smooth, level - 1>();
       prolong_sol_2_sol2<level>();
       add_domain_sol_sol_sol2<level>();
-      smooth_domain_sol<sequential_smooth, level>(2);
+      smooth_domain_sol<sequential_smooth, level>(2, 1);
     }
   }
 

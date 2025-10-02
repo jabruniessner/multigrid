@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
     // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
+
   {
     pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
         (DataType)0, DataType(0.15), q);
@@ -83,7 +84,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "The initial residual is:" << mg_solver.compute_residual()
     //           << std::endl;
 
-    const auto initial_res = mg_solver.compute_residual();
+    const auto initial_res_2 = mg_solver.compute_residual_2();
+    const auto initial_res_1 = mg_solver.compute_residual_1();
 
     //  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
     //
@@ -117,25 +119,51 @@ int main(int argc, char *argv[]) {
     //  mg_solver.sol.set_zero<DataType>();
     //  q.wait();
 
-    DataType current_res = 0;
-    DataType previous_res = initial_res;
+    // mg_solver.rhs_domain.get_domain().print_domain();
+    //  mg_solver.smooth_domain_sol(2);
+    //  mg_solver.compute_defect_sol_2_sol2();
+    //  mg_solver.restrict_domain_sol2_2_rhs();
+    //  mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+    // mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
+    // true); mg_solver.sol.template get_domain<nlev - 1>().print_domain();
+    // mg_solver.compute_defect_sol_2_sol2<nlev - 1>();
+    // mg_solver.sol2.get_domain().print_domain();
+    // mg_solver.restrict_domain_sol2_2_rhs<1>();
+    //   mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+    // mg_solver.template solve_by_cg<1>(Float<1e-8>{});
+    // mg_solver.template prolong_sol_2_sol2<nlev - 1>();
+    // mg_solver.template add_domain_sol_sol_sol2<nlev - 1>();
+    // mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 1);
+    // mg_solver.template prolong_sol_2_sol2<nlev>();
+    // mg_solver.template add_domain_sol_sol_sol2<nlev>();
+    // mg_solver.smooth_domain_sol(2, 1);
+    // mg_solver.smooth_domain_sol(2);
+    // mg_solver.compute_defect_sol_2_sol2();
+    // mg_solver.sol2.template get_domain<nlev>().print_domain();
+    // mg_solver.rhs_domain.template get_domain<nlev>().print_domain();
+    // mg_solver.sol2.get_domain().print_domain();
+    //     mg_solver.restrict_domain_sol2_2_rhs();
+    //     mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+
+    DataType current_res_1 = 0;
+    DataType previous_res_1 = initial_res_1;
 
     for (int i = 0; i < num_iters; i++) {
       mg_solver.v_cycle<std::true_type>();
 
-      current_res = mg_solver.compute_residual();
+      current_res_1 = mg_solver.compute_residual_1();
 
       std::cout << "The residual after " << i + 1 << " iterations is "
-                << current_res / initial_res << std::endl;
+                << current_res_1 / initial_res_1 << std::endl;
 
-      std::cout << "contraction number " << current_res / previous_res
+      std::cout << "contraction number " << current_res_1 / previous_res_1
                 << std::endl;
 
-      previous_res = current_res;
+      previous_res_1 = current_res_1;
     }
-  }
 
-  std::cout << "The final value of domain::i is " << domain::i << std::endl;
+    // mg_solver.sol.get_domain().print_domain();
+  }
 
   //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
   //  TD2<nlev> td2;

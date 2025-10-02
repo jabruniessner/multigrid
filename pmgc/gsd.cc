@@ -60,7 +60,8 @@ namespace pmgc {
 template <>
 void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
                        DataType *cc, DataType *fc, DataType *oE, DataType *oN,
-                       DataType *uC, DataType *x, int *itmax, sycl::queue &q,
+                       DataType *uC, DataType *x, int *itmax,
+                       const int iadjoint, sycl::queue &q,
                        bool zero_initialize) {
 
   MAT3(cc, nx, ny, nz);
@@ -79,14 +80,15 @@ void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
 
     int color = 1;
 
-    for (int color = 1; color >= 0; color--) {
+    for (int color = 0; color <= 1; color++) {
       q.parallel_for(
           sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
             const int j = I[1] + 2;
             const int i = I[2] + 2;
 
-            if ((i + j + k) % 2 == color) {
+            if ((i + j + k) % 2 ==
+                (1 - iadjoint) * color + iadjoint * (1 - color)) {
               VAT3(x, i, j, k) =
                   (VAT3(fc, i, j, k) +
 

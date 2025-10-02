@@ -122,7 +122,6 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
 
 template <typename FuncType, Dimension Dim, Length... strides_all,
           std::size_t... dims>
-
 int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
                           Domain<Dim, strides_all...> &src,
                           Domain<Dim, strides_all...> &rhs, FuncType func,
@@ -156,7 +155,6 @@ int Subtract_Convolve_map(Domain<Dim, strides_all...> &dest,
 
 template <typename FuncType, Dimension Dim, Length... strides_all,
           std::size_t... dims>
-
 DataType compute_residual_map(Domain<Dim, strides_all...> &src,
                               Domain<Dim, strides_all...> &rhs, FuncType func,
                               std::index_sequence<dims...>) {
@@ -190,6 +188,43 @@ template <typename FuncType, Dimension Dim, Length... strides_all>
 DataType compute_residual_map(Domain<Dim, strides_all...> &src,
                               Domain<Dim, strides_all...> &rhs, FuncType func) {
   return compute_residual_map(src, rhs, func, std::make_index_sequence<Dim>());
+}
+
+template <typename FuncType, Dimension Dim, Length... strides_all,
+          std::size_t... dims>
+DataType compute_residual_1_map(Domain<Dim, strides_all...> &src,
+                                Domain<Dim, strides_all...> &rhs, FuncType func,
+                                std::index_sequence<dims...>) {
+  DataType *residual = sycl::malloc_shared<DataType>(1, src.q);
+  *residual = 0;
+
+  src.q.submit([&](sycl::handler &h) {
+    h.parallel_for(sycl::range<Dim>(src.strides[dims]...),
+                   sycl::reduction(residual, sycl::plus<>()),
+                   [=](sycl::id<Dim> I, auto &r) {
+                     ((I[dims] += src.padding_width), ...);
+
+                     DataType result = func(src, I);
+                     DataType defect = rhs(I[dims]...) - result;
+
+                     r += sycl::fabs(defect);
+                   });
+  });
+
+  src.q.wait();
+
+  DataType residual_device = *residual;
+  sycl::free(residual, src.q);
+
+  return residual_device / src.num_values;
+}
+
+template <typename FuncType, Dimension Dim, Length... strides_all>
+DataType compute_residual_1_map(Domain<Dim, strides_all...> &src,
+                                Domain<Dim, strides_all...> &rhs,
+                                FuncType func) {
+  return compute_residual_1_map(src, rhs, func,
+                                std::make_index_sequence<Dim>());
 }
 
 template <int direction, typename DataType, Dimension Dim,
