@@ -120,14 +120,13 @@ int main(int argc, char *argv[]) {
     //  q.wait();
 
     // mg_solver.rhs_domain.get_domain().print_domain();
-    //  mg_solver.smooth_domain_sol(2);
-    //  mg_solver.compute_defect_sol_2_sol2();
-    //  mg_solver.restrict_domain_sol2_2_rhs();
-    //  mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
-    // mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
-    // true); mg_solver.sol.template get_domain<nlev - 1>().print_domain();
-    // mg_solver.compute_defect_sol_2_sol2<nlev - 1>();
-    // mg_solver.sol2.get_domain().print_domain();
+    //   mg_solver.smooth_domain_sol(2);
+    //   mg_solver.compute_defect_sol_2_sol2();
+    //   mg_solver.restrict_domain_sol2_2_rhs();
+    // mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+    //  mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
+    //  true); mg_solver.compute_defect_sol_2_sol2<nlev - 1>();
+    //  mg_solver.sol2.get_domain().print_domain();
     // mg_solver.restrict_domain_sol2_2_rhs<1>();
     //   mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
     // mg_solver.template solve_by_cg<1>(Float<1e-8>{});
@@ -137,13 +136,17 @@ int main(int argc, char *argv[]) {
     // mg_solver.template prolong_sol_2_sol2<nlev>();
     // mg_solver.template add_domain_sol_sol_sol2<nlev>();
     // mg_solver.smooth_domain_sol(2, 1);
-    // mg_solver.smooth_domain_sol(2);
-    // mg_solver.compute_defect_sol_2_sol2();
-    // mg_solver.sol2.template get_domain<nlev>().print_domain();
-    // mg_solver.rhs_domain.template get_domain<nlev>().print_domain();
+
+    // This is where the second iteration starts
+    //  mg_solver.smooth_domain_sol(2);
+    //  mg_solver.compute_defect_sol_2_sol2();
     // mg_solver.sol2.get_domain().print_domain();
-    //     mg_solver.restrict_domain_sol2_2_rhs();
-    //     mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+    //  mg_solver.restrict_domain_sol2_2_rhs();
+    //  mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
+    //  true);
+
+    // mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
+    // mg_solver.sol.template get_domain<nlev - 1>().print_domain();
 
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;

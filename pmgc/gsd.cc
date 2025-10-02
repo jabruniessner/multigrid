@@ -268,6 +268,10 @@ void Vgsrb27x_sequential<DataType>(
 
   int num_iters = *itmax;
 
+  if (zero_initialize) {
+    q.memset(x, 0, sizeof(DataType) * nx * ny * nz);
+  }
+
   q.submit([=](sycl::handler &h) {
     h.single_task([=] {
       for (int iters = 1; iters <= num_iters; iters++) {
