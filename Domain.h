@@ -1,12 +1,14 @@
 #include "predefinitions.h"
 #include "utils.h"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <execution>
 #include <format>
 #include <iostream>
+#include <numeric>
 #include <ostream>
-#include <sycl/sycl.hpp>
 #include <tuple>
 #include <utility>
 
@@ -59,9 +61,8 @@ std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
 
 template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
   template <typename... Length>
-  Grid(Paddings padding, sycl::queue &q, int padding_width)
-      : strides{strides_all...}, padding(padding), padding_width(padding_width),
-        q(q)
+  Grid(Paddings padding, int padding_width)
+      : strides{strides_all...}, padding(padding), padding_width(padding_width)
 
   {
     static_assert(sizeof...(strides_all) == Dim);
@@ -72,8 +73,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    values_buff = sycl::malloc_device<DataType>(num_values, q);
-    q.wait();
+    values_buff = new DataType[num_values];
     // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
@@ -84,39 +84,23 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
                                                      positions...)];
   }
 
-  template <typename... Positions>
-  void set_value(DataType val, Positions... position) {
-    q.memcpy(&values_buff[flatten_index<strides_all...>(padding_width,
-                                                        position...)],
-             &val, sizeof(DataType))
-        .wait();
-  }
-
-  template <typename... Positions> DataType get_value(Positions... position) {
-    DataType k;
-    std::size_t flat_index =
-        flatten_index<strides_all...>(padding_width, position...);
-    q.memcpy(&k, &values_buff[flat_index], sizeof(DataType)).wait();
-
-    return k;
-  }
-
   DataType *values_buff;
   Length strides[Dim];
   Length num_values;
   Length num_dofs;
   Length padding_width;
   Paddings padding;
-  sycl::queue &q;
 
   static constexpr std::array<Length, Dim> length{strides_all...};
 };
 
 template <Dimension Dim, Length... strides_all>
 struct Domain : Grid<DataType, Dim, strides_all...> {
-  Domain(Paddings padding, sycl::queue &q, int padding_width)
-      : Grid<DataType, Dim, strides_all...>(padding, q, padding_width) {
-    q.memset(this->values_buff, 0, this->num_values * sizeof(DataType)).wait();
+  Domain(Paddings padding, int padding_width)
+      : Grid<DataType, Dim, strides_all...>(padding, padding_width) {
+
+    std::fill(std::execution::par_unseq, this->values_buff,
+              this->values_buff + this->num_values, 0);
   }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
@@ -147,18 +131,12 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     out << "object 3 class array type double rank 0 items " << this->num_values
         << " data follows" << std::endl;
 
-    std::unique_ptr<DataType[]> values{new DataType[this->num_values]};
-    this->q
-        .memcpy(values.get(), this->values_buff,
-                sizeof(DataType) * this->num_values)
-        .wait();
-
     for (int i = 0; i < this->num_values; i++) {
 
       if (i % 3 == 0 && i != 0) {
         out << std::endl;
       }
-      out << format_v(values[i]);
+      out << format_v(this->values_buff[i]);
     }
     out << std::endl;
 
@@ -177,7 +155,9 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
         print_domain(indices..., i);
       std::cout << std::endl;
     } else {
-      std::cout << std::format("{:6.3f} ", this->get_value(indices...));
+      std::cout << std::format(
+          "{:6.3f} ",
+          this->Grid<DataType, Dim, strides_all...>::operator()(indices...));
     }
   };
 
@@ -192,7 +172,10 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
       }
     } else {
       ((std::cout << indices << " "), ...);
-      std::cout << std::format("{:6.3f}", this->get_value(indices...))
+      std::cout << std::format(
+                       "{:6.3f}",
+                       this->Grid<DataType, Dim, strides_all...>::operator()(
+                           indices...))
                 << std::endl;
     }
   }
@@ -214,61 +197,24 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
   }
 };
 
-template <Dimension Dim, Length... strides_all, std::size_t... dims>
+template <Dimension Dim, Length... strides_all>
 int domain_compute_norm_squared(DataType &result,
-                                Domain<Dim, strides_all...> &a,
-                                std::index_sequence<dims...>) {
-  DataType *result_device =
-      sycl::malloc_device<DataType>(sizeof(DataType), a.q);
+                                Domain<Dim, strides_all...> &a) {
 
-  a.q.memset(result_device, 0, sizeof(DataType));
-
-  a.q.parallel_for(sycl::range<Dim>(strides_all...),
-                   sycl::reduction(result_device, sycl::plus<>()),
-                   [=](sycl::id<Dim> I, auto &acc) {
-                     acc += a((I[dims] + a.padding_width)...) *
-                            a((I[dims] + a.padding_width)...);
-                   });
-
-  a.q.memcpy(&result, result_device, sizeof(DataType)).wait();
+  result = std::transform_reduce(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      0.0, std::plus<>(), [](const DataType val) { return val * val; });
 
   return 0;
 }
 
 template <Dimension Dim, Length... strides_all>
-int domain_compute_norm_squared(DataType &result,
-                                Domain<Dim, strides_all...> &a) {
-  return domain_compute_norm_squared(result, a,
-                                     std::make_index_sequence<Dim>());
-}
-
-template <Dimension Dim, Length... strides_all, std::size_t... dims>
-DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
-                               Domain<Dim, strides_all...> &b,
-                               std::index_sequence<dims...>) {
-  DataType *result_device =
-      sycl::malloc_device<DataType>(sizeof(DataType), a.q);
-
-  a.q.memset(result_device, 0, sizeof(DataType));
-
-  a.q.parallel_for(sycl::range<Dim>(strides_all...),
-                   sycl::reduction(result_device, sycl::plus<>()),
-                   [=](sycl::id<Dim> I, auto &acc) {
-                     acc += a((I[dims] + a.padding_width)...) *
-                            b((I[dims] + b.padding_width)...);
-                   })
-      .wait();
-
-  DataType result_host;
-  a.q.memcpy(&result_host, result_device, sizeof(DataType)).wait();
-
-  return result_host;
-}
-
-template <Dimension Dim, Length... strides_all>
 DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
                                Domain<Dim, strides_all...> &b) {
-  return domain_scalar_product(a, b, std::make_index_sequence<Dim>());
+  return std::transform_reduce(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      b.values_buff, 0.0, std::plus<>(),
+      [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -284,17 +230,10 @@ template <Dimension Dim, Length... strides_all>
 int domain_scalar_multiply(Domain<Dim, strides_all...> &dest,
                            Domain<Dim, strides_all...> &a,
                            const DataType &scalar) {
-  assert(dest.q == a.q);
-  assert(dest.num_values == a.num_values);
-  assert(dest.padding_width == a.padding_width);
 
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] * scalar;
-                    })
-      .wait();
-
+  std::transform(std::execution::par_unseq, a.values_buff,
+                 a.values_buff + a.num_values, dest.values_buff,
+                 [=](const DataType val) { return scalar * val; });
   return 0;
 }
 
@@ -303,18 +242,10 @@ int divide_domains(Domain<Dim, strides_all...> &dest,
                    Domain<Dim, strides_all...> &a,
                    Domain<Dim, strides_all...> &b) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] / b.values_buff[i];
-                    })
-      .wait();
-
+  std::transform(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      b.values_buff, dest.values_buff,
+      [](const DataType val_a, const DataType val_b) { return val_a / val_b; });
   return 0;
 }
 
@@ -323,17 +254,10 @@ int multiply_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] * b.values_buff[i];
-                    })
-      .wait();
+  std::transform(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      b.values_buff, dest.values_buff,
+      [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
 
   return 0;
 }
@@ -343,20 +267,10 @@ int subtract_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] - b.values_buff[i];
-                    })
-      .wait();
-
-  return 0;
+  std::transform(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      b.values_buff, dest.values_buff,
+      [](const DataType val_a, const DataType val_b) { return val_a - val_b; });
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -365,15 +279,11 @@ int subtract_and_multiply_domains(Domain<Dim, strides_all...> &dest,
                                   Domain<Dim, strides_all...> &b,
                                   const DataType &val) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i) {
-    dest.values_buff[i] = val * a.values_buff[i] - b.values_buff[i];
-  });
+  std::transform(std::execution::par_unseq, a.values_buff,
+                 a.values_buff + a.num_values, b.values_buff, dest.values_buff,
+                 [=](const DataType val_a, const DataType val_b) {
+                   return val * val_a - val_b;
+                 });
 
   return 0;
 }
@@ -383,17 +293,10 @@ int add_domains(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, strides_all...> &a,
                 Domain<Dim, strides_all...> &b) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] + b.values_buff[i];
-                    })
-      .wait();
+  std::transform(
+      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
+      b.values_buff, dest.values_buff,
+      [](const DataType val_a, const DataType val_b) { return val_a + val_b; });
 
   return 0;
 }
@@ -404,19 +307,11 @@ int add_and_multiply_domains(Domain<Dim, strides_all...> &dest,
                              Domain<Dim, strides_all...> &b,
                              const DataType &val) {
 
-  assert(dest.q == a.q && a.q == b.q);
-  assert(dest.num_values == a.num_values && b.num_values == a.num_values);
-
-  assert(dest.padding_width == a.padding_width &&
-         a.padding_width == b.padding_width);
-
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] =
-                          a.values_buff[i] + val * b.values_buff[i];
-                    })
-      .wait();
+  std::transform(std::execution::par_unseq, a.values_buff,
+                 a.values_buff + a.num_values, b.values_buff, dest.values_buff,
+                 [=](const DataType val_a, const DataType val_b) {
+                   return val_a + val * val_b;
+                 });
 
   return 0;
 }
@@ -430,58 +325,6 @@ struct RangeProps<Range<start, end>> {
   constexpr static std::size_t start_v = start;
   constexpr static std::size_t end_v = end;
 };
-
-template <typename Domain, typename... Ranges> struct Subdomain;
-
-template <template <Dimension, Length...> typename Domain, Dimension Dim,
-          Length... strides_all, typename... Ranges>
-struct Subdomain<Domain<Dim, strides_all...>, Ranges...> {
-
-  Subdomain(Domain<Dim, strides_all...> &domain, Ranges... ranges)
-      : parent_domain(domain), values_buff(domain.values_buff),
-        padding_width(domain.padding_width) {
-    static_assert(sizeof...(Ranges) == Dim);
-  }
-
-  template <typename... Positions>
-  DataType &operator()(const Positions &...positions) const {
-    static_assert(sizeof...(Positions) == Dim);
-    return values_buff[flatten_index<strides_all...>(
-        padding_width, (positions + RangeProps<Ranges>::start_v)...)];
-
-    // return parent_domain((positions + RangeProps<Ranges>::start_v)...);
-  }
-
-  template <typename Position, std::size_t... directions>
-  DataType &subscript(Position position,
-                      std::index_sequence<directions...>) const {
-    static_assert(sizeof...(directions) == sizeof...(Ranges));
-    const auto multi_index =
-        flat_to_multi_index<RangeProps<Ranges>::length...>(position);
-    return this->operator()(multi_index[directions]...);
-  }
-
-  template <typename Position> DataType &operator[](Position position) const {
-    return subscript(position, std::make_index_sequence<sizeof...(Ranges)>{});
-  }
-
-  // template <typename Position> DataType &operator[](Position position) {
-  //   const auto multi_index =
-  //       flat_to_multi_index<RangeProps<Ranges>::length...>(position);
-  //   return std::apply(
-  //       [&](const auto &...elems) { return (this->operator()(elems...)); },
-  //       multi_index);
-  // }
-
-  Domain<Dim, strides_all...> &parent_domain;
-  DataType *values_buff;
-  DataType padding_width;
-};
-
-template <template <Dimension, Length...> typename Domain, Length... length,
-          Dimension Dim, typename... Ranges>
-Subdomain(Domain<Dim, length...> &, Ranges...)
-    -> Subdomain<Domain<Dim, length...>, Ranges...>;
 
 } // namespace domain
 

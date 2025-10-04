@@ -22,9 +22,9 @@ struct Multigrid_domain
 
   using OffsetType = std::array<int, Dim>;
 
-  Multigrid_domain(sycl::queue &q)
-      : domain(Paddings::PERIODIC, q, 1),
-        Multigrid_domain<Dim, nlev - 1, base_length...>(q) {};
+  Multigrid_domain()
+      : domain(Paddings::PERIODIC, 1),
+        Multigrid_domain<Dim, nlev - 1, base_length...>() {};
 
   template <std::size_t lev = nlev, typename... Position1D>
   DataType get_value(Position1D... i) {
@@ -85,7 +85,7 @@ struct Multigrid_domain
 
 template <Dimension Dim, std::size_t... base_length>
 struct Multigrid_domain<Dim, 0u, base_length...> {
-  Multigrid_domain(sycl::queue &q) : domain(Paddings::PERIODIC, q, 1) {}
+  Multigrid_domain() : domain(Paddings::PERIODIC, 1) {}
 
   template <typename... Position1D> DataType get_value(Position1D... i) {
     return domain.get_value(i...);

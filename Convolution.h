@@ -1,7 +1,9 @@
 #include "Domain.h"
 #include "predefinitions.h"
+#include <algorithm>
 #include <array>
-#include <sycl/sycl.hpp>
+#include <boost/iterator/counting_iterator.hpp>
+#include <execution>
 #include <utility>
 
 #ifndef CONVOLUTION_H
@@ -19,25 +21,22 @@ int Convolve(Domain<Dim, strides_all...> &dest,
              const std::array<DataType, size> &values,
              const std::array<Offsets, size> &offsets,
              std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest.padding_width), ...);
+  boost::counting_iterator<int> start(0);
+  boost::counting_iterator<int> end(dest.num_dofs);
 
-          DataType result = 0;
+  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+    auto I = domain::flat_to_multi_index<strides_all...>(i);
+    ((I[dims] += dest.padding_width), ...);
 
-          for (int k = 0; k < size; k++) {
-            result += src((I[dims] + offsets[k][dims])...) * values[k];
-          }
+    DataType result = 0;
 
-          dest(I[dims]...) = result;
-        });
+    for (int k = 0; k < size; k++) {
+      result += src((I[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    dest(I[dims]...) = result;
   });
-
-  // dest.q.wait();
 
   return 0;
 }
@@ -60,25 +59,22 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                       const std::array<DataType, size> &values,
                       const std::array<Offsets, size> &offsets,
                       std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest.padding_width), ...);
+  boost::counting_iterator<int> start(0);
+  boost::counting_iterator<int> end(dest.num_dofs);
 
-          DataType result = 0;
+  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+    auto I = domain::flat_to_multi_index<strides_all...>(i);
+    ((I[dims] += dest.padding_width), ...);
 
-          for (int k = 0; k < size; k++) {
-            result += src((I[dims] + offsets[k][dims])...) * values[k];
-          }
+    DataType result = 0;
 
-          dest(I[dims]...) = rhs(I[dims]...) - result;
-        });
+    for (int k = 0; k < size; k++) {
+      result += src((I[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    dest(I[dims]...) = rhs(I[dims]...) - result;
   });
-
-  // dest.q.wait();
 
   return 0;
 }
@@ -105,19 +101,6 @@ directional_derivative(const Domain<Dim, strides_all...> &src,
   sycl::id<Dim_2> I2{I}, I3{I};
   I2[direction] += 1;
   I3[direction] -= 1;
-
-  // Evaluating epsilon at the desired points
-  // const DataType epsilon_here =
-  //     (epsilon_r + epsilon_map(I[dims]...) * delta_epsilon);
-  // const DataType epsilon_after =
-  //     (epsilon_r + epsilon_map(I2[dims]...) * delta_epsilon);
-  // const DataType epsilon_before =
-  //     (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
-
-  // const DataType epsilon_upper =
-  //     2 * epsilon_here * epsilon_after / (epsilon_here + epsilon_after);
-  // const DataType epsilon_lower =
-  //     2 * epsilon_here * epsilon_before / (epsilon_here + epsilon_before);
 
   const DataType epsilon_lower =
       (epsilon_r + epsilon_map(I3[dims]...) * delta_epsilon);
@@ -259,22 +242,18 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  const DataType &kappa_2, const DataType grid_step,
                  const DataType epsilon_r, const DataType delta_epsilon,
                  std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += src.padding_width), ...);
-          DataType result =
-              PBE_Convolve_kernel(src, kappa_map, epsilon_maps, kappa_2,
-                                  grid_step, epsilon_r, delta_epsilon, I);
+  boost::counting_iterator<int> start(0);
+  boost::counting_iterator<int> end(dest.num_dofs);
+  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+    auto I = domain::flat_to_multi_index<strides_all...>(i);
+    ((I[dims] += dest.padding_width), ...);
+    DataType result =
+        PBE_Convolve_kernel(src, kappa_map, epsilon_maps, kappa_2, grid_step,
+                            epsilon_r, delta_epsilon, I);
 
-          dest(I[dims]...) = result;
-        });
+    dest(I[dims]...) = result;
   });
-
-  // dest.q.wait();
 
   return 0;
 }
