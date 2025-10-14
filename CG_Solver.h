@@ -1,5 +1,6 @@
 #include "Convolution.h"
 #include "Domain.h"
+#include "thrust_adjust.hpp"
 #include <algorithm>
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
@@ -36,8 +37,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   boost::iterators::counting_iterator<int> begin(0);
   boost::iterators::counting_iterator<int> end(init_guess.num_dofs);
 
-  DataType r_squared = std::transform_reduce(
-      std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType r_squared =
+      thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += init_guess.padding_width), ...);
         // Computing the convolution for the initial residual
@@ -53,8 +54,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
       });
   // init_guess.print_domain();
 
-  DataType p_squared_A = std::transform_reduce(
-      std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType p_squared_A =
+      thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += init_guess.padding_width), ...);
 
@@ -88,9 +89,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   while (thresh < residual) {
     count++;
 
-    DataType r_squared_next = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-        [=](int idx) {
+    DataType r_squared_next =
+        thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
           // Update the solution
@@ -113,15 +113,14 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
     r_squared = r_squared_next;
     r_squared_next = 0;
 
-    std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
+    thrust::for_each(begin, end, [=](int idx) {
       auto I = domain::flat_to_multi_index<strides_all...>(idx);
       ((I[dims] += padding_width), ...);
       defect_p(I[dims]...) = defect_r(I[dims]...) + (beta)*defect_p(I[dims]...);
     });
 
-    p_squared_A = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-        [=](int idx) {
+    p_squared_A =
+        thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
 
@@ -195,8 +194,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
   // init_guess.print_domain();
   //
-  DataType r_squared = std::transform_reduce(
-      std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType r_squared =
+      thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += padding_width), ...);
 
@@ -217,8 +216,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
   // Computing the initial pAp
   //
-  DataType p_squared_A = std::transform_reduce(
-      std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType p_squared_A =
+      thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
 
         ((I[dims] += padding_width), ...);
@@ -247,9 +246,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   while (thresh < residual) {
     count++;
 
-    DataType r_squared_next = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-        [=](int idx) {
+    DataType r_squared_next =
+        thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
 
           ((I[dims] += padding_width), ...);
@@ -275,7 +273,7 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
     r_squared = r_squared_next;
     r_squared_next = 0;
 
-    std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
+    thrust::for_each(begin, end, [=](int idx) {
       auto I = domain::flat_to_multi_index<strides_all...>(idx);
       ((I[dims] += padding_width), ...);
       defect_p(I[dims]...) = defect_r(I[dims]...) + (beta)*defect_p(I[dims]...);
@@ -283,9 +281,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
     // init_guess.print_domain();
 
-    p_squared_A = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-        [=](int idx) {
+    p_squared_A =
+        thrust::transform_reduce(begin, end, 0.0, std::plus<>{}, [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
 
           ((I[dims] += padding_width), ...);

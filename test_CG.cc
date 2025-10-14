@@ -1,6 +1,7 @@
 #include "CG_Solver.h"
 #include "Convolution.h"
 #include "cycles.h"
+#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -54,6 +55,8 @@ int main(int argc, char *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
   CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets,
             static_cast<DataType>(1e-2));
+
+  pcudaDeviceSynchronize();
   auto end = std::chrono::high_resolution_clock::now();
 
   DataType const residual =

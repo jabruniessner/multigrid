@@ -26,7 +26,7 @@ int Convolve(Domain<Dim, strides_all...> &dest,
   boost::counting_iterator<int> start(0);
   boost::counting_iterator<int> end(dest.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+  thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
     ((I[dims] += dest.padding_width), ...);
 
@@ -64,7 +64,7 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
   boost::counting_iterator<int> start(0);
   boost::counting_iterator<int> end(dest.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+  thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
     ((I[dims] += dest.padding_width), ...);
 
@@ -248,7 +248,7 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
 
   boost::counting_iterator<int> start(0);
   boost::counting_iterator<int> end(dest.num_dofs);
-  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+  thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
     ((I[dims] += dest.padding_width), ...);
     DataType result =

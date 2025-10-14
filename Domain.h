@@ -101,8 +101,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
   Domain(Paddings padding, int padding_width)
       : Grid<DataType, Dim, strides_all...>(padding, padding_width) {
 
-    std::fill(std::execution::par_unseq, this->values_buff,
-              this->values_buff + this->num_values, 0);
+    thrust::fill(this->values_buff, this->values_buff + this->num_values, 0);
   }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
@@ -243,9 +242,9 @@ int domain_scalar_multiply(Domain<Dim, strides_all...> &dest,
                            Domain<Dim, strides_all...> &a,
                            const DataType &scalar) {
 
-  std::transform(std::execution::par_unseq, a.values_buff,
-                 a.values_buff + a.num_values, dest.values_buff,
-                 [=](const DataType val) { return scalar * val; });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values,
+                    dest.values_buff,
+                    [=](const DataType val) { return scalar * val; });
   return 0;
 }
 

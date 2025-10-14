@@ -35,7 +35,7 @@ void for_each(RandomAccIt first, RandomAccIt last, UnaryFunction f) {
   pcudaDeviceSynchronize();
 }
 
-template <Integral T, typename T2, typename BinaryOperation>
+template <Arithmetic T, typename T2, typename BinaryOperation>
 T atomicBinaryAdd(T *address, T2 val, BinaryOperation op) {
 
   using IntType = std::conditional_t<
@@ -189,7 +189,7 @@ UnaryFunction transform(RandomAccIt first, RandomAccIt last,
                 "BlockSize must be in (0, 1024]");
 
   if (length == 0)
-    return;
+    return unary_op;
 
   int num_blocks = (length + BlockSize - 1) / BlockSize;
 
@@ -205,6 +205,8 @@ UnaryFunction transform(RandomAccIt first, RandomAccIt last,
       *my_it2 = unary_op(*my_it);
     }
   });
+
+  return unary_op;
 }
 
 template <typename RandomAccIt, typename RandomAccIt2, typename RandomAccIt3,
@@ -212,6 +214,36 @@ template <typename RandomAccIt, typename RandomAccIt2, typename RandomAccIt3,
 BinaryFunction transform(RandomAccIt first, RandomAccIt last,
                          RandomAccIt2 first2, RandomAccIt3 out,
                          BinaryFunction binary_op) {
+
+  const std::size_t length = std::distance(first, last);
+  static_assert(0 < BlockSize && BlockSize <= 1024,
+                "BlockSize must be in (0, 1024]");
+
+  if (length == 0)
+    return binary_op;
+
+  int num_blocks = (length + BlockSize - 1) / BlockSize;
+
+  pcudaParallelFor(num_blocks, BlockSize, [=]() {
+    const int tid = threadIdx.x;
+    const int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (gid < length) {
+      auto my_it = first;
+      my_it += gid;
+      auto my_it2 = first2;
+      my_it2 += gid;
+      auto my_it3 = out;
+      my_it3 += gid;
+      *my_it3 = binary_op(*my_it, *my_it2);
+    }
+  });
+
+  return binary_op;
+}
+
+template <typename RandomAccIt, typename T, std::size_t BlockSize = 256>
+void fill(RandomAccIt first, RandomAccIt last, T value) {
 
   const std::size_t length = std::distance(first, last);
   static_assert(0 < BlockSize && BlockSize <= 1024,
@@ -229,11 +261,7 @@ BinaryFunction transform(RandomAccIt first, RandomAccIt last,
     if (gid < length) {
       auto my_it = first;
       my_it += gid;
-      auto my_it2 = first2;
-      my_it2 += gid;
-      auto my_it3 = out;
-      my_it3 += gid;
-      *my_it3 = binary_op(*my_it, *my_it2);
+      *my_it = value;
     }
   });
 }

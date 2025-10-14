@@ -229,7 +229,7 @@ struct GS_Smoother {
 
           using domain_type = std::remove_reference_t<decltype(src_domain)>;
 
-          std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+          thrust::for_each(start, end, [=](int idx) {
             auto I =
                 domain::flat_to_multi_index<domain_type::length[dims]...>(idx);
 
@@ -336,7 +336,7 @@ struct Jacobi_Smoother_PBE {
 
         boost::iterators::counting_iterator<int> start(0);
         boost::iterators::counting_iterator<int> end(src_domain.num_dofs);
-        std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+        thrust::for_each(start, end, [=](int idx) {
           auto I =
               domain::flat_to_multi_index<decltype(src_domain)::length[0],
                                           decltype(src_domain)::length[1],
@@ -456,7 +456,7 @@ struct Gauss_Seidel_PBE {
           const boost::iterators::counting_iterator<int> end(
               src_domain.num_dofs);
 
-          std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+          thrust::for_each(start, end, [=](int idx) {
             auto I =
                 domain::flat_to_multi_index<decltype(src_domain)::length[0],
                                             decltype(src_domain)::length[1],

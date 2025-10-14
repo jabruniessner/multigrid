@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
 
-set(CMAKE_CXX_FLAGS "-ltbb --acpp-stdpar")
+set(CMAKE_CXX_FLAGS "--acpp-pcuda")
 
 
 
