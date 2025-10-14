@@ -102,6 +102,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
       : Grid<DataType, Dim, strides_all...>(padding, padding_width) {
 
     thrust::fill(this->values_buff, this->values_buff + this->num_values, 0);
+    pcudaDeviceSynchronize();
   }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,

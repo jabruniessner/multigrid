@@ -31,7 +31,7 @@ int main() {
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end((length + 2) * (length + 2));
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<length + 2, length + 2>(idx);
     sol(0, I[0], I[1]) = -(DataType)I[1] / (length + 1.);
     sol(length + 1, I[0], I[1]) = -(DataType)I[1] / (length + 1.);

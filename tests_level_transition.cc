@@ -1,5 +1,6 @@
 #include "CG_Solver.h"
 #include "Convolution.h"
+#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include "level_transition.h"
 
 int main() {
@@ -40,6 +41,7 @@ int main() {
   }
 
   coarsening(domain_dest, domain_src, values, offsets);
+  pcudaDeviceSynchronize();
 
   std::cout << std::endl;
 
@@ -53,6 +55,7 @@ int main() {
   }
 
   refinement(domain_src, domain_dest);
+  pcudaDeviceSynchronize();
 
   std::cout << "The output after the refinement is:" << std::endl;
 

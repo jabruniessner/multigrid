@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
   CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets,
             static_cast<DataType>(1e-2));
 
-  pcudaDeviceSynchronize();
   auto end = std::chrono::high_resolution_clock::now();
+  pcudaDeviceSynchronize();
 
   DataType const residual =
       cycles::compute_residual(rhs, init_guess, defect_p, values, offsets);

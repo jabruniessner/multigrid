@@ -25,7 +25,7 @@ void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(dest.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+  thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(i);
     ((I[dims] += dest.padding_width), ...);
     decltype(I) I_fine;
@@ -61,7 +61,7 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(dest.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
 
     ((I[dims] += dest.padding_width), ...);
@@ -114,7 +114,7 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(dest1.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
     ((I[dims] += dest1.padding_width), ...);
     decltype(I) I_fine;
@@ -206,7 +206,7 @@ void refinement(Domain<Dim, strides_all...> &dest,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(dest.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<strides_all...>(idx);
     ((I[dims] += dest.padding_width), ...);
     std::tuple<> empty_index_tuple;
@@ -232,7 +232,7 @@ void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(dest1.num_dofs);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<strides_all...>(idx);
     ((I[dims] += dest1.padding_width), ...);
     std::tuple<> empty_index_tuple;

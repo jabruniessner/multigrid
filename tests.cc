@@ -12,6 +12,8 @@ int main() {
 
   //===== First Trial ======//
 
+  // pcudaDeviceSynchronize();
+
   std::cout << "The input matrix is given by: " << std::endl;
   for (Position1D i = 1; i < 3 + 1; i++) {
     for (Position1D j = 1; j < 3 + 1; j++) {
@@ -22,9 +24,9 @@ int main() {
     std::cout << std::endl;
   }
 
-  pcudaDeviceSynchronize();
+  // pcudaDeviceSynchronize();
 
-  domain_src(1, 1) = 1;
+  // domain_src(1, 1) = 1;
 
   for (Position1D i = 0; i < 3 + 2; i++) {
     for (Position1D j = 0; j < 3 + 2; j++) {
