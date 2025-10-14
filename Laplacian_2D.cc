@@ -35,23 +35,14 @@ int main(int argc, char *argv[]) {
   }
   int num_iter = std::stoi(argv[1]);
 
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else
-  sycl::gpu_selector selector;
-#endif
-
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
   constexpr std::size_t nlev = 2u;
   constexpr std::size_t base_length = 4u;
   constexpr DataType omega = 4. / 5.;
 
-  Multigrid_domain<2, nlev, base_length, base_length> lhs_domain1(q);
-  Multigrid_domain<2, nlev, base_length, base_length> lhs_domain2(q);
-  Multigrid_domain<2, nlev, base_length, base_length> rhs_domain(q);
-  Multigrid_domain<2, nlev, base_length, base_length> boundary_values(q);
+  Multigrid_domain<2, nlev, base_length, base_length> lhs_domain1{};
+  Multigrid_domain<2, nlev, base_length, base_length> lhs_domain2{};
+  Multigrid_domain<2, nlev, base_length, base_length> rhs_domain{};
+  Multigrid_domain<2, nlev, base_length, base_length> boundary_values{};
 
   // std::cout << "lhs_domain1: " << std::endl;
   // print_multigrid_domain(lhs_domain1);
@@ -145,7 +136,7 @@ int main(int argc, char *argv[]) {
   auto *next = &lhs_domain2;
 
   Domain<2, std::get<0>(length), std::get<1>(length)> helper(Paddings::PERIODIC,
-                                                             q, 1);
+                                                             1);
 
   auto start = std::chrono::high_resolution_clock::now();
   for (int num = 0; num < num_iter; num++) {
@@ -161,8 +152,8 @@ int main(int argc, char *argv[]) {
     // std::swap(current, next);
 
     v_cycle.iteration(*current, *next, rhs_domain, mult_level, diff_operator,
-                      coarser, 1., omega, num_iters_level, smoother_sequence,
-                      smoother_sequence);
+                      coarser, static_cast<DataType>(1.), omega,
+                      num_iters_level, smoother_sequence, smoother_sequence);
   }
   //
   //   // Convolve(helper, current->template get_domain<nlev>(),

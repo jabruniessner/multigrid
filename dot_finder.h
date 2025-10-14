@@ -10,7 +10,6 @@
 #include <generator>
 #include <iostream>
 #include <random>
-#include <sycl/sycl.hpp>
 #include <tuple>
 #include <utility>
 

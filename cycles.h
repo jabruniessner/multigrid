@@ -4,11 +4,14 @@
 #include "profiling_library.h"
 #include "scientific_quantities.h"
 #include <array>
+#include <boost/iterator/counting_iterator.hpp>
 #include <cmath>
 #include <cstddef>
+#include <execution>
 #include <fstream>
 #include <ostream>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #ifndef CYCLES_H
@@ -17,44 +20,6 @@
 namespace cycles {
 
 using namespace multigrid_domain;
-
-// template<std::size_t Num_Iters, Dimension Dim,
-//	typename DataType, typename OffsetType,
-//	std::size_t length, Length... strides_all>
-// struct Jacobi_Smoother
-//{
-//
-//	Jacobi_Smoother(){};
-//
-//	Jacobi_Smoother(Integer<Num_Iters> integer,
-//			Domain<Dim, strides_all...> domain,
-//			std::array<DataType, length> values,
-//			std::array<OffsetType, length> offsets){}
-//
-//	void operator()(Domain<Dim, strides_all...>& dest,
-//		 Domain<Dim, strides_all...>& src,
-//		 Domain<Dim, strides_all...>& rhs,
-//		 std::array<DataType, length>& values,
-//		 std::array<OffsetType, length>& offsets)
-//	{
-//		for(int i = 0; i< Num_Iters; i++)
-//		{
-//			convolution::Convolve(dest, src, values, offsets);
-//			subtract_domains(dest, rhs, dest);
-//
-//			DataType* temp = dest.values_buff;
-//		        dest.values_buff = src.values_buff;
-//			src.values_buff = temp;
-//		}
-//
-//
-//		DataType* temp = dest.values_buff;
-//		dest.values_buff = src.values_buff;
-//		src.values_buff = temp;
-//	}
-//
-//
-// };
 
 template <std::size_t level, std::size_t... Num_Iters>
 constexpr std::size_t get_num_iters() {
@@ -238,7 +203,6 @@ struct GS_Smoother {
 
     std::array<Dimension, Dim> strides_array =
         std::to_array(src_domain.strides);
-    auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
 
     auto index_add_in_place = [=](int place, const d_type domain,
                                   auto... elems) {
@@ -257,9 +221,18 @@ struct GS_Smoother {
     if constexpr (num_iters == 0) {
       return;
     } else {
+      const boost::iterators::counting_iterator<int> start(0);
+      const boost::iterators::counting_iterator<int> end(src_domain.num_dofs);
+
       for (int i = 0; i < num_iters; i++) {
         for (int color = 0; color < 2; color++) {
-          src_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+
+          using domain_type = std::remove_reference_t<decltype(src_domain)>;
+
+          std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+            auto I =
+                domain::flat_to_multi_index<domain_type::length[dims]...>(idx);
+
             ((I[dims] += src_domain.padding_width), ...);
 
             if ((I[dims] + ...) % 2 == color) {
@@ -361,9 +334,13 @@ struct Jacobi_Smoother_PBE {
         std::array<Dimension, Dim> strides_array =
             std::to_array(dest_domain.strides);
 
-        auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
-
-        dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+        boost::iterators::counting_iterator<int> start(0);
+        boost::iterators::counting_iterator<int> end(src_domain.num_dofs);
+        std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+          auto I =
+              domain::flat_to_multi_index<decltype(src_domain)::length[0],
+                                          decltype(src_domain)::length[1],
+                                          decltype(src_domain)::length[2]>(idx);
           I[0] += src_domain.padding_width;
           I[1] += src_domain.padding_width;
           I[2] += src_domain.padding_width;
@@ -379,7 +356,7 @@ struct Jacobi_Smoother_PBE {
 
           // We first need to compute the right diagonal value
           for (int j = 0; j < Dim; j++) {
-            sycl::id<Dim> I2{I}, I3{I};
+            const std::array<std::size_t, Dim> I2{I}, I3{I};
             I2[j] += 1;
             I3[j] -= 1;
 
@@ -393,45 +370,12 @@ struct Jacobi_Smoother_PBE {
             diag_inverse_denominator += epsilon_lower + epsilon_upper;
           }
 
-          //  if (I == sycl::id<Dim>{1, 1, 1}) {
-          //    std::cout << "src_domain value: " << src_domain(I[0], I[1],
-          //    I[2])
-          //              << std::endl;
-          //    std::cout << "dest_domain value: " << dest_domain(I[0], I[1],
-          //    I[2])
-          //              << std::endl;
-          //    std::cout << "diag_inverse value: " << diag_inverse <<
-          //    std::endl; std::cout << "rhs_domain value: " << rhs_domain(I[0],
-          //    I[1], I[2])
-          //              << std::endl;
-
-          //    std::cout << "DinvA: " << DinvA << std::endl;
-
-          //    std::cout << "The result is: "
-          //              << src_domain(I[0], I[1], I[2]) - diag_inverse * DinvA
-          //              +
-          //                     diag_inverse * rhs_domain(I[0], I[1], I[2])
-          //              << std::endl;
-          //}
-
           const DataType diag_inverse =
               diag_inverse_helper / (diag_inverse_denominator);
 
           dest_domain(I[0], I[1], I[2]) =
               src_domain(I[0], I[1], I[2]) - diag_inverse * DinvA +
               diag_inverse * rhs_domain(I[0], I[1], I[2]);
-
-          // if (I == sycl::id<Dim>{1, 1, 1}) {
-          //   std::cout << "The result is: " << dest_domain(I[0], I[1], I[2])
-          //             << std::endl;
-
-          //   std::cout << "The diag_inverse is: " << diag_inverse <<
-          //   std::endl; std::cout << "The diag_inverse_helper is: " <<
-          //   diag_inverse_helper
-          //             << std::endl;
-          //   std::cout << "The diag_inverse_denominator is: "
-          //             << diag_inverse_denominator << std::endl;
-          // }
         });
 
         std::swap(dest_domain.values_buff, src_domain.values_buff);
@@ -505,13 +449,19 @@ struct Gauss_Seidel_PBE {
       return;
     } else {
       for (int i = 0; i < num_iters; i++) {
-        std::array<Dimension, Dim> strides_array =
-            std::to_array(dest_domain.strides);
 
-        auto range = std::make_from_tuple<sycl::range<Dim>>(strides_array);
+        for (int color = 0; color < 2; color++) {
 
-        for (int color = 0; color < 2; color++)
-          dest_domain.q.parallel_for(range, [=](sycl::id<Dim> I) {
+          const boost::iterators::counting_iterator<int> start(0);
+          const boost::iterators::counting_iterator<int> end(
+              src_domain.num_dofs);
+
+          std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+            auto I =
+                domain::flat_to_multi_index<decltype(src_domain)::length[0],
+                                            decltype(src_domain)::length[1],
+                                            decltype(src_domain)::length[2]>(
+                    idx);
             I[0] += src_domain.padding_width;
             I[1] += src_domain.padding_width;
             I[2] += src_domain.padding_width;
@@ -527,7 +477,7 @@ struct Gauss_Seidel_PBE {
 
               // We first need to compute the right diagonal value
               for (int j = 0; j < Dim; j++) {
-                sycl::id<Dim> I2{I}, I3{I};
+                decltype(I) I2{I}, I3{I};
                 I2[j] += 1;
                 I3[j] -= 1;
 
@@ -548,6 +498,7 @@ struct Gauss_Seidel_PBE {
                        Off_diagonal_contribution);
             }
           });
+        }
 
         std::swap(dest_domain.values_buff, src_domain.values_buff);
       }
@@ -599,8 +550,6 @@ struct V_Cycle_base {
       Multi_Level_operator<Dim, DataType, length_coarsening_op, base_length1,
                            nlev> &coarsening_operator,
       DataType grid_step, DataType omega,
-      Multi_Level_operator<Dim, DataType, length, base_length1, nlev>
-          diff_operator,
       std::index_sequence<Num_Iters...> num_iters_,
       std::index_sequence<Num_Iters_Smoother_Pre...> smoother_iters_pre,
       std::index_sequence<Num_Iters_Smoother_Post...> smoother_iters_post,
@@ -653,8 +602,6 @@ struct V_Cycle_base {
         pre_smoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
                      rhs_domain, grid_step, omega, zero_initialize);
         PROFILE_END(pre_smoothing)
-
-        next.template get_domain<nlev>().q.wait();
 
         //  std::cout << "Next after the presmoothing: " << std::endl;
         //  next.template get_domain<iter_level>().print_domain();
@@ -713,8 +660,8 @@ struct V_Cycle_base {
 
         iteration<iter_level - 1>(
             next, current, rhs_domain, Smooth_operator, Diff_operator,
-            coarsening_operator, sqrt2 * grid_step, omega, diff_operator,
-            num_iters_, smoother_iters_pre, smoother_iters_post, true);
+            coarsening_operator, sqrt2 * grid_step, omega, num_iters_,
+            smoother_iters_pre, smoother_iters_post, true);
 
         //  next.template get_domain<nlev>().q.wait();
 

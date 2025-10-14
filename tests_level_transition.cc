@@ -6,16 +6,8 @@ int main() {
 
   using namespace level_transition;
 
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else
-  sycl::gpu_selector selector;
-#endif
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
-  Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, q, 1);
-  Domain<2, 7u, 7u> domain_src(Paddings::PERIODIC, q, 1);
+  Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);
+  Domain<2, 7u, 7u> domain_src(Paddings::PERIODIC, 1);
 
   constexpr std::array<DataType, 9> values{
       1. / 9, 1. / 9, 1. / 9., 1. / 9, 1. / 9, 1. / 9, 1. / 9, 1. / 9, 1. / 9};
@@ -34,14 +26,14 @@ int main() {
   std::cout << "The input matrix is given by: " << std::endl;
   for (Position1D i = 1; i < 7 + 1; i++) {
     for (Position1D j = 1; j < 7 + 1; j++) {
-      domain_src.set_value(((i + j) % 2 == 0) * 1, i, j);
+      domain_src(i, j) = ((i + j) % 2 == 0) * 1;
     }
   }
 
   for (Position1D i = 0; i < 7 + 2; i++) {
     for (Position1D j = 0; j < 7 + 2; j++) {
       // domain_src.set_value(1,  i, j);
-      std::cout << domain_src.get_value(i, j) << " ";
+      std::cout << domain_src(i, j) << " ";
     }
 
     std::cout << std::endl;
@@ -54,7 +46,7 @@ int main() {
   for (Position1D i = 0; i < 3 + 2; i++) {
     for (Position1D j = 0; j < 3 + 2; j++) {
       // domain_src.set_value(1,  i, j);
-      std::cout << domain_dest.get_value(i, j) << " ";
+      std::cout << domain_dest(i, j) << " ";
     }
 
     std::cout << std::endl;
@@ -67,7 +59,7 @@ int main() {
   for (Position1D i = 0; i < 7 + 2; i++) {
     for (Position1D j = 0; j < 7 + 2; j++) {
       // domain_src.set_value(1,  i, j);
-      std::cout << domain_src.get_value(i, j) << " ";
+      std::cout << domain_src(i, j) << " ";
     }
 
     std::cout << std::endl;

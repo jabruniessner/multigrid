@@ -1,6 +1,7 @@
 #include "concepts.h"
 #include "predefinitions.h"
 #include <array>
+#include <cmath>
 
 #ifndef BLAS_H
 #define BLAS_H

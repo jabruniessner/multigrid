@@ -12,21 +12,13 @@ int main(int argc, char *argv[]) {
   using namespace cg_solver;
   using namespace convolution;
 
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else  // DEBUGMODE
-  sycl::gpu_selector selector;
-#endif // DEBUGMODE
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
   constexpr std::size_t length = 44;
 
-  Domain<2, length, length> sol(Paddings::PERIODIC, q, 1);
-  Domain<2, length, length> init_guess(Paddings::PERIODIC, q, 1);
-  Domain<2, length, length> rhs(Paddings::PERIODIC, q, 1);
-  Domain<2, length, length> defect_r(Paddings::PERIODIC, q, 1);
-  Domain<2, length, length> defect_p(Paddings::PERIODIC, q, 1);
+  Domain<2, length, length> sol(Paddings::PERIODIC, 1);
+  Domain<2, length, length> init_guess(Paddings::PERIODIC, 1);
+  Domain<2, length, length> rhs(Paddings::PERIODIC, 1);
+  Domain<2, length, length> defect_r(Paddings::PERIODIC, 1);
+  Domain<2, length, length> defect_p(Paddings::PERIODIC, 1);
 
   constexpr std::array<DataType, 5> values = {4, -1, -1, -1, -1};
   constexpr std::array<OffsetType, 5> offsets = {
@@ -35,9 +27,9 @@ int main(int argc, char *argv[]) {
   const int m = 16;
 
   for (int i = 0; i < length + 2; i++) {
-    sol.set_value(-(DataType)i / (length + 1.), i, 0);
-    sol.set_value(-(DataType)i / (length + 1.), i, length + 1);
-    sol.set_value(-1., length + 1, i);
+    sol(i, 0) = -(DataType)i / (length + 1.);
+    sol(i, length + 1) = -(DataType)i / (length + 1.);
+    sol(length + 1, i) = -1.;
   }
 
   std::cout << "#============= The initial set up is ==============#"
@@ -49,7 +41,7 @@ int main(int argc, char *argv[]) {
   Convolve(rhs, sol, values, offsets);
   //  std::cout << "The right hand side is given by: " << std::endl;
   //  rhs.print_domain();
-
+  //
   //  std::cout << "The defect_r is prior to iteration given by" << std::endl;
   //  defect_r.print_domain();
   //
@@ -80,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   subtract_domains(init_guess, init_guess, sol);
 
-  // std::cout << "The output Matrix is given by: " << std::endl;
+  std::cout << "The output Matrix is given by: " << std::endl;
   // init_guess.print_domain();
   //
   //	std::cout<<"The defect is given by: "<<std::endl;
@@ -88,7 +80,8 @@ int main(int argc, char *argv[]) {
   //
   //	Convolve(defect_r, init_guess, values, offsets);
   //
-  //	std::cout<<"The convolution of the output is given by: "<< std::endl;
+  //	std::cout<<"The convolution of the output is given by: "<<
+  //  std::endl;
   //	defect_r.print_domain();
   //	subtract_domains(init_guess, sol, rhs);
   //

@@ -1,11 +1,12 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
-#include "hipSYCL/sycl/queue.hpp"
-#include "hipSYCL/sycl/usm.hpp"
 #include "level_transition.h"
 #include "profiling_library.h"
+#include <algorithm>
+#include <boost/iterator/counting_iterator.hpp>
 #include <chrono>
+#include <execution>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -35,139 +36,134 @@ void Initializing_all_rhs(
 DataType f(DataType a, DataType b, DataType c, DataType d, DataType e,
            DataType f, DataType g, DataType i, DataType l, DataType m,
            DataType n, DataType h) {
-  return (296.0 / 45.0) * sycl::pow(h, 7) -
-         1.0 / 90.0 * sycl::pow(h, 5) *
+  return (296.0 / 45.0) * std::pow(h, 7) -
+         1.0 / 90.0 * std::pow(h, 5) *
              (56 * b - 32 * c + 21 * d - 24 * e + 28 * f - 49 * g) +
-         18 * sycl::pow(h, 4) * sycl::pow(l, 3) +
-         32 * sycl::pow(h, 4) * sycl::pow(m, 3) +
-         98 * sycl::pow(h, 4) * sycl::pow(n, 3) +
-         (1.0 / 10.0) * sycl::pow(h, 3) * sycl::pow(i, 2) +
-         (1.0 / 30.0) * sycl::pow(h, 3) * i * (3 * a + b + c + d + e + f + g) +
-         9 * sycl::pow(h, 3) * sycl::pow(l, 4) +
-         16 * sycl::pow(h, 3) * sycl::pow(m, 4) +
-         49 * sycl::pow(h, 3) * sycl::pow(n, 4) +
-         (1.0 / 60.0) * sycl::pow(h, 3) *
-             (6 * sycl::pow(a, 2) + 2 * a * b + 2 * a * c + 2 * a * e +
-              2 * sycl::pow(b, 2) + 2 * sycl::pow(c, 2) + 2 * sycl::pow(d, 2) +
-              d * (2 * a + b + c) + 2 * sycl::pow(e, 2) + 2 * sycl::pow(f, 2) +
-              f * (2 * a + b + e) + 2 * sycl::pow(g, 2) + g * (2 * a + c + e)) +
-         (1.0 / 2.0) * sycl::pow(l, 2) *
-             (24 * sycl::pow(h, 5) + 3 * sycl::pow(h, 3) * i +
-              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         18 * std::pow(h, 4) * std::pow(l, 3) +
+         32 * std::pow(h, 4) * std::pow(m, 3) +
+         98 * std::pow(h, 4) * std::pow(n, 3) +
+         (1.0 / 10.0) * std::pow(h, 3) * std::pow(i, 2) +
+         (1.0 / 30.0) * std::pow(h, 3) * i * (3 * a + b + c + d + e + f + g) +
+         9 * std::pow(h, 3) * std::pow(l, 4) +
+         16 * std::pow(h, 3) * std::pow(m, 4) +
+         49 * std::pow(h, 3) * std::pow(n, 4) +
+         (1.0 / 60.0) * std::pow(h, 3) *
+             (6 * std::pow(a, 2) + 2 * a * b + 2 * a * c + 2 * a * e +
+              2 * std::pow(b, 2) + 2 * std::pow(c, 2) + 2 * std::pow(d, 2) +
+              d * (2 * a + b + c) + 2 * std::pow(e, 2) + 2 * std::pow(f, 2) +
+              f * (2 * a + b + e) + 2 * std::pow(g, 2) + g * (2 * a + c + e)) +
+         (1.0 / 2.0) * std::pow(l, 2) *
+             (24 * std::pow(h, 5) + 3 * std::pow(h, 3) * i +
+              std::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
          (1.0 / 10.0) * l *
-             (30 * sycl::pow(h, 6) + 18 * sycl::pow(h, 4) * i +
-              sycl::pow(h, 4) *
+             (30 * std::pow(h, 6) + 18 * std::pow(h, 4) * i +
+              std::pow(h, 4) *
                   (12 * a + 3 * b + 3 * c + 2 * d + 8 * e + 7 * f + 7 * g)) +
-         (2.0 / 3.0) * sycl::pow(m, 2) *
-             (32 * sycl::pow(h, 5) + 36 * sycl::pow(h, 4) * l +
-              3 * sycl::pow(h, 3) * i + 36 * sycl::pow(h, 3) * sycl::pow(l, 2) +
-              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         (2.0 / 3.0) * std::pow(m, 2) *
+             (32 * std::pow(h, 5) + 36 * std::pow(h, 4) * l +
+              3 * std::pow(h, 3) * i + 36 * std::pow(h, 3) * std::pow(l, 2) +
+              std::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
          (2.0 / 15.0) * m *
-             (40 * sycl::pow(h, 6) + 180 * sycl::pow(h, 5) * l +
-              18 * sycl::pow(h, 4) * i +
-              180 * sycl::pow(h, 4) * sycl::pow(l, 2) +
-              sycl::pow(h, 4) *
+             (40 * std::pow(h, 6) + 180 * std::pow(h, 5) * l +
+              18 * std::pow(h, 4) * i + 180 * std::pow(h, 4) * std::pow(l, 2) +
+              std::pow(h, 4) *
                   (12 * a + 3 * b + 8 * c + 7 * d + 3 * e + 2 * f + 7 * g)) +
-         (7.0 / 6.0) * sycl::pow(n, 2) *
-             (56 * sycl::pow(h, 5) - 36 * sycl::pow(h, 4) * l -
-              48 * sycl::pow(h, 4) * m - 3 * sycl::pow(h, 3) * i -
-              36 * sycl::pow(h, 3) * sycl::pow(l, 2) -
-              48 * sycl::pow(h, 3) * sycl::pow(m, 2) -
-              sycl::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
+         (7.0 / 6.0) * std::pow(n, 2) *
+             (56 * std::pow(h, 5) - 36 * std::pow(h, 4) * l -
+              48 * std::pow(h, 4) * m - 3 * std::pow(h, 3) * i -
+              36 * std::pow(h, 3) * std::pow(l, 2) -
+              48 * std::pow(h, 3) * std::pow(m, 2) -
+              std::pow(h, 3) * (3 * a + b + c + d + e + f + g)) +
          (7.0 / 30.0) * n *
-             (70 * sycl::pow(h, 6) - 180 * sycl::pow(h, 5) * l -
-              240 * sycl::pow(h, 5) * m - 18 * sycl::pow(h, 4) * i -
-              180 * sycl::pow(h, 4) * sycl::pow(l, 2) -
-              240 * sycl::pow(h, 4) * sycl::pow(m, 2) -
-              sycl::pow(h, 4) *
+             (70 * std::pow(h, 6) - 180 * std::pow(h, 5) * l -
+              240 * std::pow(h, 5) * m - 18 * std::pow(h, 4) * i -
+              180 * std::pow(h, 4) * std::pow(l, 2) -
+              240 * std::pow(h, 4) * std::pow(m, 2) -
+              std::pow(h, 4) *
                   (12 * a + 8 * b + 3 * c + 7 * d + 3 * e + 7 * f + 2 * g));
 }
 
 template <std::size_t Dim, std::size_t... strides_all>
 DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
                            DataType h) {
-  DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
+  // DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
 
   std::array<int, Dim> length{(strides_all + 1)...};
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
 
-  sol_domain.q.parallel_for(
-      sycl::range((strides_all + 1)...),
-      sycl::reduction(result, sycl::plus<>()), [=](sycl::id<Dim> I, auto &r) {
-        r += f(sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
-               sol_domain(I[0], I[1] + 1, I[2]),
-               sol_domain(I[0], I[1] + 1, I[2] + 1),
-               sol_domain(I[0] + 1, I[1], I[2]),
-               sol_domain(I[0] + 1, I[1], I[2] + 1),
-               sol_domain(I[0] + 1, I[1] + 1, I[2]),
-               sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
+  DataType result = std::transform_reduce(
+      std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
+        auto I = domain::flat_to_multi_index<(strides_all + 1)...>(idx);
+        return f(sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
+                 sol_domain(I[0], I[1] + 1, I[2]),
+                 sol_domain(I[0], I[1] + 1, I[2] + 1),
+                 sol_domain(I[0] + 1, I[1], I[2]),
+                 sol_domain(I[0] + 1, I[1], I[2] + 1),
+                 sol_domain(I[0] + 1, I[1] + 1, I[2]),
+                 sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
 
-               (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
-               (DataType)I[2] / (length[2]), h);
+                 (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
+                 (DataType)I[2] / (length[2]), h);
       });
 
-  DataType result_device = 0;
-  sol_domain.q.memcpy(&result_device, result, sizeof(DataType)).wait();
-
-  return std::sqrt(result_device);
+  return std::sqrt(result);
 }
 
 DataType f_grad(DataType a, DataType b, DataType c, DataType d, DataType e,
                 DataType f, DataType g, DataType i, DataType l, DataType m,
                 DataType n, DataType h) {
-  return (296.0 / 3.0) * sycl::pow(h, 5) +
-         36 * sycl::pow(h, 3) * sycl::pow(l, 2) +
-         64 * sycl::pow(h, 3) * sycl::pow(m, 2) +
-         196 * sycl::pow(h, 3) * sycl::pow(n, 2) -
-         2.0 / 3.0 * sycl::pow(h, 3) *
+  return (296.0 / 3.0) * std::pow(h, 5) + 36 * std::pow(h, 3) * std::pow(l, 2) +
+         64 * std::pow(h, 3) * std::pow(m, 2) +
+         196 * std::pow(h, 3) * std::pow(n, 2) -
+         2.0 / 3.0 * std::pow(h, 3) *
              (14 * b - 8 * c + 3 * d - 6 * e + 4 * f - 7 * g) +
-         h * sycl::pow(i, 2) - 2.0 / 3.0 * h * i * (d + f + g) +
+         h * std::pow(i, 2) - 2.0 / 3.0 * h * i * (d + f + g) +
          (1.0 / 3.0) * h *
-             (3 * sycl::pow(a, 2) - 2 * a * b - 2 * a * c - 2 * a * e +
-              2 * sycl::pow(b, 2) + 2 * sycl::pow(c, 2) + 2 * sycl::pow(d, 2) -
-              d * (b + c) + 2 * sycl::pow(e, 2) + 2 * sycl::pow(f, 2) -
-              f * (b + e) + 2 * sycl::pow(g, 2) - g * (c + e)) +
+             (3 * std::pow(a, 2) - 2 * a * b - 2 * a * c - 2 * a * e +
+              2 * std::pow(b, 2) + 2 * std::pow(c, 2) + 2 * std::pow(d, 2) -
+              d * (b + c) + 2 * std::pow(e, 2) + 2 * std::pow(f, 2) -
+              f * (b + e) + 2 * std::pow(g, 2) - g * (c + e)) +
          2 * l *
-             (18 * sycl::pow(h, 4) + 2 * sycl::pow(h, 2) * i -
-              sycl::pow(h, 2) * (2 * a + b + c + 2 * d - 2 * e - f - g)) +
+             (18 * std::pow(h, 4) + 2 * std::pow(h, 2) * i -
+              std::pow(h, 2) * (2 * a + b + c + 2 * d - 2 * e - f - g)) +
          (8.0 / 3.0) * m *
-             (24 * sycl::pow(h, 4) + 2 * sycl::pow(h, 2) * i -
-              sycl::pow(h, 2) * (2 * a + b - 2 * c - d + e + 2 * f - g)) +
+             (24 * std::pow(h, 4) + 2 * std::pow(h, 2) * i -
+              std::pow(h, 2) * (2 * a + b - 2 * c - d + e + 2 * f - g)) +
          (14.0 / 3.0) * n *
-             (42 * sycl::pow(h, 4) - 2 * sycl::pow(h, 2) * i +
-              sycl::pow(h, 2) * (2 * a - 2 * b + c - d + e - f + 2 * g));
+             (42 * std::pow(h, 4) - 2 * std::pow(h, 2) * i +
+              std::pow(h, 2) * (2 * a - 2 * b + c - d + e - f + 2 * g));
 }
 
 template <std::size_t Dim, std::size_t... strides_all>
 DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
                              DataType h) {
-  DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
 
   std::array<int, Dim> length{(strides_all + 1)...};
 
-  sol_domain.q.parallel_for(
-      sycl::range((strides_all + 1)...),
-      sycl::reduction(result, sycl::plus<>()), [=](sycl::id<Dim> I, auto &r) {
-        r += f_grad(sol_domain(I[0], I[1], I[2]),
-                    sol_domain(I[0], I[1], I[2] + 1),
-                    sol_domain(I[0], I[1] + 1, I[2]),
-                    sol_domain(I[0], I[1] + 1, I[2] + 1),
-                    sol_domain(I[0] + 1, I[1], I[2]),
-                    sol_domain(I[0] + 1, I[1], I[2] + 1),
-                    sol_domain(I[0] + 1, I[1] + 1, I[2]),
-                    sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
 
-                    (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
-                    (DataType)I[2] / (length[2]), h);
+  DataType result = std::transform_reduce(
+      std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
+        auto I = domain::flat_to_multi_index<(strides_all + 1)...>(idx);
+        return f_grad(
+            sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
+            sol_domain(I[0], I[1] + 1, I[2]),
+            sol_domain(I[0], I[1] + 1, I[2] + 1),
+            sol_domain(I[0] + 1, I[1], I[2]),
+            sol_domain(I[0] + 1, I[1], I[2] + 1),
+            sol_domain(I[0] + 1, I[1] + 1, I[2]),
+            sol_domain(I[0] + 1, I[1] + 1, I[2] + 1),
+
+            (DataType)I[0] / (length[0]), (DataType)I[1] / (length[1]),
+            (DataType)I[2] / (length[2]), h);
       });
 
-  DataType result_device = 0;
-  sol_domain.q.memcpy(&result_device, result, sizeof(DataType)).wait();
-
-  return std::sqrt(result_device);
+  return std::sqrt(result);
 }
 
 int main(int argc, char *argv[]) {
-
   using OffsetType = std::array<int, 3>;
 
   if (argc < 2) {
@@ -175,16 +171,6 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int num_iter = std::stoi(argv[1]);
-
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else
-  sycl::gpu_selector selector;
-#endif
-
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{},
-                                    sycl::property::queue::enable_profiling{}});
 
   constexpr std::size_t nlev = 5u;
   constexpr std::size_t base_length = 16u;
@@ -195,22 +181,21 @@ int main(int argc, char *argv[]) {
   constexpr auto &length =
       Multigrid_domain<3, nlev, base_length, base_length, base_length>::length;
 
-  Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain1(
-      q);
-  Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain2(
-      q);
-  Multigrid_domain<3, nlev, base_length, base_length, base_length> lhs_domain3(
-      q);
-  Multigrid_domain<3, nlev, base_length, base_length, base_length> rhs_domain(
-      q);
   Multigrid_domain<3, nlev, base_length, base_length, base_length>
-      boundary_values(q);
+      lhs_domain1{};
   Multigrid_domain<3, nlev, base_length, base_length, base_length>
-      defect_domain(q);
+      lhs_domain2{};
+  Multigrid_domain<3, nlev, base_length, base_length, base_length>
+      lhs_domain3{};
+  Multigrid_domain<3, nlev, base_length, base_length, base_length> rhs_domain{};
+  Multigrid_domain<3, nlev, base_length, base_length, base_length>
+      boundary_values{};
+  Multigrid_domain<3, nlev, base_length, base_length, base_length>
+      defect_domain{};
 
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
-      u_domain(Paddings::PERIODIC, q, 1), convolved(Paddings::PERIODIC, q, 1),
-      helper(Paddings::PERIODIC, q, 1);
+      u_domain(Paddings::PERIODIC, 1), convolved(Paddings::PERIODIC, 1),
+      helper(Paddings::PERIODIC, 1);
 
   std::cout << "The number of dofs is: " << u_domain.num_dofs << std::endl;
 
@@ -225,18 +210,21 @@ int main(int argc, char *argv[]) {
     return -3 * x * x - 4 * y * y + 7 * z * z;
   };
 
-  q.parallel_for(
-      sycl::range<3>(std::get<0>(length) + 2, std::get<1>(length) + 2,
-                     std::get<2>(length) + 2),
-      [=](sycl::id<3> I) {
-        //  I[0] += 1;
-        //  I[1] += 1;
-        //  I[2] += 1;
-        u_domain(I[0], I[1], I[2]) =
-            boundary_conditions((DataType)I[0] / (std::get<0>(length) + 1),
-                                (DataType)I[1] / (std::get<1>(length) + 1),
-                                (DataType)I[2] / (std::get<2>(length) + 1));
-      });
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(u_domain.num_values);
+
+  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<std::get<0>(length) + 2,
+                                         std::get<1>(length) + 2,
+                                         std::get<2>(length) + 2>(idx);
+    //  I[0] += 1;
+    //  I[1] += 1;
+    //  I[2] += 1;
+    u_domain(I[0], I[1], I[2]) =
+        boundary_conditions((DataType)I[0] / (std::get<0>(length) + 1),
+                            (DataType)I[1] / (std::get<1>(length) + 1),
+                            (DataType)I[2] / (std::get<2>(length) + 1));
+  });
 
   // std::ofstream u_file("u_file_test.dx");
   // u_domain.print_dx_to_stream(u_file, 0, 0, 0, 1);
@@ -250,38 +238,39 @@ int main(int argc, char *argv[]) {
   // print_multigrid_domain(lhs_domain1);
 
   {
+
+    boost::iterators::counting_iterator<int> start(0);
+    boost::iterators::counting_iterator<int> end((std::get<1>(length) + 2) *
+                                                 (std::get<2>(length) + 2));
+
     auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
-    q.parallel_for(
-         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
-         [=](sycl::id<2> I) {
-           boundary_domain(I[0], I[1], 0) = boundary_conditions(
-               (DataType)I[0] / (std::get<1>(length) + 1),
-               (DataType)I[1] / (std::get<2>(length) + 1), 0);
+    std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+      auto I = domain::flat_to_multi_index<(std::get<1>(length) + 2),
+                                           (std::get<2>(length) + 2)>(idx);
+      boundary_domain(I[0], I[1], 0) =
+          boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
+                              (DataType)I[1] / (std::get<2>(length) + 1), 0);
 
-           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
-               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
-                                   (DataType)I[1] / (std::get<2>(length) + 1),
-                                   1);
+      boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
+          boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
+                              (DataType)I[1] / (std::get<2>(length) + 1), 1);
 
-           boundary_domain(0, I[0], I[1]) = boundary_conditions(
-               0, (DataType)I[0] / (std::get<1>(length) + 1),
-               (DataType)I[1] / (std::get<2>(length) + 1));
+      boundary_domain(0, I[0], I[1]) =
+          boundary_conditions(0, (DataType)I[0] / (std::get<1>(length) + 1),
+                              (DataType)I[1] / (std::get<2>(length) + 1));
 
-           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
-               boundary_conditions(1,
-                                   (DataType)I[0] / (std::get<1>(length) + 1),
-                                   (DataType)I[1] / (std::get<2>(length) + 1));
+      boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
+          boundary_conditions(1, (DataType)I[0] / (std::get<1>(length) + 1),
+                              (DataType)I[1] / (std::get<2>(length) + 1));
 
-           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
-               (DataType)I[0] / (std::get<1>(length) + 1), 0,
-               (DataType)I[1] / (std::get<2>(length) + 1));
+      boundary_domain(I[0], 0, I[1]) =
+          boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1), 0,
+                              (DataType)I[1] / (std::get<2>(length) + 1));
 
-           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
-               boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1),
-                                   1,
-                                   (DataType)I[1] / (std::get<2>(length) + 1));
-         })
-        .wait();
+      boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
+          boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1), 1,
+                              (DataType)I[1] / (std::get<2>(length) + 1));
+    });
 
     //  std::cout << "The boundary domain is: " << std::endl;
     //  boundary_domain.print_domain();
@@ -309,7 +298,8 @@ int main(int argc, char *argv[]) {
   //           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
   //               boundary_conditions(1,
   //                                   (DataType)I[0] / (std::get<1>(length) +
-  //                                   2), (DataType)I[1] / (std::get<2>(length)
+  //                                   2), (DataType)I[1] /
+  //                                   (std::get<2>(length)
   //                                   + 2));
   //
   //           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
@@ -425,7 +415,7 @@ int main(int argc, char *argv[]) {
   auto *current = &lhs_domain2;
   auto *next = &lhs_domain3;
   Domain<3, std::get<0>(length), std::get<1>(length), std::get<2>(length)>
-      helper2(Paddings::PERIODIC, q, 1);
+      helper2(Paddings::PERIODIC, 1);
 
   //  std::ofstream previous("previous_domain.dx");
   //  next->get_domain().print_dx_to_stream(previous, 0, 0, 0, 1);
@@ -439,7 +429,7 @@ int main(int argc, char *argv[]) {
 
   std::ofstream out_file_devation(filenames.str());
 
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start_time = std::chrono::high_resolution_clock::now();
 
   for (int num = 0; num < num_iter; num++) {
 
@@ -462,22 +452,12 @@ int main(int argc, char *argv[]) {
         diff_operator.get_offsets());
 
     v_cycle.iteration(*next, *current, defect_domain, mult_level, diff_operator,
-                      coarser, upper_grid_step, omega, diff_operator,
-                      num_iters_level, smoother_sequence_pre,
-                      smoother_sequence_post, true);
+                      coarser, upper_grid_step, omega, num_iters_level,
+                      smoother_sequence_pre, smoother_sequence_post, true);
 
     add_domains(lhs_domain1.get_domain(), next->get_domain(),
                 lhs_domain1.get_domain());
-
-    // std::swap(current, next);
-
-    //  std::cout << "After the iterations the current is: " << std::endl;
-    //  current->get_domain().print_domain();
-    //  std::cout << "After the iteration the next is: " << std::endl;
-    //  next->get_domain().print_domain();
   }
-
-  q.wait();
 
   auto &sol_domain = current->get_domain();
 
@@ -492,50 +472,9 @@ int main(int argc, char *argv[]) {
 
   std::cout << "The gradient is given by " << e_norm << std::endl;
 
-  //  std::stringstream true_file_name;
-  //  true_file_name << "u_domain" << base_length << ".dx";
-  //  std::ofstream true_file(true_file_name.str());
-  //
-  //  u_domain.print_dx_to_stream(true_file, 0, 0, 0, 1);
-  //  true_file.close();
-  //
-  //  std::stringstream sol_file_name;
-  //  sol_file_name << "sol_domain" << base_length << ".dx";
-  //
-  //  std::ofstream sol_file(sol_file_name.str());
-  //  current->get_domain().print_dx_to_stream(sol_file, 0, 0, 0, 1);
-  //  std::cout << "The u domain is: " << std::endl;
-  //  u_domain.print_domain();
-  //
-  //  std::cout << "The solution is: " << std::endl;
-  //  current->get_domain().print_domain();
+  auto end_time = std::chrono::high_resolution_clock::now();
 
-  // std::cout << "After the iterations: " << std::endl;
-  // lhs_domain1.get_domain().print_domain();
-
-  //   //   // Convolve(helper, current->template get_domain<nlev>(),
-  //   //   //          diff_operator.get_values(),
-  //   diff_operator.get_offsets());
-  //   //
-  //   //   // helper.print_domain();
-  //   //
-  //   //   // current->template get_domain<nlev>().print_domain();
-  //   //
-  auto end = std::chrono::high_resolution_clock::now();
-
-  std::chrono::duration<double> duration = end - start;
+  std::chrono::duration<double> duration = end_time - start_time;
   std::cout << "The required time was: " << duration.count() << " seconds"
             << std::endl;
-  //
-  //    //   // current->template
-  //    get_domain<nlev>().print_to_output(std::cout);
-  //    //
-  //    //   // std::cout << "lhs_domain_1:" << std::endl;
-  //    //   // print_multigrid_domain(lhs_domain1);
-  //    //
-  //    //   // std::cout << "lhs_domain_2:" << std::endl;
-  //    //   // print_multigrid_domain(lhs_domain2);
-  //    //
-  //    //   // std::cout << "rhs_domain:" << std::endl;
-  //    //   // print_multigrid_domain(rhs_domain);
 }

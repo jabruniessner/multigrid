@@ -1,243 +1,196 @@
-#include "Convolution.h"
 #include "CG_Solver.h"
-#include<iostream>
+#include "Convolution.h"
+#include <iostream>
 
+int main() {
 
+  using OffsetType = std::array<int, 3>;
 
-int main()
-{
-	
-	using OffsetType = std::array<int, 3>;
+  using namespace convolution;
+  using namespace domain;
 
-	using namespace convolution;
-	using namespace domain; 
+  Domain<3, 3u, 3u, 3u> domain_src(Paddings::PERIODIC, 1);
+  Domain<3, 3u, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);
 
+  constexpr std::array<DataType, 7> values = {6, -1, -1, -1, -1, -1, -1};
+  constexpr std::array<OffsetType, 7> offsets{{{0, 0, 0},
+                                               {1, 0, 0},
+                                               {-1, 0, 0},
+                                               {0, 1, 0},
+                                               {0, -1, 0},
+                                               {0, 0, 1},
+                                               {0, 0, -1}}};
 
-	sycl::gpu_selector selector;
-	sycl::queue q(selector, sycl::property_list{sycl::property::queue::in_order{}});
+  //====== First Trial ====//
 
-	Domain<3, 3u, 3u, 3u> domain_src(Paddings::PERIODIC, q, 1);
-	Domain<3, 3u, 3u, 3u> domain_dest(Paddings::PERIODIC, q, 1);
+  std::cout << "The input matrix is given by: " << std::endl;
+  for (Position1D i = 1; i < 3 + 1; i++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D k = 1; k < 3 + 1; k++) {
+        domain_src(i, j, k) = 1;
+      }
+    }
+  }
 
-	constexpr std::array<DataType, 7> values = {6, -1, -1, -1, -1, -1, -1};
-	constexpr std::array<OffsetType, 7> offsets{{{0,0,0}, {1, 0,0}, {-1,0,0}, 
-						     {0,1,0}, {0,-1,0},  {0,0,1}, 
-						     {0,0,-1}}};
+  for (Position1D k = 0; k < 3 + 2; k++) {
+    for (Position1D j = 0; j < 3 + 2; j++) {
+      for (Position1D i = 0; i < 3 + 2; i++) {
+        std::cout << domain_src(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
+  std::cout << "The norm squared is given by: " << std::endl;
+  DataType result = 1;
 
-	//====== First Trial ====//
-	
-	std::cout<<"The input matrix is given by: "<<std::endl;
-	for(Position1D i = 1; i<3+1; i++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D k = 1; k < 3+1; k++)
-			{
-				domain_src.set_value(1, i, j, k);
-			}
-		}
-	}
+  domain_compute_norm_squared(result, domain_src);
 
-	for(Position1D k = 0; k<3+2; k++)
-	{
-		for(Position1D j = 0; j<3+2; j++)
-		{
-			for(Position1D i = 0; i<3+2; i++)
-			{
-				std::cout<< domain_src.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+  std::cout << "The result is given by: " << result << std::endl;
 
+  Convolve(domain_dest, domain_src, values, offsets);
 
-	std::cout<<"The norm squared is given by: "<<std::endl;
-	DataType result = 1;
+  std::cout << "The output Matrix is given by: " << std::endl;
 
-	domain_compute_norm_squared(result, domain_src);
+  for (Position1D k = 0; k < 3 + 2; k++) {
+    for (Position1D j = 0; j < 3 + 2; j++) {
+      for (Position1D i = 0; i < 3 + 2; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	std::cout<<"The result is given by: "<< result<<std::endl;
+  //======== Second trial ========//
 
-	Convolve(domain_dest, domain_src, values, offsets);
+  std::cout << "The input matrix is given by: " << std::endl;
+  for (Position1D j = 0; j < 3 + 2; j++)
+    for (Position1D i = 0; i < 3 + 2; i++) {
+      domain_src(i, j, 4u) = 1;
+      domain_src(i, j, 0u) = 1;
 
-	std::cout<<"The output Matrix is given by: "<<std::endl;
+      domain_src(i, 4u, j) = 1;
+      domain_src(i, 0u, j) = 1;
 
-	for(Position1D k = 0; k<3+2; k++)
-	{
-		for(Position1D j = 0; j<3+2; j++)
-		{
-			for(Position1D i = 0; i<3+2; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+      domain_src(4u, i, j) = 1;
+      domain_src(0u, i, j) = 1;
+    }
 
+  std::cout << "(Boundary set to 1)" << std::endl;
 
-	//======== Second trial ========//
-	
-	std::cout<<"The input matrix is given by: "<<std::endl;
-	for(Position1D j = 0; j<3+2; j++)
-		for(Position1D i = 0; i<3+2; i++)
-		{
-			domain_src.set_value(1, i, j, 4u);
-			domain_src.set_value(1, i, j, 0u);
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_src(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-			domain_src.set_value(1, i, 4u, j);
-			domain_src.set_value(1, i, 0u, j);
+  Convolve(domain_dest, domain_src, values, offsets);
 
-			domain_src.set_value(1, 4u, i, j);
-			domain_src.set_value(1, 0u, i, j);
-		}
+  std::cout << "The output matrix is given by: " << std::endl;
 
-	std::cout << "(Boundary set to 1)"<<std::endl;
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_src.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+  //============== Trial scalar multiplication ===============
+  std::cout << "The initial matrix is: " << std::endl;
+  DataType count = 0;
 
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        domain_src(i, j, k) = ++count;
+        std::cout << count << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	Convolve(domain_dest, domain_src, values, offsets);
+  std::cout << "The result is: " << std::endl;
 
+  std::cout << "Scalar multiplication with factor 3" << std::endl;
 
-	std::cout<<"The output matrix is given by: "<<std::endl;
+  domain_scalar_multiply(domain_dest, domain_src, 3);
 
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	//============== Trial scalar multiplication ===============
-	std::cout<<"The initial matrix is: "<<std::endl;
-	DataType count = 0;
+  //======== Trial Addition ======//
 
-	for(Position1D k = 1; k<3+1; k++){
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				domain_src.set_value(++count, i, j, k);
-				std::cout<< count <<" ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}	
+  std::cout << "Component-wise addition Domain with itself" << std::endl;
+  add_domains(domain_dest, domain_src, domain_src);
 
-	std::cout<<"The result is: "<<std::endl;
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	std::cout<<"Scalar multiplication with factor 3"<<std::endl;
+  //======= Trial Subtraction =======/
 
-	domain_scalar_multiply(domain_dest, domain_src, 3);	
+  std::cout << "Component-wise subtraction Domain with itself" << std::endl;
+  subtract_domains(domain_dest, domain_src, domain_src);
 
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
+  //===== Trial Multiplication ======/
 
-	//======== Trial Addition ======//
-	
+  std::cout << "Component-wise multiplication Domain with itself" << std::endl;
+  multiply_domains(domain_dest, domain_src, domain_src);
 
-	std::cout<<"Component-wise addition Domain with itself"<<std::endl;
-	add_domains(domain_dest, domain_src, domain_src);
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
+  //===== Trial Division ======/
+  std::cout << "Component-wise division Domain with itself" << std::endl;
+  divide_domains(domain_dest, domain_src, domain_src);
 
-
-	//======= Trial Subtraction =======/
-	
-
-	std::cout<<"Component-wise subtraction Domain with itself" << std::endl;
-	subtract_domains(domain_dest, domain_src, domain_src);
-
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
-
-	//===== Trial Multiplication ======/
-	
-	std::cout<<"Component-wise multiplication Domain with itself" << std::endl;
-	multiply_domains(domain_dest, domain_src, domain_src);	
-
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
-
-
-	//===== Trial Division ======/
-	std::cout<<"Component-wise division Domain with itself" << std::endl;
-	divide_domains(domain_dest, domain_src, domain_src);	
-
-	for(Position1D k = 1; k<3+1; k++)
-	{
-		for(Position1D j = 1; j<3+1; j++)
-		{
-			for(Position1D i = 1; i<3+1; i++)
-			{
-				std::cout<< domain_dest.get_value(i, j, k) << " ";
-			}
-			std::cout<<std::endl;
-		}
-		std::cout<<std::endl;
-	}
-
+  for (Position1D k = 1; k < 3 + 1; k++) {
+    for (Position1D j = 1; j < 3 + 1; j++) {
+      for (Position1D i = 1; i < 3 + 1; i++) {
+        std::cout << domain_dest(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 }
