@@ -1,4 +1,6 @@
+#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include "predefinitions.h"
+#include "thrust_adjust.hpp"
 #include "utils.h"
 #include <algorithm>
 #include <array>
@@ -73,7 +75,8 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    values_buff = new DataType[num_values]();
+    pcudaMallocManaged(&values_buff, sizeof(DataType[num_values]));
+    // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
   template <typename... Positions>
@@ -130,6 +133,8 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     out << "object 3 class array type double rank 0 items " << this->num_values
         << " data follows" << std::endl;
 
+    pcudaDeviceSynchronize();
+
     for (int i = 0; i < this->num_values; i++) {
 
       if (i % 3 == 0 && i != 0) {
@@ -148,6 +153,10 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
   }
 
   template <typename... Indices> void print_domain(Indices... indices) {
+
+    if constexpr (sizeof...(Indices) == 0)
+      pcudaDeviceSynchronize();
+
     if constexpr (sizeof...(Indices) < Dim) {
       for (Position1D i = 0;
            i < this->strides[sizeof...(Indices)] + 2 * this->padding_width; i++)
@@ -162,6 +171,10 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
 
   template <typename... Indices>
   void print_domain_to_stream(std::ostream &output, Indices... indices) {
+
+    if constexpr (sizeof...(Indices) == 0)
+      pcudaDeviceSynchronize();
+
     if constexpr (sizeof...(Indices) < Dim) {
       constexpr auto size = sizeof...(Indices);
       constexpr auto dimension_size =
@@ -200,9 +213,9 @@ template <Dimension Dim, Length... strides_all>
 int domain_compute_norm_squared(DataType &result,
                                 Domain<Dim, strides_all...> &a) {
 
-  result = std::transform_reduce(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      0.0, std::plus<>(), [](const DataType val) { return val * val; });
+  result = thrust::transform_reduce(
+      a.values_buff, a.values_buff + a.num_values, 0.0, std::plus<>(),
+      [](const DataType val) { return val * val; });
 
   return 0;
 }
@@ -210,9 +223,9 @@ int domain_compute_norm_squared(DataType &result,
 template <Dimension Dim, Length... strides_all>
 DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
                                Domain<Dim, strides_all...> &b) {
-  return std::transform_reduce(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      b.values_buff, 0.0, std::plus<>(),
+  return thrust::transform_reduce(
+      a.values_buff, a.values_buff + a.num_values, b.values_buff, 0.0,
+      std::plus<>(),
       [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
 }
 
@@ -241,9 +254,9 @@ int divide_domains(Domain<Dim, strides_all...> &dest,
                    Domain<Dim, strides_all...> &a,
                    Domain<Dim, strides_all...> &b) {
 
-  std::transform(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      b.values_buff, dest.values_buff,
+  thrust::transform(
+      a.values_buff, a.values_buff + a.num_values, b.values_buff,
+      dest.values_buff,
       [](const DataType val_a, const DataType val_b) { return val_a / val_b; });
   return 0;
 }
@@ -253,9 +266,9 @@ int multiply_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  std::transform(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      b.values_buff, dest.values_buff,
+  thrust::transform(
+      a.values_buff, a.values_buff + a.num_values, b.values_buff,
+      dest.values_buff,
       [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
 
   return 0;
@@ -266,9 +279,9 @@ int subtract_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  std::transform(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      b.values_buff, dest.values_buff,
+  thrust::transform(
+      a.values_buff, a.values_buff + a.num_values, b.values_buff,
+      dest.values_buff,
       [](const DataType val_a, const DataType val_b) { return val_a - val_b; });
 
   return 0;
@@ -280,11 +293,11 @@ int subtract_and_multiply_domains(Domain<Dim, strides_all...> &dest,
                                   Domain<Dim, strides_all...> &b,
                                   const DataType &val) {
 
-  std::transform(std::execution::par_unseq, a.values_buff,
-                 a.values_buff + a.num_values, b.values_buff, dest.values_buff,
-                 [=](const DataType val_a, const DataType val_b) {
-                   return val * val_a - val_b;
-                 });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=](const DataType val_a, const DataType val_b) {
+                      return val * val_a - val_b;
+                    });
 
   return 0;
 }
@@ -294,9 +307,9 @@ int add_domains(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, strides_all...> &a,
                 Domain<Dim, strides_all...> &b) {
 
-  std::transform(
-      std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
-      b.values_buff, dest.values_buff,
+  thrust::transform(
+      a.values_buff, a.values_buff + a.num_values, b.values_buff,
+      dest.values_buff,
       [](const DataType val_a, const DataType val_b) { return val_a + val_b; });
 
   return 0;
@@ -308,11 +321,11 @@ int add_and_multiply_domains(Domain<Dim, strides_all...> &dest,
                              Domain<Dim, strides_all...> &b,
                              const DataType &val) {
 
-  std::transform(std::execution::par_unseq, a.values_buff,
-                 a.values_buff + a.num_values, b.values_buff, dest.values_buff,
-                 [=](const DataType val_a, const DataType val_b) {
-                   return val_a + val * val_b;
-                 });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=](const DataType val_a, const DataType val_b) {
+                      return val_a + val * val_b;
+                    });
 
   return 0;
 }
