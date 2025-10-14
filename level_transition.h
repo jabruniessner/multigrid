@@ -1,6 +1,9 @@
 #include "CG_Solver.h"
 #include "Convolution.h"
 #include "utils.h"
+#include <algorithm>
+#include <boost/iterator/counting_iterator.hpp>
+#include <execution>
 
 #ifndef LEVEL_TRANSITION
 #define LEVEL_TRANSITION
@@ -18,27 +21,24 @@ void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                 const std::array<DataType, size> values,
                 const std::array<Offsets, size> offsets,
                 std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  // assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest.padding_width), ...);
-          sycl::id<Dim> I_fine;
-          ((I_fine[dims] = 2 * I[dims]), ...);
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(dest.num_dofs);
 
-          DataType result = 0;
+  std::for_each(std::execution::par_unseq, start, end, [=](int i) {
+    auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(i);
+    ((I[dims] += dest.padding_width), ...);
+    decltype(I) I_fine;
+    ((I_fine[dims] = 2 * I[dims]), ...);
 
-          for (int k = 0; k < size; k++) {
-            result += src((I_fine[dims] + offsets[k][dims])...) * values[k];
-          }
+    DataType result = 0;
 
-          dest(I[dims]...) = result;
-        });
+    for (int k = 0; k < size; k++) {
+      result += src((I_fine[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    dest(I[dims]...) = result;
   });
-
-  dest.q.wait();
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -57,19 +57,17 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                        const std::array<DataType, size> values,
                        const std::array<Offsets, size> offsets,
                        std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  // assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(sycl::range<Dim>(dest.strides[dims]...),
-                   [=](sycl::id<Dim> I) {
-                     ((I[dims] += dest.padding_width), ...);
-                     const sycl::id<Dim> I_fine{2 * I[dims]...};
-                     dest(I[dims]...) = src(I_fine[dims]...);
-                   });
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+
+  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
+
+    ((I[dims] += dest.padding_width), ...);
+    decltype(I) I_fine{2 * I[dims]...};
+    dest(I[dims]...) = src(I_fine[dims]...);
   });
-
-  // dest.q.wait();
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -90,20 +88,16 @@ void coarsening_inject_sequential(
   // assert(dest.padding_width == src.padding_width);
   constexpr std::array<const std::size_t, 3> a{strides_all...};
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.single_task([=]() {
-      int i_coarse = 1;
-      for (int i = 1; i <= a[0]; i += 2) {
-        int j_coarse = 1;
-        for (int j = 1; j <= a[1]; j += 2) {
-          int k_coarse = 1;
-          for (int k = 1; k <= a[2]; k += 2) {
-            dest(i_coarse++, j_coarse++, k_coarse++) = src(i, j, k);
-          }
-        }
+  int i_coarse = 1;
+  for (int i = 1; i <= a[0]; i += 2) {
+    int j_coarse = 1;
+    for (int j = 1; j <= a[1]; j += 2) {
+      int k_coarse = 1;
+      for (int k = 1; k <= a[2]; k += 2) {
+        dest(i_coarse++, j_coarse++, k_coarse++) = src(i, j, k);
       }
-    });
-  });
+    }
+  }
 
   // dest.q.wait();
 }
@@ -116,27 +110,24 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
                          const std::array<DataType, size> values,
                          const std::array<Offsets, size> offsets,
                          std::index_sequence<dims...>) {
-  assert(dest1.q == src.q);
-  // assert(dest.padding_width == src.padding_width);
 
-  dest1.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest1.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest1.padding_width), ...);
-          sycl::id<Dim> I_fine;
-          ((I_fine[dims] = 2 * I[dims]), ...);
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
 
-          DataType result = 0;
+  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
+    ((I[dims] += dest1.padding_width), ...);
+    decltype(I) I_fine;
+    ((I_fine[dims] = 2 * I[dims]), ...);
 
-          for (int k = 0; k < size; k++) {
-            result += src((I_fine[dims] + offsets[k][dims])...) * values[k];
-          }
+    DataType result = 0;
 
-          dest1(I[dims]...) = dest2(I[dims]...) = result;
-        });
+    for (int k = 0; k < size; k++) {
+      result += src((I_fine[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    dest1(I[dims]...) = dest2(I[dims]...) = result;
   });
-
-  dest1.q.wait();
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -211,20 +202,17 @@ template <Dimension Dim, Length... strides_all, std::size_t... dims>
 void refinement(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src,
                 std::index_sequence<dims...>) {
-  assert(dest.q == src.q);
-  // assert(dest.padding_width == src.padding_width);
 
-  dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest.padding_width), ...);
-          std::tuple<> empty_index_tuple;
-          dest(I[dims]...) =
-              domain_refinement_helper(src, empty_index_tuple, I[dims]...);
-        });
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+
+  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    ((I[dims] += dest.padding_width), ...);
+    std::tuple<> empty_index_tuple;
+    dest(I[dims]...) =
+        domain_refinement_helper(src, empty_index_tuple, I[dims]...);
   });
-
-  dest.q.wait();
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -241,17 +229,16 @@ void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
   assert(dest1.q == src.q && dest2.q == src.q);
   // assert(dest.padding_width == src.padding_width);
 
-  dest1.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest1.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest1.padding_width), ...);
-          std::tuple<> empty_index_tuple;
-          dest1(I[dims]...) = dest2(I[dims]...) =
-              domain_refinement_helper(src, empty_index_tuple, I[dims]...);
-        });
-  });
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
 
-  dest1.q.wait();
+  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    ((I[dims] += dest1.padding_width), ...);
+    std::tuple<> empty_index_tuple;
+    dest1(I[dims]...) = dest2(I[dims]...) =
+        domain_refinement_helper(src, empty_index_tuple, I[dims]...);
+  });
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -260,7 +247,6 @@ void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
                          Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src) {
   refinement_and_copy(dest1, dest2, src, std::make_index_sequence<Dim>());
 }
-
 }; // namespace level_transition
 
 #endif

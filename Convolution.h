@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
+#include <cstddef>
 #include <execution>
 #include <utility>
 
@@ -92,13 +93,13 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
 
 template <int direction, typename DataType, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
-inline DataType
-directional_derivative(const Domain<Dim, strides_all...> &src,
-                       const Domain<Dim, strides_all...> &epsilon_map,
-                       const DataType grid_step, const DataType epsilon_r,
-                       const DataType delta_epsilon, sycl::id<Dim_2> I,
-                       std::index_sequence<dims...>) {
-  sycl::id<Dim_2> I2{I}, I3{I};
+inline DataType directional_derivative(
+    const Domain<Dim, strides_all...> &src,
+    const Domain<Dim, strides_all...> &epsilon_map, const DataType grid_step,
+    const DataType epsilon_r, const DataType delta_epsilon,
+    std::array<std::size_t, Dim_2> I, std::index_sequence<dims...>) {
+
+  std::array<std::size_t, Dim_2> I2{I}, I3{I};
   I2[direction] += 1;
   I3[direction] -= 1;
 
@@ -120,7 +121,8 @@ inline DataType
 directional_derivative(const Domain<Dim, strides_all...> &src,
                        const Domain<Dim, strides_all...> &epsilon_map,
                        const DataType grid_step, const DataType epsilon_r,
-                       const DataType delta_epsilon, sycl::id<Dim_2> I) {
+                       const DataType delta_epsilon,
+                       std::array<std::size_t, Dim_2> I) {
   return directional_derivative<direction>(src, epsilon_map, grid_step,
                                            epsilon_r, delta_epsilon, I,
                                            std::make_index_sequence<Dim>{});
@@ -133,7 +135,7 @@ DataType PBE_Convolve_kernel(
     const Domain<Dim, strides_all...> &kappa_map,
     const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
     const DataType &kappa_2, const DataType grid_step, const DataType epsilon_r,
-    const DataType delta_epsilon, sycl::id<Dim_2> I,
+    const DataType delta_epsilon, std::array<std::size_t, Dim_2> I,
     std::index_sequence<dims...>) {
 
   static_assert(
@@ -156,7 +158,7 @@ DataType PBE_Convolve_kernel(
     const Domain<Dim, strides_all...> &kappa_map,
     const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
     const DataType &kappa_2, const DataType grid_step, const DataType epsilon_r,
-    const DataType delta_epsilon, sycl::id<Dim2> I) {
+    const DataType delta_epsilon, std::array<std::size_t, Dim2> I) {
 
   return PBE_Convolve_kernel(src, kappa_map, epsilon_maps, kappa_2, grid_step,
                              epsilon_r, delta_epsilon, I,
@@ -167,12 +169,13 @@ DataType PBE_Convolve_kernel(
 
 template <int direction, typename DataType, Dimension Dim,
           Length... strides_all, int Dim_2, std::size_t... dims>
-inline DataType directional_GS(const Domain<Dim, strides_all...> &src,
-                               const Domain<Dim, strides_all...> &epsilon_map,
-                               const DataType epsilon_r,
-                               const DataType delta_epsilon, sycl::id<Dim_2> I,
-                               std::index_sequence<dims...>) {
-  sycl::id<Dim_2> I2{I}, I3{I};
+inline DataType
+directional_GS(const Domain<Dim, strides_all...> &src,
+               const Domain<Dim, strides_all...> &epsilon_map,
+               const DataType epsilon_r, const DataType delta_epsilon,
+               std::array<std::size_t, Dim_2> I, std::index_sequence<dims...>) {
+
+  std::array<std::size_t, Dim_2> I2{I}, I3{I};
   I2[direction] += 1;
   I3[direction] -= 1;
 
@@ -192,7 +195,7 @@ inline DataType directional_GS(const Domain<Dim, strides_all...> &src,
                                const Domain<Dim, strides_all...> &epsilon_map,
                                const DataType epsilon_r,
                                const DataType delta_epsilon,
-                               sycl::id<Dim_2> I) {
+                               std::array<std::size_t, Dim_2> I) {
   return directional_GS<direction>(src, epsilon_map, epsilon_r, delta_epsilon,
                                    I, std::make_index_sequence<Dim>{});
 }
@@ -204,7 +207,7 @@ DataType
 PBE_GS_kernel(const Domain<Dim, strides_all...> &src,
               const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
               const DataType epsilon_r, const DataType delta_epsilon,
-              sycl::id<Dim_2> I, std::index_sequence<dims...>) {
+              std::array<std::size_t, Dim_2> I, std::index_sequence<dims...>) {
 
   static_assert(
       Dim_2 == Dim,
@@ -223,7 +226,7 @@ DataType
 PBE_GS_kernel(const Domain<Dim, strides_all...> &src,
               const std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
               const DataType epsilon_r, const DataType delta_epsilon,
-              sycl::id<Dim2> I) {
+              std::array<std::size_t, Dim2> I) {
 
   return PBE_GS_kernel(src, epsilon_maps, epsilon_r, delta_epsilon, I,
                        std::make_index_sequence<Dim>{});

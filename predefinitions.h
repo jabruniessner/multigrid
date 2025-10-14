@@ -1,7 +1,6 @@
 #include <array>
 #include <cstddef>
 #include <iostream>
-#include <sycl/sycl.hpp>
 
 #ifndef PREDEFINITIONS_H
 #define PREDEFINITIONS_H
@@ -27,13 +26,6 @@ using OffsetType = LAD::OffsetType;
 using Dimension = LAD::Dimension;
 
 template <DataType val> struct Float {};
-
-template <typename T> void gpu_print(T *val, sycl::queue &q) {
-  T val_host;
-  q.memcpy(&val_host, val, sizeof(T));
-  q.wait();
-  std::cout << val_host << std::endl;
-}
 
 enum class Paddings {
   PERIODIC = 0,

@@ -1,6 +1,5 @@
 #include "Convolution.h"
 #include "Domain.h"
-#include "tprint.hpp"
 #include <algorithm>
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
@@ -20,12 +19,12 @@ using namespace domain;
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, std::size_t... dims>
-void CG_solver(Domain<Dim, strides_all...> &init_guess,
-               Domain<Dim, strides_all...> &rhs,
-               Domain<Dim, strides_all...> &defect_r,
-               Domain<Dim, strides_all...> &defect_p,
-               const std::array<DataType, size> &values,
-               const std::array<Offsets, size> &offsets, DataType thresh,
+void CG_solver(Domain<Dim, strides_all...> init_guess,
+               Domain<Dim, strides_all...> rhs,
+               Domain<Dim, strides_all...> defect_r,
+               Domain<Dim, strides_all...> defect_p,
+               const std::array<DataType, size> values,
+               const std::array<Offsets, size> offsets, DataType thresh,
                const std::index_sequence<dims...> &) {
 
   auto &strides = init_guess.strides;
@@ -40,6 +39,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType r_squared = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
+        ((I[dims] += init_guess.padding_width), ...);
         // Computing the convolution for the initial residual
         DataType result = 0;
 
@@ -56,6 +56,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType p_squared_A = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
+        ((I[dims] += init_guess.padding_width), ...);
 
         // Computing the convolution for the initial residual
         DataType result = 0;
@@ -79,7 +80,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  // std::cout << "The residual before the conjugate gradient is: " << residual
+  // std::cout << "The residual before the conjugate gradient is: " <<
+  // residual
   //           << std::endl;
 
   int count = 0;
@@ -161,8 +163,7 @@ struct Solver_CG {
   Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
             const std::array<DataType, size> &,
             const std::array<Offsets, size> &)
-      : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
-        defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
+      : defect_r(Paddings::PERIODIC, 1), defect_p(Paddings::PERIODIC, 1) {};
 
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs,

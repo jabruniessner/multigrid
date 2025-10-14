@@ -73,8 +73,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    values_buff = new DataType[num_values];
-    // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
+    values_buff = new DataType[num_values]();
   }
 
   template <typename... Positions>
@@ -271,6 +270,8 @@ int subtract_domains(Domain<Dim, strides_all...> &dest,
       std::execution::par_unseq, a.values_buff, a.values_buff + a.num_values,
       b.values_buff, dest.values_buff,
       [](const DataType val_a, const DataType val_b) { return val_a - val_b; });
+
+  return 0;
 }
 
 template <Dimension Dim, Length... strides_all>

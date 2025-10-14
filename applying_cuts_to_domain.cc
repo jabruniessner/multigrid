@@ -2,23 +2,21 @@
 #include "Domain.h"
 #include "cutting_tetrahedra.h"
 #include "fileio.h"
-#include "hipSYCL/sycl/libkernel/half.hpp"
-#include "hipSYCL/sycl/libkernel/memory.hpp"
 // #include "tetraeda_type.h"
+#include <algorithm>
 #include <array>
+#include <boost/iterator/counting_iterator.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <execution>
 #include <iostream>
 // #include <mdspan>
 #include "cubes_cutter.h"
-#include <sycl/sycl.hpp>
 #include <sys/types.h>
 #include <tuple>
 
 constexpr int Dim = 3;
 constexpr int side_length = 353;
-
-using DataType = float;
 
 template <typename T> struct TD;
 
@@ -74,28 +72,14 @@ int main(int argc, char *argv[]) {
 
   std::cout << "The size of a edge_ref is " << sizeof(edge_ref) << std::endl;
 
-  sycl::gpu_selector selector;
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
-  // sycl::queue q(selector);
-
   domain::Grid<std::uint32_t, Dim + 1, 510, 510, 60, 19> grid_edges(
-      Paddings::PERIODIC, q, 1);
+      Paddings::PERIODIC, 1);
 
   domain::Grid<std::uint32_t, Dim, 510, 510, 60> inside_outside(
-      Paddings::PERIODIC, q, 1);
+      Paddings::PERIODIC, 1);
 
   {
     auto start = std::chrono::high_resolution_clock::now();
-
-    q.memset(grid_edges.values_buff, 0,
-             sizeof(std::uint32_t) * grid_edges.num_values);
-
-    q.memset(inside_outside.values_buff, 0,
-             sizeof(std::uint32_t) * inside_outside.num_values);
-
-    q.wait();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_seconds1 = end - start;
@@ -107,9 +91,8 @@ int main(int argc, char *argv[]) {
   {
     auto start = std::chrono::high_resolution_clock::now();
 
-    q.memset(grid_edges.values_buff, 0,
-             sizeof(DataType) * grid_edges.num_values);
-    q.wait();
+    std::fill(grid_edges.values_buff,
+              grid_edges.values_buff + grid_edges.num_values, 0);
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_seconds1 = end - start;
@@ -119,9 +102,13 @@ int main(int argc, char *argv[]) {
   }
 
   auto start2 = std::chrono::high_resolution_clock::now();
-  q.parallel_for(sycl::range<1>(grid_edges.num_values), [=](sycl::id<1> i) {
-     grid_edges.values_buff[i] = 0;
-   }).wait();
+
+  boost::iterators::counting_iterator<int> start(0);
+  boost::iterators::counting_iterator<int> end(grid_edges.num_values);
+
+  std::for_each(std::execution::par_unseq, start, end,
+                [=](int i) { grid_edges.values_buff[i] = 0; });
+
   auto end2 = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double> elapsed_seconds2 = end2 - start2;
@@ -151,30 +138,26 @@ int main(int argc, char *argv[]) {
   cubes_cutter::Cutter cutter{};
 
   // Copy atoms to device
-  Atom<DataType> *atoms_device =
-      sycl::malloc_device<Atom<DataType>>(atoms_vector.size(), q);
-
-  q.memcpy(atoms_device, atoms_vector.data(),
-           sizeof(Atom<DataType>) * atoms_vector.size())
-      .wait();
+  Atom<DataType> *atoms_device = atoms_vector.data();
 
   // // TD<decltype(grid_edges)> grid_edges_t;
 
-  auto start = std::chrono::high_resolution_clock::now();
+  using ci = boost::iterators::counting_iterator<int>;
+
+  auto start_time = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < 100; i++)
-    q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> i) {
-      Atom<DataType> atom = atoms_device[i];
-      auto arg_tuple =
-          std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
-                                grid_step, grid_edges, inside_outside);
-      cubes_cutter::cutting_cubes(cutter, arg_tuple);
-    });
+    std::for_each(
+        std::execution::par_unseq, ci(0), ci(atoms_vector.size()), [=](int i) {
+          Atom<DataType> atom = atoms_device[i];
+          auto arg_tuple =
+              std::forward_as_tuple(static_cast<Sphere<DataType, Dim> &>(atom),
+                                    grid_step, grid_edges, inside_outside);
+          cubes_cutter::cutting_cubes(cutter, arg_tuple);
+        });
 
-  q.wait();
+  auto end_time = std::chrono::high_resolution_clock::now();
 
-  auto end = std::chrono::high_resolution_clock::now();
-
-  std::chrono::duration<double> elapsed_seconds = end - start;
+  std::chrono::duration<double> elapsed_seconds = end_time - start_time;
 
   std::cout << "Elapsed time: " << elapsed_seconds.count() << "s\n";
 

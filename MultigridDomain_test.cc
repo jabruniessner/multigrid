@@ -6,16 +6,7 @@ using namespace multigrid_domain;
 
 int main() {
 
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else
-  sycl::gpu_selector selector;
-#endif
-
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
-  Multigrid_domain<2, 4, 4u, 4u> mult_domain(q);
+  Multigrid_domain<2, 4u, 4u, 4u> mult_domain{};
 
   //	auto& dom0 = mult_domain.get_domain<0u>();
   //	auto& dom1 = mult_domain.get_domain<1u>();

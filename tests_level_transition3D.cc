@@ -6,16 +6,8 @@ int main() {
   using namespace level_transition;
   using OffsetType = std::array<int, 3>;
 
-#ifdef DEBUGMODE
-  sycl::cpu_selector selector;
-#else  // DEBUGMODE
-  sycl::gpu_selector selector;
-#endif // DEBUGMODE
-  sycl::queue q(selector,
-                sycl::property_list{sycl::property::queue::in_order{}});
-
-  Domain<3, 3u, 3u, 3u> domain_dest(Paddings::PERIODIC, q, 1);
-  Domain<3, 7u, 7u, 7u> domain_src(Paddings::PERIODIC, q, 1);
+  Domain<3, 3u, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);
+  Domain<3, 7u, 7u, 7u> domain_src(Paddings::PERIODIC, 1);
 
   std::array<DataType, 27> values;
   std::fill(values.begin(), values.end(), 1 / (27.));
@@ -30,8 +22,8 @@ int main() {
   for (Position1D i = 1; i < 7 + 1; i++) {
     for (Position1D j = 1; j < 7 + 1; j++) {
       for (Position1D k = 1; k < 7 + 1; k++) {
-        domain_src.set_value(((i + j + k) % 2 == 0) * 1, k, j, i);
-        std::cout << domain_src.get_value(k, j, i) << " ";
+        domain_src(k, j, i) = ((i + j + k) % 2 == 0) * 1;
+        std::cout << domain_src(k, j, i) << " ";
       }
       std::cout << std::endl;
     }
@@ -45,7 +37,7 @@ int main() {
   for (Position1D i = 1; i < 3 + 1; i++) {
     for (Position1D j = 1; j < 3 + 1; j++) {
       for (Position1D k = 1; k < 3 + 1; k++) {
-        std::cout << domain_dest.get_value(k, j, i) << " ";
+        std::cout << domain_dest(k, j, i) << " ";
       }
       std::cout << std::endl;
     }
@@ -58,7 +50,7 @@ int main() {
   for (Position1D i = 0; i < 7 + 2; i++) {
     for (Position1D j = 0; j < 7 + 2; j++) {
       for (Position1D k = 0; k < 7 + 2; k++)
-        std::cout << domain_src.get_value(k, j, i) << " ";
+        std::cout << domain_src(k, j, i) << " ";
       std::cout << std::endl;
     }
     std::cout << std::endl;

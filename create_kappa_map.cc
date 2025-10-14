@@ -2,11 +2,11 @@
 #include "Domain.h"
 #include "dot_finder.h"
 #include "fileio.h"
-#include "hipSYCL/sycl/queue.hpp"
-#include "hipSYCL/sycl/usm.hpp"
+#include <algorithm>
+#include <boost/iterator/counting_iterator.hpp>
+#include <execution>
 #include <fstream>
 #include <iostream>
-#include <sycl/sycl.hpp>
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
@@ -17,10 +17,6 @@ int main(int argc, char *argv[]) {
   }
 
   constexpr std::size_t length = 95;
-
-  sycl::cpu_selector selector;
-  sycl::queue q{selector,
-                sycl::property_list{sycl::property::queue::in_order{}}};
 
   std::string pqr_file{argv[1]};
   std::ofstream dx_file{argv[2]};
@@ -44,25 +40,31 @@ int main(int argc, char *argv[]) {
     atoms_vector.push_back(atom);
   }
 
-  Atom<DataType> *atoms_device =
-      sycl::malloc_device<Atom<DataType>>(atoms.size(), q);
+  Atom<DataType> *atoms_device = atoms_vector.data();
 
-  q.memcpy(atoms_device, atoms_vector.data(),
-           atoms_vector.size() * sizeof(Atom<DataType>));
+  domain::Domain<3, length, length, length> domain(Paddings::PERIODIC, 1);
 
-  domain::Domain<3, length, length, length> domain(Paddings::PERIODIC, q, 1);
-  q.wait();
+  boost::iterators::counting_iterator<int> start(0);
 
-  q.parallel_for(sycl::range<1>(atoms.size()), [=](sycl::id<1> I) {
-     find_dots_in_sphere(atoms_device[I], domain, static_cast<DataType>(1.));
-   }).wait();
+  {
+    boost::iterators::counting_iterator<int> end(atoms.size());
 
-  q.parallel_for(sycl::range<3>(length + 2, length + 2, length + 2),
-                 [=](sycl::id<3> I) {
-                   domain(I[0], I[1], I[2]) =
-                       (domain(I[0], I[1], I[2]) < .9) * 1.f;
-                 })
-      .wait();
+    std::for_each(std::execution::par_unseq, start, end, [=](int I) {
+      find_dots_in_sphere(atoms_device[I], domain, static_cast<DataType>(1.));
+    });
+  }
+
+  {
+    boost::iterators::counting_iterator<int> end((length + 2) * (length + 2) *
+                                                 (length + 2));
+
+    std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+      auto I =
+          domain::flat_to_multi_index<length + 2, length + 2, length + 2>(idx);
+
+      domain(I[0], I[1], I[2]) = (domain(I[0], I[1], I[2]) < .9) * 1.f;
+    });
+  }
 
   domain.print_dx_to_stream(dx_file, a[0], a[1], a[2], 96.f);
 }

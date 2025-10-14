@@ -30,14 +30,14 @@ struct Multigrid_domain
   DataType get_value(Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
     static_assert(sizeof...(Position1D) == Dim);
-    return Multigrid_domain<Dim, lev, base_length...>::domain.get_value(i...);
+    return Multigrid_domain<Dim, lev, base_length...>::domain(i...);
   }
 
   template <std::size_t lev = nlev, typename... Position1D>
   void set_value(DataType val, Position1D... i) {
     static_assert(lev <= nlev, "level too large!");
     static_assert(sizeof...(Position1D) == Dim);
-    Multigrid_domain<Dim, lev, base_length...>::domain.set_value(val, i...);
+    Multigrid_domain<Dim, lev, base_length...>::domain(i...) = val;
   }
 
   template <std::size_t lev = nlev>
