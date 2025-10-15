@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
+#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include <algorithm>
@@ -92,8 +93,8 @@ DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
 
-  DataType result = std::transform_reduce(
-      std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType result =
+      thrust::transform_reduce(start, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<(strides_all + 1)...>(idx);
         return f(sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
                  sol_domain(I[0], I[1] + 1, I[2]),
@@ -144,8 +145,8 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
 
-  DataType result = std::transform_reduce(
-      std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
+  DataType result =
+      thrust::transform_reduce(start, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<(strides_all + 1)...>(idx);
         return f_grad(
             sol_domain(I[0], I[1], I[2]), sol_domain(I[0], I[1], I[2] + 1),
@@ -166,10 +167,15 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
 int main(int argc, char *argv[]) {
   using OffsetType = std::array<int, 3>;
 
+  int i{};
+  pcudaGetBackend(&i);
+  std::cout << "The currently active backend is: " << i << std::endl;
+
   if (argc < 2) {
     std::cout << "Usage: ./this_program num_iters" << std::endl;
     return 0;
   }
+
   int num_iter = std::stoi(argv[1]);
 
   constexpr std::size_t nlev = 5u;
@@ -213,7 +219,7 @@ int main(int argc, char *argv[]) {
   boost::iterators::counting_iterator<int> start(0);
   boost::iterators::counting_iterator<int> end(u_domain.num_values);
 
-  std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+  thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<std::get<0>(length) + 2,
                                          std::get<1>(length) + 2,
                                          std::get<2>(length) + 2>(idx);
@@ -244,7 +250,7 @@ int main(int argc, char *argv[]) {
                                                  (std::get<2>(length) + 2));
 
     auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
-    std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    thrust::for_each(start, end, [=](int idx) {
       auto I = domain::flat_to_multi_index<(std::get<1>(length) + 2),
                                            (std::get<2>(length) + 2)>(idx);
       boundary_domain(I[0], I[1], 0) =
