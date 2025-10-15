@@ -2,14 +2,17 @@
 #include "hipSYCL/pcuda/pcuda.hpp"
 #include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include <execution>
+#include <iostream>
 
 #ifndef THRUST_ADJUST_HPP
 #define THRUST_ADJUST_HPP
 
 namespace thrust {
 
+constexpr std::size_t gbs = 128;
+
 template <typename RandomAccIt, typename UnaryFunction,
-          std::size_t BlockSize = 256>
+          std::size_t BlockSize = gbs>
 void for_each(RandomAccIt first, RandomAccIt last, UnaryFunction f) {
 
   const std::size_t length = std::distance(first, last);
@@ -71,23 +74,25 @@ T atomicBinaryAdd(T *address, T2 val, BinaryOperation op) {
 }
 
 template <typename RandomAccIt, typename BinaryFunction, typename UnaryFunction,
-          typename T, std::size_t BlockSize = 256>
+          typename T, std::size_t BlockSize = gbs>
 
 T transform_reduce(RandomAccIt first, RandomAccIt last, T init,
                    BinaryFunction binary_op, UnaryFunction unary_op) {
-  const std::size_t length = std::distance(first, last);
+  std::size_t length = std::distance(first, last);
   static_assert(0 < BlockSize && BlockSize <= 1024,
                 "BlockSize must be in (0, 1024]");
 
   if (length == 0)
     return init;
 
-  T *result;
-
-  pcudaMallocManaged(&result, sizeof(T));
-
-  *result = init;
   int num_blocks = (length + BlockSize - 1) / BlockSize;
+
+  // std::cout << "Hello World from inside transform_reduce" << std::endl;
+
+  T *results;
+  pcudaMallocManaged(&results, (1 + num_blocks) * sizeof(T));
+
+  results[0] = init;
 
   pcudaParallelFor(num_blocks, BlockSize, [=]() {
     __shared__ T shared_data[BlockSize];
@@ -113,37 +118,64 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, T init,
     }
 
     if (tid == 0) {
-      atomicBinaryAdd(result, shared_data[0], binary_op);
+      results[blockIdx.x] = shared_data[0];
     };
   });
 
+  do {
+    length = num_blocks;
+    num_blocks = (length + BlockSize - 1) / BlockSize;
+
+    pcudaParallelFor(num_blocks, BlockSize, [=]() {
+      __shared__ T shared_data[BlockSize];
+      const int tid = threadIdx.x;
+      const int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+      shared_data[tid] = gid < length ? results[gid] : 0;
+      __syncthreads();
+
+      for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+          shared_data[tid] = binary_op(shared_data[tid], shared_data[tid + s]);
+        }
+        __syncthreads();
+      }
+
+      if (tid == 0) {
+        results[blockIdx.x] = shared_data[0];
+      };
+    });
+
+  } while (num_blocks > 1);
+
   pcudaDeviceSynchronize();
 
-  auto return_result = *result;
-  pcudaFree(result);
+  auto return_result = results[0];
+  pcudaFree(results);
 
   return return_result;
 }
 
 template <typename RandomAccIt, typename RandomAccIt2, typename BinaryFunction,
-          typename BinaryFunction2, typename T, std::size_t BlockSize = 256>
+          typename BinaryFunction2, typename T, std::size_t BlockSize = gbs>
 
 T transform_reduce(RandomAccIt first, RandomAccIt last, RandomAccIt2 first2,
                    T init, BinaryFunction binary_op,
                    BinaryFunction2 binary_op2) {
-  const std::size_t length = std::distance(first, last);
+  std::size_t length = std::distance(first, last);
   static_assert(0 < BlockSize && BlockSize <= 1024,
                 "BlockSize must be in (0, 1024]");
 
   if (length == 0)
     return init;
 
-  T *result;
+  T *results;
 
-  pcudaMallocManaged(&result, sizeof(T));
-
-  *result = init;
   int num_blocks = (length + BlockSize - 1) / BlockSize;
+
+  pcudaMallocManaged(&results, (num_blocks + 1) * sizeof(T));
+
+  results[0] = init;
 
   pcudaParallelFor(num_blocks, BlockSize, [=]() {
     __shared__ T shared_data[BlockSize];
@@ -170,17 +202,46 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, RandomAccIt2 first2,
     }
 
     if (tid == 0) {
-      atomicBinaryAdd(result, shared_data[0], binary_op);
+      results[blockIdx.x] = shared_data[0];
     };
   });
 
+  do {
+    length = num_blocks;
+    num_blocks = (length + BlockSize - 1) / BlockSize;
+
+    pcudaParallelFor(num_blocks, BlockSize, [=]() {
+      __shared__ T shared_data[BlockSize];
+      const int tid = threadIdx.x;
+      const int gid = blockIdx.x * blockDim.x + threadIdx.x;
+
+      shared_data[tid] = gid < length ? results[gid] : 0;
+      __syncthreads();
+
+      for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+          shared_data[tid] = binary_op(shared_data[tid], shared_data[tid + s]);
+        }
+        __syncthreads();
+      }
+
+      if (tid == 0) {
+        results[blockIdx.x] = shared_data[0];
+      };
+    });
+
+  } while (num_blocks > 1);
+
   pcudaDeviceSynchronize();
 
-  return *result;
+  auto return_result = results[0];
+  pcudaFree(results);
+
+  return return_result;
 }
 
 template <typename RandomAccIt, typename RandomAccIt2, typename UnaryFunction,
-          std::size_t BlockSize = 256>
+          std::size_t BlockSize = gbs>
 UnaryFunction transform(RandomAccIt first, RandomAccIt last,
                         RandomAccIt2 first2, UnaryFunction unary_op) {
 
@@ -210,7 +271,7 @@ UnaryFunction transform(RandomAccIt first, RandomAccIt last,
 }
 
 template <typename RandomAccIt, typename RandomAccIt2, typename RandomAccIt3,
-          typename BinaryFunction, std::size_t BlockSize = 256>
+          typename BinaryFunction, std::size_t BlockSize = gbs>
 BinaryFunction transform(RandomAccIt first, RandomAccIt last,
                          RandomAccIt2 first2, RandomAccIt3 out,
                          BinaryFunction binary_op) {
@@ -242,7 +303,7 @@ BinaryFunction transform(RandomAccIt first, RandomAccIt last,
   return binary_op;
 }
 
-template <typename RandomAccIt, typename T, std::size_t BlockSize = 256>
+template <typename RandomAccIt, typename T, std::size_t BlockSize = gbs>
 void fill(RandomAccIt first, RandomAccIt last, T value) {
 
   const std::size_t length = std::distance(first, last);

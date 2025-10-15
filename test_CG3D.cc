@@ -65,15 +65,15 @@ int main() {
 
   std::cout << "The output Matrix is given by: " << std::endl;
 
-  //  for (int k = 0; k < 5; k++) {
-  //    for (int j = 0; j < 5; j++) {
-  //      for (int i = 0; i < 5; i++) {
-  //        std::cout << init_guess(i, j, k) << " ";
-  //      }
-  //      std::cout << std::endl;
-  //    }
-  //    std::cout << std::endl;
-  //  }
+  for (int k = 0; k < 5; k++) {
+    for (int j = 0; j < 5; j++) {
+      for (int i = 0; i < 5; i++) {
+        std::cout << init_guess(i, j, k) << " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 
   std::cout << "The defect is given by: " << std::endl;
 }
