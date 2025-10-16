@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     mg_solver.initialize_boundary(atoms_vector);
     mg_solver.initialize_epsilons(atoms_vector);
     mg_solver.set_up_rhs(atoms_vector);
-    mg_solver.buildmultilevelops<std::true_type>();
+    mg_solver.buildmultilevelops<std::false_type>();
 
     // std::cout << "The initial residual is:" << mg_solver.compute_residual()
     //           << std::endl;
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     DataType previous_res_1 = initial_res_1;
 
     for (int i = 0; i < num_iters; i++) {
-      mg_solver.v_cycle<std::true_type>();
+      mg_solver.v_cycle<std::false_type>();
 
       current_res_1 = mg_solver.compute_residual_1();
 
