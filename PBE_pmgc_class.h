@@ -1002,8 +1002,27 @@ public:
       compute_defect_sol_2_sol2<level>();
       restrict_domain_sol2_2_rhs<level - 1>();
       v_cycle<sequential_smooth, level - 1>();
+
+      // Here we are computing the Hackbush reusken parameter:
+      {
+        DataType omega = multigrid_domain::get_ideal_lambda(
+            sol.template get_domain<level - 1>(),
+            rhs_domain.template get_domain<level - 1>(), get_map<level - 1>());
+
+        std::cout << "The value for lambda1 is: " << omega << std::endl;
+      }
+
       prolong_sol_2_sol2<level>();
-      add_domain_sol_sol_sol2<level>();
+
+      {
+        DataType omega = multigrid_domain::get_ideal_omega(
+            sol.template get_domain<level>(), sol2.template get_domain<level>(),
+            rhs_domain.template get_domain<level>(), get_map<level>());
+
+        std::cout << "The value for lambda2 is: " << omega << std::endl;
+      }
+
+      add_and_multiply_domain_sol_sol_sol2<level>((DataType)1);
       smooth_domain_sol<sequential_smooth, level>(2, 1);
     }
   }

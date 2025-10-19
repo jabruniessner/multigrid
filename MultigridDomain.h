@@ -326,9 +326,9 @@ DataType get_ideal_omega(Domain<Dim, strides_all...> x,
 
 template <Dimension Dim, typename Functype, Length... strides_all,
           std::size_t... dirs>
-DataType get_ideal_lamda(Domain<Dim, strides_all...> x,
-                         Domain<Dim, strides_all...> r, Functype map,
-                         std::index_sequence<dirs...>) {
+DataType get_ideal_lambda(Domain<Dim, strides_all...> x,
+                          Domain<Dim, strides_all...> r, Functype map,
+                          std::index_sequence<dirs...>) {
 
   sycl::queue &q = x.q;
 
