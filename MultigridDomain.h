@@ -324,6 +324,40 @@ DataType get_ideal_omega(Domain<Dim, strides_all...> x,
   return get_ideal_omega(x, r, b, map, std::make_index_sequence<Dim>{});
 }
 
+template <Dimension Dim, typename Functype, Length... strides_all,
+          std::size_t... dirs>
+DataType get_ideal_lamda(Domain<Dim, strides_all...> x,
+                         Domain<Dim, strides_all...> r, Functype map,
+                         std::index_sequence<dirs...>) {
+
+  sycl::queue &q = x.q;
+
+  DataType *upper_lower =
+      sycl::malloc_device<DataType>(sizeof(DataType) * 2, q);
+
+  q.parallel_for(sycl::range{strides_all...},
+                 sycl::reduction(upper_lower, sycl::plus<>()),
+                 sycl::reduction(upper_lower + 1, sycl::plus<>()),
+                 [=](sycl::id<Dim> I, auto &acc_upper, auto &acc_lower) {
+                   ((I[dirs] += x.padding_width), ...);
+                   acc_upper += r(I[dirs]...) * x(I[dirs]...);
+
+                   acc_lower += x(I[dirs]...) * map(x, I);
+                 })
+      .wait();
+
+  std::array<DataType, 2> upper_lower_host;
+  q.memcpy(upper_lower_host.data(), upper_lower, sizeof(DataType) * 2).wait();
+
+  return upper_lower_host[0] / upper_lower_host[1];
+}
+
+template <Dimension Dim, typename FuncType, Length... strides_all>
+DataType get_ideal_lambda(Domain<Dim, strides_all...> x,
+                          Domain<Dim, strides_all...> r, FuncType map) {
+  return get_ideal_lambda(x, r, map, std::make_index_sequence<Dim>{});
+}
+
 } // namespace multigrid_domain
 
 #endif

@@ -1,11 +1,13 @@
 #include "PBE_pmgc_class.h"
 #include "fileio.h"
+#include <chrono>
 #include <cstdlib>
+#include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 2;
-constexpr std::size_t nlev = 6;
-constexpr DataType box_length = 16;
+constexpr std::size_t base_length = 22;
+constexpr std::size_t nlev = 4;
+constexpr DataType box_length = 96;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -76,10 +78,22 @@ int main(int argc, char *argv[]) {
     using d_type = std::remove_reference_t<
         decltype(mg_solver.sol.template get_domain<nlev>())>;
 
-    mg_solver.initialize_boundary(atoms_vector);
-    mg_solver.initialize_epsilons(atoms_vector);
-    mg_solver.set_up_rhs(atoms_vector);
-    mg_solver.buildmultilevelops<std::false_type>();
+    {
+
+      auto start = std::chrono::high_resolution_clock::now();
+
+      mg_solver.initialize_boundary(atoms_vector);
+      mg_solver.initialize_epsilons(atoms_vector);
+      mg_solver.set_up_rhs(atoms_vector);
+      mg_solver.buildmultilevelops<std::false_type>();
+
+      auto end = std::chrono::high_resolution_clock::now();
+
+      std::chrono::duration<double> duration = end - start;
+
+      std::cout << "The required time for the problem setup was: "
+                << duration.count() << std::endl;
+    }
 
     // std::cout << "The initial residual is:" << mg_solver.compute_residual()
     //           << std::endl;
@@ -151,6 +165,8 @@ int main(int argc, char *argv[]) {
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     for (int i = 0; i < num_iters; i++) {
       mg_solver.v_cycle<std::false_type>();
 
@@ -165,24 +181,21 @@ int main(int argc, char *argv[]) {
       previous_res_1 = current_res_1;
     }
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> duration = end_time - start_time;
+
+    std::cout << "The required time for the solution was: " << duration.count()
+              << std::endl;
+
     // mg_solver.sol.get_domain().print_domain();
+
+    std::ofstream out_file{"output_potential.dx"};
+
+    //    mg_solver.sol.get_domain().print_dx_to_stream(out_file, x_min, y_min,
+    //    z_min,
+    //                                                  box_length);
   }
-
-  //  TD<decltype(mg_solver.epsilon_oNE_map)> td;
-  //  TD2<nlev> td2;
-
-  // mg_solver.rhs_domain.get_domain().print_domain();
-
-  //  std::cout << "oC epsilon" << std::endl;
-  //  mg_solver.epsilon_oC_map.get_domain().print_domain();
-  //  std::cout << "oE epsilon" << std::endl;
-  //  mg_solver.epsilon_oE_map.get_domain().print_domain();
-  //  std::cout << "oN epsilon" << std::endl;
-  //  mg_solver.epsilon_oN_map.get_domain().print_domain();
-  //  std::cout << "uC epsilon" << std::endl;
-  //  mg_solver.epsilon_uC_map.get_domain().print_domain();
-
-  // mg_solver.sol.get_domain().print_domain();
 
   return 0;
 }

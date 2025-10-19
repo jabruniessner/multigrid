@@ -149,8 +149,10 @@ public:
 
     auto num_atoms = atom_list.size();
 
-    d_type_wrapper<nlev> boundary_domain_wrapper(Paddings::PERIODIC, q, 1);
-    d_type<nlev> boundary_domain = boundary_domain_wrapper;
+    // d_type_wrapper<nlev> boundary_domain_wrapper(Paddings::PERIODIC, q, 1);
+    // d_type<nlev> boundary_domain = boundary_domain_wrapper;
+
+    auto &boundary_domain = sol.get_domain();
 
     q.memcpy(atoms_device, atom_list.data(),
              atom_list.size() * sizeof(Atom<DataType>));
@@ -175,17 +177,17 @@ public:
          })
         .wait();
 
-    //  sycl::free(atoms_device, q);
+    //  //  sycl::free(atoms_device, q);
 
-    convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
-                              this->get_map());
+    //  convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
+    //                            this->get_map());
 
-    // Inverting the sign for values inside the domain
-    d_type<nlev> rhs = rhs_domain.get_domain();
+    //  // Inverting the sign for values inside the domain
+    //  d_type<nlev> rhs = rhs_domain.get_domain();
 
-    q.parallel_for(sycl::range<1>{rhs.num_values}, [=](sycl::id<1> I) {
-      rhs.values_buff[I] = -rhs.values_buff[I];
-    });
+    //  q.parallel_for(sycl::range<1>{rhs.num_values}, [=](sycl::id<1> I) {
+    //    rhs.values_buff[I] = -rhs.values_buff[I];
+    //  });
 
     q.wait();
   }
@@ -656,6 +658,41 @@ public:
                 sol.template get_domain<level>());
   }
 
+  void add_and_multiply_domains(auto result, auto a, auto b, DataType fac) {
+    using result_domain_t = decltype(result);
+    using a_t = decltype(a);
+    using b_t = decltype(b);
+
+    constexpr std::size_t result_level =
+        utils::level_from_length(std::get<0>(result_domain_t::length),
+                                 std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t a_level = utils::level_from_length(
+        std::get<0>(a_t::length), std::get<0>(d_type<nlev>::length), nlev);
+
+    constexpr std::size_t b_level = utils::level_from_length(
+        std::get<0>(b_t::length), std::get<0>(d_type<nlev>::length), nlev);
+
+    static_assert(a_level == b_level && result_level == a_level,
+                  "All domains do are not on the same level");
+
+    domain::add_and_multiply_domains(result, a, b, fac);
+  }
+
+  template <std::size_t level = nlev>
+  void add_and_multiply_domain_sol_sol_sol2(DataType fac) {
+    add_and_multiply_domains(sol.template get_domain<level>(),
+                             sol2.template get_domain<level>(),
+                             sol.template get_domain<level>(), fac);
+  }
+
+  template <std::size_t level = nlev>
+  void add_and_multiply_domain_sol2_sol_sol2(DataType fac) {
+    add_and_multiply_domains(sol2.template get_domain<level>(),
+                             sol2.template get_domain<level>(),
+                             sol.template get_domain<level>(), fac);
+  }
+
   template <std::size_t level = nlev> DataType compute_residual_2() {
     return convolution::compute_residual_map(
         sol.template get_domain<level>(),
@@ -959,7 +996,7 @@ public:
             std::size_t level = nlev>
   void v_cycle() {
     if constexpr (level == 1) {
-      solve_by_cg<level>(Float<1e-8>{});
+      solve_by_cg<level>(Float<(DataType)1e-8>{});
     } else {
       smooth_domain_sol<sequential_smooth, level>(2, 0, level != nlev);
       compute_defect_sol_2_sol2<level>();
