@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
-set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
 
 set(CMAKE_CXX_FLAGS "--acpp-pcuda")

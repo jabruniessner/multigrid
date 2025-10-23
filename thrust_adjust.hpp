@@ -9,7 +9,7 @@
 
 namespace thrust {
 
-constexpr std::size_t gbs = 128;
+constexpr std::size_t gbs = 256;
 
 template <typename RandomAccIt, typename UnaryFunction,
           std::size_t BlockSize = gbs>
@@ -75,7 +75,6 @@ T atomicBinaryAdd(T *address, T2 val, BinaryOperation op) {
 
 template <typename RandomAccIt, typename BinaryFunction, typename UnaryFunction,
           typename T, std::size_t BlockSize = gbs>
-
 T transform_reduce(RandomAccIt first, RandomAccIt last, T init,
                    BinaryFunction binary_op, UnaryFunction unary_op) {
   std::size_t length = std::distance(first, last);
