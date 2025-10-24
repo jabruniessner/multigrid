@@ -35,7 +35,7 @@ void for_each(RandomAccIt first, RandomAccIt last, UnaryFunction f) {
     }
   });
 
-  pcudaDeviceSynchronize();
+  // pcudaDeviceSynchronize();
 }
 
 template <Arithmetic T, typename T2, typename BinaryOperation>

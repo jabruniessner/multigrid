@@ -580,7 +580,8 @@ struct V_Cycle_base {
           //  DataType const residual = compute_residual(
           //      rhs_domain.template get_domain<nlev>(),
           //      current.template get_domain<nlev>(),
-          //      next.template get_domain<nlev>(), diff_operator.get_values(),
+          //      next.template get_domain<nlev>(),
+          // diff_operator.get_values(),
           //      diff_operator.get_offsets());
 
           DataType *residual;
@@ -647,7 +648,8 @@ struct V_Cycle_base {
         //    std::ofstream outfile2("After_subtract_next.dx");
         //    next.template
         //    get_domain<iter_level>().print_dx_to_stream(outfile2, 0,
-        //                                                              0, 0,
+        //                                                              0,
+        // 0,
         //                                                              1);
         //  }
         PROFILE_START(restriction)
@@ -658,20 +660,20 @@ struct V_Cycle_base {
             coarsening_operator.template get_offsets<iter_level>());
         PROFILE_END(restriction)
 
-        //  next.template get_domain<iter_level>().q.wait();
+        //  //  next.template get_domain<iter_level>().q.wait();
 
-        //  std::cout << "After the coarsening: " << std::endl;
-        //  rhs_domain.template get_domain<iter_level - 1>().print_domain();
+        //  //  std::cout << "After the coarsening: " << std::endl;
+        //  //  rhs_domain.template get_domain<iter_level - 1>().print_domain();
 
         iteration<iter_level - 1>(
             next, current, rhs_domain, Smooth_operator, Diff_operator,
             coarsening_operator, sqrt2 * grid_step, omega, num_iters_,
             smoother_iters_pre, smoother_iters_post, true);
 
-        //  next.template get_domain<nlev>().q.wait();
+        //  //  next.template get_domain<nlev>().q.wait();
 
-        //  std::cout << "After the coarse grid solve: " << std::endl;
-        //  next.template get_domain<iter_level - 1>().print_domain();
+        //  //  std::cout << "After the coarse grid solve: " << std::endl;
+        //  //  next.template get_domain<iter_level - 1>().print_domain();
 
         PROFILE_START(refinement)
         level_transition::refinement(
@@ -679,79 +681,86 @@ struct V_Cycle_base {
             next.template get_domain<iter_level - 1>());
 
         //  if constexpr (iter_level == nlev) {
-        //    std::cout << "The next after the refinement is: " << std::endl;
+        //    std::cout << "The next after the refinement is: " <<
+        // std::endl;
         //    next.get_domain().print_domain();
-        //    std::cout << "The current after the refinement is: " << std::endl;
+        //    std::cout << "The current after the refinement is: " <<
+        // std::endl;
         //    current.get_domain().print_domain();
         //  }
 
-        //  if constexpr (iter_level == nlev) {
-        //    std::ofstream outfile("before_domain_adding_next.dx");
-        //    next.template get_domain<iter_level>().print_dx_to_stream(outfile,
-        //    0,
-        //                                                              0, 0,
-        //                                                              1);
+        //  //  if constexpr (iter_level == nlev) {
+        //  //    std::ofstream outfile("before_domain_adding_next.dx");
+        //  //    next.template
+        //  get_domain<iter_level>().print_dx_to_stream(outfile,
+        //  //    0,
+        //  //                                                              0,
+        //  0,
+        //  //                                                              1);
 
-        //    std::ofstream outfile2("before_domain_adding_current.dx");
-        //    current.template get_domain<iter_level>().print_dx_to_stream(
-        //        outfile2, 0, 0, 0, 1);
-        //  }
+        //  //    std::ofstream outfile2("before_domain_adding_current.dx");
+        //  //    current.template get_domain<iter_level>().print_dx_to_stream(
+        //  //        outfile2, 0, 0, 0, 1);
+        //  //  }
 
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
         PROFILE_END(refinement)
 
-        //  if constexpr (iter_level == nlev) {
-        //    std::cout << "The next after the add_domains is: " << std::endl;
-        //    next.get_domain().print_domain();
-        //    std::cout << "The current after the add_domains is: " <<
-        //    std::endl; current.get_domain().print_domain();
-        //  }
-
-        //  if constexpr (iter_level == nlev) {
-        //    std::ofstream outfile("after_domain_adding_next.dx");
-        //    next.template get_domain<iter_level>().print_dx_to_stream(outfile,
-        //    0,
-        //                                                              0, 0,
-        //                                                              1);
-
-        //    std::ofstream outfile2("after_domain_adding_current.dx");
-        //    current.template get_domain<iter_level>().print_dx_to_stream(
-        //        outfile2, 0, 0, 0, 1);
-        //  }
-        //  next.template
-        //  get_domain<nlev>().q.wait();
-
-        //  std::cout <<
-        //  "After refine and
-        //  add: " <<
+        //  //  if constexpr (iter_level == nlev) {
+        //  //    std::cout << "The next after the add_domains is: " <<
         //  std::endl;
-        //  next.template
-        //  get_domain<iter_level>().print_domain();
+        //  //    next.get_domain().print_domain();
+        //  //    std::cout << "The current after the add_domains is: " <<
+        //  //    std::endl; current.get_domain().print_domain();
+        //  //  }
+
+        //  //  if constexpr (iter_level == nlev) {
+        //  //    std::ofstream outfile("after_domain_adding_next.dx");
+        //  //    next.template
+        //  get_domain<iter_level>().print_dx_to_stream(outfile,
+        //  //    0,
+        //  //                                                              0,
+        //  0,
+        //  //                                                              1);
+
+        //  //    std::ofstream outfile2("after_domain_adding_current.dx");
+        //  //    current.template get_domain<iter_level>().print_dx_to_stream(
+        //  //        outfile2, 0, 0, 0, 1);
+        //  //  }
+        //  //  next.template
+        //  //  get_domain<nlev>().q.wait();
+
+        //  //  std::cout <<
+        //  //  "After refine and
+        //  //  add: " <<
+        //  //  std::endl;
+        //  //  next.template
+        //  //  get_domain<iter_level>().print_domain();
         PROFILE_START(post_smoothing)
         post_smoother(Integer<iter_level>{}, smoother_iters_post, next, next,
                       rhs_domain, grid_step, omega, false);
         PROFILE_END(post_smoothing)
 
-        //  if constexpr (iter_level == nlev) {
-        //    std::cout << "The next after the post smoothing is: " <<
-        //    std::endl; next.get_domain().print_domain(); std::cout << "The
-        //    current after the post smoothing is: " << std::endl;
-        //    current.get_domain().print_domain();
-        //  }
+        //  //  if constexpr (iter_level == nlev) {
+        //  //    std::cout << "The next after the post smoothing is: " <<
+        //  //    std::endl; next.get_domain().print_domain(); std::cout << "The
+        //  //    current after the post smoothing is: " << std::endl;
+        //  //    current.get_domain().print_domain();
+        //  //  }
 
-        //  next.template
-        //  get_domain<iter_level>().q.wait();
+        //  //  next.template
+        //  //  get_domain<iter_level>().q.wait();
 
-        //  current.get_domain().print_domain();
-        //  std::cout <<
-        //  "After
-        //  post_smoothing
-        //  the current is: "
-        //  << std::endl;
-        //  current.template
-        //  get_domain<iter_level>().print_domain();
+        //  //  current.get_domain().print_domain();
+        //  //  std::cout <<
+        //  //  "After
+        //  //  post_smoothing
+        //  //  the current is: "
+        //  //  << std::endl;
+        //  //  current.template
+        //  //  get_domain<iter_level>().print_domain();
         PROFILE_END(overall_time)
       }
     }

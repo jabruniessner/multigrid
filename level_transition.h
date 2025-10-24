@@ -1,4 +1,4 @@
-#include "CG_Solver.h"
+#include "CG_solver_simplified.h"
 #include "Convolution.h"
 #include "utils.h"
 #include <algorithm>

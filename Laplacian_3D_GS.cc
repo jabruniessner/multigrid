@@ -1,3 +1,4 @@
+#include "CG_solver_simplified.h"
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
@@ -439,18 +440,6 @@ int main(int argc, char *argv[]) {
 
   for (int num = 0; num < num_iter; num++) {
 
-    DataType const deviation = compute_truth_deviation(
-        u_domain, lhs_domain1.get_domain(), helper, diff_operator.get_values(),
-        diff_operator.get_offsets());
-
-    DataType const deviation_grad = compute_truth_deviaton_gradient(
-        u_domain, lhs_domain1.get_domain(), helper, helper2,
-        diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
-
-    out_file_devation << "The deviation after " << num << " iterations is "
-                      << deviation << " The deviation_grad is "
-                      << deviation_grad << std::endl;
-
     // Computing the defect
     convolution::Subtract_Convolve(
         defect_domain.get_domain(), lhs_domain1.get_domain(),
@@ -465,18 +454,7 @@ int main(int argc, char *argv[]) {
                 lhs_domain1.get_domain());
   }
 
-  auto &sol_domain = current->get_domain();
-
-  // std::cout << "The sol domain is given by: " << std::endl;
-  // sol_domain.print_domain();
-
-  DataType result = compute_deviation(lhs_domain1.get_domain(), h);
-
-  std::cout << "The deviation is given by " << result << std::endl;
-
-  DataType e_norm = compute_energy_norm(lhs_domain1.get_domain(), h);
-
-  std::cout << "The gradient is given by " << e_norm << std::endl;
+  pcudaDeviceSynchronize();
 
   auto end_time = std::chrono::high_resolution_clock::now();
 

@@ -43,6 +43,7 @@ extern Values values;
 #ifdef PROFILING
 #define PROFILE_END(type)                                                      \
   if (profiling::stack_depth_counter == 1) {                                   \
+    pcudaDeviceSynchronize();                                                  \
     auto end_##type = std::chrono::high_resolution_clock::now();               \
     std::chrono::duration<double> duration = end_##type - start_##type;        \
     profiling::values.type += duration.count();                                \
