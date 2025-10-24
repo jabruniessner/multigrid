@@ -1,5 +1,6 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
+#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include "scientific_quantities.h"
@@ -582,14 +583,18 @@ struct V_Cycle_base {
           //      next.template get_domain<nlev>(), diff_operator.get_values(),
           //      diff_operator.get_offsets());
 
-          DataType residual;
-          domain_compute_norm_squared(residual,
+          DataType *residual;
+          pcudaMallocManaged(&residual, sizeof(DataType));
+          domain_compute_norm_squared(*residual,
                                       rhs_domain.template get_domain<nlev>());
-          residual = std::sqrt(residual /
-                               rhs_domain.template get_domain<nlev>().num_dofs);
+          pcudaDeviceSynchronize();
+          DataType residual_new = std::sqrt(
+              *residual / rhs_domain.template get_domain<nlev>().num_dofs);
           std::cout << "The residual after " << j << " iterations is "
-                    << residual << std::endl;
+                    << residual_new << std::endl;
+
           PROFILE_END(residual_computation)
+          pcudaFree(residual);
         }
 
         //  std::cout << "The grid step: " << grid_step << std::endl;

@@ -1,3 +1,4 @@
+#include "cuda_reduce.hpp"
 #include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include "predefinitions.h"
 #include "thrust_adjust.hpp"
@@ -213,9 +214,18 @@ template <Dimension Dim, Length... strides_all>
 int domain_compute_norm_squared(DataType &result,
                                 Domain<Dim, strides_all...> &a) {
 
-  result = thrust::transform_reduce(
-      a.values_buff, a.values_buff + a.num_values, 0.0, std::plus<>(),
-      [](const DataType val) { return val * val; });
+  int num_required_threads = (a.num_dofs + reduction_kernel::seq_size - 1);
+
+  int num_blocks = (num_required_threads + reduction_kernel::gbs - 1) /
+                   reduction_kernel::gbs;
+
+  DataType *results;
+  pcudaMalloc(&results, sizeof(DataType) * num_blocks);
+  pcudaMemset(results, 0, sizeof(DataType) * num_blocks);
+
+  reduction_kernel::pcudaParallelTransformReduce(
+      a.num_values, &result, results, std::plus<>(),
+      [=](int i) { return a.values_buff[i] * a.values_buff[i]; });
 
   return 0;
 }
