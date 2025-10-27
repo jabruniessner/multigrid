@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   //  init_guess.print_domain();
 
   subtract_domains(init_guess, init_guess, sol);
+  pcudaDeviceSynchronize();
 
   std::cout << "The output Matrix is given by: " << std::endl;
   // init_guess.print_domain();

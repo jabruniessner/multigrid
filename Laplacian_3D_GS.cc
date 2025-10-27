@@ -446,6 +446,8 @@ int main(int argc, char *argv[]) {
         rhs_domain.get_domain(), diff_operator.get_values(),
         diff_operator.get_offsets());
 
+    pcudaDeviceSynchronize();
+
     v_cycle.iteration(*next, *current, defect_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, num_iters_level,
                       smoother_sequence_pre, smoother_sequence_post, true);
