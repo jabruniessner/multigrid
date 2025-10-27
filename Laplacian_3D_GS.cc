@@ -443,23 +443,25 @@ int main(int argc, char *argv[]) {
 
   for (int num = 0; num < num_iter; num++) {
 
-    DataType const deviation = compute_truth_deviation(
-        u_domain, lhs_domain1.get_domain(), helper, diff_operator.get_values(),
-        diff_operator.get_offsets());
+    //  DataType const deviation = compute_truth_deviation(
+    //      u_domain, lhs_domain1.get_domain(), helper,
+    //      diff_operator.get_values(), diff_operator.get_offsets());
 
-    DataType const deviation_grad = compute_truth_deviaton_gradient(
-        u_domain, lhs_domain1.get_domain(), helper, helper2,
-        diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
+    //  DataType const deviation_grad = compute_truth_deviaton_gradient(
+    //      u_domain, lhs_domain1.get_domain(), helper, helper2,
+    //      diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
 
-    out_file_devation << "The deviation after " << num << " iterations is "
-                      << deviation << " The deviation_grad is "
-                      << deviation_grad << std::endl;
+    //  out_file_devation << "The deviation after " << num << " iterations is "
+    //                    << deviation << " The deviation_grad is "
+    //                    << deviation_grad << std::endl;
 
     // Computing the defect
     convolution::Subtract_Convolve(
         defect_domain.get_domain(), lhs_domain1.get_domain(),
         rhs_domain.get_domain(), diff_operator.get_values(),
         diff_operator.get_offsets());
+
+    q.wait();
 
     v_cycle.iteration(*next, *current, defect_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, diff_operator,
@@ -479,18 +481,18 @@ int main(int argc, char *argv[]) {
 
   q.wait();
 
-  auto &sol_domain = current->get_domain();
-
-  // std::cout << "The sol domain is given by: " << std::endl;
-  // sol_domain.print_domain();
-
-  DataType result = compute_deviation(lhs_domain1.get_domain(), h);
-
-  std::cout << "The deviation is given by " << result << std::endl;
-
-  DataType e_norm = compute_energy_norm(lhs_domain1.get_domain(), h);
-
-  std::cout << "The gradient is given by " << e_norm << std::endl;
+  //  auto &sol_domain = current->get_domain();
+  //
+  //  // std::cout << "The sol domain is given by: " << std::endl;
+  //  // sol_domain.print_domain();
+  //
+  //  DataType result = compute_deviation(lhs_domain1.get_domain(), h);
+  //
+  //  std::cout << "The deviation is given by " << result << std::endl;
+  //
+  //  DataType e_norm = compute_energy_norm(lhs_domain1.get_domain(), h);
+  //
+  //  std::cout << "The gradient is given by " << e_norm << std::endl;
 
   //  std::stringstream true_file_name;
   //  true_file_name << "u_domain" << base_length << ".dx";

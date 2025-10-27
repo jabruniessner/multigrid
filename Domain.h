@@ -219,18 +219,27 @@ int domain_compute_norm_squared(DataType &result,
                                 Domain<Dim, strides_all...> &a,
                                 std::index_sequence<dims...>) {
   DataType *result_device =
-      sycl::malloc_device<DataType>(sizeof(DataType), a.q);
+      sycl::malloc_shared<DataType>(sizeof(DataType), a.q);
 
   a.q.memset(result_device, 0, sizeof(DataType));
 
-  a.q.parallel_for(sycl::range<Dim>(strides_all...),
-                   sycl::reduction(result_device, sycl::plus<>()),
-                   [=](sycl::id<Dim> I, auto &acc) {
-                     acc += a((I[dims] + a.padding_width)...) *
-                            a((I[dims] + a.padding_width)...);
-                   });
+  //  a.q.parallel_for(sycl::range<Dim>(strides_all...),
+  //                   sycl::reduction(result_device, sycl::plus<>()),
+  //                   [=](sycl::id<Dim> I, auto &acc) {
+  //                     acc += a((I[dims] + a.padding_width)...) *
+  //                            a((I[dims] + a.padding_width)...);
+  //                   })
+  //      .wait();
 
-  a.q.memcpy(&result, result_device, sizeof(DataType)).wait();
+  a.q.parallel_for(sycl::range<1>(a.num_values),
+                   sycl::reduction(result_device, sycl::plus<>()),
+                   [=](sycl::id<1> I, auto &acc) {
+                     acc += a.values_buff[I] * a.values_buff[I];
+                   })
+      .wait();
+
+  result = *result_device;
+  sycl::free(result_device, a.q);
 
   return 0;
 }
@@ -388,12 +397,9 @@ int add_domains(Domain<Dim, strides_all...> &dest,
   assert(dest.padding_width == a.padding_width &&
          a.padding_width == b.padding_width);
 
-  dest.q
-      .parallel_for(sycl::range<1>(a.num_values),
-                    [=](sycl::id<1> i) {
-                      dest.values_buff[i] = a.values_buff[i] + b.values_buff[i];
-                    })
-      .wait();
+  dest.q.parallel_for(sycl::range<1>(a.num_values), [=](sycl::id<1> i) {
+    dest.values_buff[i] = a.values_buff[i] + b.values_buff[i];
+  });
 
   return 0;
 }
