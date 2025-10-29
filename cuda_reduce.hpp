@@ -1,6 +1,5 @@
 #include "concepts.h"
-#include "hipSYCL/pcuda/pcuda.hpp"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
+#include "cudaParallelFor.h"
 #include <iostream>
 
 #ifndef CUDA_REDUCE
@@ -8,23 +7,23 @@
 
 namespace reduction_kernel {
 
-constexpr std::size_t gbs = 256;
+constexpr std::size_t gbs = 128;
 constexpr std::size_t seq_size = 8;
 
 template <typename UnaryOp, typename BinaryOp, typename T,
-          std::size_t BlockSize = gbs, std::size_t seq_size = 8>
-void pcudaParallelTransformReduce(std::size_t length, T *reduction, T *results,
-                                  BinaryOp binary_op, UnaryOp unary_op) {
+          std::size_t BlockSize = gbs, std::size_t seq_size = seq_size>
+void cudaParallelTransformReduce(std::size_t length, T *reduction, T *results,
+                                 BinaryOp binary_op, UnaryOp unary_op) {
 
   int num_threads = (length + seq_size - 1) / seq_size;
 
   int num_blocks = (num_threads + BlockSize - 1) / BlockSize;
 
-  // pcudaMalloc(&results, (1 + num_blocks) * sizeof(T));
+  // cudaMalloc(&results, (1 + num_blocks) * sizeof(T));
 
   // results[0] = *reduction;
 
-  pcudaParallelFor(num_blocks, BlockSize, [=]() {
+  cudaParallelFor(num_blocks, BlockSize, [=]() {
     __shared__ T shared_data[BlockSize];
     const int tid = threadIdx.x;
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -56,7 +55,7 @@ void pcudaParallelTransformReduce(std::size_t length, T *reduction, T *results,
     num_threads = (length + seq_size - 1) / seq_size;
     num_blocks = (num_threads + BlockSize - 1) / BlockSize;
 
-    pcudaParallelFor(num_blocks, BlockSize, [=]() {
+    cudaParallelFor(num_blocks, BlockSize, [=]() {
       __shared__ T shared_data[BlockSize];
       const int tid = threadIdx.x;
       const int gid = blockIdx.x * blockDim.x + threadIdx.x;
