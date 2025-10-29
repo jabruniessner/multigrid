@@ -1,6 +1,6 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
+#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include "scientific_quantities.h"
@@ -41,11 +41,15 @@ DataType compute_residual(Domain<Dim, strides_all...> &rhs,
                           const std::array<DataType, size> &values,
                           const std::array<OffsetType, size> &offsets) {
   convolution::Subtract_Convolve(helper, sol, rhs, values, offsets);
-  DataType result;
+  DataType *result;
+  cudaMallocManaged(&result, sizeof(DataType));
   DataType rhs_norm;
-  domain_compute_norm_squared(result, helper);
-  // domain_compute_norm_squared(rhs_norm, rhs);
-  return std::sqrt(result / helper.num_dofs);
+  domain_compute_norm_squared(*result, helper);
+  cudaDeviceSynchronize();
+
+  DataType return_result = *result;
+  cudaFree(result);
+  return std::sqrt(return_result / helper.num_dofs);
 }
 
 template <Dimension Dim, Length... strides_all, typename DataType,
@@ -581,17 +585,17 @@ struct V_Cycle_base {
           PROFILE_START(residual_computation)
 
           DataType *residual;
-          pcudaMallocManaged(&residual, sizeof(DataType));
+          cudaMallocManaged(&residual, sizeof(DataType));
           domain_compute_norm_squared(*residual,
                                       rhs_domain.template get_domain<nlev>());
-          pcudaDeviceSynchronize();
+          cudaDeviceSynchronize();
           DataType residual_new = std::sqrt(
               *residual / rhs_domain.template get_domain<nlev>().num_dofs);
           std::cout << "The residual after " << j << " iterations is "
                     << residual_new << std::endl;
 
           PROFILE_END(residual_computation)
-          pcudaFree(residual);
+          cudaFree(residual);
         }
 
         PROFILE_START(pre_smoothing)

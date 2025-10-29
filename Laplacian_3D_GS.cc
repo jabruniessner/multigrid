@@ -2,7 +2,7 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
+#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include <algorithm>
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
         rhs_domain.get_domain(), diff_operator.get_values(),
         diff_operator.get_offsets());
 
-    pcudaDeviceSynchronize();
+    // cudaDeviceSynchronize();
 
     v_cycle.iteration(*next, *current, defect_domain, mult_level, diff_operator,
                       coarser, upper_grid_step, omega, num_iters_level,
@@ -456,7 +456,7 @@ int main(int argc, char *argv[]) {
                 lhs_domain1.get_domain());
   }
 
-  pcudaDeviceSynchronize();
+  cudaDeviceSynchronize();
 
   auto end_time = std::chrono::high_resolution_clock::now();
 

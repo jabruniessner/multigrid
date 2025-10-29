@@ -1,8 +1,6 @@
 #include "Convolution.h"
 #include "Domain.h"
 #include "cuda_reduce.hpp"
-#include "hipSYCL/pcuda/pcuda.hpp"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -31,20 +29,20 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   Length &padding_width = init_guess.padding_width;
 
   DataType *r_squared;
-  pcudaMalloc(&r_squared, sizeof(DataType));
-  pcudaMemset(r_squared, 0, sizeof(DataType));
+  cudaMalloc(&r_squared, sizeof(DataType));
+  cudaMemset(r_squared, 0, sizeof(DataType));
   DataType *r_squared_next;
-  pcudaMalloc(&r_squared_next, sizeof(DataType));
-  pcudaMemset(r_squared_next, 0, sizeof(DataType));
+  cudaMalloc(&r_squared_next, sizeof(DataType));
+  cudaMemset(r_squared_next, 0, sizeof(DataType));
   DataType *p_squared_A;
-  pcudaMalloc(&p_squared_A, sizeof(DataType));
-  pcudaMemset(p_squared_A, 0, sizeof(DataType));
+  cudaMalloc(&p_squared_A, sizeof(DataType));
+  cudaMemset(p_squared_A, 0, sizeof(DataType));
   DataType *alpha;
-  pcudaMalloc(&alpha, sizeof(DataType));
-  pcudaMemset(alpha, 0, sizeof(DataType));
+  cudaMalloc(&alpha, sizeof(DataType));
+  cudaMemset(alpha, 0, sizeof(DataType));
   DataType *beta;
-  pcudaMalloc(&beta, sizeof(DataType));
-  pcudaMemset(beta, 0, sizeof(DataType));
+  cudaMalloc(&beta, sizeof(DataType));
+  cudaMemset(beta, 0, sizeof(DataType));
 
   int num_required_threads =
       (init_guess.num_dofs + reduction_kernel::seq_size - 1);
@@ -53,10 +51,10 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                    reduction_kernel::gbs;
 
   DataType *results;
-  pcudaMalloc(&results, sizeof(DataType) * num_blocks);
-  pcudaMemset(results, 0, sizeof(DataType) * num_blocks);
+  cudaMalloc(&results, sizeof(DataType) * num_blocks);
+  cudaMemset(results, 0, sizeof(DataType) * num_blocks);
 
-  reduction_kernel::pcudaParallelTransformReduce(
+  reduction_kernel::cudaParallelTransformReduce(
       init_guess.num_dofs, r_squared, results, std::plus<>(),
 
       [=](std::size_t idx) {
@@ -76,7 +74,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
       });
 
   //  // Computing the initial pAp
-  reduction_kernel::pcudaParallelTransformReduce(
+  reduction_kernel::cudaParallelTransformReduce(
       init_guess.num_dofs, p_squared_A, results, std::plus<>(),
       [=](std::size_t idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
@@ -92,19 +90,19 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
       });
 
   DataType p_squared_A_value = 0;
-  pcudaMemcpy(&p_squared_A_value, p_squared_A, sizeof(DataType),
-              pcudaMemcpyDeviceToHost);
+  cudaMemcpy(&p_squared_A_value, p_squared_A, sizeof(DataType),
+             cudaMemcpyDeviceToHost);
 
   // Computing initial alpha
 
-  pcudaParallelFor(1, 1, [=]() {
+  cudaParallelFor(1, 1, [=]() {
     *alpha = (*r_squared) / (*p_squared_A);
     *p_squared_A = 0;
   });
 
   DataType residual = 0;
-  pcudaMemcpy(&residual, r_squared, sizeof(DataType), pcudaMemcpyDeviceToHost);
-  pcudaDeviceSynchronize();
+  cudaMemcpy(&residual, r_squared, sizeof(DataType), cudaMemcpyDeviceToHost);
+  cudaDeviceSynchronize();
 
   if (p_squared_A_value == 0)
     return;
@@ -117,7 +115,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   while (thresh < residual) {
     // for (int k = 0; k < 90; k++) {
     count++;
-    reduction_kernel::pcudaParallelTransformReduce(
+    reduction_kernel::cudaParallelTransformReduce(
         init_guess.num_dofs, r_squared_next, results, std::plus<>(),
         [=](std::size_t idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
@@ -134,7 +132,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
           return defect_r(I[dims]...) * defect_r(I[dims]...);
         });
 
-    pcudaParallelFor(1, 1, [=]() {
+    cudaParallelFor(1, 1, [=]() {
       if (*r_squared == 0) {
         *beta = 0.;
       } else {
@@ -147,7 +145,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     constexpr int block_size = reduction_kernel::gbs;
     int num_blocks = (init_guess.num_dofs + block_size - 1) / block_size;
 
-    pcudaParallelFor(num_blocks, block_size, [=]() {
+    cudaParallelFor(num_blocks, block_size, [=]() {
       int gid = blockIdx.x * blockDim.x + threadIdx.x;
       if (gid < init_guess.num_dofs) {
         auto I = domain::flat_to_multi_index<strides_all...>(gid);
@@ -157,7 +155,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
       }
     });
 
-    reduction_kernel::pcudaParallelTransformReduce(
+    reduction_kernel::cudaParallelTransformReduce(
         init_guess.num_dofs, p_squared_A, results, std::plus<>{}, [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
@@ -174,15 +172,15 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
       DataType r_squared_value = 0;
       DataType p_squared_A_value = 0;
 
-      pcudaMemcpy(&r_squared_value, r_squared, sizeof(DataType),
-                  pcudaMemcpyDeviceToHost);
-      pcudaMemcpy(&p_squared_A_value, p_squared_A, sizeof(DataType),
-                  pcudaMemcpyDeviceToHost);
-      pcudaDeviceSynchronize();
+      cudaMemcpy(&r_squared_value, r_squared, sizeof(DataType),
+                 cudaMemcpyDeviceToHost);
+      cudaMemcpy(&p_squared_A_value, p_squared_A, sizeof(DataType),
+                 cudaMemcpyDeviceToHost);
+      cudaDeviceSynchronize();
       residual = std::sqrt(r_squared_value / defect_r.num_dofs);
     }
 
-    pcudaParallelFor(1, 1, [=]() {
+    cudaParallelFor(1, 1, [=]() {
       if (*p_squared_A == 0) {
         *alpha = 0;
       } else {
@@ -192,8 +190,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     });
   }
 
-  // pcudaMemcpy(&residual, r_squared, sizeof(DataType),
-  // pcudaMemcpyDeviceToHost); pcudaDeviceSynchronize(); residual =
+  // cudaMemcpy(&residual, r_squared, sizeof(DataType),
+  // cudaMemcpyDeviceToHost); cudaDeviceSynchronize(); residual =
   // std::sqrt(residual);
   // std::cout << "We made " << count << " iterations" << std::endl;
 }

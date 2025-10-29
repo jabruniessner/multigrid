@@ -1,7 +1,7 @@
 #include "CG_solver_simplified.h"
 #include "Convolution.h"
 #include "cycles.h"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
+#include "hipSYCL/cuda/cuda_runtime.hpp"
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -52,12 +52,14 @@ int main(int argc, char *argv[]) {
   //  std::cout << "The init_guess is given by " << std::endl;
   //  init_guess.print_domain();
 
+  cudaDeviceSynchronize();
+
   auto start = std::chrono::high_resolution_clock::now();
   CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets,
             static_cast<DataType>(1e-2));
 
   auto end = std::chrono::high_resolution_clock::now();
-  pcudaDeviceSynchronize();
+  cudaDeviceSynchronize();
 
   DataType const residual =
       cycles::compute_residual(rhs, init_guess, defect_p, values, offsets);
@@ -74,9 +76,9 @@ int main(int argc, char *argv[]) {
   //  init_guess.print_domain();
 
   subtract_domains(init_guess, init_guess, sol);
-  pcudaDeviceSynchronize();
+  cudaDeviceSynchronize();
 
-  std::cout << "The output Matrix is given by: " << std::endl;
+  //  std::cout << "The output Matrix is given by: " << std::endl;
   // init_guess.print_domain();
   //
   //	std::cout<<"The defect is given by: "<<std::endl;

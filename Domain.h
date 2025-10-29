@@ -1,5 +1,5 @@
 #include "cuda_reduce.hpp"
-#include "hipSYCL/pcuda/pcuda_runtime.hpp"
+#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "predefinitions.h"
 #include "thrust_adjust.hpp"
 #include "utils.h"
@@ -76,7 +76,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    pcudaMallocManaged(&values_buff, sizeof(DataType[num_values]));
+    cudaMallocManaged(&values_buff, sizeof(DataType[num_values]));
     // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
@@ -103,7 +103,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
       : Grid<DataType, Dim, strides_all...>(padding, padding_width) {
 
     thrust::fill(this->values_buff, this->values_buff + this->num_values, 0);
-    pcudaDeviceSynchronize();
+    cudaDeviceSynchronize();
   }
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
@@ -134,7 +134,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     out << "object 3 class array type double rank 0 items " << this->num_values
         << " data follows" << std::endl;
 
-    pcudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     for (int i = 0; i < this->num_values; i++) {
 
@@ -156,7 +156,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
   template <typename... Indices> void print_domain(Indices... indices) {
 
     if constexpr (sizeof...(Indices) == 0)
-      pcudaDeviceSynchronize();
+      cudaDeviceSynchronize();
 
     if constexpr (sizeof...(Indices) < Dim) {
       for (Position1D i = 0;
@@ -174,7 +174,7 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
   void print_domain_to_stream(std::ostream &output, Indices... indices) {
 
     if constexpr (sizeof...(Indices) == 0)
-      pcudaDeviceSynchronize();
+      cudaDeviceSynchronize();
 
     if constexpr (sizeof...(Indices) < Dim) {
       constexpr auto size = sizeof...(Indices);
@@ -220,10 +220,10 @@ int domain_compute_norm_squared(DataType &result,
                    reduction_kernel::gbs;
 
   DataType *results;
-  pcudaMalloc(&results, sizeof(DataType) * num_blocks);
-  pcudaMemset(results, 0, sizeof(DataType) * num_blocks);
+  cudaMalloc(&results, sizeof(DataType) * num_blocks);
+  cudaMemset(results, 0, sizeof(DataType) * num_blocks);
 
-  reduction_kernel::pcudaParallelTransformReduce(
+  reduction_kernel::cudaParallelTransformReduce(
       a.num_values, &result, results, std::plus<>(),
       [=](int i) { return a.values_buff[i] * a.values_buff[i]; });
 
