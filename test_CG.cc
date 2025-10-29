@@ -59,10 +59,22 @@ int main(int argc, char *argv[]) {
   //  std::cout << "The init_guess is given by " << std::endl;
   //  init_guess.print_domain();
 
+  {
+    DataType const residual =
+        cycles::compute_residual(rhs, init_guess, defect_p, values, offsets);
+
+    std::cout << "The residual before the iterations is: " << residual
+              << std::endl;
+  }
+  //  q.wait();
+
   auto start = std::chrono::high_resolution_clock::now();
+  // for (int i = 0; i < 100; i++)
   CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets,
             static_cast<DataType>(1e-2));
+
   auto end = std::chrono::high_resolution_clock::now();
+  q.wait();
 
   DataType const residual =
       cycles::compute_residual(rhs, init_guess, defect_p, values, offsets);

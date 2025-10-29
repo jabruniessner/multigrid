@@ -213,13 +213,13 @@ void refinement(Domain<Dim, strides_all...> &dest,
   // assert(dest.padding_width == src.padding_width);
 
   dest.q.submit([&](sycl::handler &h) {
-    h.parallel_for(
-        sycl::range<Dim>(dest.strides[dims]...), [=](sycl::id<Dim> I) {
-          ((I[dims] += dest.padding_width), ...);
-          std::tuple<> empty_index_tuple;
-          dest(I[dims]...) =
-              domain_refinement_helper(src, empty_index_tuple, I[dims]...);
-        });
+    h.parallel_for(sycl::range<1>(dest.num_dofs), [=](sycl::id<1> idx) {
+      auto I = flat_to_multi_index<strides_all...>(idx);
+      ((I[dims] += dest.padding_width), ...);
+      std::tuple<> empty_index_tuple;
+      dest(I[dims]...) =
+          domain_refinement_helper(src, empty_index_tuple, I[dims]...);
+    });
   });
 
   // dest.q.wait();

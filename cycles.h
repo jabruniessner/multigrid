@@ -612,12 +612,12 @@ struct V_Cycle_base {
                   sizeof...(Num_Iters) == nlev - 1);
 
     if constexpr (iter_level == 1) {
-      PROFILE_START(coarse_grid_solver);
+      // PROFILE_START(coarse_grid_solver);
       solver(next.template get_domain<iter_level>(),
              rhs_domain.template get_domain<iter_level>(),
              Diff_operator.template get_values<iter_level>(),
              Diff_operator.template get_offsets<iter_level>());
-      PROFILE_END_DEEP(coarse_grid_solver)
+      // PROFILE_END_DEEP(coarse_grid_solver)
       return;
     } else {
 
@@ -669,6 +669,8 @@ struct V_Cycle_base {
             coarsening_operator, sqrt2 * grid_step, omega, diff_operator,
             num_iters_, smoother_iters_pre, smoother_iters_post, true);
         PROFILE_END(coarser_grids);
+
+        // current.get_domain().q.wait();
 
         PROFILE_START(refinement)
         level_transition::refinement(

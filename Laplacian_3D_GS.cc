@@ -479,7 +479,7 @@ int main(int argc, char *argv[]) {
     //  next->get_domain().print_domain();
   }
 
-  q.wait();
+  // q.wait();
 
   //  auto &sol_domain = current->get_domain();
   //
@@ -528,6 +528,8 @@ int main(int argc, char *argv[]) {
   std::chrono::duration<double> duration = end - start;
   std::cout << "The required time was: " << duration.count() << " seconds"
             << std::endl;
+
+  q.wait();
   //
   //    //   // current->template
   //    get_domain<nlev>().print_to_output(std::cout);
