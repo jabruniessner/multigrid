@@ -1,3 +1,4 @@
+#include "array.h"
 #include <array>
 #include <cstddef>
 #include <iostream>
@@ -13,7 +14,11 @@ public:
   using Length = std::size_t;
   using Position1D = std::size_t;
   // using PositionType = sycl::id<2>;
+#ifdef __CUDACC__
+  using OffsetType = array::vector<int, 2>;
+#else
   using OffsetType = std::array<int, 2>;
+#endif
   using Dimension = std::size_t;
 };
 

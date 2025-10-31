@@ -9,11 +9,16 @@
 #ifndef CUDA_PARALLEL_FOR_H
 #define CUDA_PARALLEL_FOR_H
 
-template <class F> void cudaParallelFor(dim3 grid, dim3 block, F f) {
+using int_return_double = decltype([](int) { return 0.0; });
+
+template <class F> __global__ void kernel_launcher(F f) { f(); }
+
+template <class F> cudaError_t cudaParallelFor(dim3 grid, dim3 block, F f) {
 #ifdef __ACPP__
-  pcudaParallelFor(grid, block, f);
+  return pcudaParallelFor(grid, block, f);
 #else
-  f<<<grid, block>>>();
+  kernel_launcher<<<grid, block>>>(f);
+  return cudaGetLastError();
 #endif
 }
 

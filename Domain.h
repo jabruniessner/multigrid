@@ -1,29 +1,39 @@
 #include "cuda_reduce.hpp"
-#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "predefinitions.h"
 #include "thrust_adjust.hpp"
 #include "utils.h"
-#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
-#include <execution>
 #include <format>
 #include <iostream>
-#include <numeric>
 #include <ostream>
-#include <tuple>
 #include <utility>
+
+#ifdef __CUDACC__
+#include "array.h"
+#include <cuda_runtime.h>
+#else
+#include "hipSYCL/pcuda/cuda_runtime.h"
+#endif
 
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
 namespace domain {
 
+#ifdef __CUDACC__
+template <typename DataType, Dimension Dim>
+using array = array::vector<DataType, Dim>;
+#else
+template <typename DataType, Dimension Dim>
+using array = std::array<DataDataType, Dim>
+#endif
+
 template <Length FirstStride, Length... RestStrides, typename Padding,
           typename Position, typename... PositionRest>
-size_t flatten_index(Padding padding, Position i,
-                     PositionRest... rest_positions) {
+__host__ __device__ size_t flatten_index(Padding padding, Position i,
+                                         PositionRest... rest_positions) {
   // initialize i with the first index value
   int index = i;
 
@@ -34,13 +44,13 @@ size_t flatten_index(Padding padding, Position i,
 }
 
 template <Length FirstStride, Length... RestStrides, std::size_t... directions>
-std::array<Length, sizeof...(RestStrides) + 1>
+__host__ __device__ array<Length, sizeof...(RestStrides) + 1>
 flat_to_multi_index(Length i, std::index_sequence<directions...>) {
   static_assert(sizeof...(RestStrides) == sizeof...(directions));
   constexpr std::array<Length, sizeof...(RestStrides)> strides{RestStrides...};
   constexpr std::size_t Dim = sizeof...(RestStrides) + 1;
 
-  std::array<Length, sizeof...(RestStrides) + 1> multi_index;
+  array<Length, sizeof...(RestStrides) + 1> multi_index{};
 
   // for (int i : strides)
   //   std::cout << "Strides: " << i << std::endl;
@@ -57,7 +67,8 @@ flat_to_multi_index(Length i, std::index_sequence<directions...>) {
 }
 
 template <Length FirstStride, Length... RestStrides>
-std::array<Length, sizeof...(RestStrides) + 1> flat_to_multi_index(Length i) {
+__host__ __device__ array<Length, sizeof...(RestStrides) + 1>
+flat_to_multi_index(Length i) {
   return flat_to_multi_index<FirstStride, RestStrides...>(
       i, std::make_index_sequence<sizeof...(RestStrides)>{});
 }
@@ -76,12 +87,13 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    cudaMallocManaged(&values_buff, sizeof(DataType[num_values]));
+    cudaMallocManaged(&(this->values_buff), sizeof(DataType) * num_values);
     // q.memset(values_buff, 0, num_values * sizeof(DataType)).wait();
   }
 
   template <typename... Positions>
-  DataType &operator()(const Positions &...positions) const {
+  __host__ __device__ DataType &
+  operator()(const Positions &...positions) const {
     static_assert(sizeof...(Positions) == Dim);
     return values_buff[flatten_index<strides_all...>(padding_width,
                                                      positions...)];
@@ -224,8 +236,9 @@ int domain_compute_norm_squared(DataType &result,
   cudaMemset(results, 0, sizeof(DataType) * num_blocks);
 
   reduction_kernel::cudaParallelTransformReduce(
-      a.num_values, &result, results, std::plus<>(),
-      [=](int i) { return a.values_buff[i] * a.values_buff[i]; });
+      a.num_values, &result, results,
+      [] __device__(auto a, auto b) { return a + b; },
+      [=] __device__(int i) { return a.values_buff[i] * a.values_buff[i]; });
 
   return 0;
 }
@@ -235,8 +248,10 @@ DataType domain_scalar_product(Domain<Dim, strides_all...> &a,
                                Domain<Dim, strides_all...> &b) {
   return thrust::transform_reduce(
       a.values_buff, a.values_buff + a.num_values, b.values_buff, 0.0,
-      std::plus<>(),
-      [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
+      [] __device__(auto a, auto b) { return a + b; },
+      [] __device__(const DataType val_a, const DataType val_b) {
+        return val_a * val_b;
+      });
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -253,9 +268,9 @@ int domain_scalar_multiply(Domain<Dim, strides_all...> &dest,
                            Domain<Dim, strides_all...> &a,
                            const DataType &scalar) {
 
-  thrust::transform(a.values_buff, a.values_buff + a.num_values,
-                    dest.values_buff,
-                    [=](const DataType val) { return scalar * val; });
+  thrust::transform(
+      a.values_buff, a.values_buff + a.num_values, dest.values_buff,
+      [=] __device__(const DataType val) { return scalar * val; });
   return 0;
 }
 
@@ -264,10 +279,11 @@ int divide_domains(Domain<Dim, strides_all...> &dest,
                    Domain<Dim, strides_all...> &a,
                    Domain<Dim, strides_all...> &b) {
 
-  thrust::transform(
-      a.values_buff, a.values_buff + a.num_values, b.values_buff,
-      dest.values_buff,
-      [](const DataType val_a, const DataType val_b) { return val_a / val_b; });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=] __device__(const DataType val_a, const DataType val_b) {
+                      return val_a / val_b;
+                    });
   return 0;
 }
 
@@ -276,10 +292,11 @@ int multiply_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  thrust::transform(
-      a.values_buff, a.values_buff + a.num_values, b.values_buff,
-      dest.values_buff,
-      [](const DataType val_a, const DataType val_b) { return val_a * val_b; });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=] __device__(const DataType val_a, const DataType val_b) {
+                      return val_a * val_b;
+                    });
 
   return 0;
 }
@@ -289,10 +306,11 @@ int subtract_domains(Domain<Dim, strides_all...> &dest,
                      Domain<Dim, strides_all...> &a,
                      Domain<Dim, strides_all...> &b) {
 
-  thrust::transform(
-      a.values_buff, a.values_buff + a.num_values, b.values_buff,
-      dest.values_buff,
-      [](const DataType val_a, const DataType val_b) { return val_a - val_b; });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=] __device__(const DataType val_a, const DataType val_b) {
+                      return val_a - val_b;
+                    });
 
   return 0;
 }
@@ -305,7 +323,7 @@ int subtract_and_multiply_domains(Domain<Dim, strides_all...> &dest,
 
   thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
                     dest.values_buff,
-                    [=](const DataType val_a, const DataType val_b) {
+                    [=] __device__(const DataType val_a, const DataType val_b) {
                       return val * val_a - val_b;
                     });
 
@@ -317,10 +335,11 @@ int add_domains(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, strides_all...> &a,
                 Domain<Dim, strides_all...> &b) {
 
-  thrust::transform(
-      a.values_buff, a.values_buff + a.num_values, b.values_buff,
-      dest.values_buff,
-      [](const DataType val_a, const DataType val_b) { return val_a + val_b; });
+  thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
+                    dest.values_buff,
+                    [=] __device__(const DataType val_a, const DataType val_b) {
+                      return val_a + val_b;
+                    });
 
   return 0;
 }
@@ -333,7 +352,7 @@ int add_and_multiply_domains(Domain<Dim, strides_all...> &dest,
 
   thrust::transform(a.values_buff, a.values_buff + a.num_values, b.values_buff,
                     dest.values_buff,
-                    [=](const DataType val_a, const DataType val_b) {
+                    [=] __device__(const DataType val_a, const DataType val_b) {
                       return val_a + val * val_b;
                     });
 

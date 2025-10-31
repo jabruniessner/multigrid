@@ -57,7 +57,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   reduction_kernel::cudaParallelTransformReduce(
       init_guess.num_dofs, r_squared, results, std::plus<>(),
 
-      [=](std::size_t idx) {
+      [=] __device__(std::size_t idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += padding_width), ...);
 
@@ -76,7 +76,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   //  // Computing the initial pAp
   reduction_kernel::cudaParallelTransformReduce(
       init_guess.num_dofs, p_squared_A, results, std::plus<>(),
-      [=](std::size_t idx) {
+      [=] __device__(std::size_t idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += padding_width), ...);
 
@@ -95,7 +95,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
 
   // Computing initial alpha
 
-  cudaParallelFor(1, 1, [=]() {
+  cudaParallelFor(1, 1, [=] __device__() {
     *alpha = (*r_squared) / (*p_squared_A);
     *p_squared_A = 0;
   });
@@ -117,7 +117,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     count++;
     reduction_kernel::cudaParallelTransformReduce(
         init_guess.num_dofs, r_squared_next, results, std::plus<>(),
-        [=](std::size_t idx) {
+        [=] __device__(std::size_t idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
           init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
@@ -132,7 +132,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
           return defect_r(I[dims]...) * defect_r(I[dims]...);
         });
 
-    cudaParallelFor(1, 1, [=]() {
+    cudaParallelFor(1, 1, [=] __device__() {
       if (*r_squared == 0) {
         *beta = 0.;
       } else {
@@ -145,7 +145,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     constexpr int block_size = reduction_kernel::gbs;
     int num_blocks = (init_guess.num_dofs + block_size - 1) / block_size;
 
-    cudaParallelFor(num_blocks, block_size, [=]() {
+    cudaParallelFor(num_blocks, block_size, [=] __device__() {
       int gid = blockIdx.x * blockDim.x + threadIdx.x;
       if (gid < init_guess.num_dofs) {
         auto I = domain::flat_to_multi_index<strides_all...>(gid);
@@ -156,7 +156,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     });
 
     reduction_kernel::cudaParallelTransformReduce(
-        init_guess.num_dofs, p_squared_A, results, std::plus<>{}, [=](int idx) {
+        init_guess.num_dofs, p_squared_A, results, std::plus<>{},
+        [=] __device__(int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
 
@@ -180,7 +181,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
       residual = std::sqrt(r_squared_value / defect_r.num_dofs);
     }
 
-    cudaParallelFor(1, 1, [=]() {
+    cudaParallelFor(1, 1, [=] __device__() {
       if (*p_squared_A == 0) {
         *alpha = 0;
       } else {

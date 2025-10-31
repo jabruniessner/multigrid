@@ -23,7 +23,7 @@ void cudaParallelTransformReduce(std::size_t length, T *reduction, T *results,
 
   // results[0] = *reduction;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     __shared__ T shared_data[BlockSize];
     const int tid = threadIdx.x;
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -55,7 +55,7 @@ void cudaParallelTransformReduce(std::size_t length, T *reduction, T *results,
     num_threads = (length + seq_size - 1) / seq_size;
     num_blocks = (num_threads + BlockSize - 1) / BlockSize;
 
-    cudaParallelFor(num_blocks, BlockSize, [=]() {
+    cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
       __shared__ T shared_data[BlockSize];
       const int tid = threadIdx.x;
       const int gid = blockIdx.x * blockDim.x + threadIdx.x;

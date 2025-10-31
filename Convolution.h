@@ -1,35 +1,36 @@
 #include "Domain.h"
 #include "predefinitions.h"
-#include <algorithm>
 #include <array>
-#include <boost/iterator/counting_iterator.hpp>
 #include <cstddef>
-#include <execution>
+#include <type_traits>
 #include <utility>
+
+#ifdef __CUDACC__
+#include <thrust/iterator/counting_iterator.h>
+#else
+#include <boost/iterator/counting_iterator.hpp>
+#endif // __CUDACC__
 
 #ifndef CONVOLUTION_H
 #define CONVOLUTION_H
 
 namespace convolution {
 
+#ifdef __CUDACC__
+using namespace thrust;
+#else
+using namespace boost;
+#endif
+
 using namespace domain;
 
-template <typename DataType, typename Offsets, size_t size, Dimension Dim,
-          Length... strides_all, std::size_t... dims>
-
-int Convolve(Domain<Dim, strides_all...> &dest,
-             Domain<Dim, strides_all...> &src,
-             const std::array<DataType, size> &values,
-             const std::array<Offsets, size> &offsets,
-             std::index_sequence<dims...>) {
-
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
-
-  thrust::for_each(start, end, [=](int i) {
-    auto I = domain::flat_to_multi_index<strides_all...>(i);
+template <typename Domain_type, typename Offsets, std::size_t size,
+          std::size_t... dims>
+struct Convolution_functor {
+  __device__ __host__ void operator()(int i) const {
+    constexpr auto strides = Domain_type::length;
+    auto I = domain::flat_to_multi_index<strides[dims]...>(i);
     ((I[dims] += dest.padding_width), ...);
-
     DataType result = 0;
 
     for (int k = 0; k < size; k++) {
@@ -37,7 +38,37 @@ int Convolve(Domain<Dim, strides_all...> &dest,
     }
 
     dest(I[dims]...) = result;
-  });
+  }
+
+  const domain::array<Offsets, size> offsets;
+  const domain::array<DataType, size> values;
+  const Domain_type dest;
+  const Domain_type src;
+};
+
+template <typename T> struct TD;
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+
+int Convolve(Domain<Dim, strides_all...> &dest,
+             Domain<Dim, strides_all...> &src,
+             const domain::array<DataType, size> values,
+             const domain::array<Offsets, size> offsets,
+             std::index_sequence<dims...>) {
+
+  counting_iterator<int> start(0);
+  counting_iterator<int> end(dest.num_dofs);
+
+  using d_type = std::remove_reference_t<decltype(dest)>;
+
+  Convolution_functor<d_type, Offsets, size, dims...> f{offsets, values, dest,
+                                                        src};
+
+  using UnaryFunction = decltype(f);
+  using RandAccIt = decltype(start);
+
+  thrust::for_each<RandAccIt, UnaryFunction, thrust::gbs>(start, end, f);
 
   return 0;
 }
@@ -46,9 +77,12 @@ template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all>
 int Convolve(Domain<Dim, strides_all...> &dest,
              Domain<Dim, strides_all...> &src,
-             const std::array<DataType, size> &values,
-             const std::array<Offsets, size> &offsets) {
-  return Convolve(dest, src, values, offsets, std::make_index_sequence<Dim>());
+             const domain::array<DataType, size> values,
+             const domain::array<Offsets, size> offsets) {
+  return Convolve<DataType, Offsets, size, Dim, strides_all...>(
+      dest, src, values, offsets, std::make_index_sequence<Dim>());
+
+  // return 0;
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -57,12 +91,12 @@ template <typename DataType, typename Offsets, size_t size, Dimension Dim,
 int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                       Domain<Dim, strides_all...> &src,
                       Domain<Dim, strides_all...> &rhs,
-                      const std::array<DataType, size> &values,
-                      const std::array<Offsets, size> &offsets,
+                      const domain::array<DataType, size> values,
+                      const domain::array<Offsets, size> offsets,
                       std::index_sequence<dims...>) {
 
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
+  counting_iterator<int> start(0);
+  counting_iterator<int> end(dest.num_dofs);
 
   thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
@@ -85,8 +119,8 @@ template <typename DataType, typename Offsets, size_t size, Dimension Dim,
 int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                       Domain<Dim, strides_all...> &src,
                       Domain<Dim, strides_all...> &rhs,
-                      const std::array<DataType, size> &values,
-                      const std::array<Offsets, size> &offsets) {
+                      const domain::array<DataType, size> values,
+                      const domain::array<Offsets, size> offsets) {
   return Subtract_Convolve(dest, src, rhs, values, offsets,
                            std::make_index_sequence<Dim>());
 }
@@ -246,8 +280,8 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  const DataType epsilon_r, const DataType delta_epsilon,
                  std::index_sequence<dims...>) {
 
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
+  counting_iterator<int> start(0);
+  counting_iterator<int> end(dest.num_dofs);
   thrust::for_each(start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
     ((I[dims] += dest.padding_width), ...);
@@ -275,9 +309,9 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
   return 0;
 }
 
-constexpr std::array<OffsetType, 5> vec_offsets = {
+constexpr domain::array<OffsetType, 5> vec_offsets{
     {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
-constexpr std::array<DataType, 5> vec_val{4, -1, -1, -1, -1};
+constexpr domain::array<DataType, 5> vec_val{4., -1., -1., -1., -1.};
 
 } // End namespace convolution
 

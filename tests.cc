@@ -1,9 +1,12 @@
 // #include "CG_Solver.h"
 #include "Convolution.h"
-#include "hipSYCL/cuda/cuda_runtime.hpp"
+#include "Domain.h"
+#include <iostream>
+#include <utility>
 
 int main() {
 
+  std::cout << "Hello World!" << std::endl;
   using namespace convolution;
   using namespace domain;
 
@@ -12,9 +15,9 @@ int main() {
 
   //===== First Trial ======//
 
-  // cudaDeviceSynchronize();
+  cudaDeviceSynchronize();
 
-  std::cout << "The input matrix is given by: " << std::endl;
+  //  std::cout << "The input matrix is given by: " << std::endl;
   for (Position1D i = 1; i < 3 + 1; i++) {
     for (Position1D j = 1; j < 3 + 1; j++) {
       // domain_src.values_buff[flatten_index<3u, 3u>(1, i, j)] = 1;
@@ -41,6 +44,7 @@ int main() {
   DataType result = 1;
 
   domain_compute_norm_squared(result, domain_src);
+  cudaDeviceSynchronize();
 
   std::cout << "The result is given by: " << result << std::endl;
 
@@ -88,7 +92,7 @@ int main() {
     std::cout << std::endl;
   }
 
-  //======= Trial scalar multiplication =======
+  //  //======= Trial scalar multiplication =======
   std::cout << "The initial matrix is: " << std::endl;
   DataType count = 0;
   for (Position1D i = 1; i < 3 + 1; i++) {

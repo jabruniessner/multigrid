@@ -1,23 +1,38 @@
 # Minimum required version of CMake
 cmake_minimum_required(VERSION 3.10)
 
+
+
+set(CMAKE_CXX_COMPILER "acpp" CACHE STRING "Choose C++ compiler")
+
 # Set the project name
 project(MultigridSYCL)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 #set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUGMODE -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
-
+if(CMAKE_CXX_COMPILER MATCHES acpp.*)
+set(CMAKE_CXX_FLAGS_RELEASE " --acpp-targets=generic")
 set(CMAKE_CXX_FLAGS "--acpp-pcuda")
+elseif(CMAKE_CXX_COMPILER MATCHES nvcc.*)
+set(CMAKE_CXX_FLAGS "--expt-extended-lambda --expt-relaxed-constexpr")
+set(CMAKE_CUDA_SOURCE_FILE_EXTENSIONS cu;cuh;cc;cpp)
+
+# Apply to all CUDA files in this directory and subdirectories
+add_compile_options(-x cu)
+
+else()
+  message(FATAL_ERROR "no supported compiler chosen")
+endif()
 
 
 
-set(CMAKE_CXX_COMPILER "acpp")
+
+
 
 include_directories("mdspan")
 

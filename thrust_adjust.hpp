@@ -1,6 +1,5 @@
 #include "concepts.h"
 #include "cudaParallelFor.h"
-#include <execution>
 #include <iostream>
 
 #ifndef THRUST_ADJUST_HPP
@@ -24,7 +23,7 @@ void for_each(RandomAccIt first, RandomAccIt last, UnaryFunction f) {
 
   int num_blocks = (length + BlockSize - 1) / BlockSize;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
     auto my_it = first;
 
@@ -92,7 +91,7 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, T init,
 
   results[0] = init;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     __shared__ T shared_data[BlockSize];
     const int tid = threadIdx.x;
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -124,7 +123,7 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, T init,
     length = num_blocks;
     num_blocks = (length + BlockSize - 1) / BlockSize;
 
-    cudaParallelFor(num_blocks, BlockSize, [=]() {
+    cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
       __shared__ T shared_data[BlockSize];
       const int tid = threadIdx.x;
       const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -175,7 +174,7 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, RandomAccIt2 first2,
 
   results[0] = init;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     __shared__ T shared_data[BlockSize];
     const int tid = threadIdx.x;
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -208,7 +207,7 @@ T transform_reduce(RandomAccIt first, RandomAccIt last, RandomAccIt2 first2,
     length = num_blocks;
     num_blocks = (length + BlockSize - 1) / BlockSize;
 
-    cudaParallelFor(num_blocks, BlockSize, [=]() {
+    cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
       __shared__ T shared_data[BlockSize];
       const int tid = threadIdx.x;
       const int gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -252,8 +251,7 @@ UnaryFunction transform(RandomAccIt first, RandomAccIt last,
 
   int num_blocks = (length + BlockSize - 1) / BlockSize;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
-    const int tid = threadIdx.x;
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (gid < length) {
@@ -283,8 +281,7 @@ BinaryFunction transform(RandomAccIt first, RandomAccIt last,
 
   int num_blocks = (length + BlockSize - 1) / BlockSize;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
-    const int tid = threadIdx.x;
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (gid < length) {
@@ -313,8 +310,7 @@ void fill(RandomAccIt first, RandomAccIt last, T value) {
 
   int num_blocks = (length + BlockSize - 1) / BlockSize;
 
-  cudaParallelFor(num_blocks, BlockSize, [=]() {
-    const int tid = threadIdx.x;
+  cudaParallelFor(num_blocks, BlockSize, [=] __device__() {
     const int gid = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (gid < length) {
