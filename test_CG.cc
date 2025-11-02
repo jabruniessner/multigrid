@@ -1,10 +1,15 @@
 #include "CG_solver_simplified.h"
 #include "Convolution.h"
 #include "cycles.h"
-#include "hipSYCL/cuda/cuda_runtime.hpp"
 #include <chrono>
 #include <iostream>
 #include <string>
+
+#ifdef __CUDACC__
+#include <cuda_runtime.h>
+#else
+#include "hipSYCL/cuda/cuda_runtime.hpp"
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -21,8 +26,8 @@ int main(int argc, char *argv[]) {
   Domain<2, length, length> defect_r(Paddings::PERIODIC, 1);
   Domain<2, length, length> defect_p(Paddings::PERIODIC, 1);
 
-  constexpr std::array<DataType, 5> values = {4, -1, -1, -1, -1};
-  constexpr std::array<OffsetType, 5> offsets = {
+  constexpr domain::array<DataType, 5> values = {4, -1, -1, -1, -1};
+  constexpr domain::array<OffsetType, 5> offsets = {
       {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
 
   const int m = 16;
@@ -75,8 +80,8 @@ int main(int argc, char *argv[]) {
   // std::cout << "The init_guess before subtraction is: " << std::endl;
   //  init_guess.print_domain();
 
-  subtract_domains(init_guess, init_guess, sol);
-  cudaDeviceSynchronize();
+  // subtract_domains(init_guess, init_guess, sol);
+  // cudaDeviceSynchronize();
 
   //  std::cout << "The output Matrix is given by: " << std::endl;
   // init_guess.print_domain();

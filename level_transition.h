@@ -1,8 +1,6 @@
 #include "Convolution.h"
 #include "utils.h"
-#include <algorithm>
 #include <boost/iterator/counting_iterator.hpp>
-#include <execution>
 
 #ifndef LEVEL_TRANSITION
 #define LEVEL_TRANSITION

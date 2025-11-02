@@ -85,6 +85,30 @@ int Convolve(Domain<Dim, strides_all...> &dest,
   // return 0;
 }
 
+template <typename Domain_type, typename Offsets, std::size_t size,
+          std::size_t... dims>
+struct Subtract_Convolution_functor {
+  __device__ __host__ void operator()(int i) const {
+    constexpr auto strides = Domain_type::length;
+    auto I = domain::flat_to_multi_index<strides[dims]...>(i);
+    ((I[dims] += dest.padding_width), ...);
+
+    DataType result = 0;
+
+    for (int k = 0; k < size; k++) {
+      result += src((I[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    dest(I[dims]...) = rhs(I[dims]...) - result;
+  }
+
+  const domain::array<Offsets, size> offsets;
+  const domain::array<DataType, size> values;
+  const Domain_type dest;
+  const Domain_type src;
+  const Domain_type rhs;
+};
+
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, std::size_t... dims>
 
@@ -98,18 +122,12 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
   counting_iterator<int> start(0);
   counting_iterator<int> end(dest.num_dofs);
 
-  thrust::for_each(start, end, [=](int i) {
-    auto I = domain::flat_to_multi_index<strides_all...>(i);
-    ((I[dims] += dest.padding_width), ...);
+  using d_type = std::remove_reference_t<decltype(dest)>;
 
-    DataType result = 0;
+  Subtract_Convolution_functor<d_type, Offsets, size, dims...> sub_conv_func{
+      offsets, values, dest, src, rhs};
 
-    for (int k = 0; k < size; k++) {
-      result += src((I[dims] + offsets[k][dims])...) * values[k];
-    }
-
-    dest(I[dims]...) = rhs(I[dims]...) - result;
-  });
+  thrust::for_each(start, end, sub_conv_func);
 
   return 0;
 }

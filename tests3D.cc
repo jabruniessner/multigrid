@@ -1,11 +1,16 @@
 #include "CG_Solver.h"
 #include "Convolution.h"
+
+#ifdef __CUDACC__
+#include <cuda_runtime.h>
+#else
 #include "hipSYCL/cuda/cuda_runtime.hpp"
+#endif
 #include <iostream>
 
 int main() {
 
-  using OffsetType = std::array<int, 3>;
+  using OffsetType = domain::array<int, 3>;
 
   using namespace convolution;
   using namespace domain;
@@ -13,14 +18,14 @@ int main() {
   Domain<3, 3u, 3u, 3u> domain_src(Paddings::PERIODIC, 1);
   Domain<3, 3u, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);
 
-  constexpr std::array<DataType, 7> values = {6, -1, -1, -1, -1, -1, -1};
-  constexpr std::array<OffsetType, 7> offsets{{{0, 0, 0},
-                                               {1, 0, 0},
-                                               {-1, 0, 0},
-                                               {0, 1, 0},
-                                               {0, -1, 0},
-                                               {0, 0, 1},
-                                               {0, 0, -1}}};
+  constexpr domain::array<DataType, 7> values = {6, -1, -1, -1, -1, -1, -1};
+  constexpr domain::array<OffsetType, 7> offsets{{{0, 0, 0},
+                                                  {1, 0, 0},
+                                                  {-1, 0, 0},
+                                                  {0, 1, 0},
+                                                  {0, -1, 0},
+                                                  {0, 0, 1},
+                                                  {0, 0, -1}}};
 
   //====== First Trial ====//
 

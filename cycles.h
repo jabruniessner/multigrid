@@ -1,6 +1,5 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
-#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "level_transition.h"
 #include "profiling_library.h"
 #include "scientific_quantities.h"
@@ -8,12 +7,16 @@
 #include <boost/iterator/counting_iterator.hpp>
 #include <cmath>
 #include <cstddef>
-#include <execution>
-#include <fstream>
 #include <ostream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
+#ifdef __CUDACC__
+#include <cuda_runtime.h>
+#else
+#include "hipSYCL/pcuda/cuda_runtime.h"
+#endif
 
 #ifndef CYCLES_H
 #define CYCLES_H
@@ -38,8 +41,8 @@ template <Dimension Dim, Length... strides_all, typename DataType,
 DataType compute_residual(Domain<Dim, strides_all...> &rhs,
                           Domain<Dim, strides_all...> &sol,
                           Domain<Dim, strides_all...> &helper,
-                          const std::array<DataType, size> &values,
-                          const std::array<OffsetType, size> &offsets) {
+                          const domain::array<DataType, size> &values,
+                          const domain::array<OffsetType, size> &offsets) {
   convolution::Subtract_Convolve(helper, sol, rhs, values, offsets);
   DataType *result;
   cudaMallocManaged(&result, sizeof(DataType));

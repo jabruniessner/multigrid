@@ -1,14 +1,10 @@
 #include "Convolution.h"
 #include "Domain.h"
 #include "thrust_adjust.hpp"
-#include <algorithm>
 #include <array>
 #include <boost/iterator/counting_iterator.hpp>
 #include <cmath>
 #include <cstddef>
-#include <execution>
-#include <numeric>
-#include <ostream>
 #include <utility>
 
 #ifndef CG_SOLVER_H
