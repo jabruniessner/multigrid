@@ -64,7 +64,7 @@ struct pAp_computer : initial_defect_r<d_type, Offsets, size, dims...> {
 
 template <typename DataType> struct compute_initial_alpha {
 
-  __host__ __device__ void operator()() {
+  __host__ __device__ void operator()() const {
     *alpha = (*r_squared) / (*p_squared_A);
     *p_squared_A = 0;
   }
@@ -99,7 +99,7 @@ struct defect_r_correct : compute_initial_alpha<DataType>,
 
 template <typename DataType> struct beta_and_r_squared_next {
 
-  __host__ __device__ void operator()() {
+  __host__ __device__ void operator()() const {
     if (*r_squared == 0) {
       *beta = 0.;
     } else {
@@ -135,7 +135,7 @@ struct defect_p_correct : beta_and_r_squared_next<DataType>,
 };
 
 template <typename DataType> struct recompute_alpha {
-  __device__ __host__ void operator()() {
+  __device__ __host__ void operator()() const {
     if (*p_squared_A == 0) {
       *alpha = 0;
     } else {

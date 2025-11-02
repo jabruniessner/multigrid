@@ -8,7 +8,7 @@
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
 #else
-#include "hipSYCL/cuda/cuda_runtime.hpp"
+#include "hipSYCL/pcuda/cuda_runtime.h"
 #endif
 
 int main(int argc, char *argv[]) {

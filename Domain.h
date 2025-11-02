@@ -27,7 +27,7 @@ template <typename DataType, Dimension Dim>
 using array = array::vector<DataType, Dim>;
 #else
 template <typename DataType, Dimension Dim>
-using array = std::array<DataDataType, Dim>
+using array = std::array<DataType, Dim>;
 #endif
 
 template <Length FirstStride, Length... RestStrides, typename Padding,
