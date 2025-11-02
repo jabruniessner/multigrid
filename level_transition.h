@@ -1,6 +1,13 @@
 #include "Convolution.h"
 #include "utils.h"
+#include <type_traits>
+#include <unistd.h>
+
+#ifdef __CUDACC__
+#include <thrust/iterator/counting_iterator.h>
+#else
 #include <boost/iterator/counting_iterator.hpp>
+#endif
 
 #ifndef LEVEL_TRANSITION
 #define LEVEL_TRANSITION
@@ -9,21 +16,13 @@ namespace level_transition {
 
 using namespace domain;
 
-template <typename T> struct TD;
+template <typename dtype_dest, typename dtype_src, typename Offsets,
+          std::size_t size, std::size_t... dims>
+struct coarsening_helper {
 
-template <typename DataType, typename Offsets, size_t size, Dimension Dim,
-          Length... strides_all, std::size_t... dims>
-void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
-                Domain<Dim, strides_all...> &src,
-                const std::array<DataType, size> values,
-                const std::array<Offsets, size> offsets,
-                std::index_sequence<dims...>) {
-
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
-
-  thrust::for_each(start, end, [=](int i) {
-    auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(i);
+  __host__ __device__ void operator()(std::size_t idx) const {
+    constexpr auto strides = dtype_dest::length;
+    auto I = domain::flat_to_multi_index<strides[dims]...>(idx);
     ((I[dims] += dest.padding_width), ...);
     decltype(I) I_fine;
     ((I_fine[dims] = 2 * I[dims]), ...);
@@ -35,36 +34,86 @@ void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
     }
 
     dest(I[dims]...) = result;
-  });
+  }
+
+  const domain::array<Offsets, size> offsets;
+  const domain::array<DataType, size> values;
+  dtype_dest dest;
+  dtype_src src;
+};
+
+template <typename DataType, typename Offsets, size_t size, Dimension Dim,
+          Length... strides_all, std::size_t... dims>
+void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
+                Domain<Dim, strides_all...> &src,
+                const domain::array<DataType, size> values,
+                const domain::array<Offsets, size> offsets,
+                std::index_sequence<dims...>) {
+
+#ifdef __CUDACC__
+  using iterator = thrust::counting_iterator<int>;
+#else
+  using iterator = boost::iterators::counting_iterator<int>
+#endif
+  iterator start(0);
+  iterator end(dest.num_dofs);
+
+  using dtype_src = std::remove_reference_t<decltype(src)>;
+  using dtype_dest = std::remove_reference_t<decltype(dest)>;
+
+  coarsening_helper<dtype_dest, dtype_src, Offsets, size, dims...> ch{
+      offsets, values, dest, src};
+
+  thrust::for_each(start, end, ch);
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all>
 void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                 Domain<Dim, strides_all...> &src,
-                const std::array<DataType, size> values,
-                const std::array<Offsets, size> offsets) {
+                const domain::array<DataType, size> values,
+                const domain::array<Offsets, size> offsets) {
   coarsening(dest, src, values, offsets, std::make_index_sequence<Dim>());
 }
+
+template <typename dtype_dest, typename dtype_src, std::size_t... dims>
+struct coarseing_inject_helper {
+  __host__ __device__ void operator()(std::size_t idx) const {
+    constexpr auto strides = dtype_src::length;
+    auto I = domain::flat_to_multi_index<((strides[dims] + 1) / 2 - 1)...>(idx);
+
+    ((I[dims] += dest.padding_width), ...);
+    decltype(I) I_fine{2 * I[dims]...};
+    dest(I[dims]...) = src(I_fine[dims]...);
+  }
+
+  dtype_dest dest;
+  dtype_src src;
+};
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all, std::size_t... dims>
 void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                        Domain<Dim, strides_all...> &src,
-                       const std::array<DataType, size> values,
-                       const std::array<Offsets, size> offsets,
+                       const domain::array<DataType, size> values,
+                       const domain::array<Offsets, size> offsets,
                        std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+#ifdef __CUDACC__
+  using iterator = thrust::counting_iterator<int>;
+#else
+  using iterator = boost::iterators::counting_iterator<int>
+#endif
 
-  thrust::for_each(start, end, [=](int idx) {
-    auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
+  iterator start(0);
+  iterator end(dest.num_dofs);
 
-    ((I[dims] += dest.padding_width), ...);
-    decltype(I) I_fine{2 * I[dims]...};
-    dest(I[dims]...) = src(I_fine[dims]...);
-  });
+  using dtype_dest = std::remove_reference_t<decltype(dest)>;
+  using dtype_src = std::remove_reference_t<decltype(src)>;
+
+  coarseing_inject_helper<dtype_dest, dtype_src, dims...> cih{dest, src};
+
+  thrust::for_each(start, end, cih);
 }
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -108,8 +157,14 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
                          const std::array<Offsets, size> offsets,
                          std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
+#ifdef __CUDACC__
+  using iterator = thrust::counting_iterator<int>;
+#else
+  using iterator = boost::iterators::counting_iterator<int>
+#endif
+
+  iterator start(0);
+  iterator end(dest1.num_dofs);
 
   thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
@@ -140,9 +195,9 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
 
 template <Dimension Dim, Length... strides_all, typename... Index,
           typename... Rest_indices>
-DataType domain_refinement_helper(const Domain<Dim, strides_all...> &dom,
-                                  std::tuple<Index...> &index_tuple,
-                                  Rest_indices &...rest_indices) {
+__host__ __device__ DataType domain_refinement_helper(
+    const Domain<Dim, strides_all...> &dom, std::tuple<Index...> &index_tuple,
+    Rest_indices &...rest_indices) {
   if constexpr (sizeof...(Index) == Dim) {
     std::apply([&](auto &&...args) { ((args /= 2), ...); }, index_tuple);
 
@@ -195,21 +250,41 @@ DataType domain_refinement_helper(const Domain<Dim, strides_all...> &dom,
   return 0.;
 }
 
+template <typename dtype_dest, typename dtype_src, std::size_t... dims>
+struct refinement_helper_struct {
+
+  __host__ __device__ void operator()(std::size_t idx) const {
+    constexpr auto strides = dtype_dest::length;
+    auto I = domain::flat_to_multi_index<strides[dims]...>(idx);
+    ((I[dims] += dest.padding_width), ...);
+    std::tuple<> empty_index_tuple;
+    dest(I[dims]...) =
+        domain_refinement_helper(src, empty_index_tuple, I[dims]...);
+  }
+
+  dtype_dest dest;
+  dtype_src src;
+};
+
 template <Dimension Dim, Length... strides_all, std::size_t... dims>
 void refinement(Domain<Dim, strides_all...> &dest,
                 Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src,
                 std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+#ifdef __CUDACC__
+  using iterator = thrust::counting_iterator<int>;
+#else
+  using iterator = boost::iterators::counting_iterator<int>
+#endif
 
-  thrust::for_each(start, end, [=](int idx) {
-    auto I = domain::flat_to_multi_index<strides_all...>(idx);
-    ((I[dims] += dest.padding_width), ...);
-    std::tuple<> empty_index_tuple;
-    dest(I[dims]...) =
-        domain_refinement_helper(src, empty_index_tuple, I[dims]...);
-  });
+  iterator start(0);
+  iterator end(dest.num_dofs);
+
+  using dtype_dest = std::remove_reference_t<decltype(dest)>;
+  using dtype_src = std::remove_reference_t<decltype(src)>;
+  refinement_helper_struct<dtype_dest, dtype_src, dims...> rhs{dest, src};
+
+  thrust::for_each(start, end, rhs);
 }
 
 template <Dimension Dim, Length... strides_all>
@@ -226,8 +301,14 @@ void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
   assert(dest1.q == src.q && dest2.q == src.q);
   // assert(dest.padding_width == src.padding_width);
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
+#ifdef __CUDACC__
+  using iterator = thrust::counting_iterator<int>;
+#else
+  using iterator = boost::iterators::counting_iterator<int>
+#endif
+
+  iterator start(0);
+  iterator end(dest1.num_dofs);
 
   thrust::for_each(start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<strides_all...>(idx);

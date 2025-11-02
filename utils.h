@@ -25,12 +25,12 @@ void add_to_tuple(Tuple1 &tuple_1, Tuple2 &tuple_2) {
 }
 
 template <typename Arg1, typename... Args>
-Arg1 &&get_first(Arg1 &&arg1, Args &&...) {
+__host__ __device__ Arg1 &&get_first(Arg1 &&arg1, Args &&...) {
   return std::forward<Arg1>(arg1);
 }
 
 template <typename Arg1, typename... Args>
-auto get_tail(Arg1 &&arg1, Args &...args) {
+__host__ __device__ auto get_tail(Arg1 &&arg1, Args &...args) {
   auto tail = std::forward_as_tuple(args...);
   return tail;
 }
