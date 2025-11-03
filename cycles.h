@@ -4,7 +4,6 @@
 #include "profiling_library.h"
 #include "scientific_quantities.h"
 #include <array>
-#include <boost/iterator/counting_iterator.hpp>
 #include <cmath>
 #include <cstddef>
 #include <ostream>
@@ -14,12 +13,20 @@
 
 #ifdef __CUDACC__
 #include <cuda_runtime.h>
+#include <thrust/iterator/counting_iterator.h>
 #else
 #include "hipSYCL/pcuda/cuda_runtime.h"
+#include <boost/iterator/counting_iterator.hpp>
 #endif
 
 #ifndef CYCLES_H
 #define CYCLES_H
+
+#ifdef __CUDACC__
+using iterator = thrust::counting_iterator<int>;
+#else
+using iterator = boost::iterators::counting_iterator<int>;
+#endif
 
 namespace cycles {
 
@@ -181,7 +188,48 @@ struct GS_Smoother {
 
   GS_Smoother(Multigrid_domain<Dim, nlev, base_length...>) {}
 
-  template <std::size_t num> struct TD;
+  template <typename d_type, std::size_t... dims> struct GS_smoother_kernel {
+
+    __host__ __device__ auto index_add_in_place(int place, const d_type domain,
+                                                auto... elems) const {
+      domain::array<std::size_t, sizeof...(elems)> indices{elems...};
+      indices[place] += 1;
+      return std::apply(domain, indices);
+    };
+
+    __host__ __device__ auto index_sub_in_place(int place, const d_type domain,
+                                                auto... elems) const {
+      domain::array<std::size_t, sizeof...(elems)> indices{elems...};
+      indices[place] -= 1;
+      return std::apply(domain, indices);
+    };
+
+    __host__ __device__ void operator()(std::size_t idx) const {
+
+      auto I = domain::flat_to_multi_index<d_type::length[dims]...>(idx);
+
+      ((I[dims] += src_domain.padding_width), ...);
+
+      if ((I[dims] + ...) % 2 == color) {
+        const auto subs =
+            (index_sub_in_place(dims, src_domain, I[dims]...) + ...) *
+            (zeros_start && i == 0 ? color : 1);
+
+        const auto adds =
+            (index_add_in_place(dims, src_domain, I[dims]...) + ...) *
+            (zeros_start && i == 0 ? color : 1);
+
+        src_domain(I[dims]...) =
+            diag_inverse * (adds + subs + h * h * rhs_domain(I[dims]...));
+      }
+    }
+
+    d_type dest_domain, src_domain, rhs_domain;
+    bool zeros_start;
+    int i = 0;
+    int color = 0;
+    DataType diag_inverse, h;
+  };
 
   template <std::size_t level, typename DataType, std::size_t... Num_Iters,
             std::size_t... dims>
@@ -229,33 +277,19 @@ struct GS_Smoother {
     if constexpr (num_iters == 0) {
       return;
     } else {
-      const boost::iterators::counting_iterator<int> start(0);
-      const boost::iterators::counting_iterator<int> end(src_domain.num_dofs);
+      const iterator start(0);
+      const iterator end(src_domain.num_dofs);
+
+      using d_type = std::remove_reference_t<decltype(src_domain)>;
 
       for (int i = 0; i < num_iters; i++) {
         for (int color = 0; color < 2; color++) {
 
           using domain_type = std::remove_reference_t<decltype(src_domain)>;
-
-          thrust::for_each(start, end, [=](int idx) {
-            auto I =
-                domain::flat_to_multi_index<domain_type::length[dims]...>(idx);
-
-            ((I[dims] += src_domain.padding_width), ...);
-
-            if ((I[dims] + ...) % 2 == color) {
-              const auto subs =
-                  (index_sub_in_place(dims, src_domain, I[dims]...) + ...) *
-                  (zeros_start && i == 0 ? color : 1);
-
-              const auto adds =
-                  (index_add_in_place(dims, src_domain, I[dims]...) + ...) *
-                  (zeros_start && i == 0 ? color : 1);
-
-              src_domain(I[dims]...) =
-                  diag_inverse * (adds + subs + h * h * rhs_domain(I[dims]...));
-            }
-          });
+          GS_smoother_kernel<d_type, dims...> gd_kernel_helper{
+              dest_domain, src_domain, rhs_domain,   zeros_start,
+              i,           color,      diag_inverse, h};
+          thrust::for_each(start, end, gd_kernel_helper);
         }
       }
     }
@@ -342,8 +376,8 @@ struct Jacobi_Smoother_PBE {
         std::array<Dimension, Dim> strides_array =
             std::to_array(dest_domain.strides);
 
-        boost::iterators::counting_iterator<int> start(0);
-        boost::iterators::counting_iterator<int> end(src_domain.num_dofs);
+        iterator start(0);
+        iterator end(src_domain.num_dofs);
         thrust::for_each(start, end, [=](int idx) {
           auto I =
               domain::flat_to_multi_index<decltype(src_domain)::length[0],
@@ -460,9 +494,8 @@ struct Gauss_Seidel_PBE {
 
         for (int color = 0; color < 2; color++) {
 
-          const boost::iterators::counting_iterator<int> start(0);
-          const boost::iterators::counting_iterator<int> end(
-              src_domain.num_dofs);
+          const iterator start(0);
+          const iterator end(src_domain.num_dofs);
 
           thrust::for_each(start, end, [=](int idx) {
             auto I =
@@ -613,7 +646,6 @@ struct V_Cycle_base {
             rhs_domain.template get_domain<iter_level>(),
             Diff_operator.template get_values<iter_level>(),
             Diff_operator.template get_offsets<iter_level>());
-
         PROFILE_END(defect_computation)
 
         PROFILE_START(restriction)

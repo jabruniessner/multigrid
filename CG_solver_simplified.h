@@ -292,8 +292,8 @@ struct Solver_CG {
 
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs,
-                  const std::array<DataType, size> &values,
-                  const std::array<Offsets, size> &offsets) {
+                  const domain::array<DataType, size> &values,
+                  const domain::array<Offsets, size> &offsets) {
     CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets, thresh);
   }
 

@@ -1,5 +1,4 @@
 #include "profiling_library.h"
-#include "predefinitions.h"
 #include <iostream>
 
 namespace profiling {

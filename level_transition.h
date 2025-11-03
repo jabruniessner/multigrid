@@ -102,7 +102,7 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
 #ifdef __CUDACC__
   using iterator = thrust::counting_iterator<int>;
 #else
-  using iterator = boost::iterators::counting_iterator<int>
+  using iterator = boost::iterators::counting_iterator<int>;
 #endif
 
   iterator start(0);
@@ -120,8 +120,8 @@ template <typename DataType, typename Offsets, size_t size, Dimension Dim,
           Length... strides_all>
 void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                        Domain<Dim, strides_all...> &src,
-                       const std::array<DataType, size> values,
-                       const std::array<Offsets, size> offsets) {
+                       const domain::array<DataType, size> values,
+                       const domain::array<Offsets, size> offsets) {
   coarsening_inject(dest, src, values, offsets,
                     std::make_index_sequence<Dim>());
 }

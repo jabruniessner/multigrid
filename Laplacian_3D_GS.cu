@@ -2,17 +2,27 @@
 #include "Convolution.h"
 #include "MultigridDomain.h"
 #include "cycles.h"
-#include "hipSYCL/pcuda/cuda_runtime.h"
 #include "level_transition.h"
 #include "profiling_library.h"
-#include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 #include <chrono>
-#include <execution>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <utility>
+
+#ifdef __CUDACC__
+#include <cuda_runtime.h>
+#include <thrust/iterator/counting_iterator.h>
+#else
+#include "hipSYCL/pcuda/cuda_runtime.h"
+#include <boost/iterator/counting_iterator.hpp>
+#endif
+
+#ifdef __CUDACC__
+using iterator = thrust::counting_iterator<int>;
+#elif
+using iterator = boost::iterators::counting_iterator<int>;
+#endif
 
 using namespace cycles;
 using namespace convolution;
@@ -91,8 +101,8 @@ DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
   // DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
 
   std::array<int, Dim> length{(strides_all + 1)...};
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
+  iterator start(0);
+  iterator end(((strides_all + 1) * ...));
 
   DataType result =
       thrust::transform_reduce(start, end, 0.0, std::plus<>{}, [=](int idx) {
@@ -143,8 +153,8 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
 
   std::array<int, Dim> length{(strides_all + 1)...};
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
+  iterator start(0);
+  iterator end(((strides_all + 1) * ...));
 
   DataType result =
       thrust::transform_reduce(start, end, 0.0, std::plus<>{}, [=](int idx) {
@@ -169,8 +179,10 @@ int main(int argc, char *argv[]) {
   using OffsetType = std::array<int, 3>;
 
   int i{};
+#ifdef __ACPP__
   pcudaGetBackend(&i);
   std::cout << "The currently active backend is: " << i << std::endl;
+#endif
 
   if (argc < 2) {
     std::cout << "Usage: ./this_program num_iters" << std::endl;
@@ -213,20 +225,18 @@ int main(int argc, char *argv[]) {
 
   std::cout << "The value of h is: " << h << std::endl;
 
-  auto boundary_conditions = [=](DataType x, DataType y, DataType z) {
+  auto boundary_conditions = [=] __host__ __device__(DataType x, DataType y,
+                                                     DataType z) {
     return -3 * x * x - 4 * y * y + 7 * z * z;
   };
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(u_domain.num_values);
+  iterator start(0);
+  iterator end(u_domain.num_values);
 
-  thrust::for_each(start, end, [=](int idx) {
+  thrust::for_each(start, end, [=] __host__ __device__(int idx) {
     auto I = domain::flat_to_multi_index<std::get<0>(length) + 2,
                                          std::get<1>(length) + 2,
                                          std::get<2>(length) + 2>(idx);
-    //  I[0] += 1;
-    //  I[1] += 1;
-    //  I[2] += 1;
     u_domain(I[0], I[1], I[2]) =
         boundary_conditions((DataType)I[0] / (std::get<0>(length) + 1),
                             (DataType)I[1] / (std::get<1>(length) + 1),
@@ -246,12 +256,11 @@ int main(int argc, char *argv[]) {
 
   {
 
-    boost::iterators::counting_iterator<int> start(0);
-    boost::iterators::counting_iterator<int> end((std::get<1>(length) + 2) *
-                                                 (std::get<2>(length) + 2));
+    iterator start(0);
+    iterator end((std::get<1>(length) + 2) * (std::get<2>(length) + 2));
 
     auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
-    thrust::for_each(start, end, [=](int idx) {
+    thrust::for_each(start, end, [=] __host__ __device__(int idx) {
       auto I = domain::flat_to_multi_index<(std::get<1>(length) + 2),
                                            (std::get<2>(length) + 2)>(idx);
       boundary_domain(I[0], I[1], 0) =
@@ -278,68 +287,27 @@ int main(int argc, char *argv[]) {
           boundary_conditions((DataType)I[0] / (std::get<1>(length) + 1), 1,
                               (DataType)I[1] / (std::get<2>(length) + 1));
     });
-
-    //  std::cout << "The boundary domain is: " << std::endl;
-    //  boundary_domain.print_domain();
   }
 
-  //  {
-  //    auto &boundary_domain = lhs_domain2.template get_domain<nlev>();
-  //    q.parallel_for(
-  //         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
-  //         [=](sycl::id<2> I) {
-  //           boundary_domain(I[0], I[1], 0) = boundary_conditions(
-  //               (DataType)I[0] / (std::get<1>(length) + 2),
-  //               (DataType)I[1] / (std::get<2>(length) + 2), 0);
-  //
-  //           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
-  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
-  //               2),
-  //                                   (DataType)I[1] / (std::get<2>(length) +
-  //                                   2), 1);
-  //
-  //           boundary_domain(0, I[0], I[1]) = boundary_conditions(
-  //               0, (DataType)I[0] / (std::get<1>(length) + 2),
-  //               (DataType)I[1] / (std::get<2>(length) + 2));
-  //
-  //           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
-  //               boundary_conditions(1,
-  //                                   (DataType)I[0] / (std::get<1>(length) +
-  //                                   2), (DataType)I[1] /
-  //                                   (std::get<2>(length)
-  //                                   + 2));
-  //
-  //           boundary_domain(I[0], 0, I[1]) = boundary_conditions(
-  //               (DataType)I[0] / (std::get<1>(length) + 2), 0,
-  //               (DataType)I[1] / (std::get<2>(length) + 2));
-  //
-  //           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
-  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
-  //               2),
-  //                                   1,
-  //                                   (DataType)I[1] / (std::get<2>(length) +
-  //                                   2));
-  //         })
-  //        .wait();
-  //  }
-
-  std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
-                                        {1, 0, 0},
-                                        {0, 0, 0},
-                                        {0, -1, 0},
-                                        {0, 1, 0},
-                                        {0, 0, -1},
-                                        {0, 0, 1}}};
-  std::array<DataType, 7> values_op{
+  domain::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
+                                           {1, 0, 0},
+                                           {0, 0, 0},
+                                           {0, -1, 0},
+                                           {0, 1, 0},
+                                           {0, 0, -1},
+                                           {0, 0, 1}}};
+  domain::array<DataType, 7> values_op{
       -1., -1,  6,  -1.,
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
-                      // as it is only applied to the right hand side anyways
+                      // as it is only applied to the right hand side
+                      // anyways
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
                                      upper_grid_step, Integer<base_length>{});
 
-  diff_operator.print_operator();
+  // diff_operator.print_operator();
 
-  // convolution::Convolve(convolved, u_domain, diff_operator.get_values(),
+  // convolution::Convolve(convolved, u_domain,
+  // diff_operator.get_values(),
   //                       diff_operator.get_offsets());
 
   // std::ofstream file("convolved.dx");
@@ -347,25 +315,25 @@ int main(int argc, char *argv[]) {
 
   // Here I am testing that ty u is indeed harmonic
 
-  std::array<OffsetType, 7u> offsets{{{-1, 0, 0},
-                                      {1, 0, 0},
-                                      {0, 0, 0},
-                                      {0, -1, 0},
-                                      {0, 1, 0},
-                                      {0, 0, -1},
-                                      {0, 0, 1}}};
+  domain::array<OffsetType, 7u> offsets{{{-1, 0, 0},
+                                         {1, 0, 0},
+                                         {0, 0, 0},
+                                         {0, -1, 0},
+                                         {0, 1, 0},
+                                         {0, 0, -1},
+                                         {0, 0, 1}}};
   // Smoothing operator
-  std::array<DataType, 7u> values{-omega * 1. / 6., -omega * 1. / 6.,
-                                  -1. + omega,      -omega * 1. / 6.,
-                                  -omega * 1. / 6., -omega * 1 / 6.,
-                                  -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
+  domain::array<DataType, 7u>
+      values{-omega * 1. / 6., -omega * 1. / 6., -1. + omega,
+             -omega * 1. / 6., -omega * 1. / 6., -omega * 1 / 6.,
+             -omega * 1 / 6.}; // Formula S = 1 - D^(-1) L,
 
   Multi_Level_operator mult_level(
       Integer<nlev>{}, values, offsets,
       Integer<base_length>{}); // Smoothing diff_operator
-                               //
-                               //  // mult_level.print_operator();
-                               //
+
+  //  // mult_level.print_operator();
+  //
   //  // //  std::array<OffsetType, 9u> offsets_coarse{
   //  // //      {{-1, -1},
   //  // //       {0, -1},
@@ -385,8 +353,8 @@ int main(int argc, char *argv[]) {
   //
   //  Lambda expression for computing deviation
 
-  std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
-  std::array<DataType, 1u> values_coarse{1.};
+  domain::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
+  domain::array<DataType, 1u> values_coarse{1.};
 
   Multi_Level_operator coarser(Integer<nlev>{}, values_coarse, offsets_coarse,
                                Integer<base_length>{});
@@ -430,11 +398,11 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "The right hand side domain is: " << std::endl;
   // rhs_domain.get_domain().print_domain();
-  std::stringstream filenames;
+  // std::stringstream filenames;
 
-  filenames << "deviations" << base_length << ".txt";
+  // filenames << "deviations" << base_length << ".txt";
 
-  std::ofstream out_file_devation(filenames.str());
+  // std::ofstream out_file_devation(filenames.str());
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -457,7 +425,6 @@ int main(int argc, char *argv[]) {
   }
 
   cudaDeviceSynchronize();
-
   auto end_time = std::chrono::high_resolution_clock::now();
 
   std::chrono::duration<double> duration = end_time - start_time;

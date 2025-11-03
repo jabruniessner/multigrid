@@ -6,7 +6,8 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_COMPILER "acpp" CACHE STRING "Choose C++ compiler")
 
 # Set the project name
-project(MultigridSYCL)
+project(MultigridSYCL LANGUAGES CXX CUDA)
+set(CMAKE_CUDA_ARCHITECTURES 89)
 
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -18,15 +19,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(CMAKE_CXX_COMPILER MATCHES acpp.*)
 set(CMAKE_CXX_FLAGS_RELEASE " --acpp-targets=generic")
 set(CMAKE_CXX_FLAGS "--acpp-pcuda")
-elseif(CMAKE_CXX_COMPILER MATCHES nvcc.*)
-set(CMAKE_CXX_FLAGS "--expt-extended-lambda --expt-relaxed-constexpr")
-set(CMAKE_CUDA_SOURCE_FILE_EXTENSIONS cu;cuh;cc;cpp)
-
-# Apply to all CUDA files in this directory and subdirectories
-add_compile_options(-x cu)
-
 else()
-  message(FATAL_ERROR "no supported compiler chosen")
+  set(CMAKE_CUDA_FLAGS "--expt-extended-lambda --expt-relaxed-constexpr")
 endif()
 
 
@@ -39,25 +33,43 @@ include_directories("mdspan")
 #find_package(TBB REQUIRED)
 #link_libraries(TBB:tbb)
 
-
-
-add_library(prof SHARED profiling_library.cc)
+#set(LIB_NAME prof)
+#set(LIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/profiling_library.cc)
+#set(LIB_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/lib${LIB_NAME}.so)
+#
+#
+##add_library(${LIB_NAME} SHARED ${LIB_SOURCES})
+#
+#add_custom_command(
+#    OUTPUT ${LIB_OUTPUT}
+#    COMMAND nvcc -std=c++20 -Xcompiler -fPIC -shared -o ${LIB_OUTPUT} ${LIB_SOURCES}
+#    DEPENDS ${LIB_SOURCES}
+#    COMMENT "Building shared library ${LIB_NAME} with custom command"
+#)
+#
+#add_custom_target(${LIB_NAME} ALL DEPENDS ${LIB_OUTPUT})
 
 #endif()
 
-# Add the executable
-add_executable(run_tests tests.cc)
-add_executable(test_CG_solver test_CG.cc)
+add_library(prof profiling_library.cc)
 
-add_executable(test_CG_solver3D test_CG3D.cc)
-add_executable(run_test_3D tests3D.cc)
-add_executable(test_lvl_trans tests_level_transition.cc)
-add_executable(test_lvl_trans3D tests_level_transition3D.cc)
-add_executable(MultiGrid_test MultigridDomain_test.cc)
+# Add the executable
+add_executable(run_tests tests.cu)
+add_executable(test_CG_solver test_CG.cu)
+
+add_executable(test_CG_solver3D test_CG3D.cu)
+add_executable(run_test_3D tests3D.cu)
+add_executable(test_lvl_trans tests_level_transition.cu)
+add_executable(test_lvl_trans3D tests_level_transition3D.cu)
+add_executable(MultiGrid_test MultigridDomain_test.cu)
 add_executable(Laplacian2D Laplacian_2D.cc)
 add_executable(Laplacian3D Laplacian_3D.cc)
-add_executable(Laplacian3D_GS Laplacian_3D_GS.cc)
+add_executable(Laplacian3D_GS Laplacian_3D_GS.cu)
+
+
+
 # Link NVTX to your target
+add_dependencies(Laplacian3D_GS prof)
 target_link_libraries(Laplacian3D_GS PRIVATE prof)
 target_compile_definitions(Laplacian3D_GS PRIVATE PROFILING)
 

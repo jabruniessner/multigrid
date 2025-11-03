@@ -142,15 +142,16 @@ struct Multi_Level_operator
 
   Multi_Level_operator() {};
 
-  Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &values,
-                       std::array<OffsetType, length> &offsets,
+  Multi_Level_operator(Integer<nlev>, domain::array<DataType, length> &values,
+                       domain::array<OffsetType, length> &offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets),
         Multi_Level_operator<Dim, DataType, length, base_length, nlev - 1>(
             Integer<nlev - 1>{}, values, offsets, Integer<base_length>{}) {};
 
-  Multi_Level_operator(Integer<nlev>, std::array<DataType, length> &values_new,
-                       std::array<OffsetType, length> &offsets,
+  Multi_Level_operator(Integer<nlev>,
+                       domain::array<DataType, length> &values_new,
+                       domain::array<OffsetType, length> &offsets,
                        DataType grid_step, Integer<base_length>)
       : offsets(offsets),
         Multi_Level_operator<Dim, DataType, length, base_length, nlev - 1>(
@@ -200,8 +201,8 @@ struct Multi_Level_operator
                          nlev - 1>::print_operator();
   }
 
-  std::array<DataType, length> values;
-  std::array<OffsetType, length> offsets;
+  domain::array<DataType, length> values;
+  domain::array<OffsetType, length> offsets;
 };
 
 template <Dimension Dim, typename DataType, std::size_t length,
@@ -209,13 +210,13 @@ template <Dimension Dim, typename DataType, std::size_t length,
 struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
   using OffsetType = std::array<int, Dim>;
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values,
-                       std::array<OffsetType, length> &offsets,
+  Multi_Level_operator(Integer<1>, domain::array<DataType, length> &values,
+                       domain::array<OffsetType, length> &offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets) {};
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &values_new,
-                       std::array<OffsetType, length> &offsets,
+  Multi_Level_operator(Integer<1>, domain::array<DataType, length> &values_new,
+                       domain::array<OffsetType, length> &offsets,
                        DataType grid_step, Integer<base_length>)
       : offsets(offsets) {
 
@@ -226,8 +227,8 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
     }
   }
 
-  Multi_Level_operator(Integer<1>, std::array<DataType, length> &&values,
-                       std::array<OffsetType, length> &&offsets,
+  Multi_Level_operator(Integer<1>, domain::array<DataType, length> &&values,
+                       domain::array<OffsetType, length> &&offsets,
                        Integer<base_length>)
       : values(values), offsets(offsets) {};
   template <std::size_t access_level = 1> auto get_values() { return values; }
@@ -245,8 +246,8 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
     }
   }
 
-  std::array<DataType, length> values;
-  std::array<OffsetType, length> offsets;
+  domain::array<DataType, length> values;
+  domain::array<OffsetType, length> offsets;
 };
 
 } // namespace multigrid_domain
