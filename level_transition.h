@@ -2,8 +2,8 @@
 #include "Convolution.h"
 #include "utils.h"
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 #include <execution>
+#include <tuple>
 
 #ifndef LEVEL_TRANSITION
 #define LEVEL_TRANSITION
@@ -22,8 +22,8 @@ void coarsening(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                 const std::array<Offsets, size> offsets,
                 std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(i);
@@ -58,8 +58,8 @@ void coarsening_inject(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest,
                        const std::array<Offsets, size> offsets,
                        std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
@@ -111,8 +111,8 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
                          const std::array<Offsets, size> offsets,
                          std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
+  iterator start(0);
+  iterator end(dest1.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<((strides_all + 1) / 2 - 1)...>(idx);
@@ -143,13 +143,14 @@ void coarsening_and_copy(Domain<Dim, ((strides_all + 1) / 2 - 1)...> &dest1,
 
 template <Dimension Dim, Length... strides_all, typename... Index,
           typename... Rest_indices>
-DataType domain_refinement_helper(const Domain<Dim, strides_all...> &dom,
-                                  std::tuple<Index...> &index_tuple,
-                                  Rest_indices &...rest_indices) {
+DataType domain_refinement_helper(const Domain<Dim, strides_all...> dom,
+                                  std::tuple<Index...> index_tuple,
+                                  Rest_indices... rest_indices) {
   if constexpr (sizeof...(Index) == Dim) {
     std::apply([&](auto &&...args) { ((args /= 2), ...); }, index_tuple);
 
     return std::apply(dom, index_tuple);
+
   } else {
     auto first = utils::get_first(rest_indices...);
     auto rest = utils::get_tail(rest_indices...);
@@ -194,24 +195,36 @@ DataType domain_refinement_helper(const Domain<Dim, strides_all...> &dom,
       return return_value / 2;
     }
   }
-
-  return 0.;
 }
 
 template <Dimension Dim, Length... strides_all, std::size_t... dims>
-void refinement(Domain<Dim, strides_all...> &dest,
-                Domain<Dim, ((strides_all + 1) / 2 - 1)...> &src,
+void refinement(Domain<Dim, strides_all...> dest,
+                Domain<Dim, ((strides_all + 1) / 2 - 1)...> src,
                 std::index_sequence<dims...>) {
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
+
+  auto *src_ptr = src.values_buff;
+  auto *dest_ptr = dest.values_buff;
+  // printf("At the beginning of the call the ptr_pointer value is %p\n",
+  //        ptr_pointer);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
+    //  printf("Inside the for_each loop, ptr_pointer is %p\n", ptr_pointer);
+    //  printf("Inside the for_each loop, dest_ptr:%p \n", dest.values_buff);
+    //  printf("Inside the for_each loop, src_ptr:%p \n", src.values_buff);
+
+    src.values_buff = src_ptr;
+    dest.values_buff = dest_ptr;
     auto I = domain::flat_to_multi_index<strides_all...>(idx);
+
+    const auto src_domain = src;
+    const auto dest_domain = dest;
     ((I[dims] += dest.padding_width), ...);
     std::tuple<> empty_index_tuple;
-    dest(I[dims]...) =
-        domain_refinement_helper(src, empty_index_tuple, I[dims]...);
+    dest_domain(I[dims]...) =
+        domain_refinement_helper(src_domain, empty_index_tuple, I[dims]...);
   });
 }
 
@@ -229,8 +242,8 @@ void refinement_and_copy(Domain<Dim, strides_all...> &dest1,
   assert(dest1.q == src.q && dest2.q == src.q);
   // assert(dest.padding_width == src.padding_width);
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(dest1.num_dofs);
+  iterator start(0);
+  iterator end(dest1.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<strides_all...>(idx);

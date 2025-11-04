@@ -9,6 +9,12 @@ int main() {
   Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);
   Domain<2, 7u, 7u> domain_src(Paddings::PERIODIC, 1);
 
+  printf("At the very beginning the coarse domain has a pointer: %p\n",
+         domain_dest.values_buff);
+
+  printf("At the very beginning the fine domain has a pointer: %p\n",
+         domain_src.values_buff);
+
   constexpr std::array<DataType, 9> values{
       1. / 9, 1. / 9, 1. / 9., 1. / 9, 1. / 9, 1. / 9, 1. / 9, 1. / 9, 1. / 9};
 

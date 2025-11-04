@@ -83,7 +83,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
                                                      positions...)];
   }
 
-  DataType *values_buff;
+  mutable DataType *values_buff;
   Length strides[Dim];
   Length num_values;
   Length num_dofs;
