@@ -2,13 +2,20 @@
 #include "Domain.h"
 #include <algorithm>
 #include <array>
-#include <boost/iterator/counting_iterator.hpp>
 #include <cmath>
 #include <cstddef>
 #include <execution>
 #include <numeric>
 #include <ostream>
 #include <utility>
+
+#ifdef __NVCOMPILER
+#include <thrust/iterator/counting_iterator.h>
+using iterator = thrust::counting_iterator<int>;
+#else
+#include <boost/iterator/counting_iterator.hpp>
+using iterator = boost::iterators::counting_iterator<int>;
+#endif
 
 #ifndef CG_SOLVER_H
 #define CG_SOLVER_H
@@ -33,8 +40,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   DataType r_squared_next = 0;
   DataType beta = 0;
 
-  boost::iterators::counting_iterator<int> begin(0);
-  boost::iterators::counting_iterator<int> end(init_guess.num_dofs);
+  iterator begin(0);
+  iterator end(init_guess.num_dofs);
 
   DataType r_squared = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
@@ -86,6 +93,7 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
 
   int count = 0;
   while (thresh < residual) {
+    // for (int i = 0; i < 100; i++) {
     count++;
 
     DataType r_squared_next = std::transform_reduce(
@@ -139,9 +147,9 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
     alpha = p_squared_A == 0 ? 0. : r_squared / p_squared_A;
     p_squared_A = 0;
   }
-
-  //  std::cout << "We made " << count << " CG iterations." << std::endl;
-  residual = std::sqrt(residual);
+  //
+  //  //  std::cout << "We made " << count << " CG iterations." << std::endl;
+  //  residual = std::sqrt(residual);
   // std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
@@ -190,8 +198,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
 
   auto &strides = init_guess.strides;
   Length &padding_width = init_guess.padding_width;
-  boost::iterators::counting_iterator<int> begin(0);
-  boost::iterators::counting_iterator<int> end(init_guess.num_dofs);
+  iterator begin(0);
+  iterator end(init_guess.num_dofs);
 
   // init_guess.print_domain();
   //

@@ -28,8 +28,8 @@ int main() {
                                                {0, 0, 1},
                                                {0, 0, -1}}};
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end((length + 2) * (length + 2));
+  iterator start(0);
+  iterator end((length + 2) * (length + 2));
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<length + 2, length + 2>(idx);

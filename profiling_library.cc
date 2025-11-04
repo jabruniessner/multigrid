@@ -23,6 +23,8 @@ Values::~Values() {
   PRINT_TIMING(refinement);
   PRINT_TIMING(post_smoothing);
   PRINT_TIMING(residual_computation);
+  PRINT_TIMING(coarser_grids);
+  PRINT_TIMING(coarse_grid_solver);
 }
 
 Values values;

@@ -561,10 +561,12 @@ struct V_Cycle_base {
                   sizeof...(Num_Iters) == nlev - 1);
 
     if constexpr (iter_level == 1) {
+      PROFILE_START(coarse_grid_solver);
       solver(next.template get_domain<iter_level>(),
              rhs_domain.template get_domain<iter_level>(),
              Diff_operator.template get_values<iter_level>(),
              Diff_operator.template get_offsets<iter_level>());
+      PROFILE_END_DEEP(coarse_grid_solver);
       return;
     } else {
 
@@ -579,7 +581,8 @@ struct V_Cycle_base {
           //  DataType const residual = compute_residual(
           //      rhs_domain.template get_domain<nlev>(),
           //      current.template get_domain<nlev>(),
-          //      next.template get_domain<nlev>(), diff_operator.get_values(),
+          //      next.template get_domain<nlev>(),
+          // diff_operator.get_values(),
           //      diff_operator.get_offsets());
 
           DataType residual;
@@ -642,7 +645,8 @@ struct V_Cycle_base {
         //    std::ofstream outfile2("After_subtract_next.dx");
         //    next.template
         //    get_domain<iter_level>().print_dx_to_stream(outfile2, 0,
-        //                                                              0, 0,
+        //                                                              0,
+        // 0,
         //                                                              1);
         //  }
         PROFILE_START(restriction)
@@ -653,20 +657,21 @@ struct V_Cycle_base {
             coarsening_operator.template get_offsets<iter_level>());
         PROFILE_END(restriction)
 
-        //  next.template get_domain<iter_level>().q.wait();
+        //  //  next.template get_domain<iter_level>().q.wait();
 
-        //  std::cout << "After the coarsening: " << std::endl;
-        //  rhs_domain.template get_domain<iter_level - 1>().print_domain();
-
+        //  //  std::cout << "After the coarsening: " << std::endl;
+        //  //  rhs_domain.template get_domain<iter_level - 1>().print_domain();
+        PROFILE_START(coarser_grids)
         iteration<iter_level - 1>(
             next, current, rhs_domain, Smooth_operator, Diff_operator,
             coarsening_operator, sqrt2 * grid_step, omega, num_iters_,
             smoother_iters_pre, smoother_iters_post, true);
+        PROFILE_END(coarser_grids)
 
-        //  next.template get_domain<nlev>().q.wait();
+        //  //  next.template get_domain<nlev>().q.wait();
 
-        //  std::cout << "After the coarse grid solve: " << std::endl;
-        //  next.template get_domain<iter_level - 1>().print_domain();
+        //  //  std::cout << "After the coarse grid solve: " << std::endl;
+        //  //  next.template get_domain<iter_level - 1>().print_domain();
 
         PROFILE_START(refinement)
         level_transition::refinement(
@@ -674,17 +679,21 @@ struct V_Cycle_base {
             next.template get_domain<iter_level - 1>());
 
         //  if constexpr (iter_level == nlev) {
-        //    std::cout << "The next after the refinement is: " << std::endl;
+        //    std::cout << "The next after the refinement is: " <<
+        // std::endl;
         //    next.get_domain().print_domain();
-        //    std::cout << "The current after the refinement is: " << std::endl;
+        //    std::cout << "The current after the refinement is: " <<
+        // std::endl;
         //    current.get_domain().print_domain();
         //  }
 
         //  if constexpr (iter_level == nlev) {
         //    std::ofstream outfile("before_domain_adding_next.dx");
-        //    next.template get_domain<iter_level>().print_dx_to_stream(outfile,
+        //    next.template
+        // get_domain<iter_level>().print_dx_to_stream(outfile,
         //    0,
-        //                                                              0, 0,
+        //                                                              0,
+        // 0,
         //                                                              1);
 
         //    std::ofstream outfile2("before_domain_adding_current.dx");
@@ -698,7 +707,8 @@ struct V_Cycle_base {
         PROFILE_END(refinement)
 
         //  if constexpr (iter_level == nlev) {
-        //    std::cout << "The next after the add_domains is: " << std::endl;
+        //    std::cout << "The next after the add_domains is: " <<
+        // std::endl;
         //    next.get_domain().print_domain();
         //    std::cout << "The current after the add_domains is: " <<
         //    std::endl; current.get_domain().print_domain();
@@ -706,9 +716,11 @@ struct V_Cycle_base {
 
         //  if constexpr (iter_level == nlev) {
         //    std::ofstream outfile("after_domain_adding_next.dx");
-        //    next.template get_domain<iter_level>().print_dx_to_stream(outfile,
+        //    next.template
+        // get_domain<iter_level>().print_dx_to_stream(outfile,
         //    0,
-        //                                                              0, 0,
+        //                                                              0,
+        // 0,
         //                                                              1);
 
         //    std::ofstream outfile2("after_domain_adding_current.dx");

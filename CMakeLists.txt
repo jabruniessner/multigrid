@@ -5,19 +5,22 @@ cmake_minimum_required(VERSION 3.10)
 project(MultigridSYCL)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
+
+
+
+if(CMAKE_CXX_COMPILER MATCHES acpp)
 set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
-
 set(CMAKE_CXX_FLAGS "-ltbb --acpp-stdpar")
+else()
+set(CMAKE_CXX_FLAGS "-stdpar")
+endif()
 
-
-
-set(CMAKE_CXX_COMPILER "acpp")
 
 include_directories("mdspan")
 

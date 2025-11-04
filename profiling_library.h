@@ -20,6 +20,8 @@ struct Values {
   double post_smoothing = 0;
   double residual_computation = 0;
   double overall_time = 0;
+  double coarser_grids = 0;
+  double coarse_grid_solver = 0;
   ~Values();
 };
 
@@ -47,8 +49,15 @@ extern Values values;
     std::chrono::duration<double> duration = end_##type - start_##type;        \
     profiling::values.type += duration.count();                                \
   }
+
+#define PROFILE_END_DEEP(type)                                                 \
+  auto end_##type = std::chrono::high_resolution_clock::now();                 \
+  std::chrono::duration<double> duration = end_##type - start_##type;          \
+  profiling::values.type += duration.count();
+
 #else
 #define PROFILE_END(type)
+#define PROFILE_END_DEEP(type)
 #endif
 
 #endif

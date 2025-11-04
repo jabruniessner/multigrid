@@ -2,10 +2,17 @@
 #include "predefinitions.h"
 #include <algorithm>
 #include <array>
-#include <boost/iterator/counting_iterator.hpp>
 #include <cstddef>
 #include <execution>
 #include <utility>
+
+#ifdef __NVCOMPILER
+#include <thrust/iterator/counting_iterator.h>
+using iterator = thrust::counting_iterator<int>;
+#else
+#include <boost/iterator/counting_iterator.hpp>
+using iterator = boost::iterators::counting_iterator<int>;
+#endif
 
 #ifndef CONVOLUTION_H
 #define CONVOLUTION_H
@@ -23,8 +30,8 @@ int Convolve(Domain<Dim, strides_all...> &dest,
              const std::array<Offsets, size> &offsets,
              std::index_sequence<dims...>) {
 
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
@@ -61,8 +68,8 @@ int Subtract_Convolve(Domain<Dim, strides_all...> &dest,
                       const std::array<Offsets, size> &offsets,
                       std::index_sequence<dims...>) {
 
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
@@ -246,8 +253,8 @@ int PBE_Convolve(Domain<Dim, strides_all...> &dest,
                  const DataType epsilon_r, const DataType delta_epsilon,
                  std::index_sequence<dims...>) {
 
-  boost::counting_iterator<int> start(0);
-  boost::counting_iterator<int> end(dest.num_dofs);
+  iterator start(0);
+  iterator end(dest.num_dofs);
   std::for_each(std::execution::par_unseq, start, end, [=](int i) {
     auto I = domain::flat_to_multi_index<strides_all...>(i);
     ((I[dims] += dest.padding_width), ...);
