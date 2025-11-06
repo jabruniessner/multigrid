@@ -4,7 +4,6 @@
 #include "level_transition.h"
 #include "profiling_library.h"
 #include <algorithm>
-#include <boost/iterator/counting_iterator.hpp>
 #include <chrono>
 #include <execution>
 #include <fstream>
@@ -89,8 +88,8 @@ DataType compute_deviation(domain::Domain<Dim, strides_all...> sol_domain,
   // DataType *result = sycl::malloc_device<DataType>(1, sol_domain.q);
 
   std::array<int, Dim> length{(strides_all + 1)...};
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
+  iterator start(0);
+  iterator end(((strides_all + 1) * ...));
 
   DataType result = std::transform_reduce(
       std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
@@ -141,8 +140,8 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
 
   std::array<int, Dim> length{(strides_all + 1)...};
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(((strides_all + 1) * ...));
+  iterator start(0);
+  iterator end(((strides_all + 1) * ...));
 
   DataType result = std::transform_reduce(
       std::execution::par_unseq, start, end, 0.0, std::plus<>{}, [=](int idx) {
@@ -210,8 +209,8 @@ int main(int argc, char *argv[]) {
     return -3 * x * x - 4 * y * y + 7 * z * z;
   };
 
-  boost::iterators::counting_iterator<int> start(0);
-  boost::iterators::counting_iterator<int> end(u_domain.num_values);
+  iterator start(0);
+  iterator end(u_domain.num_values);
 
   std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
     auto I = domain::flat_to_multi_index<std::get<0>(length) + 2,
@@ -239,9 +238,8 @@ int main(int argc, char *argv[]) {
 
   {
 
-    boost::iterators::counting_iterator<int> start(0);
-    boost::iterators::counting_iterator<int> end((std::get<1>(length) + 2) *
-                                                 (std::get<2>(length) + 2));
+    iterator start(0);
+    iterator end((std::get<1>(length) + 2) * (std::get<2>(length) + 2));
 
     auto &boundary_domain = lhs_domain1.template get_domain<nlev>();
     std::for_each(std::execution::par_unseq, start, end, [=](int idx) {
@@ -279,16 +277,19 @@ int main(int argc, char *argv[]) {
   //  {
   //    auto &boundary_domain = lhs_domain2.template get_domain<nlev>();
   //    q.parallel_for(
-  //         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
+  //         sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) +
+  // 2),
   //         [=](sycl::id<2> I) {
   //           boundary_domain(I[0], I[1], 0) = boundary_conditions(
   //               (DataType)I[0] / (std::get<1>(length) + 2),
   //               (DataType)I[1] / (std::get<2>(length) + 2), 0);
   //
   //           boundary_domain(I[0], I[1], std::get<2>(length) + 1) =
-  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
+  //               boundary_conditions((DataType)I[0] / (std::get<1>(length)
+  //+
   //               2),
-  //                                   (DataType)I[1] / (std::get<2>(length) +
+  //                                   (DataType)I[1] / (std::get<2>(length)
+  //+
   //                                   2), 1);
   //
   //           boundary_domain(0, I[0], I[1]) = boundary_conditions(
@@ -297,7 +298,8 @@ int main(int argc, char *argv[]) {
   //
   //           boundary_domain(std::get<0>(length) + 1, I[0], I[1]) =
   //               boundary_conditions(1,
-  //                                   (DataType)I[0] / (std::get<1>(length) +
+  //                                   (DataType)I[0] / (std::get<1>(length)
+  //+
   //                                   2), (DataType)I[1] /
   //                                   (std::get<2>(length)
   //                                   + 2));
@@ -307,15 +309,17 @@ int main(int argc, char *argv[]) {
   //               (DataType)I[1] / (std::get<2>(length) + 2));
   //
   //           boundary_domain(I[0], std::get<1>(length) + 1, I[1]) =
-  //               boundary_conditions((DataType)I[0] / (std::get<1>(length) +
+  //               boundary_conditions((DataType)I[0] / (std::get<1>(length)
+  //+
   //               2),
   //                                   1,
-  //                                   (DataType)I[1] / (std::get<2>(length) +
+  //                                   (DataType)I[1] / (std::get<2>(length)
+  //+
   //                                   2));
   //         })
   //        .wait();
   //  }
-
+  //
   std::array<OffsetType, 7> offsets_op{{{-1, 0, 0},
                                         {1, 0, 0},
                                         {0, 0, 0},
@@ -326,7 +330,8 @@ int main(int argc, char *argv[]) {
   std::array<DataType, 7> values_op{
       -1., -1,  6,  -1.,
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
-                      // as it is only applied to the right hand side anyways
+                      // as it is only applied to the right hand side
+                      //   anyways
   Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
                                      upper_grid_step, Integer<base_length>{});
 
@@ -359,24 +364,24 @@ int main(int argc, char *argv[]) {
                                //
                                //  // mult_level.print_operator();
                                //
-  //  // //  std::array<OffsetType, 9u> offsets_coarse{
-  //  // //      {{-1, -1},
-  //  // //       {0, -1},
-  //  // //       {1, -1},
-  //  // //       {-1, 0},
-  //  // //       {0, 0},
-  //  // //       {1, 0},
-  //  // //       {-1, 1},
-  //  // //       {0, 1},
-  //  // //       {1, 1}}}; // Coarsening operator single point for now
-  //  // //  std::array<DataType, 9u> values_coarse{1. / 16., 2. / 16., 1.
-  //  / 16.,
-  //  // //                                         2. / 16., 4. / 16., 2.
-  //  / 16.,
-  //  // //                                         1. / 16., 2. / 16., 1.
-  //  / 16.};
-  //
-  //  Lambda expression for computing deviation
+  //  //  // //  std::array<OffsetType, 9u> offsets_coarse{
+  //  //  // //      {{-1, -1},
+  //  //  // //       {0, -1},
+  //  //  // //       {1, -1},
+  //  //  // //       {-1, 0},
+  //  //  // //       {0, 0},
+  //  //  // //       {1, 0},
+  //  //  // //       {-1, 1},
+  //  //  // //       {0, 1},
+  //  //  // //       {1, 1}}}; // Coarsening operator single point for now
+  //  //  // //  std::array<DataType, 9u> values_coarse{1. / 16., 2. / 16., 1.
+  //  //  / 16.,
+  //  //  // //                                         2. / 16., 4. / 16., 2.
+  //  //  / 16.,
+  //  //  // //                                         1. / 16., 2. / 16., 1.
+  //  //  / 16.};
+  //  //
+  //  //  Lambda expression for computing deviation
 
   std::array<OffsetType, 1u> offsets_coarse{{{0, 0, 0}}};
   std::array<DataType, 1u> values_coarse{1.};
@@ -423,11 +428,11 @@ int main(int argc, char *argv[]) {
 
   // std::cout << "The right hand side domain is: " << std::endl;
   // rhs_domain.get_domain().print_domain();
-  std::stringstream filenames;
-
-  filenames << "deviations" << base_length << ".txt";
-
-  std::ofstream out_file_devation(filenames.str());
+  //  std::stringstream filenames;
+  //
+  //  filenames << "deviations" << base_length << ".txt";
+  //
+  //  std::ofstream out_file_devation(filenames.str());
 
   auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -439,9 +444,11 @@ int main(int argc, char *argv[]) {
 
     //  DataType const deviation_grad = compute_truth_deviaton_gradient(
     //      u_domain, lhs_domain1.get_domain(), helper, helper2,
-    //      diff_operator.get_values(), diff_operator.get_offsets(), 1 / 511.);
+    //      diff_operator.get_values(), diff_operator.get_offsets(), 1 /
+    // 511.);
 
-    //  out_file_devation << "The deviation after " << num << " iterations is "
+    //  out_file_devation << "The deviation after " << num << " iterations
+    //  is "
     //                    << deviation << " The deviation_grad is "
     //                    << deviation_grad << std::endl;
 

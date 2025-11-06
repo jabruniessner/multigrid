@@ -34,8 +34,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
                const std::array<Offsets, size> offsets, DataType thresh,
                const std::index_sequence<dims...> &) {
 
-  auto &strides = init_guess.strides;
-  Length &padding_width = init_guess.padding_width;
+  auto strides = init_guess.strides;
+  const Length padding_width = init_guess.padding_width;
 
   DataType r_squared_next = 0;
   DataType beta = 0;
@@ -43,36 +43,48 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   iterator begin(0);
   iterator end(init_guess.num_dofs);
 
+  // init_guess.print_domain();
+  // rhs.print_domain();
+
   DataType r_squared = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
-        ((I[dims] += init_guess.padding_width), ...);
+        ((I[dims] += padding_width), ...);
         // Computing the convolution for the initial residual
         DataType result = 0;
 
         for (int k = 0; k < size; k++) {
-          result += init_guess((I[dims] + offsets[k][dims])...) * values[k];
+          result += values[k] * init_guess((I[dims] + offsets[k][dims])...);
         }
         // Assigning values and reducing to the sum
         defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...) - result;
 
         return defect_r(I[dims]...) * defect_r(I[dims]...);
       });
-  // init_guess.print_domain();
+
+  // defect_p.print_domain();
+  // std::cout << "The value of r_squared is: " << r_squared << std::endl;
 
   DataType p_squared_A = std::transform_reduce(
-      std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
+      std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
+      [](auto a, auto b) { return a + b; },
+      [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
-        ((I[dims] += init_guess.padding_width), ...);
+        ((I[dims] += defect_p.padding_width), ...);
 
         // Computing the convolution for the initial residual
         DataType result = 0;
         for (int k = 0; k < size; k++) {
+          // auto idx = domain::flatten_index<strides_all...>(
+          //     defect_p.padding_width, (I[dims] + offsets[k][dims])...);
+
           result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
         }
 
         return result * defect_p(I[dims]...);
       });
+
+  // std::cout << "The value of p_squared_A is: " << p_squared_A << std::endl;
 
   // init_guess.print_domain();
 
@@ -87,22 +99,31 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   residual = std::sqrt(residual);
   thresh = thresh * residual;
 
-  // std::cout << "The residual before the conjugate gradient is: " <<
-  // residual
-  //           << std::endl;
+  //  std::cout << "The residual before the conjugate gradient is: " << residual
+  //            << std::endl;
 
   int count = 0;
   while (thresh < residual) {
-    // for (int i = 0; i < 100; i++) {
+    // for (int i = 0; i < 85; i++) {
     count++;
 
+    // std::cout << "The value of alpha is: " << alpha << std::endl;
+
+    std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
+      auto I = domain::flat_to_multi_index<strides_all...>(idx);
+      ((I[dims] += padding_width), ...);
+      // Update the solution
+      init_guess(I[dims]...) += defect_p(I[dims]...) * (alpha);
+    });
+
     DataType r_squared_next = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
+        std::execution::par_unseq, begin, end, 0.0,
+        [](auto a, auto b) { return a + b; },
         [=](int idx) {
           auto I = domain::flat_to_multi_index<strides_all...>(idx);
           ((I[dims] += padding_width), ...);
           // Update the solution
-          init_guess(I[dims]...) += (alpha)*defect_p(I[dims]...);
+          // init_guess(I[dims]...) += (alpha)*defect_p(I[dims]...);
 
           // Computing the convolution for the residual update
           DataType result = 0;
@@ -115,6 +136,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
 
           return defect_r(I[dims]...) * defect_r(I[dims]...);
         });
+
+    //  std::cout << "r_squared_next is " << r_squared_next << std::endl;
 
     // init_guess.print_domain();
     DataType beta = r_squared == 0 ? 0. : r_squared_next / r_squared;
@@ -141,12 +164,21 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
           return result * defect_p(I[dims]...);
         });
 
-    if (count % 10 == 0)
+    //  std::cout << "The value of p_squared_A later is: " << p_squared_A
+    //            << std::endl;
+
+    if (count % 10 == 0) {
       residual = std::sqrt(r_squared / defect_r.num_dofs);
+      //  std::cout << "Num iters " << count << std::endl;
+      //  std::cout << "Residual: " << residual << std::endl;
+    }
 
     alpha = p_squared_A == 0 ? 0. : r_squared / p_squared_A;
     p_squared_A = 0;
   }
+
+  // std::cout << "At the end of the iterations, we have: " << std::endl;
+  // std::cout << ""
   //
   //  //  std::cout << "We made " << count << " CG iterations." << std::endl;
   //  residual = std::sqrt(residual);
@@ -248,7 +280,8 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
   DataType residual = std::sqrt(r_squared);
   thresh = thresh * residual;
 
-  // std::cout << "The residual before the conjugate gradient is: " << residual
+  // std::cout << "The residual before the conjugate gradient is: " <<
+  // residual
   //           << std::endl;
   int count = 0;
   // for (int i = 0; i < num_iters; i++)
