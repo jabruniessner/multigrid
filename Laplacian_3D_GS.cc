@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   int num_iter = std::stoi(argv[1]);
 
   constexpr std::size_t nlev = 5u;
-  constexpr std::size_t base_length = 16u;
+  constexpr std::size_t base_length = 7u;
   constexpr DataType omega = 1.;
   // constexpr DataType box_length = 12;
   constexpr DataType upper_grid_step = 1;
