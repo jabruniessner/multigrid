@@ -22,6 +22,33 @@ using iterator = boost::iterators::counting_iterator<int>;
 
 namespace cg_solver {
 
+template <typename Domain, typename Offset, std::size_t size,
+          std::size_t... dims>
+struct p_squared_A_helper {
+  decltype(auto) operator()(int idx) {
+    constexpr auto strides = Domain::length;
+    auto I = domain::flat_to_multi_index<strides[dims]...>(idx);
+    ((I[dims] += defect_p.padding_width), ...);
+
+    // Computing the convolution for the initial residual
+    DataType result = 0;
+
+#pragma unroll
+    for (int k = 0; k < size; k++) {
+      // auto idx = domain::flatten_index<strides_all...>(
+      //     defect_p.padding_width, (I[dims] + offsets[k][dims])...);
+
+      result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
+    }
+
+    return result * defect_p(I[dims]...);
+  }
+
+  Domain defect_p;
+  std::array<Offset, size> offsets;
+  std::array<DataType, size> values;
+};
+
 using namespace domain;
 
 template <typename DataType, typename Offsets, size_t size, Dimension Dim,
@@ -37,7 +64,6 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   auto strides = init_guess.strides;
   const Length padding_width = init_guess.padding_width;
 
-  DataType r_squared_next = 0;
   DataType beta = 0;
 
   iterator begin(0);
@@ -46,24 +72,31 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   // init_guess.print_domain();
   // rhs.print_domain();
 
+  std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
+    auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    ((I[dims] += padding_width), ...);
+    // Computing the convolution for the initial residual
+    DataType result = 0;
+
+#pragma unroll
+    for (int k = 0; k < size; k++) {
+      result += values[k] * init_guess((I[dims] + offsets[k][dims])...);
+    }
+    // Assigning values and reducing to the sum
+    defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...) - result;
+  });
+
   DataType r_squared = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, std::plus<>{}, [=](int idx) {
         auto I = domain::flat_to_multi_index<strides_all...>(idx);
         ((I[dims] += padding_width), ...);
         // Computing the convolution for the initial residual
-        DataType result = 0;
-
-        for (int k = 0; k < size; k++) {
-          result += values[k] * init_guess((I[dims] + offsets[k][dims])...);
-        }
-        // Assigning values and reducing to the sum
-        defect_r(I[dims]...) = defect_p(I[dims]...) = rhs(I[dims]...) - result;
 
         return defect_r(I[dims]...) * defect_r(I[dims]...);
       });
 
   // defect_p.print_domain();
-  // std::cout << "The value of r_squared is: " << r_squared << std::endl;
+  std::cout << "The value of r_squared is: " << r_squared << std::endl;
 
   DataType p_squared_A = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
@@ -74,6 +107,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
 
         // Computing the convolution for the initial residual
         DataType result = 0;
+
+#pragma unroll
         for (int k = 0; k < size; k++) {
           // auto idx = domain::flatten_index<strides_all...>(
           //     defect_p.padding_width, (I[dims] + offsets[k][dims])...);
@@ -84,7 +119,7 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
         return result * defect_p(I[dims]...);
       });
 
-  // std::cout << "The value of p_squared_A is: " << p_squared_A << std::endl;
+  std::cout << "The value of p_squared_A is: " << p_squared_A << std::endl;
 
   // init_guess.print_domain();
 
@@ -103,11 +138,11 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
   //            << std::endl;
 
   int count = 0;
-  while (thresh < residual) {
-    // for (int i = 0; i < 85; i++) {
+  //  while (thresh < residual) {
+  for (int i = 0; i < 1; i++) {
     count++;
 
-    // std::cout << "The value of alpha is: " << alpha << std::endl;
+    std::cout << "The value of alpha is: " << alpha << std::endl;
 
     std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
       auto I = domain::flat_to_multi_index<strides_all...>(idx);
@@ -116,28 +151,28 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
       init_guess(I[dims]...) += defect_p(I[dims]...) * (alpha);
     });
 
+    std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
+      auto I = domain::flat_to_multi_index<strides_all...>(idx);
+      ((I[dims] += padding_width), ...);
+
+      // Computing the convolution for the residual update
+      DataType result = 0;
+
+#pragma unroll
+      for (int k = 0; k < size; k++) {
+        result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
+      }
+
+      // Updating the residual
+      defect_r(I[dims]...) -= (alpha)*result;
+    });
+
     DataType r_squared_next = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0,
-        [](auto a, auto b) { return a + b; },
-        [=](int idx) {
-          auto I = domain::flat_to_multi_index<strides_all...>(idx);
-          ((I[dims] += padding_width), ...);
-          // Update the solution
-          // init_guess(I[dims]...) += (alpha)*defect_p(I[dims]...);
+        std::execution::par_unseq, defect_r.values_buff,
+        defect_r.values_buff + defect_r.num_values, 0.0, std::plus<>{},
+        [=](auto val) { return val * val; });
 
-          // Computing the convolution for the residual update
-          DataType result = 0;
-          for (int k = 0; k < size; k++) {
-            result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
-          }
-
-          // Updating the residual
-          defect_r(I[dims]...) -= (alpha)*result;
-
-          return defect_r(I[dims]...) * defect_r(I[dims]...);
-        });
-
-    //  std::cout << "r_squared_next is " << r_squared_next << std::endl;
+    std::cout << "r_squared_next is " << r_squared_next << std::endl;
 
     // init_guess.print_domain();
     DataType beta = r_squared == 0 ? 0. : r_squared_next / r_squared;
@@ -150,22 +185,56 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
       defect_p(I[dims]...) = defect_r(I[dims]...) + (beta)*defect_p(I[dims]...);
     });
 
-    p_squared_A = std::transform_reduce(
-        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-        [=](int idx) {
-          auto I = domain::flat_to_multi_index<strides_all...>(idx);
-          ((I[dims] += padding_width), ...);
+    //    p_squared_A = std::transform_reduce(
+    //        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
+    //        [=](int idx) {
+    //          auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    //          ((I[dims] += padding_width), ...);
+    //
+    //          DataType result = 0;
+    //
+    // #pragma unroll
+    //          for (int k = 0; k < size; k++) {
+    //            result += defect_p((I[dims] + offsets[k][dims])...) *
+    //            values[k];
+    //          }
+    //
+    //          return result * defect_p(I[dims]...);
+    //        });
+    //
 
-          DataType result = 0;
-          for (int k = 0; k < size; k++) {
-            result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
-          }
+    p_squared_A_helper<decltype(defect_p), Offsets, size, dims...> psa{
+        defect_p, offsets, values};
 
-          return result * defect_p(I[dims]...);
-        });
+    DataType p_squared_A = std::transform_reduce(
+        std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
+        [](auto a, auto b) { return a + b; }, psa);
 
-    //  std::cout << "The value of p_squared_A later is: " << p_squared_A
-    //            << std::endl;
+    //   DataType p_squared_A = std::transform_reduce(
+    //       std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
+    //       [](auto a, auto b) { return a + b; },
+    //       [=](int idx) {
+    //         auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    //         ((I[dims] += defect_p.padding_width), ...);
+
+    //         // Computing the convolution for the initial residual
+    //         DataType result = 0;
+
+    //         // #pragma unroll
+    //         for (int k = 0; k < size; k++) {
+    //           // auto idx = domain::flatten_index<strides_all...>(
+    //           //     defect_p.padding_width, (I[dims] +
+    //           offsets[k][dims])...);
+
+    //           result += defect_p((I[dims] + offsets[k][dims])...) *
+    //           values[k];
+    //         }
+
+    //         return result * defect_p(I[dims]...);
+    //       });
+
+    std::cout << "The value of p_squared_A later is: " << p_squared_A
+              << std::endl;
 
     if (count % 10 == 0) {
       residual = std::sqrt(r_squared / defect_r.num_dofs);
