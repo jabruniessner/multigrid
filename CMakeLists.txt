@@ -14,7 +14,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 if(CMAKE_CXX_COMPILER MATCHES acpp)
-set(CMAKE_CXX_FLAGS_DEBUG "--acpp-targets=omp.library-only -DDEBUGMODE -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
 set(CMAKE_CXX_FLAGS "-ltbb --acpp-stdpar")
 else()

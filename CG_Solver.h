@@ -1,5 +1,6 @@
 #include "Convolution.h"
 #include "Domain.h"
+#include "counting_iterator.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -9,13 +10,15 @@
 #include <ostream>
 #include <utility>
 
-#ifdef __NVCOMPILER
-#include <thrust/iterator/counting_iterator.h>
-using iterator = thrust::counting_iterator<int>;
-#else
-#include <boost/iterator/counting_iterator.hpp>
-using iterator = boost::iterators::counting_iterator<int>;
-#endif
+// #ifdef __NVCOMPILER
+// #include <thrust/iterator/counting_iterator.h>
+// using iterator = thrust::counting_iterator<int>;
+// #else
+// #include <boost/iterator/counting_iterator.hpp>
+// using iterator = boost::iterators::counting_iterator<int>;
+// #endif
+
+// using iterator = counting_iterator<int>;
 
 #ifndef CG_SOLVER_H
 #define CG_SOLVER_H
@@ -25,19 +28,20 @@ namespace cg_solver {
 template <typename Domain, typename Offset, std::size_t size,
           std::size_t... dims>
 struct p_squared_A_helper {
-  decltype(auto) operator()(int idx) const {
+  decltype(auto) operator()(const int idx) const {
     constexpr auto strides = Domain::length;
+
     auto I = domain::flat_to_multi_index<strides[dims]...>(idx);
     ((I[dims] += defect_p.padding_width), ...);
 
     // Computing the convolution for the initial residual
     DataType result = 0;
-#pragma unroll
+
     for (int k = 0; k < size; k++) {
       result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
     }
 
-    return defect_p(I[dims]...) * result;
+    return result * defect_p(I[dims]...);
   }
 
   const Domain defect_p;
@@ -96,6 +100,8 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
 
   // defect_p.print_domain();
   std::cout << "The value of r_squared is: " << r_squared << std::endl;
+
+  // defect_p.print_domain();
 
   DataType p_squared_A = std::transform_reduce(
       std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}

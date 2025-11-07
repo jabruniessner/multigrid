@@ -1,4 +1,5 @@
 #include "Domain.h"
+#include "counting_iterator.h"
 #include "predefinitions.h"
 #include <algorithm>
 #include <array>
@@ -6,13 +7,15 @@
 #include <execution>
 #include <utility>
 
-#ifdef __NVCOMPILER
-#include <thrust/iterator/counting_iterator.h>
-using iterator = thrust::counting_iterator<int>;
-#else
-#include <boost/iterator/counting_iterator.hpp>
-using iterator = boost::iterators::counting_iterator<int>;
-#endif
+using iterator = counting_iterator<int>;
+
+// #ifdef __NVCOMPILER
+// #include <thrust/iterator/counting_iterator.h>
+// using iterator = thrust::counting_iterator<int>;
+// #else
+// #include <boost/iterator/counting_iterator.hpp>
+// using iterator = boost::iterators::counting_iterator<int>;
+// #endif
 
 #ifndef CONVOLUTION_H
 #define CONVOLUTION_H
