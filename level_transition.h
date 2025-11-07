@@ -205,8 +205,8 @@ void refinement(Domain<Dim, strides_all...> dest,
   iterator start(0);
   iterator end(dest.num_dofs);
 
-  auto *src_ptr = src.values_buff;
-  auto *dest_ptr = dest.values_buff;
+  DataType *src_ptr = src.values_buff;
+  DataType *dest_ptr = dest.values_buff;
   // printf("At the beginning of the call the ptr_pointer value is %p\n",
   //        ptr_pointer);
 
@@ -215,12 +215,20 @@ void refinement(Domain<Dim, strides_all...> dest,
     //  printf("Inside the for_each loop, dest_ptr:%p \n", dest.values_buff);
     //  printf("Inside the for_each loop, src_ptr:%p \n", src.values_buff);
 
-    src.values_buff = src_ptr;
-    dest.values_buff = dest_ptr;
+    // src.values_buff = src_ptr;
+    // dest.values_buff = dest_ptr;
     auto I = domain::flat_to_multi_index<strides_all...>(idx);
+    using d_type_dest = decltype(dest);
+    using d_type_src = decltype(src);
 
-    const auto src_domain = src;
-    const auto dest_domain = dest;
+    d_type_dest dest_domain(
+        Grid<DataType, Dim, strides_all...>{dest_ptr, Paddings::PERIODIC, 1u});
+
+    d_type_src src_domain(Grid<DataType, Dim, ((strides_all + 1) / 2 - 1)...>{
+        src_ptr, Paddings::PERIODIC, 1u});
+
+    // const auto src_domain = src;
+    // const auto dest_domain = dest;
     ((I[dims] += dest.padding_width), ...);
     std::tuple<> empty_index_tuple;
     dest_domain(I[dims]...) =

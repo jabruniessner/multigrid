@@ -73,7 +73,20 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
     num_dofs = 1;
     ((num_dofs *= strides_all), ...);
 
-    values_buff = new DataType[num_values]();
+    values_buff = new DataType[num_values]{};
+
+    // values_buff = new DataType[num_values]();
+  }
+
+  Grid(DataType *values_buff, Paddings padding, Length padding_width)
+      : strides{strides_all...}, values_buff{values_buff}, padding{padding},
+        padding_width{padding_width} {
+
+    num_values = 1;
+    ((num_values *= strides_all + 2 * padding_width), ...);
+
+    num_dofs = 1;
+    ((num_dofs *= strides_all), ...);
   }
 
   template <typename... Positions>
@@ -83,7 +96,7 @@ template <typename DataType, Dimension Dim, Length... strides_all> struct Grid {
                                                      positions...)];
   }
 
-  mutable DataType *values_buff;
+  DataType *values_buff;
   Length strides[Dim];
   Length num_values;
   Length num_dofs;
@@ -101,6 +114,9 @@ struct Domain : Grid<DataType, Dim, strides_all...> {
     std::fill(std::execution::par_unseq, this->values_buff,
               this->values_buff + this->num_values, 0);
   }
+
+  Domain(Grid<DataType, Dim, strides_all...> grid)
+      : Grid<DataType, Dim, strides_all...>{grid} {}
 
   void print_dx_to_stream(std::ostream &out, DataType xmin, DataType ymin,
                           DataType zmin, DataType Box_length) const {
