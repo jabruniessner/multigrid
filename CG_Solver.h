@@ -172,50 +172,31 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
       defect_p(I[dims]...) = defect_r(I[dims]...) + (beta)*defect_p(I[dims]...);
     });
 
-    //    p_squared_A = std::transform_reduce(
-    //        std::execution::par_unseq, begin, end, 0.0, std::plus<>{},
-    //        [=](int idx) {
-    //          auto I = domain::flat_to_multi_index<strides_all...>(idx);
-    //          ((I[dims] += padding_width), ...);
-    //
-    //          DataType result = 0;
-    //
-    // #pragma unroll
-    //          for (int k = 0; k < size; k++) {
-    //            result += defect_p((I[dims] + offsets[k][dims])...) *
-    //            values[k];
-    //          }
-    //
-    //          return result * defect_p(I[dims]...);
-    //        });
-    //
+    //  DataType p_squared_A = std::transform_reduce(
+    //      std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
+    //      std::plus<>{}, psa);
 
     DataType p_squared_A = std::transform_reduce(
         std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
-        std::plus<>{}, psa);
+        [](auto a, auto b) { return a + b; },
+        [=](int idx) {
+          auto I = domain::flat_to_multi_index<strides_all...>(idx);
+          ((I[dims] += defect_p.padding_width), ...);
 
-    //   DataType p_squared_A = std::transform_reduce(
-    //       std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
-    //       [](auto a, auto b) { return a + b; },
-    //       [=](int idx) {
-    //         auto I = domain::flat_to_multi_index<strides_all...>(idx);
-    //         ((I[dims] += defect_p.padding_width), ...);
+          // Computing the convolution for the initial residual
+          DataType result = 0;
 
-    //         // Computing the convolution for the initial residual
-    //         DataType result = 0;
+          // #pragma unroll
+          for (int k = 0; k < size; k++) {
+            // auto idx = domain::flatten_index<strides_all...>(
+            //     defect_p.padding_width, (I[dims] +
+            // offsets[k][dims])...);
 
-    //         // #pragma unroll
-    //         for (int k = 0; k < size; k++) {
-    //           // auto idx = domain::flatten_index<strides_all...>(
-    //           //     defect_p.padding_width, (I[dims] +
-    //           offsets[k][dims])...);
+            result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
+          }
 
-    //           result += defect_p((I[dims] + offsets[k][dims])...) *
-    //           values[k];
-    //         }
-
-    //         return result * defect_p(I[dims]...);
-    //       });
+          return result * defect_p(I[dims]...);
+        });
 
     std::cout << "The value of p_squared_A later is: " << p_squared_A
               << std::endl;
