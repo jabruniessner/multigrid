@@ -14,7 +14,9 @@ Values::~Values() {
 #define PRINT_TIMING(type)                                                     \
   std::cout << #type << " time: " << type                                      \
             << "s: " << (overall_time == 0 ? 0 : type / overall_time * 100)    \
-            << "\%" << std::endl;
+            << "%" << std::endl;
+
+  // #define PRINT_TIMING(type)
 
   PRINT_TIMING(overall_time);
   PRINT_TIMING(pre_smoothing);

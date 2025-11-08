@@ -36,7 +36,7 @@ struct p_squared_A_helper {
 
     // Computing the convolution for the initial residual
     DataType result = 0;
-
+#pragma unroll
     for (int k = 0; k < size; k++) {
       result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
     }
@@ -130,7 +130,7 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
     // for (int i = 0; i < 1; i++) {
     count++;
 
-    //  std::cout << "The value of alpha is: " << alpha << std::endl;
+    //   //  std::cout << "The value of alpha is: " << alpha << std::endl;
 
     std::for_each(std::execution::par_unseq, begin, end, [=](int idx) {
       auto I = domain::flat_to_multi_index<strides_all...>(idx);
@@ -159,7 +159,7 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
         defect_r.values_buff + defect_r.num_values, 0.0, std::plus<>{},
         [=](auto val) { return val * val; });
 
-    // std::cout << "r_squared_next is " << r_squared_next << std::endl;
+    //   // std::cout << "r_squared_next is " << r_squared_next << std::endl;
 
     // init_guess.print_domain();
     DataType beta = r_squared == 0 ? 0. : r_squared_next / r_squared;
@@ -172,35 +172,13 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
       defect_p(I[dims]...) = defect_r(I[dims]...) + (beta)*defect_p(I[dims]...);
     });
 
-    //  DataType p_squared_A = std::transform_reduce(
-    //      std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
-    //      std::plus<>{}, psa);
-
     DataType p_squared_A = std::transform_reduce(
         std::execution::par_unseq, begin, end, 0.0, // std::plus<>{}
-        [](auto a, auto b) { return a + b; },
-        [=](int idx) {
-          auto I = domain::flat_to_multi_index<strides_all...>(idx);
-          ((I[dims] += defect_p.padding_width), ...);
-
-          // Computing the convolution for the initial residual
-          DataType result = 0;
-
-          // #pragma unroll
-          for (int k = 0; k < size; k++) {
-
-            result += defect_p((I[dims] + offsets[k][dims])...) * values[k];
-          }
-
-          return result * defect_p(I[dims]...);
-        });
-
-    //  std::cout << "The value of p_squared_A later is: " << p_squared_A
-    //            << std::endl;
+        std::plus<>{}, psa);
 
     if (count % 10 == 0) {
       residual = std::sqrt(r_squared / defect_r.num_dofs);
-      //  std::cout << "Num iters " << count << std::endl;
+      std::cout << "Num iters " << count << std::endl;
       //  std::cout << "Residual: " << residual << std::endl;
     }
 

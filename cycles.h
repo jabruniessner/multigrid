@@ -586,13 +586,13 @@ struct V_Cycle_base {
                                rhs_domain.template get_domain<nlev>().num_dofs);
           std::cout << "The residual after " << j << " iterations is "
                     << residual << std::endl;
-          PROFILE_END(residual_computation)
+          PROFILE_END(residual_computation);
         }
 
         PROFILE_START(pre_smoothing)
         pre_smoother(Integer<iter_level>{}, smoother_iters_pre, next, current,
                      rhs_domain, grid_step, omega, zero_initialize);
-        PROFILE_END(pre_smoothing)
+        PROFILE_END(pre_smoothing);
 
         PROFILE_START(defect_computation)
         convolution::Subtract_Convolve(
@@ -602,7 +602,7 @@ struct V_Cycle_base {
             Diff_operator.template get_values<iter_level>(),
             Diff_operator.template get_offsets<iter_level>());
 
-        PROFILE_END(defect_computation)
+        PROFILE_END(defect_computation);
 
         PROFILE_START(restriction)
         level_transition::coarsening_inject(
@@ -610,14 +610,14 @@ struct V_Cycle_base {
             current.template get_domain<iter_level>(),
             coarsening_operator.template get_values<iter_level>(),
             coarsening_operator.template get_offsets<iter_level>());
-        PROFILE_END(restriction)
+        PROFILE_END(restriction);
 
         PROFILE_START(coarser_grids)
         iteration<iter_level - 1>(
             next, current, rhs_domain, Smooth_operator, Diff_operator,
             coarsening_operator, sqrt2 * grid_step, omega, num_iters_,
             smoother_iters_pre, smoother_iters_post, true);
-        PROFILE_END(coarser_grids)
+        PROFILE_END(coarser_grids);
 
         PROFILE_START(refinement)
         level_transition::refinement(
@@ -627,12 +627,12 @@ struct V_Cycle_base {
         add_domains(next.template get_domain<iter_level>(),
                     next.template get_domain<iter_level>(),
                     current.template get_domain<iter_level>());
-        PROFILE_END(refinement)
+        PROFILE_END(refinement);
 
         PROFILE_START(post_smoothing)
         post_smoother(Integer<iter_level>{}, smoother_iters_post, next, next,
                       rhs_domain, grid_step, omega, false);
-        PROFILE_END(post_smoothing)
+        PROFILE_END(post_smoothing);
 
         PROFILE_END(overall_time)
       }
