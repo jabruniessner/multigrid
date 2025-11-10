@@ -15,10 +15,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(CMAKE_CXX_COMPILER MATCHES acpp)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
-set(CMAKE_CXX_FLAGS "-ltbb --acpp-stdpar")
+set(CMAKE_CXX_FLAGS "--acpp-stdpar")
+
+find_package(TBB REQUIRED)
+link_libraries(tbb)
+
 elseif(CMAKE_CXX_COMPILER MATCHES nvc[+][+])
-set(CMAKE_CXX_FLAGS_RELEASE "-stdpar")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -stdpar -acc=host")
+  set(CMAKE_CXX_FLAGS_RELEASE  "-O3 -stdpar -DNDEBUG")
+  set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -stdpar")
+  #  find_package(TBB REQUIRED)
+  #  link_libraries(tbb)
+
 else()
 find_package(TBB REQUIRED)
 link_libraries(tbb)
