@@ -178,7 +178,7 @@ void CG_solver(Domain<Dim, strides_all...> init_guess,
 
     if (count % 10 == 0) {
       residual = std::sqrt(r_squared / defect_r.num_dofs);
-      std::cout << "Num iters " << count << std::endl;
+      // std::cout << "Num iters " << count << std::endl;
       //  std::cout << "Residual: " << residual << std::endl;
     }
 

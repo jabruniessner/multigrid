@@ -16,16 +16,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 if(CMAKE_CXX_COMPILER MATCHES acpp)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
 set(CMAKE_CXX_FLAGS "-ltbb --acpp-stdpar")
+elseif(CMAKE_CXX_COMPILER MATCHES nvc[+][+])
+set(CMAKE_CXX_FLAGS_RELEASE "-stdpar")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -stdpar -acc=host")
 else()
-  set(CMAKE_CXX_FLAGS_RELEASE "-stdpar")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -ltbb")
+find_package(TBB REQUIRED)
+link_libraries(tbb)
+
 endif()
 
 
 include_directories("mdspan")
 
-#find_package(TBB REQUIRED)
-#link_libraries(TBB:tbb)
 
 
 
