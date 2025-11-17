@@ -192,7 +192,7 @@ struct Multi_Level_operator
 
     for (int i = 0; i < length; i++) {
       for (int j = 0; j < Dim; j++)
-        printf(" %d", offsets[i][j]);
+        printf(" %ld", offsets[i][j]);
       std::cout << ":";
       std::cout << " " << values[i] << std::endl;
     }
@@ -240,7 +240,7 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
 
     for (int i = 0; i < length; i++) {
       for (int j = 0; j < Dim; j++)
-        printf(" %d", offsets[i][j]);
+        printf(" %ld", offsets[i][j]);
       std::cout << ":";
       std::cout << " " << values[i] << std::endl;
     }
