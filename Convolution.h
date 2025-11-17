@@ -7,7 +7,7 @@
 #include <execution>
 #include <utility>
 
-using iterator = counting_iterator<int>;
+using iterator = counting_iterator<std::size_t>;
 
 // #ifdef __NVCOMPILER
 // #include <thrust/iterator/counting_iterator.h>

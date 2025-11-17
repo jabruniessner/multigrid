@@ -201,8 +201,11 @@ struct GS_Smoother {
     const DataType h = grid_step;
     const DataType diag_inverse = omega / (2 * Dim);
 
-    std::array<Dimension, Dim> strides_array =
-        std::to_array(src_domain.strides);
+    std::array<Dimension, Dim>
+        strides_array; //=
+                       // std::to_array(src_domain.strides);
+
+    std::copy_n(src_domain.strides, Dim, strides_array.begin());
 
     auto index_add_in_place = [=](int place, const d_type domain,
                                   auto... elems) {

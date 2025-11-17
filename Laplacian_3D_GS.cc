@@ -163,7 +163,7 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
 }
 
 int main(int argc, char *argv[]) {
-  using OffsetType = std::array<int, 3>;
+  using OffsetType = std::array<long, 3>;
 
   if (argc < 2) {
     std::cout << "Usage: ./this_program num_iters" << std::endl;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   }
   int num_iter = std::stoi(argv[1]);
 
-  constexpr std::size_t nlev = 1u;
+  constexpr std::size_t nlev = 5u;
   constexpr std::size_t base_length = 16u;
   constexpr DataType omega = 1.;
   // constexpr DataType box_length = 12;

@@ -20,7 +20,7 @@ template <Dimension Dim, std::size_t nlev, std::size_t... base_length>
 struct Multigrid_domain
     : public Multigrid_domain<Dim, nlev - 1, base_length...> {
 
-  using OffsetType = std::array<int, Dim>;
+  using OffsetType = std::array<long, Dim>;
 
   Multigrid_domain()
       : domain(Paddings::PERIODIC, 1),
@@ -139,7 +139,7 @@ template <Dimension Dim, typename DataType, std::size_t length,
 struct Multi_Level_operator
     : public Multi_Level_operator<Dim, DataType, length, base_length,
                                   nlev - 1> {
-  using OffsetType = std::array<int, Dim>;
+  using OffsetType = std::array<long, Dim>;
 
   Multi_Level_operator() {};
 
@@ -208,7 +208,7 @@ struct Multi_Level_operator
 template <Dimension Dim, typename DataType, std::size_t length,
           Length base_length>
 struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
-  using OffsetType = std::array<int, Dim>;
+  using OffsetType = std::array<long, Dim>;
 
   Multi_Level_operator(Integer<1>, std::array<DataType, length> &values,
                        std::array<OffsetType, length> &offsets,
