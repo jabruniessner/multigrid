@@ -25,7 +25,7 @@ using OffsetType = LAD::OffsetType;
 // using PositionType = LAD::PositionType;
 using Dimension = LAD::Dimension;
 
-template <DataType val> struct Float {};
+// template <DataType val> struct Float {};
 
 enum class Paddings {
   PERIODIC = 0,

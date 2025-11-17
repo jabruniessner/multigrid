@@ -1,4 +1,4 @@
-#include "concepts.h"
+// #include "concepts.h"
 #include <array>
 #include <iostream>
 #include <tuple>
@@ -83,7 +83,7 @@ template <std::size_t base> struct Power<base, 0u> {
   constexpr static std::size_t value = 1;
 };
 
-template <Arithmetic T> constexpr T power_off(T t, std::size_t n) {
+template <typename T> constexpr T power_off(T t, std::size_t n) {
   if (n == 0) {
     return 1;
   } else {

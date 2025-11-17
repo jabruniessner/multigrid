@@ -199,13 +199,14 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
             std::make_index_sequence<Dim>());
 }
 
-template <typename DataType, typename Offsets, std::size_t size,
-          DataType thresh, Dimension Dim, Length... strides_all>
+template <typename DataType, typename Offsets, std::size_t size, Dimension Dim,
+          Length... strides_all>
 struct Solver_CG {
-  Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
+  Solver_CG(DataType thresh, Domain<Dim, strides_all...> &sample_domain,
             const std::array<DataType, size> &,
             const std::array<Offsets, size> &)
-      : defect_r(Paddings::PERIODIC, 1), defect_p(Paddings::PERIODIC, 1) {};
+      : defect_r(Paddings::PERIODIC, 1), defect_p(Paddings::PERIODIC, 1),
+        thresh{thresh} {};
 
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs,
@@ -216,6 +217,7 @@ struct Solver_CG {
 
   Domain<Dim, strides_all...> defect_r;
   Domain<Dim, strides_all...> defect_p;
+  DataType thresh;
 };
 
 template <typename DataType, Dimension Dim, Length... strides_all,
@@ -382,30 +384,31 @@ void CG_solver_PBE(Domain<Dim, strides_all...> &init_guess,
                 std::make_index_sequence<Dim>{});
 }
 
-template <typename DataType, typename Offsets, std::size_t size,
-          DataType thresh, Dimension Dim, Length... strides_all>
-struct PBE_Solver_CG {
-  PBE_Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
-                const std::array<DataType, size> &,
-                const std::array<Offsets, size> &)
-      : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
-        defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
-
-  void operator()(Domain<Dim, strides_all...> &init_guess,
-                  Domain<Dim, strides_all...> &rhs,
-                  // Domain<Dim, strides_all...> &defect_r,
-                  // Domain<Dim, strides_all...> &defectr_p,
-                  Domain<Dim, strides_all...> &kappa_map,
-                  std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
-                  const DataType &kappa_2, const DataType grid_step,
-                  const DataType epsilon_r, const DataType delta_epsilon) {
-    CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_maps,
-                  kappa_2, grid_step, epsilon_r, delta_epsilon, thresh);
-  }
-
-  Domain<Dim, strides_all...> defect_r;
-  Domain<Dim, strides_all...> defect_p;
-};
+// template <typename DataType, typename Offsets, std::size_t size,
+//           DataType thresh, Dimension Dim, Length... strides_all>
+// struct PBE_Solver_CG {
+//   PBE_Solver_CG(Float<thresh>, Domain<Dim, strides_all...> &sample_domain,
+//                 const std::array<DataType, size> &,
+//                 const std::array<Offsets, size> &)
+//       : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
+//         defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
+//
+//   void operator()(Domain<Dim, strides_all...> &init_guess,
+//                   Domain<Dim, strides_all...> &rhs,
+//                   // Domain<Dim, strides_all...> &defect_r,
+//                   // Domain<Dim, strides_all...> &defectr_p,
+//                   Domain<Dim, strides_all...> &kappa_map,
+//                   std::array<Domain<Dim, strides_all...>, Dim> &epsilon_maps,
+//                   const DataType &kappa_2, const DataType grid_step,
+//                   const DataType epsilon_r, const DataType delta_epsilon) {
+//     CG_solver_PBE(init_guess, rhs, defect_r, defect_p, kappa_map,
+//     epsilon_maps,
+//                   kappa_2, grid_step, epsilon_r, delta_epsilon, thresh);
+//   }
+//
+//   Domain<Dim, strides_all...> defect_r;
+//   Domain<Dim, strides_all...> defect_p;
+// };
 
 } // namespace cg_solver
 

@@ -11,7 +11,7 @@ int main() {
 
   using OffsetType = std::array<int, 3>;
 
-  constexpr std::size_t length = 3;
+  constexpr std::size_t length = 31;
 
   Domain<3, length, length, length> sol(Paddings::PERIODIC, 1);
   Domain<3, length, length, length> init_guess(Paddings::PERIODIC, 1);

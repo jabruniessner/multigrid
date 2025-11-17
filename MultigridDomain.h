@@ -80,7 +80,7 @@ struct Multigrid_domain
   constexpr static Domain_Type domain_t_v{std::make_index_sequence<Dim>{}};
   constexpr static auto &length = decltype(domain_t_v)::length;
 
-  decltype(domain_t_v)::domain_t domain;
+  typename decltype(domain_t_v)::domain_t domain;
 };
 
 template <Dimension Dim, std::size_t... base_length>
@@ -115,7 +115,8 @@ struct Multigrid_domain<Dim, 0u, base_length...> {
   constexpr static std::array<DataType, 1> coarse_filter_values{1};
   constexpr static std::array<OffsetType, 1> coarse_filter_offsets{{{0, 0}}};
 
-  decltype(Domain_Type(std::make_index_sequence<Dim>{}))::domain_t domain;
+  typename decltype(Domain_Type(
+      std::make_index_sequence<Dim>{}))::domain_t domain;
 };
 
 template <Dimension Dim, std::size_t nlev, std::size_t level = nlev,
@@ -191,7 +192,7 @@ struct Multi_Level_operator
 
     for (int i = 0; i < length; i++) {
       for (int j = 0; j < Dim; j++)
-        std::cout << " " << std::format("{:>2}", offsets[i][j]);
+        printf(" %d", offsets[i][j]);
       std::cout << ":";
       std::cout << " " << values[i] << std::endl;
     }
@@ -239,7 +240,7 @@ struct Multi_Level_operator<Dim, DataType, length, base_length, 1u> {
 
     for (int i = 0; i < length; i++) {
       for (int j = 0; j < Dim; j++)
-        std::cout << " " << std::format("{:>2}", offsets[i][j]);
+        printf(" %d", offsets[i][j]);
       std::cout << ":";
       std::cout << " " << values[i] << std::endl;
     }

@@ -5,8 +5,9 @@ cmake_minimum_required(VERSION 3.10)
 project(MultigridSYCL)
 
 # Specify the C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+#set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 #set(CMAKE_BUILD_TYPE Release)
 #if(NOT DEFINED CMAKE_CXX_COMPILER)
@@ -22,7 +23,7 @@ link_libraries(tbb)
 
 elseif(CMAKE_CXX_COMPILER MATCHES nvc[+][+])
   set(CMAKE_CXX_FLAGS_RELEASE  "-O3 -stdpar -DNDEBUG")
-  set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -stdpar")
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -stdpar")
   #  find_package(TBB REQUIRED)
   #  link_libraries(tbb)
 

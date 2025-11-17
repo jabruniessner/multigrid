@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   }
   int num_iter = std::stoi(argv[1]);
 
-  constexpr std::size_t nlev = 5u;
+  constexpr std::size_t nlev = 1u;
   constexpr std::size_t base_length = 16u;
   constexpr DataType omega = 1.;
   // constexpr DataType box_length = 12;
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
 
   // lhs_domain2.get_domain().print_domain();
 
-  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-8)>{},
+  cg_solver::Solver_CG solver((DataType)1e-8,
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());
