@@ -7,6 +7,10 @@
 
 int main(int argc, char *argv[]) {
 
+#ifdef __ACPP__
+  hipsycl::stdpar::unified_shared_memory::pop_disabled();
+#endif
+
   // int num_iters = std::stoi(argv[1]);
 
   using namespace cg_solver;

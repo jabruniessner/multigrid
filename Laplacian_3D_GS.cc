@@ -163,6 +163,11 @@ DataType compute_energy_norm(domain::Domain<Dim, strides_all...> sol_domain,
 }
 
 int main(int argc, char *argv[]) {
+
+#ifdef __ACPP__
+  hipsycl::stdpar::unified_shared_memory::pop_disabled();
+#endif
+
   using OffsetType = std::array<long, 3>;
 
   if (argc < 2) {

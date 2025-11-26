@@ -4,6 +4,10 @@
 
 int main() {
 
+#ifdef __ACPP__
+  hipsycl::stdpar::unified_shared_memory::pop_disabled();
+#endif
+
   using OffsetType = std::array<int, 3>;
 
   using namespace convolution;

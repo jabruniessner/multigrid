@@ -4,6 +4,10 @@
 
 int main() {
 
+#ifdef __ACPP__
+  hipsycl::stdpar::unified_shared_memory::pop_disabled();
+#endif
+
   using namespace level_transition;
 
   Domain<2, 3u, 3u> domain_dest(Paddings::PERIODIC, 1);

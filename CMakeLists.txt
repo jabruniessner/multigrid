@@ -16,13 +16,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(CMAKE_CXX_COMPILER MATCHES acpp)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 --acpp-targets=generic")
-set(CMAKE_CXX_FLAGS "--acpp-stdpar")
+set(CMAKE_CXX_FLAGS "--acpp-stdpar -DHIPSYCL_STDPAR_MEMORY_MANAGEMENT_DEFAULT_DISABLED")
 
 find_package(TBB REQUIRED)
 link_libraries(tbb)
 
 elseif(CMAKE_CXX_COMPILER MATCHES nvc[+][+])
-  set(CMAKE_CXX_FLAGS_RELEASE  "-O3 -stdpar -DNDEBUG")
+  set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -stdpar -DNDEBUG")
   set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -stdpar")
   #  find_package(TBB REQUIRED)
   #  link_libraries(tbb)
