@@ -4,6 +4,11 @@
 #include <chrono>
 
 int main() {
+
+#ifdef __ACPP__
+  hipsycl::stdpar::unified_shared_memory::pop_disabled();
+#endif
+
   using namespace level_transition;
   using OffsetType = std::array<int, 3>;
 
@@ -23,7 +28,7 @@ int main() {
       for (int j = -1; j < 2; j++)
         offsets[(i + 1) * 9 + (k + 1) * 3 + j + 1] = {i, k, j};
 
-  std::cout << "The input matrix is given by: " << std::endl;
+  // std::cout << "The input matrix is given by: " << std::endl;
   for (Position1D i = 1; i < num_fine + 1; i++) {
     for (Position1D j = 1; j < num_fine + 1; j++) {
       for (Position1D k = 1; k < num_fine + 1; k++) {
