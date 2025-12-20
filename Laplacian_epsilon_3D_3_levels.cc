@@ -25,9 +25,9 @@
 
 template <typename T> struct TD;
 
-constexpr std::size_t nlev = 5;
+constexpr std::size_t nlev = 3;
 constexpr std::size_t Dim = 3;
-constexpr std::size_t side_length = 16;
+constexpr std::size_t side_length = 64;
 // constexpr DataType omega = 1.;
 
 template <typename D_Type, std::size_t Type_dim, std::size_t... type_dirs>

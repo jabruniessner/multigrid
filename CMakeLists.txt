@@ -84,6 +84,13 @@ add_executable(Test_epsilon test_epsilon_markes.cc  fileio.cc)
 add_executable(get_epsilon Get_epsilons.cc)
 
 add_executable(Laplacian3D_epsilon Laplacian_epsilon_3D.cc  fileio.cc)
+add_executable(Laplacian_epsilon_3D_5l Laplacian_epsilon_3D_5_levels.cc fileio.cc)
+add_executable(Laplacian_epsilon_3D_4l Laplacian_epsilon_3D_4_levels.cc fileio.cc)
+add_executable(Laplacian_epsilon_3D_3l Laplacian_epsilon_3D_3_levels.cc fileio.cc)
+add_executable(Laplacian_epsilon_3D_2l Laplacian_epsilon_3D_2_levels.cc fileio.cc)
+
+
+
 
 add_executable(test_get_epsilon_values Test_get_epsilon_values.cc)
 
@@ -96,6 +103,11 @@ target_link_libraries(Laplacian3D_epsilon PRIVATE prof)
 #    VTK::CommonDataModel
 #    VTK::IOXML
 #    )
+target_link_libraries(Laplacian_epsilon_3D_5l PRIVATE prof)
+target_link_libraries(Laplacian_epsilon_3D_4l PRIVATE prof)
+target_link_libraries(Laplacian_epsilon_3D_3l PRIVATE prof)
+target_link_libraries(Laplacian_epsilon_3D_2l PRIVATE prof)
+
 
 
 
