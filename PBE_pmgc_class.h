@@ -285,6 +285,7 @@ public:
     } else if constexpr (level == nlev) {
 
       if constexpr (vanilla_prolongation{}()) {
+        std::cout<<"Using trilinear prolongation"<<std::endl;
         pmgc::VbuildPb_trilin(
             nx<nlev>, ny<nlev>, nz<nlev>, nx<nlev - 1>, ny<nlev - 1>,
             nz<nlev - 1>, oPC.template get_domain<nlev - 1>().values_buff,
@@ -682,8 +683,8 @@ public:
   template <std::size_t level = nlev>
   void add_and_multiply_domain_sol_sol_sol2(DataType fac) {
     add_and_multiply_domains(sol.template get_domain<level>(),
-                             sol2.template get_domain<level>(),
-                             sol.template get_domain<level>(), fac);
+                             sol.template get_domain<level>(),
+                             sol2.template get_domain<level>(), fac);
   }
 
   template <std::size_t level = nlev>
@@ -999,19 +1000,22 @@ public:
       solve_by_cg<level>(Float<(DataType)1e-8>{});
     } else {
       smooth_domain_sol<sequential_smooth, level>(2, 0, level != nlev);
+      //this->sol.template get_domain<level>().print_domain();
       compute_defect_sol_2_sol2<level>();
       restrict_domain_sol2_2_rhs<level - 1>();
       v_cycle<sequential_smooth, level - 1>();
 
-      //  // Here we are computing the Hackbush reusken parameter:
-      //  {
-      //    DataType omega = multigrid_domain::get_ideal_lambda(
-      //        sol.template get_domain<level - 1>(),
-      //        rhs_domain.template get_domain<level - 1>(), get_map<level -
-      //        1>());
+      DataType omega = 0;
 
-      //    std::cout << "The value for lambda1 is: " << omega << std::endl;
-      //  }
+      // Here we are computing the Hackbush reusken parameter:
+      {
+        omega = multigrid_domain::get_ideal_lambda(
+            sol.template get_domain<level - 1>(),
+            rhs_domain.template get_domain<level - 1>(), get_map<level -
+            1>());
+
+        std::cout << "The value for lambda1 is: " << omega << std::endl;
+      }
 
       prolong_sol_2_sol2<level>();
 
@@ -1024,7 +1028,9 @@ public:
       //    std::cout << "The value for lambda2 is: " << omega << std::endl;
       //  }
 
-      add_and_multiply_domain_sol_sol_sol2<level>((DataType)1);
+      // add_and_multiply_domain_sol_sol_sol2<level>((DataType)1);
+      add_and_multiply_domain_sol_sol_sol2<level>(omega);
+
       smooth_domain_sol<sequential_smooth, level>(2, 1);
     }
   }

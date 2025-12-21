@@ -5,9 +5,9 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 22;
-constexpr std::size_t nlev = 4;
-constexpr DataType box_length = 96;
+constexpr std::size_t base_length = 2;
+constexpr std::size_t nlev = 3;
+constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
       mg_solver.initialize_boundary(atoms_vector);
       mg_solver.initialize_epsilons(atoms_vector);
       mg_solver.set_up_rhs(atoms_vector);
-      mg_solver.buildmultilevelops<std::false_type>();
+      mg_solver.buildmultilevelops<std::true_type>();
 
       auto end = std::chrono::high_resolution_clock::now();
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < num_iters; i++) {
-      mg_solver.v_cycle<std::false_type>();
+      mg_solver.v_cycle<std::true_type>();
 
       current_res_1 = mg_solver.compute_residual_1();
 
