@@ -5,9 +5,9 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 2;
-constexpr std::size_t nlev = 3;
-constexpr DataType box_length = 16;
+constexpr std::size_t base_length = 22;
+constexpr std::size_t nlev = 4;
+constexpr DataType box_length = 96;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
       mg_solver.initialize_boundary(atoms_vector);
       mg_solver.initialize_epsilons(atoms_vector);
       mg_solver.set_up_rhs(atoms_vector);
-      mg_solver.buildmultilevelops<std::true_type>();
+      mg_solver.buildmultilevelops<std::false_type>();
 
       auto end = std::chrono::high_resolution_clock::now();
 
@@ -95,72 +95,13 @@ int main(int argc, char *argv[]) {
                 << duration.count() << std::endl;
     }
 
-    // std::cout << "The initial residual is:" << mg_solver.compute_residual()
-    //           << std::endl;
 
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
 
-    //  mg_solver.solve_by_cg<nlev>(Float<1e-5>{});
-    //
-    //  std::cout << "After the cg_method on top level, the residual is: "
-    //            << mg_solver.compute_residual() << std::endl;
 
     q.wait();
 
-    // for (int i = 0; i < num_iters; i++) {
-    //   mg_solver.smooth_domain_sol(2);
-    //   mg_solver.compute_defect_sol_2_sol2();
-    //   mg_solver.restrict_domain_sol2_2_rhs();
-    //   mg_solver.solve_by_cg(Float<1e-5>{});
-    //   mg_solver.prolong_sol_2_sol2();
-    //   mg_solver.add_domain_sol_sol_sol2();
-    //   mg_solver.smooth_domain_sol(2);
-
-    //   std::cout << "The residual after " << i + 1 << " iterations is "
-    //             << mg_solver.compute_residual() << std::endl;
-    // }
-
-    //  std::cout << "oE map" << std::endl;
-    //  mg_solver.epsilon_oE_map.get_domain().print_domain();
-    //  std::cout << "oN map" << std::endl;
-    //  mg_solver.epsilon_oN_map.get_domain().print_domain();
-    //  std::cout << "uC map" << std::endl;
-    //  mg_solver.epsilon_uC_map.get_domain().print_domain();
-    //
-    //
-
-    //  mg_solver.sol.set_zero<DataType>();
-    //  q.wait();
-
-    // mg_solver.rhs_domain.get_domain().print_domain();
-    //   mg_solver.smooth_domain_sol(2);
-    //   mg_solver.compute_defect_sol_2_sol2();
-    //   mg_solver.restrict_domain_sol2_2_rhs();
-    // mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
-    //  mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
-    //  true); mg_solver.compute_defect_sol_2_sol2<nlev - 1>();
-    //  mg_solver.sol2.get_domain().print_domain();
-    // mg_solver.restrict_domain_sol2_2_rhs<1>();
-    //   mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
-    // mg_solver.template solve_by_cg<1>(Float<1e-8>{});
-    // mg_solver.template prolong_sol_2_sol2<nlev - 1>();
-    // mg_solver.template add_domain_sol_sol_sol2<nlev - 1>();
-    // mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 1);
-    // mg_solver.template prolong_sol_2_sol2<nlev>();
-    // mg_solver.template add_domain_sol_sol_sol2<nlev>();
-    // mg_solver.smooth_domain_sol(2, 1);
-
-    // This is where the second iteration starts
-    //  mg_solver.smooth_domain_sol(2);
-    //  mg_solver.compute_defect_sol_2_sol2();
-    // mg_solver.sol2.get_domain().print_domain();
-    //  mg_solver.restrict_domain_sol2_2_rhs();
-    //  mg_solver.template smooth_domain_sol<std::true_type, nlev - 1>(2, 0,
-    //  true);
-
-    // mg_solver.rhs_domain.template get_domain<nlev - 1>().print_domain();
-    // mg_solver.sol.template get_domain<nlev - 1>().print_domain();
 
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
@@ -168,7 +109,7 @@ int main(int argc, char *argv[]) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < num_iters; i++) {
-      mg_solver.v_cycle<std::true_type>();
+      mg_solver.v_cycle<std::false_type>();
 
       current_res_1 = mg_solver.compute_residual_1();
 
@@ -188,13 +129,8 @@ int main(int argc, char *argv[]) {
     std::cout << "The required time for the solution was: " << duration.count()
               << std::endl;
 
-    // mg_solver.sol.get_domain().print_domain();
-
     std::ofstream out_file{"output_potential.dx"};
 
-    //    mg_solver.sol.get_domain().print_dx_to_stream(out_file, x_min, y_min,
-    //    z_min,
-    //                                                  box_length);
   }
 
   return 0;

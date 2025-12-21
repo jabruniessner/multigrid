@@ -76,6 +76,8 @@ void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
   MAT3(uC, nx, ny, nz);
   MAT3(oC, nx, ny, nz);
 
+  std::cout << "The value for iadjoint is " << iadjoint << std::endl;
+
   for (int iters = 1; iters <= *itmax; iters++) {
 
     int color = 1;
@@ -115,7 +117,7 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
                         DataType *uE, DataType *uW, DataType *uN, DataType *uS,
                         DataType *uNE, DataType *uNW, DataType *uSE,
                         DataType *uSW, DataType *x, int *itmax, sycl::queue &q,
-                        bool zero_initialize) {
+                        bool zero_initialize, const int iadjoint) {
 
   int i, j, k;
   int i1, j1, k1;
@@ -153,15 +155,18 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
     q.memset(x, 0, sizeof(DataType) * nx * ny * nz);
   }
 
+  std::cout << "The value for iadjoint is" << iadjoint << std::endl;
+
   for (int iters = 1; iters <= *itmax; iters++) {
-    for (int color = 0; color <= 8; color++) {
+    for (int color = 0; color < 8; color++) {
       q.parallel_for(
           sycl::range<3>((nx - 2), ny - 2, nz - 2), [=](sycl::id<3> I) {
             const int k = I[0] + 2;
             const int j = I[1] + 2;
             const int i = I[2] + 2;
 
-            if ((i % 2) + 2 * (j % 2) + 4 * (k % 2) == color) {
+            int color_ordered = color * (1 - iadjoint) + iadjoint * (7 - color);
+            if ((i % 2) + 2 * (j % 2) + 4 * (k % 2) == color_ordered) {
 
               const auto tmpO =
                   +VAT3(oN, i, j, k) * VAT3(x, i, j + 1, k) +

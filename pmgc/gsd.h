@@ -120,7 +120,7 @@ void Vgsrb27x(int nx,         ///< @todo:  Doc
               DataType *x,    ///< @todo:  Doc
               int *itmax,     ///< @todo:  Doc
               sycl::queue &q, ///< @todo:  Doc
-              bool zero_initialize = false
+              bool zero_initialize = false, const int adjoint = 0
 
 );
 
