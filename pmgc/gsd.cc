@@ -76,7 +76,7 @@ void Vgsrb7x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
   MAT3(uC, nx, ny, nz);
   MAT3(oC, nx, ny, nz);
 
-  std::cout << "The value for iadjoint is " << iadjoint << std::endl;
+  // std::cout << "The value for iadjoint is " << iadjoint << std::endl;
 
   for (int iters = 1; iters <= *itmax; iters++) {
 
@@ -155,7 +155,7 @@ void Vgsrb27x<DataType>(const int nx, const int ny, const int nz, DataType *oC,
     q.memset(x, 0, sizeof(DataType) * nx * ny * nz);
   }
 
-  std::cout << "The value for iadjoint is" << iadjoint << std::endl;
+  // std::cout << "The value for iadjoint is" << iadjoint << std::endl;
 
   for (int iters = 1; iters <= *itmax; iters++) {
     for (int color = 0; color < 8; color++) {
