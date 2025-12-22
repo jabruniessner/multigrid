@@ -1,5 +1,7 @@
 #include "Convolution.h"
 #include "Domain.h"
+#include "bitshift_lib.h"
+#include "hipSYCL/sycl/libkernel/reduction.hpp"
 #include "tprint.hpp"
 #include <array>
 #include <cmath>
@@ -15,13 +17,18 @@ namespace cg_solver {
 
 using namespace domain;
 
+struct IdentityPreconditioner {
+  template <class Vec> Vec operator()(const Vec r) const { return r; }
+};
+
 template <typename DataType, Dimension Dim, Length... strides_all,
           std::size_t... dims>
 void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &rhs,
                Domain<Dim, strides_all...> &defect_r,
                Domain<Dim, strides_all...> &defect_p, auto map, DataType thresh,
-               const std::index_sequence<dims...> &) {
+               const std::index_sequence<dims...> &,
+               auto precond = IdentityPreconditioner{}) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
   assert(defect_r.num_values == defect_p.num_values &&
@@ -29,6 +36,8 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
 
   assert(defect_r.padding_width == defect_p.padding_width &&
          init_guess.padding_width == defect_p.padding_width);
+
+  std::cout << "Using the preconditioned Conjugate Gradient" << std::endl;
 
   sycl::queue &q = init_guess.q;
   auto &strides = init_guess.strides;
@@ -49,20 +58,25 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
 
   // init_guess.print_domain();
 
+  q.parallel_for(sycl::range<Dim>((strides[dims])...), [=](sycl::id<Dim> I) {
+    ((I[dims] += padding_width), ...);
+
+    // Computing the convolution for the initial residual
+    DataType result = map(init_guess, I);
+
+    // Assigning values and reducing to the sum
+    defect_r(I[dims]...) = rhs(I[dims]...) - result;
+  });
+
+  auto s = precond(defect_r);
+  q.memcpy(defect_p.values_buff, s.values_buff,
+           sizeof(DataType) * defect_p.num_values);
+
   q.parallel_for(sycl::range<Dim>((strides[dims])...),
                  sycl::reduction(r_squared, sycl::plus<>()),
-
                  [=](sycl::id<Dim> I, auto &r) {
                    ((I[dims] += padding_width), ...);
-
-                   // Computing the convolution for the initial residual
-                   DataType result = map(init_guess, I);
-
-                   // Assigning values and reducing to the sum
-                   defect_r(I[dims]...) = defect_p(I[dims]...) =
-                       rhs(I[dims]...) - result;
-
-                   r += defect_r(I[dims]...) * defect_r(I[dims]...);
+                   r += defect_r(I[dims]...) * s(I[dims]...);
                  });
 
   // init_guess.print_domain();
@@ -113,18 +127,22 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
     //              << residual << std::endl;
     //  }
 
+    q.parallel_for(sycl::range<Dim>(strides[dims]...), [=](sycl::id<Dim> I) {
+      ((I[dims] += padding_width), ...);
+      init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
+
+      DataType result = map(defect_p, I);
+
+      defect_r(I[dims]...) -= (*alpha) * result;
+    });
+
+    auto s = precond(defect_r);
+
     q.parallel_for(sycl::range<Dim>(strides[dims]...),
                    sycl::reduction(r_squared_next, sycl::plus<>()),
                    [=](sycl::id<Dim> I, auto &r_squared_plus_1) {
                      ((I[dims] += padding_width), ...);
-                     init_guess(I[dims]...) += (*alpha) * defect_p(I[dims]...);
-
-                     DataType result = map(defect_p, I);
-
-                     defect_r(I[dims]...) -= (*alpha) * result;
-
-                     r_squared_plus_1 +=
-                         defect_r(I[dims]...) * defect_r(I[dims]...);
+                     r_squared_plus_1 += defect_r(I[dims]...) * s(I[dims]...);
                    });
 
     // init_guess.print_domain();
@@ -143,8 +161,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
 
     q.parallel_for(sycl::range<Dim>(strides[dims]...), [=](sycl::id<Dim> I) {
       ((I[dims] += padding_width), ...);
-      defect_p(I[dims]...) =
-          defect_r(I[dims]...) + (*beta) * defect_p(I[dims]...);
+      defect_p(I[dims]...) = s(I[dims]...) + (*beta) * defect_p(I[dims]...);
     });
 
     // init_guess.print_domain();
@@ -191,10 +208,11 @@ template <typename DataType, Dimension Dim, Length... strides_all>
 void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &rhs,
                Domain<Dim, strides_all...> &defect_r,
-               Domain<Dim, strides_all...> &defect_p, auto map, DataType m) {
-  CG_solver<DataType, Dim, strides_all...>(init_guess, rhs, defect_r, defect_p,
-                                           map, m,
-                                           std::make_index_sequence<Dim>());
+               Domain<Dim, strides_all...> &defect_p, auto map, DataType m,
+               auto precond = IdentityPreconditioner{}) {
+  CG_solver<DataType, Dim, strides_all...>(
+      init_guess, rhs, defect_r, defect_p, map, m,
+      std::make_index_sequence<Dim>(), precond);
 }
 
 template <typename DataType, DataType thresh, Dimension Dim,
@@ -204,10 +222,12 @@ struct Solver_CG {
       : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
         defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
 
+  template <class preconditioner = IdentityPreconditioner>
   void operator()(Domain<Dim, strides_all...> &init_guess,
-                  Domain<Dim, strides_all...> &rhs, auto map) {
+                  Domain<Dim, strides_all...> &rhs, auto map,
+                  preconditioner precond = IdentityPreconditioner{}) {
     CG_solver<DataType, Dim, strides_all...>(init_guess, rhs, defect_r,
-                                             defect_p, map, thresh);
+                                             defect_p, map, thresh, precond);
   }
 
   Domain<Dim, strides_all...> defect_r;
