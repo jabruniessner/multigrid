@@ -21,13 +21,26 @@ struct IdentityPreconditioner {
   template <class Vec> Vec operator()(const Vec r) const { return r; }
 };
 
-template <typename DataType, Dimension Dim, Length... strides_all,
-          std::size_t... dims>
+template <typename DataType> struct thresh_criterion {
+  DataType thresh;
+  DataType thresh_;
+
+  thresh_criterion(DataType thresh) : thresh{thresh}, thresh_{} {}
+
+  bool operator()(DataType residual) { return (residual > thresh); }
+
+  void initialize_residual_dependancy(DataType residual) {
+    this->thresh_ = this->thresh * residual;
+  };
+};
+
+template <typename DataType, Dimension Dim, typename Finish_crit,
+          Length... strides_all, std::size_t... dims>
 void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &rhs,
                Domain<Dim, strides_all...> &defect_r,
-               Domain<Dim, strides_all...> &defect_p, auto map, DataType thresh,
-               const std::index_sequence<dims...> &,
+               Domain<Dim, strides_all...> &defect_p, auto map,
+               Finish_crit thresh, const std::index_sequence<dims...> &,
                auto precond = IdentityPreconditioner{}) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
@@ -37,7 +50,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   assert(defect_r.padding_width == defect_p.padding_width &&
          init_guess.padding_width == defect_p.padding_width);
 
-  std::cout << "Using the preconditioned Conjugate Gradient" << std::endl;
+  // std::cout << "Using the preconditioned Conjugate Gradient" << std::endl;
 
   sycl::queue &q = init_guess.q;
   auto &strides = init_guess.strides;
@@ -112,7 +125,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType residual = 0;
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  thresh = thresh * residual;
+  thresh.initialize_residual_dependancy(residual);
 
   //  std::cout << "The residual before the conjugate gradient is: " << residual
   //            << std::endl;
@@ -120,7 +133,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   //  std::cout << "The threshold is: " << thresh << std::endl;
 
   int count = 0;
-  while (thresh < residual) {
+  while (thresh(residual)) {
     count++;
     //  if (count % 1000 == 0) {
     //    std::cout << "The residual after " << count << " iterations is "
@@ -204,13 +217,15 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   // std::cout << "The residual after the CG is: " << residual << std::endl;
 }
 
-template <typename DataType, Dimension Dim, Length... strides_all>
+template <typename DataType, Dimension Dim,
+          typename Finish_crit = thresh_criterion<DataType>,
+          Length... strides_all>
 void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &rhs,
                Domain<Dim, strides_all...> &defect_r,
-               Domain<Dim, strides_all...> &defect_p, auto map, DataType m,
+               Domain<Dim, strides_all...> &defect_p, auto map, Finish_crit m,
                auto precond = IdentityPreconditioner{}) {
-  CG_solver<DataType, Dim, strides_all...>(
+  CG_solver<DataType, Dim, Finish_crit, strides_all...>(
       init_guess, rhs, defect_r, defect_p, map, m,
       std::make_index_sequence<Dim>(), precond);
 }
@@ -222,17 +237,42 @@ struct Solver_CG {
       : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
         defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
 
-  template <class preconditioner = IdentityPreconditioner>
+  template <class preconditioner = IdentityPreconditioner,
+            class Finish_crit = thresh_criterion<DataType>>
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs, auto map,
                   preconditioner precond = IdentityPreconditioner{}) {
-    CG_solver<DataType, Dim, strides_all...>(init_guess, rhs, defect_r,
-                                             defect_p, map, thresh, precond);
+    CG_solver<DataType, Dim, Finish_crit, strides_all...>(
+        init_guess, rhs, defect_r, defect_p, map, Finish_crit(thresh), precond);
   }
 
   Domain<Dim, strides_all...> defect_r;
   Domain<Dim, strides_all...> defect_p;
 };
+
+template <typename DataType, Dimension Dim, Length... strides_all>
+struct Solver_CG_general {
+  Solver_CG_general(Domain<Dim, strides_all...> &sample_domain)
+      : defect_r(Paddings::PERIODIC, sample_domain.q, 1),
+        defect_p(Paddings::PERIODIC, sample_domain.q, 1) {};
+
+  template <class Finish_crit, class preconditioner = IdentityPreconditioner>
+  void operator()(Domain<Dim, strides_all...> &init_guess,
+                  Domain<Dim, strides_all...> &rhs, auto map,
+                  Finish_crit finish,
+                  preconditioner precond = IdentityPreconditioner{}) {
+    CG_solver<DataType, Dim, Finish_crit, strides_all...>(
+        init_guess, rhs, defect_r, defect_p, map, finish, precond);
+  }
+
+  Domain<Dim, strides_all...> defect_r;
+  Domain<Dim, strides_all...> defect_p;
+};
+
+template <typename DataType, Dimension Dim, Length... strides_all>
+auto make_general_solver(Domain<Dim, strides_all...> &domain) {
+  return Solver_CG_general<DataType, Dim, strides_all...>(domain);
+}
 
 template <typename DataType, DataType thresh, Dimension Dim,
           Length... strides_all>

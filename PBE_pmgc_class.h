@@ -994,7 +994,8 @@ public:
   }
 
   template <typename sequential_smooth = std::false_type,
-            std::size_t level = nlev>
+            std::size_t level = nlev,
+            typename as_preconditioner = std::false_type>
   void v_cycle() {
     if constexpr (level == 1) {
       solve_by_cg<level>(Float<(DataType)1e-8>{});
@@ -1002,7 +1003,7 @@ public:
 
       bool iadjoint = false;
       for (int i = 0; i < 2; i++) {
-        bool zero_initialize = level != nlev;
+        bool zero_initialize = (level != nlev) | as_preconditioner{}();
         smooth_domain_sol<sequential_smooth, level>(2, (int)iadjoint,
                                                     zero_initialize);
         zero_initialize = false;
@@ -1034,6 +1035,13 @@ public:
       }
     }
   }
+
+  d_type<nlev> operator()(d_type<nlev> rhs) {
+    std::swap(rhs.values_buff, this->rhs_domain.get_domain().values_buff);
+    this->template v_cycle<std::false_type, nlev, std::true_type>();
+    std::swap(rhs.values_buff, this->rhs_domain.get_domain().values_buff);
+    return sol.get_domain();
+  };
 
   void cycle(std::size_t num_iters) {}
 
