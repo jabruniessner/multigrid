@@ -253,8 +253,8 @@ public:
     sycl::free(atoms_device, q);
   }
 
-  void set_up_rhs(std::vector<Atom<DataType>> atom_list) {
-    auto &rhs = rhs_domain.template get_domain<nlev>();
+  void set_up_rhs_extern(std::vector<Atom<DataType>> atom_list, auto &rhs) {
+    // auto &rhs = rhs_domain.template get_domain<nlev>();
 
     const auto num_atoms = atom_list.size();
 
@@ -275,6 +275,11 @@ public:
     });
 
     sycl::free(atoms_device, q);
+  }
+
+  void set_up_rhs(std::vector<Atom<DataType>> atom_list) {
+    auto &rhs = rhs_domain.template get_domain<nlev>();
+    set_up_rhs_extern(atom_list, rhs);
   }
 
   template <typename vanilla_prolongation = std::false_type,
@@ -1004,11 +1009,14 @@ public:
       bool iadjoint = false;
       for (int i = 0; i < 2; i++) {
         bool zero_initialize = (level != nlev) | as_preconditioner{}();
-        smooth_domain_sol<sequential_smooth, level>(2, (int)iadjoint,
+
+        //  std::cout << "The value of zero_initialize is: " << zero_initialize
+        //            << std::endl;
+        smooth_domain_sol<sequential_smooth, level>(1, (int)iadjoint,
                                                     zero_initialize);
         zero_initialize = false;
-        iadjoint = !iadjoint;
       }
+      iadjoint = !iadjoint;
       // this->sol.template get_domain<level>().print_domain();
 
       compute_defect_sol_2_sol2<level>();
@@ -1030,15 +1038,26 @@ public:
 
       iadjoint = !iadjoint;
       for (int i = 0; i < 2; i++) {
-        smooth_domain_sol<sequential_smooth, level>(2, (int)iadjoint);
-        iadjoint = !iadjoint;
+        smooth_domain_sol<sequential_smooth, level>(1, (int)iadjoint);
+        // iadjoint = !iadjoint;
       }
     }
   }
 
   d_type<nlev> operator()(d_type<nlev> rhs) {
+
+    DataType residual;
+    domain::domain_compute_norm_squared(residual, rhs);
+    auto residual_pre = std::sqrt(residual / rhs.num_values);
+
     std::swap(rhs.values_buff, this->rhs_domain.get_domain().values_buff);
     this->template v_cycle<std::false_type, nlev, std::true_type>();
+
+    auto residual_post = this->compute_residual_2();
+
+    std::cout << "The residual contraction is: " << residual_post / residual_pre
+              << std::endl;
+
     std::swap(rhs.values_buff, this->rhs_domain.get_domain().values_buff);
     return sol.get_domain();
   };

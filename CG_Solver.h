@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "Domain.h"
 #include "bitshift_lib.h"
+#include "concepts.h"
 #include "hipSYCL/sycl/libkernel/reduction.hpp"
 #include "tprint.hpp"
 #include <array>
@@ -34,6 +35,13 @@ template <typename DataType> struct thresh_criterion {
   };
 };
 
+struct counting_criterion {
+  std::size_t num_iters;
+  std::size_t current_iters = 0;
+  counting_criterion(std::size_t num_iters) : num_iters{num_iters} {};
+  bool operator()(DataType residual) { return (num_iters > current_iters++); }
+};
+
 template <typename DataType, Dimension Dim, typename Finish_crit,
           Length... strides_all, std::size_t... dims>
 void CG_solver(Domain<Dim, strides_all...> &init_guess,
@@ -41,7 +49,7 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &defect_r,
                Domain<Dim, strides_all...> &defect_p, auto map,
                Finish_crit thresh, const std::index_sequence<dims...> &,
-               auto precond = IdentityPreconditioner{}) {
+               auto precond = IdentityPreconditioner{}, bool verbose = false) {
   assert(defect_r.q == defect_p.q && init_guess.q == defect_p.q);
 
   assert(defect_r.num_values == defect_p.num_values &&
@@ -125,15 +133,31 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
   DataType residual = 0;
   q.memcpy(&residual, r_squared, sizeof(DataType)).wait();
   residual = std::sqrt(residual);
-  thresh.initialize_residual_dependancy(residual);
+  if constexpr (has_initialize_residual_dependancy<decltype(thresh)>) {
+    thresh.initialize_residual_dependancy(residual);
+  }
+
+  residual = std::sqrt(residual);
 
   //  std::cout << "The residual before the conjugate gradient is: " << residual
   //            << std::endl;
   //
   //  std::cout << "The threshold is: " << thresh << std::endl;
+  DataType true_residual;
+  domain_compute_norm_squared(true_residual, defect_r);
+
+  auto residual_init = std::sqrt(true_residual);
 
   int count = 0;
   while (thresh(residual)) {
+
+    if (verbose) {
+      domain_compute_norm_squared(true_residual, defect_r);
+      true_residual = std::sqrt(true_residual);
+      std::cout << "The residual after " << count << " iterations is "
+                << true_residual / residual_init << std::endl;
+    }
+
     count++;
     //  if (count % 1000 == 0) {
     //    std::cout << "The residual after " << count << " iterations is "
@@ -224,10 +248,11 @@ void CG_solver(Domain<Dim, strides_all...> &init_guess,
                Domain<Dim, strides_all...> &rhs,
                Domain<Dim, strides_all...> &defect_r,
                Domain<Dim, strides_all...> &defect_p, auto map, Finish_crit m,
-               auto precond = IdentityPreconditioner{}) {
+               auto precond = IdentityPreconditioner{}, bool verbose = false) {
+  // std::cout << "The value for verbose is " << verbose << std::endl;
   CG_solver<DataType, Dim, Finish_crit, strides_all...>(
       init_guess, rhs, defect_r, defect_p, map, m,
-      std::make_index_sequence<Dim>(), precond);
+      std::make_index_sequence<Dim>(), precond, verbose);
 }
 
 template <typename DataType, DataType thresh, Dimension Dim,
@@ -260,9 +285,12 @@ struct Solver_CG_general {
   void operator()(Domain<Dim, strides_all...> &init_guess,
                   Domain<Dim, strides_all...> &rhs, auto map,
                   Finish_crit finish,
-                  preconditioner precond = IdentityPreconditioner{}) {
+                  preconditioner precond = IdentityPreconditioner{},
+                  bool verbose = false) {
+
+    // std::cout << "The value for verbose is: " << verbose << std::endl;
     CG_solver<DataType, Dim, Finish_crit, strides_all...>(
-        init_guess, rhs, defect_r, defect_p, map, finish, precond);
+        init_guess, rhs, defect_r, defect_p, map, finish, precond, verbose);
   }
 
   Domain<Dim, strides_all...> defect_r;

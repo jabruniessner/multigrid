@@ -78,13 +78,16 @@ int main(int argc, char *argv[]) {
     using d_type = std::remove_reference_t<
         decltype(mg_solver.sol.template get_domain<nlev>())>;
 
+    d_type init_guess(Paddings::PERIODIC, q, 1),
+        rhs_domain(Paddings::PERIODIC, q, 1);
+
     {
 
       auto start = std::chrono::high_resolution_clock::now();
 
       mg_solver.initialize_boundary(atoms_vector);
       mg_solver.initialize_epsilons(atoms_vector);
-      mg_solver.set_up_rhs(atoms_vector);
+      mg_solver.set_up_rhs_extern(atoms_vector, rhs_domain);
       mg_solver.buildmultilevelops<std::false_type>();
 
       auto end = std::chrono::high_resolution_clock::now();
@@ -95,32 +98,39 @@ int main(int argc, char *argv[]) {
                 << duration.count() << std::endl;
     }
 
-
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
 
-
     q.wait();
-
 
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
 
+    auto main_solver =
+        cg_solver::make_general_solver<DataType>(mg_solver.sol.get_domain());
+    cg_solver::counting_criterion counter(num_iters);
+
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < num_iters; i++) {
-      mg_solver.v_cycle<std::false_type>();
+    auto map = mg_solver.get_map();
 
-      current_res_1 = mg_solver.compute_residual_1();
+    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
 
-      std::cout << "The residual after " << i + 1 << " iterations is "
-                << current_res_1 / initial_res_1 << std::endl;
+    //  main_solver();
 
-      std::cout << "contraction number " << current_res_1 / previous_res_1
-                << std::endl;
+    //  for (int i = 0; i < num_iters; i++) {
+    //    mg_solver.v_cycle<std::false_type>();
 
-      previous_res_1 = current_res_1;
-    }
+    //    current_res_1 = mg_solver.compute_residual_1();
+
+    //    std::cout << "The residual after " << i + 1 << " iterations is "
+    //              << current_res_1 / initial_res_1 << std::endl;
+
+    //    std::cout << "contraction number " << current_res_1 / previous_res_1
+    //              << std::endl;
+
+    //    previous_res_1 = current_res_1;
+    //  }
 
     auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -130,7 +140,6 @@ int main(int argc, char *argv[]) {
               << std::endl;
 
     std::ofstream out_file{"output_potential.dx"};
-
   }
 
   return 0;
