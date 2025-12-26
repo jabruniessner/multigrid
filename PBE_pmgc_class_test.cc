@@ -93,7 +93,10 @@ int main(int argc, char *argv[]) {
 
       auto start = std::chrono::high_resolution_clock::now();
 
-      mg_solver.initialize_boundary(atoms_vector);
+      // TD<d_type> td;
+      // TD<decltype(init_guess)> td2;
+
+      mg_solver.initialize_boundary_extern(atoms_vector, init_guess);
       mg_solver.initialize_epsilons(atoms_vector);
       mg_solver.set_up_rhs_extern(atoms_vector, rhs_domain);
       mg_solver.buildmultilevelops<std::false_type>();
@@ -117,39 +120,38 @@ int main(int argc, char *argv[]) {
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
 
-    //  auto main_solver =
-    //      cg_solver::make_general_solver<DataType>(mg_solver.sol.get_domain());
-    //  cg_solver::counting_criterion counter(num_iters);
+    auto main_solver =
+        cg_solver::make_general_solver<DataType>(mg_solver.sol.get_domain());
+    cg_solver::counting_criterion counter(num_iters);
 
-    //  auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now();
 
-    // auto map = mg_solver.get_map();
+    auto map = mg_solver.get_map();
 
-    // main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
+    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
 
     //  //  main_solver();
 
-    for (int i = 0; i < num_iters; i++) {
-      mg_solver.v_cycle<std::false_type>();
+    //  for (int i = 0; i < num_iters; i++) {
+    //    mg_solver.v_cycle<std::false_type>();
 
-      current_res_1 = mg_solver.compute_residual_1();
+    //    current_res_1 = mg_solver.compute_residual_1();
 
-      std::cout << "The residual after " << i + 1 << " iterations is "
-                << current_res_1 / initial_res_1 << std::endl;
+    //    std::cout << "The residual after " << i + 1 << " iterations is "
+    //              << current_res_1 / initial_res_1 << std::endl;
 
-      std::cout << "contraction number " << current_res_1 / previous_res_1
-                << std::endl;
+    //    std::cout << "contraction number " << current_res_1 / previous_res_1
+    //              << std::endl;
 
-      previous_res_1 = current_res_1;
-    }
+    //    previous_res_1 = current_res_1;
+    //  }
 
-    //  auto end_time = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
 
-    //  std::chrono::duration<double> duration = end_time - start_time;
+    std::chrono::duration<double> duration = end_time - start_time;
 
-    //  std::cout << "The required time for the solution was: " <<
-    //  duration.count()
-    //            << std::endl;
+    std::cout << "The required time for the solution was: " << duration.count()
+              << std::endl;
 
     //  std::ofstream out_file{"output_potential.dx"};
   }

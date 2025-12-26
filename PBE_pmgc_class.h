@@ -140,7 +140,8 @@ public:
     domain(x, y, z) = buffer_value;
   }
 
-  void initialize_boundary(std::vector<Atom<DataType>> atom_list) {
+  void initialize_boundary_extern(std::vector<Atom<DataType>> atom_list,
+                                  d_type<nlev> boundary_domain) {
 
     constexpr auto length = Domain_Type<>::length;
 
@@ -152,7 +153,7 @@ public:
     // d_type_wrapper<nlev> boundary_domain_wrapper(Paddings::PERIODIC, q, 1);
     // d_type<nlev> boundary_domain = boundary_domain_wrapper;
 
-    auto &boundary_domain = sol.get_domain();
+    // auto &boundary_domain = sol.get_domain();
 
     q.memcpy(atoms_device, atom_list.data(),
              atom_list.size() * sizeof(Atom<DataType>));
@@ -177,7 +178,7 @@ public:
          })
         .wait();
 
-    //  //  sycl::free(atoms_device, q);
+    sycl::free(atoms_device, q);
 
     //  convolution::Convolve_map(rhs_domain.get_domain(), boundary_domain,
     //                            this->get_map());
@@ -189,7 +190,11 @@ public:
     //    rhs.values_buff[I] = -rhs.values_buff[I];
     //  });
 
-    q.wait();
+    // q.wait();
+  }
+
+  void initialize_boundary(std::vector<Atom<DataType>> atom_list) {
+    initialize_boundary_extern(atom_list, sol.get_domain());
   }
 
   void initialize_epsilons(std::vector<Atom<DataType>> atom_list) {
@@ -820,6 +825,9 @@ public:
     auto &rhs = rhs_domain.template get_domain<level>();
 
     if constexpr (level == nlev) {
+      //  std::cout << "The value for zero initialize is: " << zero_initialize
+      //            << std::endl;
+
       pmgc::Vgsrb7x(nx<level>, ny<level>, nz<level>, VAL_BUF_EPSILON(oC),
                     kappa_domain.values_buff,
                     rhs_domain.template get_domain<level>().values_buff,
@@ -1011,8 +1019,8 @@ public:
     } else {
 
       bool iadjoint = false;
+      bool zero_initialize = (level != nlev) | as_preconditioner{}();
       for (int i = 0; i < 2; i++) {
-        bool zero_initialize = (level != nlev) | as_preconditioner{}();
 
         //  std::cout << "The value of zero_initialize is: " << zero_initialize
         //            << std::endl;
@@ -1055,6 +1063,7 @@ public:
     auto residual_pre = std::sqrt(residual / rhs.num_values);
 
     std::swap(rhs.values_buff, this->rhs_domain.get_domain().values_buff);
+
     this->template v_cycle<std::false_type, nlev, std::true_type>();
 
     auto residual_post = this->compute_residual_2();
