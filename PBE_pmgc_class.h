@@ -250,6 +250,8 @@ public:
           : kappa_domain.values_buff[I] = kappa_2 * epsilon_r;
     });
 
+    q.wait();
+
     sycl::free(atoms_device, q);
   }
 
