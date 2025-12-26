@@ -276,6 +276,8 @@ public:
       });
     });
 
+    q.wait();
+
     sycl::free(atoms_device, q);
   }
 

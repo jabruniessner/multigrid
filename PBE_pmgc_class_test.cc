@@ -5,9 +5,9 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 22;
+constexpr std::size_t base_length = 2;
 constexpr std::size_t nlev = 4;
-constexpr DataType box_length = 96;
+constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
 #else
-  sycl::gpu_selector selector;
+  sycl::cpu_selector selector;
 #endif
 
   sycl::queue q{selector,
@@ -63,6 +63,9 @@ int main(int argc, char *argv[]) {
   auto z_min = std::stod(argv[5]);
   int num_iters = std::stoi(argv[6]);
 
+  std::cout << "The origin position is: " << x_min << " " << y_min << " "
+            << z_min << std::endl;
+
   for (auto &atom : atom_list) {
     atom.Position[0] -= x_min;
     atom.Position[1] -= y_min;
@@ -70,6 +73,11 @@ int main(int argc, char *argv[]) {
     // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
+
+  std::cout << "The number of atoms is:" << atoms_vector.size() << std::endl;
+  std::cout << "The atom position is: " << atoms_vector[0].Position[0] << " "
+            << atoms_vector[0].Position[1] << " " << atoms_vector[0].Position[2]
+            << std::endl;
 
   {
     pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
@@ -91,6 +99,8 @@ int main(int argc, char *argv[]) {
       mg_solver.buildmultilevelops<std::false_type>();
       q.wait();
 
+      q.wait();
+
       auto end = std::chrono::high_resolution_clock::now();
 
       std::chrono::duration<double> duration = end - start;
@@ -102,20 +112,22 @@ int main(int argc, char *argv[]) {
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
 
+    q.wait();
+
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
 
-    auto main_solver =
-        cg_solver::make_general_solver<DataType>(mg_solver.sol.get_domain());
-    cg_solver::counting_criterion counter(num_iters);
+    //  auto main_solver =
+    //      cg_solver::make_general_solver<DataType>(mg_solver.sol.get_domain());
+    //  cg_solver::counting_criterion counter(num_iters);
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    //  auto start_time = std::chrono::high_resolution_clock::now();
 
     // auto map = mg_solver.get_map();
 
     // main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
 
-    //  main_solver();
+    //  //  main_solver();
 
     for (int i = 0; i < num_iters; i++) {
       mg_solver.v_cycle<std::false_type>();
@@ -131,14 +143,15 @@ int main(int argc, char *argv[]) {
       previous_res_1 = current_res_1;
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now();
+    //  auto end_time = std::chrono::high_resolution_clock::now();
 
-    std::chrono::duration<double> duration = end_time - start_time;
+    //  std::chrono::duration<double> duration = end_time - start_time;
 
-    std::cout << "The required time for the solution was: " << duration.count()
-              << std::endl;
+    //  std::cout << "The required time for the solution was: " <<
+    //  duration.count()
+    //            << std::endl;
 
-    std::ofstream out_file{"output_potential.dx"};
+    //  std::ofstream out_file{"output_potential.dx"};
   }
 
   return 0;
