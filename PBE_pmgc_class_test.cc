@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
       mg_solver.initialize_epsilons(atoms_vector);
       mg_solver.set_up_rhs_extern(atoms_vector, rhs_domain);
       mg_solver.buildmultilevelops<std::false_type>();
+      q.wait();
 
       auto end = std::chrono::high_resolution_clock::now();
 
@@ -101,8 +102,6 @@ int main(int argc, char *argv[]) {
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
 
-    q.wait();
-
     DataType current_res_1 = 0;
     DataType previous_res_1 = initial_res_1;
 
@@ -112,25 +111,25 @@ int main(int argc, char *argv[]) {
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
-    auto map = mg_solver.get_map();
+    // auto map = mg_solver.get_map();
 
-    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
+    // main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
 
     //  main_solver();
 
-    //  for (int i = 0; i < num_iters; i++) {
-    //    mg_solver.v_cycle<std::false_type>();
+    for (int i = 0; i < num_iters; i++) {
+      mg_solver.v_cycle<std::false_type>();
 
-    //    current_res_1 = mg_solver.compute_residual_1();
+      current_res_1 = mg_solver.compute_residual_1();
 
-    //    std::cout << "The residual after " << i + 1 << " iterations is "
-    //              << current_res_1 / initial_res_1 << std::endl;
+      std::cout << "The residual after " << i + 1 << " iterations is "
+                << current_res_1 / initial_res_1 << std::endl;
 
-    //    std::cout << "contraction number " << current_res_1 / previous_res_1
-    //              << std::endl;
+      std::cout << "contraction number " << current_res_1 / previous_res_1
+                << std::endl;
 
-    //    previous_res_1 = current_res_1;
-    //  }
+      previous_res_1 = current_res_1;
+    }
 
     auto end_time = std::chrono::high_resolution_clock::now();
 
