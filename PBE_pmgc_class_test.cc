@@ -28,9 +28,9 @@ int main(int argc, char *argv[]) {
   std::cout << "The value of grid_step is: " << grid_step << std::endl;
 
   if (argc < 3) {
-    std::cout
-        << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
-        << std::endl;
+    std::cout << "Usage: ./this_program in_file out_file x_min y_min z_min "
+                 "num_iters ionic_strength"
+              << std::endl;
     return 0;
   }
 
@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
   auto y_min = std::stod(argv[4]);
   auto z_min = std::stod(argv[5]);
   int num_iters = std::stoi(argv[6]);
+  auto ionic_strength = std::stod(argv[7]);
 
   std::cout << "The origin position is: " << x_min << " " << y_min << " "
             << z_min << std::endl;
@@ -81,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   {
     pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
-        (DataType)0, DataType(0.15), q);
+        (DataType)ionic_strength, DataType(0.15), q);
 
     using d_type = std::remove_reference_t<
         decltype(mg_solver.sol.template get_domain<nlev>())>;

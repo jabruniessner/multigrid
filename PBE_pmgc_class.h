@@ -62,6 +62,53 @@ void compute_center_domain(domain::Domain<Dim, strides_all...> &center_domain,
                         other_domains...);
 }
 
+template <Dimension Dim, Length... strides_all, typename... domains,
+          std::size_t... Directions>
+void compute_center_domain_with_kappa(
+    std::index_sequence<Directions...>,
+    domain::Domain<Dim, strides_all...> &center_domain,
+    domain::Domain<Dim, strides_all...> &kappa_domain,
+    domains &...other_domains) {
+  static_assert(
+      (std::is_same_v<domain::Domain<Dim, strides_all...>, domains> && ...),
+      "One of the other domains is not of the right type");
+
+  static_assert(sizeof...(Directions) == sizeof...(other_domains));
+
+  center_domain.q.parallel_for(
+      sycl::range<Dim>(strides_all...), [=](sycl::id<Dim> I) {
+        ((I[Directions] += center_domain.padding_width), ...);
+
+        auto domain_offset = [=](auto domain, int dir) {
+          auto I2 = I;
+          I2[dir] -= 1;
+          return domain(I2[Directions]...);
+        };
+
+        auto domain_no_offset = [=](auto domain, int dir) {
+          return (domain(I[Directions]...));
+        };
+
+        center_domain(I[Directions]...) = 0;
+        center_domain(I[Directions]...) =
+            ((domain_no_offset(other_domains, Directions) +
+              domain_offset(other_domains, Directions)) +
+             ...);
+
+        center_domain(I[Directions]...) += kappa_domain(I[Directions]...);
+      });
+}
+
+template <Dimension Dim, Length... strides_all, typename... domains>
+void compute_center_domain_with_kappa(
+    domain::Domain<Dim, strides_all...> &center_domain,
+    domain::Domain<Dim, strides_all...> &kappa_domain,
+    domains &...other_domains) {
+  compute_center_domain_with_kappa(std::make_index_sequence<Dim>{},
+                                   center_domain, kappa_domain,
+                                   other_domains...);
+}
+
 template <std::size_t base_length, std::size_t nlev, DataType box_length>
 class PBE_linear_problem {
 
@@ -96,13 +143,14 @@ public:
       : ion_radius(ion_radius), ionic_strength(ionic_strength), q{q}, sol(q),
         sol2(q), lhs_domain1(q), lhs_domain2(q), rhs_domain(q),
         epsilon_oC_map(q), epsilon_oE_map(q), epsilon_oN_map(q),
-        epsilon_uC_map(q), kappa_(q), epsilon_oNE_map(q), epsilon_oNW_map(q),
-        epsilon_uE_map(q), epsilon_uW_map(q), epsilon_uN_map(q),
-        epsilon_uS_map(q), epsilon_uNE_map(q), epsilon_uNW_map(q),
-        epsilon_uSE_map(q), epsilon_uSW_map(q), oPC(q), oPN(q), oPS(q), oPE(q),
-        oPW(q), oPNE(q), oPNW(q), oPSE(q), oPSW(q), uPC(q), uPN(q), uPS(q),
-        uPE(q), uPW(q), uPNE(q), uPNW(q), uPSE(q), uPSW(q), dPC(q), dPN(q),
-        dPS(q), dPE(q), dPW(q), dPNE(q), dPNW(q), dPSE(q), dPSW(q)
+        epsilon_uC_map(q), kappa_(q), kappa2_(q), epsilon_oNE_map(q),
+        epsilon_oNW_map(q), epsilon_uE_map(q), epsilon_uW_map(q),
+        epsilon_uN_map(q), epsilon_uS_map(q), epsilon_uNE_map(q),
+        epsilon_uNW_map(q), epsilon_uSE_map(q), epsilon_uSW_map(q), oPC(q),
+        oPN(q), oPS(q), oPE(q), oPW(q), oPNE(q), oPNW(q), oPSE(q), oPSW(q),
+        uPC(q), uPN(q), uPS(q), uPE(q), uPW(q), uPNE(q), uPNW(q), uPSE(q),
+        uPSW(q), dPC(q), dPN(q), dPS(q), dPE(q), dPW(q), dPNE(q), dPNW(q),
+        dPSE(q), dPSW(q)
 
   {
 
@@ -232,14 +280,11 @@ public:
                           (DataType)epsilon_p / (grid_step * grid_step));
     });
 
-    auto &epsilonc_domain = epsilon_oC_map.template get_domain<nlev>();
-    compute_center_domain(epsilonc_domain, epsilonuC_domain, epsilonoN_domain,
-                          epsilonoE_domain);
-
-    auto &kappa_domain = kappa_.template get_domain<nlev>();
+    auto &kappa_domain = kappa2_.template get_domain<nlev>();
+    auto ion_radius = this->ion_radius;
     q.parallel_for(sycl::range<1>(atom_list.size()), [=](sycl::id<1> I) {
       auto atom = atoms_device[I];
-      atom.radius += 1.5;
+      atom.radius += ion_radius;
       find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
     });
 
@@ -254,6 +299,11 @@ public:
           ? kappa_domain.values_buff[I] = 0
           : kappa_domain.values_buff[I] = kappa_2 * epsilon_r;
     });
+
+    auto &epsilonc_domain = epsilon_oC_map.template get_domain<nlev>();
+    compute_center_domain_with_kappa(epsilonc_domain, kappa_domain,
+                                     epsilonuC_domain, epsilonoN_domain,
+                                     epsilonoE_domain);
 
     q.wait();
 
@@ -1082,7 +1132,7 @@ public:
   sycl::queue &q;
 
   Domain_Type<> sol, sol2, lhs_domain1, lhs_domain2, rhs_domain, epsilon_oC_map,
-      epsilon_oE_map, epsilon_oN_map, epsilon_uC_map, kappa_;
+      epsilon_oE_map, epsilon_oN_map, epsilon_uC_map, kappa_, kappa2_;
 
   Domain_Type<nlev - 1> epsilon_oNE_map, epsilon_oNW_map, epsilon_uE_map,
       epsilon_uW_map, epsilon_uN_map, epsilon_uS_map, epsilon_uNE_map,
