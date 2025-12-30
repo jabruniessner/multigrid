@@ -142,8 +142,7 @@ int main(int argc, char *argv[]) {
 
     auto map = mg_solver.get_map();
 
-    main_solver(init_guess, rhs_domain, map, counter,
-                cg_solver::IdentityPreconditioner{}, true);
+    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
 
     //  //  main_solver();
 
