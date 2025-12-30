@@ -5,8 +5,8 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 1;
-constexpr std::size_t nlev = 2;
+constexpr std::size_t base_length = 4;
+constexpr std::size_t nlev = 3;
 constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
@@ -88,7 +88,9 @@ int main(int argc, char *argv[]) {
         decltype(mg_solver.sol.template get_domain<nlev>())>;
 
     d_type init_guess(Paddings::PERIODIC, q, 1),
-        rhs_domain(Paddings::PERIODIC, q, 1);
+        rhs_domain(Paddings::PERIODIC, q, 1),
+        boundary_domain(Paddings::PERIODIC, q, 1),
+        convolved_boundary_domain(Paddings::PERIODIC, q, 1);
 
     {
 
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
       // mg_solver.set_up_rhs(atoms_vector);
       mg_solver.set_up_rhs_extern(atoms_vector, rhs_domain);
       mg_solver.buildmultilevelops<std::false_type>();
-      q.wait();
+      // q.wait();
 
       auto end = std::chrono::high_resolution_clock::now();
 
@@ -113,16 +115,16 @@ int main(int argc, char *argv[]) {
                 << duration.count() << std::endl;
     }
 
-    init_guess.print_domain();
-    convolution::Convolve_map(mg_solver.rhs_domain.get_domain(), init_guess,
-                              mg_solver.get_map());
+    // init_guess.print_domain();
+    // convolution::Convolve_map(mg_solver.rhs_domain.get_domain(), init_guess,
+    //                           mg_solver.get_map());
 
-    std::cout << "Printing the convolved domain" << std::endl;
-    mg_solver.rhs_domain.get_domain().print_domain();
+    // std::cout << "Printing the convolved domain" << std::endl;
+    //  mg_solver.rhs_domain.get_domain().print_domain();
+    //   rhs_domain.print_domain();
+
+    // std::cout << "Printing the rhs domain " << std::endl;
     // rhs_domain.print_domain();
-
-    std::cout << "Printing the rhs domain " << std::endl;
-    rhs_domain.print_domain();
 
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
@@ -140,7 +142,8 @@ int main(int argc, char *argv[]) {
 
     auto map = mg_solver.get_map();
 
-    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
+    main_solver(init_guess, rhs_domain, map, counter,
+                cg_solver::IdentityPreconditioner{}, true);
 
     //  //  main_solver();
 
@@ -169,7 +172,8 @@ int main(int argc, char *argv[]) {
 
     std::ofstream out_file{"output_potential.dx"};
 
-    init_guess.print_dx_to_stream(out_file, x_min, y_min, z_min, (DataType)96);
+    init_guess.print_dx_to_stream(out_file, x_min, y_min, z_min,
+                                  (DataType)box_length);
 
     out_file.close();
   }

@@ -23,11 +23,11 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 4u;
+constexpr std::size_t nlev = 5u;
 constexpr std::size_t base_length = 1;
 constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 16;
-constexpr DataType ionic_strength = 0.15;
+constexpr DataType ionic_strength = 0.0;
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5;
+      Atom.Position[0] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonx_domain,
                           static_cast<DataType>(grid_step));
     });
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[1] -= 0.5;
+      Atom.Position[1] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilony_domain,
                           static_cast<DataType>(grid_step));
     });
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[2] -= 0.5;
+      Atom.Position[2] -= 0.5 * grid_step;
       find_dots_in_sphere(Atom, epsilonz_domain,
                           static_cast<DataType>(grid_step));
     });
