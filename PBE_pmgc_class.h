@@ -282,6 +282,7 @@ public:
 
     auto &kappa_domain = kappa2_.template get_domain<nlev>();
     auto ion_radius = this->ion_radius;
+    std::cout << "The ion radius is " << this->ion_radius << std::endl;
     q.parallel_for(sycl::range<1>(atom_list.size()), [=](sycl::id<1> I) {
       auto atom = atoms_device[I];
       atom.radius += ion_radius;
@@ -293,6 +294,9 @@ public:
 
     const auto *values_buff = kappa_domain.values_buff;
     const DataType kappa_2 = this->kappa_2;
+
+    std::cout << "The value for kappa_2 is " << kappa_2 << std::endl;
+    std::cout << "The value for epsilon_r is " << epsilon_r << std::endl;
 
     q.parallel_for(sycl::range<1>(kappa_domain.num_values), [=](sycl::id<1> I) {
       kappa_domain.values_buff[I] != 0

@@ -5,9 +5,9 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 6;
-constexpr std::size_t nlev = 4;
-constexpr DataType box_length = 96;
+constexpr std::size_t base_length = 1;
+constexpr std::size_t nlev = 2;
+constexpr DataType box_length = 16;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -112,6 +112,17 @@ int main(int argc, char *argv[]) {
       std::cout << "The required time for the problem setup was: "
                 << duration.count() << std::endl;
     }
+
+    init_guess.print_domain();
+    convolution::Convolve_map(mg_solver.rhs_domain.get_domain(), init_guess,
+                              mg_solver.get_map());
+
+    std::cout << "Printing the convolved domain" << std::endl;
+    mg_solver.rhs_domain.get_domain().print_domain();
+    // rhs_domain.print_domain();
+
+    std::cout << "Printing the rhs domain " << std::endl;
+    rhs_domain.print_domain();
 
     const auto initial_res_2 = mg_solver.compute_residual_2();
     const auto initial_res_1 = mg_solver.compute_residual_1();
