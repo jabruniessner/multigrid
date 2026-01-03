@@ -289,10 +289,13 @@ public:
       find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
     });
 
+    // std::ofstream kappa_outfile{"kappa_PBE_pmgc_class_map.dx"};
+    // kappa_domain.print_dx_to_stream(kappa_outfile, 0.0, 0.0, 0.0,
+    //                                 (DataType)box_length);
     // Inverting the kappa domain because the original functions marks the
     // points inside the protein with 1. And assigning the right value
 
-    const auto *values_buff = kappa_domain.values_buff;
+    // const auto *values_buff = kappa_domain.values_buff;
     const DataType kappa_2 = this->kappa_2;
 
     std::cout << "The value for kappa_2 is " << kappa_2 << std::endl;

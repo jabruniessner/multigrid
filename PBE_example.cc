@@ -23,11 +23,11 @@ using namespace cycles;
 using namespace convolution;
 
 constexpr Dimension Dim = 3;
-constexpr std::size_t nlev = 5u;
-constexpr std::size_t base_length = 1;
+constexpr std::size_t nlev = 4u;
+constexpr std::size_t base_length = 6;
 constexpr DataType omega = 4. / 5.;
-constexpr DataType box_length = 16;
-constexpr DataType ionic_strength = 0.15;
+constexpr DataType box_length = 96;
+constexpr DataType ionic_strength = 0.15; // in molar
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
@@ -229,6 +229,10 @@ int main(int argc, char *argv[]) {
       //                      diff_operator.get_offsets(), 1e-2);
       find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
     });
+
+    std::ofstream kappa_outfile{"kappa_PBE_example_map.dx"};
+    kappa_domain.print_dx_to_stream(kappa_outfile, x_min, y_min, z_min,
+                                    (DataType)box_length);
 
     // Inverting the kappa domain because the original functions marks the
     // points inside the protein with 1.

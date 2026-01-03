@@ -5,9 +5,9 @@
 #include <fstream>
 #include <type_traits>
 
-constexpr std::size_t base_length = 4;
-constexpr std::size_t nlev = 3;
-constexpr DataType box_length = 16;
+constexpr std::size_t base_length = 6;
+constexpr std::size_t nlev = 4;
+constexpr DataType box_length = 96;
 
 template <typename T> struct TD;
 template <std::size_t nlev> struct TD2;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   {
     pmgc_solver::PBE_linear_problem<base_length, nlev, box_length> mg_solver(
-        (DataType)ionic_strength, DataType(0.15), q);
+        (DataType)ionic_strength, DataType(1.5), q);
 
     using d_type = std::remove_reference_t<
         decltype(mg_solver.sol.template get_domain<nlev>())>;
@@ -142,7 +142,8 @@ int main(int argc, char *argv[]) {
 
     auto map = mg_solver.get_map();
 
-    main_solver(init_guess, rhs_domain, map, counter, mg_solver, true);
+    main_solver(init_guess, rhs_domain, map, counter,
+                cg_solver::IdentityPreconditioner{}, true);
 
     //  //  main_solver();
 
