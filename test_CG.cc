@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[]) {
 
-  int num_iters = std::stoi(argv[1]);
+  // int num_iters = std::stoi(argv[1]);
 
   using namespace cg_solver;
   using namespace convolution;
@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
   //  init_guess.print_domain();
 
   auto start = std::chrono::high_resolution_clock::now();
-  CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets, num_iters);
+  CG_solver(init_guess, rhs, defect_r, defect_p, values, offsets,
+            static_cast<DataType>(1e-2));
   auto end = std::chrono::high_resolution_clock::now();
 
   DataType const residual =

@@ -58,9 +58,9 @@ int main(int argc, char *argv[]) {
   q.submit([=](sycl::handler &h) {
      h.single_task([=]() {
        for (int I = 0; I < atoms.size(); I++)
-         add_charges_to_distribution(domain, atoms_device[I].Position,
-                                     atoms_device[I].charge,
-                                     spacing<DataType, 1.>{});
+         add_charges_to_distribution(
+             domain, atoms_device[I].Position, atoms_device[I].charge,
+             spacing<DataType, static_cast<DataType>(1.)>{});
      });
    }).wait();
   //}).wait();

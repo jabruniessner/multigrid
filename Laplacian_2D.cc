@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
       -1.}; // Dividing the original operator by the Diagonal
             // as it is only applied to the right hand side anyways
 
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op, 1.,
+  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+                                     static_cast<DataType>(1.),
                                      Integer<base_length>{});
 
   diff_operator.print_operator();
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
   std::index_sequence<3> smoother_sequence{};
   Jacobi_Smoother j_smoother(rhs_domain, values, offsets);
 
-  cg_solver::Solver_CG solver(Float<1e-9>{},
+  cg_solver::Solver_CG solver(Float<static_cast<DataType>(1e-9)>{},
                               rhs_domain.template get_domain<1>(),
                               diff_operator.template get_values<1>(),
                               diff_operator.template get_offsets<1>());

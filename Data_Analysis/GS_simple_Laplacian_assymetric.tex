@@ -1,0 +1,45 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{graphicx} % Required for inserting images
+
+
+\textwidth=150mm
+\textheight=250mm
+\hoffset= -10mm       % may need change
+\voffset= -25mm 
+
+\title{Simple Laplacian RB Gau{\ss}-Seidel Smoother and Asymmetric Boundary Conditions}
+\author{Jakob Niessner}
+%\date{June 2025}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{center}
+\begin{tabular}{|c|c|}
+  \hline
+  Specification & Value \\
+  \hline
+  Smoother        & RB GS        \\
+  Smoothing steps & 2        \\
+  Stencil Size    & 7        \\
+  Coarse Grid Solver & CG \\
+  Coarse Grid Dimensions & $33 \times 33 \times 33$ \\
+  Coarsening & injection \\ 
+  Prolongation & trilinear interpolation \\
+  Boundary Conditions & Dirichlet \\ 
+  Boundary funtions & $f(x, y, z) = -3x^2 - 4y^2 + 7z^2$ \\
+  \hline
+\end{tabular}
+\end{center}
+
+\begin{figure}[h!]
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{Residuals_plotted_asymmetric.pdf}
+  \end{center}
+  \label{fig:}
+\end{figure}
+  
+
+\end{document}

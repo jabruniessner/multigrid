@@ -1,6 +1,7 @@
 #include "Convolution.h"
 #include "Debye_Hueckel_functions.h"
 #include "MultigridDomain.h"
+#include "bitshift_lib.h"
 #include "create_charge_distribution.h"
 #include "cycles.h"
 #include "dot_finder.h"
@@ -26,7 +27,7 @@ constexpr std::size_t nlev = 4u;
 constexpr std::size_t base_length = 6;
 constexpr DataType omega = 4. / 5.;
 constexpr DataType box_length = 96;
-constexpr DataType ionic_strength = 0.15;
+constexpr DataType ionic_strength = 0.15; // in molar
 constexpr DataType kappa = KappaA(ionic_strength);
 constexpr DataType kappa_2 = kappa * kappa;
 constexpr DataType ionradius = 1.5;
@@ -44,12 +45,14 @@ DataType sqr(double val) { return val * val; }
 template <std::size_t level = nlev>
 void Set_boundary_conditions(Atom<DataType> *atoms, std::size_t num_atoms,
                              const Domain_Type_upper &domain, std::size_t x,
-                             std::size_t y, std::size_t z) {
+                             std::size_t y, std::size_t z,
+                             DataType grid_step = 1.) {
   DataType buffer_value = 0;
   for (int i = 0; i < num_atoms; i++) {
-    const DataType distance = std::sqrt(sqr(x - atoms[i].Position[0]) +
-                                        sqr(y - atoms[i].Position[1]) +
-                                        sqr(z - atoms[i].Position[2]));
+    const DataType distance =
+        std::sqrt(sqr(x * grid_step - atoms[i].Position[0]) +
+                  sqr(y * grid_step - atoms[i].Position[1]) +
+                  sqr(z * grid_step - atoms[i].Position[2]));
 
     buffer_value +=
         DH_Sphere(atoms[i].radius, atoms[i].charge, distance, kappa);
@@ -76,6 +79,8 @@ int main(int argc, char *argv[]) {
 
   using OffsetType = std::array<int, Dim>;
 
+  std::cout << "The value of kappa_2 is: " << kappa_2 << std::endl;
+
   if (argc < 3) {
     std::cout
         << "Usage: ./this_program in_file out_file x_min y_min z_min num_iters"
@@ -84,10 +89,15 @@ int main(int argc, char *argv[]) {
   }
   // int num_iters = std::stoi(argv[3]);
 
+  constexpr auto grid_step =
+      box_length / (base_length * utils::power_off(2, nlev));
+
+  std::cout << "The value for grid step is: " << grid_step << std::endl;
+
 #ifdef DEBUGMODE
   sycl::cpu_selector selector;
 #else
-  sycl::gpu_selector selector;
+  sycl::cpu_selector selector;
 #endif
 
   sycl::queue q{selector,
@@ -106,7 +116,10 @@ int main(int argc, char *argv[]) {
   auto x_min = std::stod(argv[3]);
   auto y_min = std::stod(argv[4]);
   auto z_min = std::stod(argv[5]);
-  auto num_iters = std::stod(argv[6]);
+  auto num_iters = std::stoi(argv[6]);
+
+  std::cout << "The minimal values are " << x_min << " " << y_min << " "
+            << z_min << std::endl;
 
   for (auto &atom : atom_list) {
     atom.Position[0] -= x_min;
@@ -115,6 +128,10 @@ int main(int argc, char *argv[]) {
     // atom.radius += ionradius;
     atoms_vector.push_back(atom);
   }
+
+  std::cout << "The atom position is: " << atoms_vector[0].Position[0] << " "
+            << atoms_vector[0].Position[1] << " " << atoms_vector[0].Position[2]
+            << std::endl;
 
   Atom<DataType> *atoms_device =
       sycl::malloc_device<Atom<DataType>>(atom_list.size(), q);
@@ -142,8 +159,8 @@ int main(int argc, char *argv[]) {
       -1., -1., -1.}; // Dividing the original operator by the Diagonal
                       // as it is only applied to the right hand side anyways
 
-  Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
-                                     box_length, Integer<base_length>{});
+  // Multi_Level_operator diff_operator(Integer<nlev>{}, values_op, offsets_op,
+  //                                    box_length, Integer<base_length>{});
 
   {
     auto &boundary_domain = boundary_values.template get_domain<nlev>();
@@ -151,42 +168,51 @@ int main(int argc, char *argv[]) {
          sycl::range<2>(std::get<1>(length) + 2, std::get<2>(length) + 2),
          [=](sycl::id<2> I) {
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], I[1], 0);
+                                         boundary_domain, I[0], I[1], 0,
+                                         grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
                                          boundary_domain, I[0], I[1],
-                                         std::get<2>(length) + 1);
+                                         std::get<2>(length) + 1, grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, 0, I[0], I[1]);
+                                         boundary_domain, 0, I[0], I[1],
+                                         grid_step);
+           Set_boundary_conditions<nlev>(
+               atoms_device, num_atoms, boundary_domain,
+               std::get<0>(length) + 1, I[0], I[1], grid_step);
            Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain,
-                                         std::get<0>(length) + 1, I[0], I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0], 0, I[1]);
-           Set_boundary_conditions<nlev>(atoms_device, num_atoms,
-                                         boundary_domain, I[0],
-                                         std::get<1>(length) + 1, I[1]);
+                                         boundary_domain, I[0], 0, I[1],
+                                         grid_step);
+           Set_boundary_conditions<nlev>(
+               atoms_device, num_atoms, boundary_domain, I[0],
+               std::get<1>(length) + 1, I[1], grid_step);
          })
         .wait();
+
+    std::cout << "The boundary_domain is " << std::endl;
+    // boundary_domain.print_domain();
 
     auto &epsilonx_domain = epsilonx_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[0] -= 0.5;
-      find_dots_in_sphere(Atom, epsilonx_domain, static_cast<DataType>(1.));
+      Atom.Position[0] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilonx_domain,
+                          static_cast<DataType>(grid_step));
     });
 
     auto &epsilony_domain = epsilony_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[1] -= 0.5;
-      find_dots_in_sphere(Atom, epsilony_domain, static_cast<DataType>(1.));
+      Atom.Position[1] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilony_domain,
+                          static_cast<DataType>(grid_step));
     });
 
     auto &epsilonz_domain = epsilonz_map.template get_domain<nlev>();
     q.parallel_for(sycl::range<1>(atoms_vector.size()), [=](sycl::id<1> I) {
       Sphere<DataType, Dim> Atom = atoms_device[I];
-      Atom.Position[2] -= 0.5;
-      find_dots_in_sphere(Atom, epsilonz_domain, static_cast<DataType>(1.));
+      Atom.Position[2] -= 0.5 * grid_step;
+      find_dots_in_sphere(Atom, epsilonz_domain,
+                          static_cast<DataType>(grid_step));
     });
 
     // q.parallel_for(sycl::range<1>(epsilon_domain.num_values),
@@ -201,8 +227,12 @@ int main(int argc, char *argv[]) {
       auto atom = atoms_device[I];
       atom.radius += 1.5;
       //                      diff_operator.get_offsets(), 1e-2);
-      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(1.));
+      find_dots_in_sphere(atom, kappa_domain, static_cast<DataType>(grid_step));
     });
+
+    std::ofstream kappa_outfile{"kappa_PBE_example_map.dx"};
+    kappa_domain.print_dx_to_stream(kappa_outfile, x_min, y_min, z_min,
+                                    (DataType)box_length);
 
     // Inverting the kappa domain because the original functions marks the
     // points inside the protein with 1.
@@ -223,10 +253,9 @@ int main(int argc, char *argv[]) {
                Dim>
         epsilon_domains{epsilonx_domain, epsilony_domain, epsilonz_domain};
 
-    convolution::PBE_Convolve(
-        rhs, boundary_domain, kappa_map, epsilon_domains, kappa_2,
-        static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
-        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets());
+    convolution::PBE_Convolve(rhs, boundary_domain, kappa_map, epsilon_domains,
+                              kappa_2, static_cast<DataType>(grid_step),
+                              static_cast<DataType>(epsilon_r), delta_epsilon);
 
     //  //  q.wait();
 
@@ -236,9 +265,13 @@ int main(int argc, char *argv[]) {
            add_charges_to_distribution(
                rhs, atoms_device[I].Position,
                static_cast<DataType>(atoms_device[I].charge / epsilon),
-               spacing<DataType, static_cast<DataType>(1.)>{});
+               spacing<DataType, static_cast<DataType>(grid_step)>{});
        });
      }).wait();
+
+    // rhs.print_domain();
+
+    std::cout << "The number of atoms is: " << num_atoms << std::endl;
 
     auto &defect_p = lhs_domain1.get_domain();
     auto &defect_r = lhs_domain2.get_domain();
@@ -246,17 +279,21 @@ int main(int argc, char *argv[]) {
 
     cg_solver::CG_solver_PBE(
         init_guess, rhs, defect_r, defect_p, kappa_map, epsilon_domains,
-        kappa_2, static_cast<DataType>(1.), static_cast<DataType>(epsilon_r),
-        delta_epsilon, diff_operator.get_values(), diff_operator.get_offsets(),
-        num_iters);
+        kappa_2, static_cast<DataType>(grid_step),
+        static_cast<DataType>(epsilon_r), delta_epsilon, num_iters);
 
-    domain::subtract_domains(init_guess, boundary_domain, init_guess);
+    domain::add_domains(init_guess, boundary_domain, init_guess);
+
+    // init_guess.print_domain();
 
     //  //  q.wait();
 
     std::ofstream outfile{filename_out};
-    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min, 96);
+    init_guess.print_dx_to_stream(outfile, x_min, y_min, z_min,
+                                  (DataType)box_length);
   }
+
+  q.wait();
 
   std::cout << "The length is: " << std::get<0>(length) << std::endl;
 
